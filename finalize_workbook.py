@@ -87,9 +87,6 @@ def finalize(path):
             data = z.read(item.filename)
             if item.filename == "xl/styles.xml":
                 data = fix_fonts(data.decode("utf-8")).encode("utf-8")
-            if item.filename.endswith(".xml"):
-                # الألوان بصيغة ARGB: البادئة 00 تعني شفافاً تماماً في بعض إصدارات Excel -> نجعلها معتمة FF
-                data = re.sub(rb'rgb="00([0-9A-Fa-f]{6})"', rb'rgb="FF\1"', data)
             elif item.filename in file2sheet:
                 sheet = file2sheet[item.filename].upper()
                 xml = data.decode("utf-8")
@@ -105,6 +102,9 @@ def finalize(path):
                     return cell_xml(attrs, formula, upper[key], XlError)
                 xml = re.sub(r"<c(\s[^>]*?)>(<f>(.*?)</f>)(?:<v\s*/>|<v></v>)</c>", sub, xml, flags=re.S)
                 data = xml.encode("utf-8")
+            if item.filename.endswith(".xml"):
+                # الألوان بصيغة ARGB: البادئة 00 تعني شفافاً تماماً في بعض إصدارات Excel -> نجعلها معتمة FF
+                data = re.sub(rb'rgb="00([0-9A-Fa-f]{6})"', rb'rgb="FF\1"', data)
             out.writestr(item, data)
     z.close()
     shutil.move(tmp, path)
