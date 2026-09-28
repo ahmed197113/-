@@ -105,6 +105,7 @@ def finalize(path):
             out.writestr(item, data)
     z.close()
     shutil.move(tmp, path)
+    os.chmod(path, 0o644)
     print(f"finalized {path}: {len(values)} values, {missing} formulas without value")
 
 
