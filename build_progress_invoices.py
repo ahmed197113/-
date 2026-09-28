@@ -15,8 +15,9 @@ from openpyxl.chart import BarChart, LineChart, DoughnutChart, Reference
 from openpyxl.chart.label import DataLabelList
 from openpyxl.comments import Comment
 
-N_INV = 25          # عدد المستخلصات
-N_ITEMS = 100       # عدد بنود جدول الكميات
+import os
+N_INV = int(os.environ.get("N_INV", 25))          # عدد المستخلصات
+N_ITEMS = int(os.environ.get("N_ITEMS", 100))       # عدد بنود جدول الكميات
 N_SEC = 12          # عدد أقسام الأعمال
 
 # ---------------------------------------------------------------- الألوان والتنسيقات
@@ -306,7 +307,21 @@ ITEMS = [
 
 # نسب تنفيذ تراكمية لكل مستخلص مثال (مستخلص 1 ، 2 ، 3)
 SAMPLE_PROGRESS = [0.35, 0.65, 0.85]
-SAMPLE_DATES = [dt.date(2025, 6, 30), dt.date(2025, 8, 5), dt.date(2025, 10, 8)]
+def sample_progress(i):
+    """نسب تنفيذ تراكمية لبند المثال رقم i في المستخلصات 1..3"""
+    if i == 11:
+        return [0, 1.0, 1.06]                  # بند تجاوز الكمية التعاقدية (للتوضيح)
+    if i % 4 == 0:
+        return [0.5, 1.0, 1.0]                 # بنود اكتملت
+    if i % 5 == 4:
+        return [0, 0, 0.3]                     # بنود بدأت متأخراً
+    if i % 7 == 6:
+        return [0, 0, 0]                       # بنود لم تبدأ
+    f = 1 if i % 3 else 0.8
+    return [p * f for p in SAMPLE_PROGRESS]
+
+
+SAMPLE_DATES = [dt.date(2026, 5, 31), dt.date(2026, 7, 15), dt.date(2026, 9, 10)]
 
 
 def build(sample, out):
@@ -335,9 +350,9 @@ def build(sample, out):
         (9, "المقاول", "مؤسسة البناء المتقن للمقاولات" if sample else "اسم المقاول", None),
         (10, "الاستشاري / الجهة المشرفة", "مكتب الهندسة الاستشارية" if sample else "", None),
         (11, "موقع المشروع", "المدينة المنورة - المنطقة المركزية" if sample else "", None),
-        (12, "تاريخ توقيع العقد", dt.date(2025, 4, 15) if sample else None, DATE),
-        (13, "تاريخ بدء التنفيذ (استلام الموقع)", dt.date(2025, 5, 1) if sample else None, DATE),
-        (14, "مدة العقد (يوم)", 300 if sample else None, "#,##0"),
+        (12, "تاريخ توقيع العقد", dt.date(2026, 2, 15) if sample else None, DATE),
+        (13, "تاريخ بدء التنفيذ (استلام الموقع)", dt.date(2026, 3, 1) if sample else None, DATE),
+        (14, "مدة العقد (يوم)", 365 if sample else None, "#,##0"),
         (16, "العملة", "ريال سعودي", None),
     ]
     for r, lbl, v, fmt in info:
@@ -453,7 +468,7 @@ def build(sample, out):
         lab("G4", "الحالة", None)
         inp(ws, "H4", ("جاري" if (sample and n <= len(SAMPLE_DATES)) else None), merge="H4:I4")
         lab("J4", "الفترة من", "J4:K4")
-        inp(ws, "L4", (SAMPLE_DATES[n - 2] + dt.timedelta(days=1) if n > 1 else dt.date(2025, 5, 1))
+        inp(ws, "L4", (SAMPLE_DATES[n - 2] + dt.timedelta(days=1) if n > 1 else dt.date(2026, 3, 1))
             if (sample and n <= len(SAMPLE_DATES)) else None, DATE)
         lab("M4", "إلى")
         inp(ws, "N4", SAMPLE_DATES[n - 1] if (sample and n <= len(SAMPLE_DATES)) else None, DATE, merge="N4:P4")
@@ -501,10 +516,10 @@ def build(sample, out):
             q = None
             if it and n <= len(SAMPLE_PROGRESS):
                 # كميات مثال: بعض البنود لم تبدأ بعد
-                if i % 5 != 4 or n >= 3:
-                    cum = round(it[3] * SAMPLE_PROGRESS[n - 1] * (1 if i % 3 else 0.8), 2)
-                    prv = round(it[3] * SAMPLE_PROGRESS[n - 2] * (1 if i % 3 else 0.8), 2) if n > 1 and i % 5 != 4 else 0
-                    q = round(cum - prv, 2) or None
+                prog = sample_progress(i)
+                cum = round(it[3] * prog[n - 1], 2)
+                prv = round(it[3] * prog[n - 2], 2) if n > 1 else 0
+                q = round(cum - prv, 2) or None
             inp(ws, f"G{r}", q, QTY)
             calc(ws, f"H{r}", f"=F{r}+G{r}", QTY, True, fl=zebra)
             calc(ws, f"I{r}", f"={R(prev)}K{r}" if prev else 1, PCT0, fl=zebra, color=GREEN if prev else "1F2933")
@@ -545,12 +560,12 @@ def build(sample, out):
         rows = [
             (S_WORK, "إجمالي قيمة الأعمال", f"=M{IT}"),
             (S_VAT, f'="ضريبة القيمة المضافة ("&TEXT({VAT},"0%")&")"', f"=ROUND(M{S_WORK}*{VAT},2)"),
-            (S_GROSS, "الإجمالي شامل الضريبة", f"=M{S_WORK}+M{S_VAT}"),
+            (S_GROSS, "الإجمالي شامل الضريبة", f"=ROUND(M{S_WORK}+M{S_VAT},2)"),
             (S_ADVD, "(-) خصم استرداد الدفعة المقدمة", f"={R(S_ADV)}I{ADV_T0 + n - 1}"),
             (S_RETD, f'="(-) خصم ضمان الأعمال ("&TEXT({R(S_RET)}$E$6,"0%")&")"', f"={R(S_RET)}I{RET_T0 + n - 1}"),
             (S_OTH, "(-) خصومات أخرى / غرامات / مواد مورّدة من المالك ✎", None),
             (S_DED, "إجمالي الخصومات", f"=SUM(M{S_ADVD}:M{S_OTH})"),
-            (S_NET, "صافي قيمة المستخلص المستحق", f"=M{S_GROSS}-M{S_DED}"),
+            (S_NET, "صافي قيمة المستخلص المستحق", f"=ROUND(M{S_GROSS}-M{S_DED},2)"),
         ]
         for r, lbl, fm in rows:
             key = r in (S_GROSS, S_NET)
@@ -631,7 +646,7 @@ def build(sample, out):
             paid = f"=ROUND(O{r}*{sample_paid[n]},2)"
         inp(ws, f"P{r}", paid, ACC)
         inp(ws, f"Q{r}", (SAMPLE_DATES[n - 1] + dt.timedelta(days=20)) if paid else None, DATE)
-        calc(ws, f"R{r}", f"=O{r}-P{r}", ACC, True, fl=zebra)
+        calc(ws, f"R{r}", f"=ROUND(O{r}-P{r},2)", ACC, True, fl=zebra)
         calc(ws, f"S{r}", f'=IF(C{r}="","",IF(O{r}<=0,"-",IF(P{r}>=O{r},"✔ محصل بالكامل",'
                           f'IF(P{r}>0,"⚠ محصل جزئياً","✖ غير محصل"))))', None, fl=zebra)
     put(ws, f"B{GT}", "الإجمالي", font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, merge=f"B{GT}:F{GT}")
@@ -699,12 +714,12 @@ def build(sample, out):
         r = ADV_D0 + i
         ex = sample and i == 0
         calc(ws, f"B{r}", i + 1, "0")
-        inp(ws, f"C{r}", dt.date(2025, 5, 10) if ex else None, DATE)
+        inp(ws, f"C{r}", dt.date(2026, 3, 10) if ex else None, DATE)
         inp(ws, f"D{r}", 195000 if ex else None, ACC)
         calc(ws, f"E{r}", f"=IF({CONTRACT}=0,0,D{r}/{CONTRACT})", PCT)
         inp(ws, f"F{r}", "LG-558210" if ex else None)
         inp(ws, f"G{r}", "البنك الأهلي السعودي" if ex else None)
-        inp(ws, f"H{r}", dt.date(2026, 11, 10) if ex else None, DATE)
+        inp(ws, f"H{r}", dt.date(2027, 3, 10) if ex else None, DATE)
         calc(ws, f"I{r}", f'=IF(H{r}="","",H{r}-TODAY())', "#,##0;[Red]-#,##0")
         calc(ws, f"J{r}", f'=IF(H{r}="","",IF(I{r}<0,"✖ منتهي",IF(I{r}<=30,"⚠ ينتهي قريباً","✔ ساري")))', None)
         inp(ws, f"K{r}", None, merge=f"K{r}:L{r}", h="right")
@@ -880,7 +895,7 @@ def build(sample, out):
         inp(ws, f"F{r}", "مصرف الراجحي" if ex else None)
         inp(ws, f"G{r}", 195000 if ex else None, ACC)
         calc(ws, f"H{r}", f"=IF({CONTRACT}=0,0,G{r}/{CONTRACT})", PCT)
-        inp(ws, f"I{r}", dt.date(2025, 4, 20) if ex else None, DATE)
+        inp(ws, f"I{r}", dt.date(2026, 2, 20) if ex else None, DATE)
         inp(ws, f"J{r}", dt.date(2026, 10, 20) if ex else None, DATE)
         calc(ws, f"K{r}", f'=IF(J{r}="","",J{r}-TODAY())', "#,##0;[Red]-#,##0")
         calc(ws, f"L{r}", f'=IF(J{r}="","",IF(K{r}<0,"✖ منتهي",IF(K{r}<=30,"⚠ ينتهي قريباً","✔ ساري")))', None)
@@ -960,7 +975,7 @@ def build(sample, out):
     # حالة البنود
     section(ws, "H17", "حالة تنفيذ البنود", "H17:M17", NAVY)
     stat = [
-        ("إجمالي عدد البنود", f'=COUNTIF({DB}C{B0}:C{B1},"?*")', NAVY),
+        ("إجمالي عدد البنود", f'=SUMPRODUCT(({DB}C{B0}:C{B1}<>"")*1)', NAVY),
         ("بنود مكتملة 100%", f"=SUMPRODUCT(({DB}E{B0}:E{B1}>0)*({DB}I{B0}:I{B1}>={DB}E{B0}:E{B1}))", GREEN),
         ("بنود جارية", f"=SUMPRODUCT(({DB}I{B0}:I{B1}>0)*({DB}I{B0}:I{B1}<{DB}E{B0}:E{B1}))", GOLD),
         ("بنود لم تبدأ", f'=SUMPRODUCT(({DB}C{B0}:C{B1}<>"")*({DB}I{B0}:I{B1}=0))', GREY_TXT),
