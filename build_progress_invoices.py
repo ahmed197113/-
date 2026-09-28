@@ -1198,5 +1198,7 @@ def build(sample, out):
 
 
 if __name__ == "__main__":
-    build(True, "Progress_Invoices_Template.xlsx")
-    build(False, "Progress_Invoices_Template_Blank.xlsx")
+    from finalize_workbook import finalize
+    for flag, name in ((True, "Progress_Invoices_Template.xlsx"), (False, "Progress_Invoices_Template_Blank.xlsx")):
+        build(flag, name)
+        finalize(name)   # قيم محسوبة مسبقاً + توافق كامل مع مخطط Excel
