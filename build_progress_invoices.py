@@ -1192,6 +1192,10 @@ def build(sample, out):
         r += 1
 
     wb.active = 0
+    # نافذة بمقاس صريح داخل الشاشة (بدونها قد يفتح Excel نافذة غير مرئية / شاشة بيضاء)
+    v = wb.views[0]
+    v.xWindow, v.yWindow, v.windowWidth, v.windowHeight = 0, 0, 28800, 15000
+    v.visibility, v.minimized = "visible", False
     wb.calculation.fullCalcOnLoad = True
     wb.save(out)
     print("saved", out)
