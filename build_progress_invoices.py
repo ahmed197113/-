@@ -216,6 +216,13 @@ def dv_date(ws, rng):
     dv.add(rng)
 
 
+def show_axes(*charts):
+    """إظهار المحاور (الإصدارات الحديثة من openpyxl تخفيها افتراضياً)"""
+    for c in charts:
+        c.x_axis.delete = False
+        c.y_axis.delete = False
+
+
 # ---------------------------------------------------------------- ثوابت المواقع
 # الإعدادات
 SET_SEC0 = 22                       # أول صف في قائمة الأقسام
@@ -381,7 +388,7 @@ def build(sample, out):
         put(ws, f"B{r}", t, font(10, True), fill(ALT), align("right", indent=1), BORDER)
         inp(ws, f"C{r}", sig_names[i] if sample else None, merge=f"C{r}:E{r}", h="right")
     # دليل الألوان
-    section(ws, "G5", "دليل الألوان", "G5:G5", NAVY)
+    section(ws, "G5", "دليل الألوان", None, NAVY)
     put(ws, "G6", "خلية إدخال — اكتب هنا", font(10, False, INPUT_FONT), fill(INPUT), align("center"), BORDER)
     put(ws, "G7", "خلية محسوبة بمعادلة — لا تعدلها", font(10), None, align("center"), BORDER)
     put(ws, "G8", "عنوان / رأس جدول", font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER)
@@ -430,7 +437,7 @@ def build(sample, out):
                          ("I", "", None), ("J", f"=IF(G{BT}=0,0,K{BT}/G{BT})", PCT), ("K", f"=SUM(K{B0}:K{B1})", ACC),
                          ("L", "", None)]:
         put(ws, f"{col}{BT}", f_ or None, font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, fmt)
-    dv_list(ws, f"={R(S_SET)}$C${SET_SEC0}:$C${SET_SEC1}", f"B{B0}:B{B1}",
+    dv_list(ws, f"{R(S_SET)}$C${SET_SEC0}:$C${SET_SEC1}", f"B{B0}:B{B1}",
             prompt="اختر القسم من القائمة (تعدل الأقسام من صفحة الإعدادات)")
     dv_list(ws, '"م.ط,م2,م3,عدد,طقم,نقطة,طن,كجم,لتر,مقطوعية"', f"D{B0}:D{B1}", strict=False)
     ws.conditional_formatting.add(f"J{B0}:J{B1}", DataBarRule(start_type="num", start_value=0, end_type="num",
@@ -784,6 +791,7 @@ def build(sample, out):
     ln.y_axis.crosses = "max"
     ch += ln
     ch.height, ch.width = 9, 17
+    show_axes(ch, ln)
     ch.legend.position = "b"
     ws.add_chart(ch, f"N{ADV_T0-2}")
     ws.freeze_panes = "B5"
@@ -916,6 +924,7 @@ def build(sample, out):
     ch.add_data(Reference(ws, min_col=10, min_row=RET_T0 - 1, max_row=RET_T1), titles_from_data=True)
     ch.set_categories(Reference(ws, min_col=2, min_row=RET_T0, max_row=RET_T1))
     ch.height, ch.width = 9, 17
+    show_axes(ch)
     ch.legend = None
     ws.add_chart(ch, f"N{RET_T0-2}")
     ws.freeze_panes = "B5"
@@ -1073,6 +1082,7 @@ def build(sample, out):
     ln.y_axis.title = "التراكمي"
     ch += ln
     ch.height, ch.width = 9, 24
+    show_axes(ch, ln)
     ch.legend.position = "b"
     ws.add_chart(ch, f"B{CH}")
     ch2 = BarChart()
@@ -1082,6 +1092,7 @@ def build(sample, out):
     ch2.add_data(Reference(ws, min_col=8, min_row=SEC_H, max_row=SEC_T - 1), titles_from_data=True)
     ch2.set_categories(Reference(ws, min_col=2, min_row=SEC_H + 1, max_row=SEC_T - 1))
     ch2.height, ch2.width = 9, 16
+    show_axes(ch2)
     ch2.legend.position = "b"
     ws.add_chart(ch2, f"B{CH+19}")
     ch3 = DoughnutChart()
