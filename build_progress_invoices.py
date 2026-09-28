@@ -314,8 +314,16 @@ ITEMS = [
 
 # نسب تنفيذ تراكمية لكل مستخلص مثال (مستخلص 1 ، 2 ، 3)
 SAMPLE_PROGRESS = [0.35, 0.65, 0.85]
+# نسب الإنجاز/الاستحقاق في المثال: (رقم المستخلص، رقم البند) -> النسبة
+SAMPLE_PAY = {(1, 8): 0.9, (1, 9): 0.9, (3, 9): 1.0,   # توريد دون تركيب ثم الاستكمال
+              (2, 6): 0.7}                              # شبابيك مركبة بالكامل وتنقصها الإكسسوارات
+SAMPLE_NOTES = {6: "مركبة بالكامل - تنقصها الإكسسوارات (مقابض ومحابس)"}
+
+
 def sample_progress(i):
     """نسب تنفيذ تراكمية لبند المثال رقم i في المستخلصات 1..3"""
+    if i == 6:
+        return [0.6, 1.0, 1.0]                 # شبابيك: الكمية كاملة لكن نسبة الإنجاز 70%
     if i == 11:
         return [0, 1.0, 1.06]                  # بند تجاوز الكمية التعاقدية (للتوضيح)
     if i % 4 == 0:
@@ -405,17 +413,19 @@ def build(sample, out):
     # ============================================================ جدول الكميات
     ws = ws_boq
     setup(ws, {"A": 8, "B": 22, "C": 52, "D": 9, "E": 12, "F": 12, "G": 16, "H": 9, "I": 12, "J": 11, "K": 16,
-               "L": 24}, TEAL)
-    banner(ws, "A", "L", "📋 جدول الكميات والأسعار (BOQ) — ومتابعة تنفيذ البنود", SUBTITLE)
-    nav(ws, ["A3:B3", "C3", "D3:E3", "F3:G3", "H3:I3", "J3:K3", "L3"], S_BOQ)
-    put(ws, "A4", f"أضف البنود في الصفوف الفارغة (حتى {N_ITEMS} بند). الأعمدة الصفراء إدخال، والأعمدة من I إلى K "
-                  f"تُحسب تلقائياً من المستخلصات. لا تقم بحذف صفوف أو إدراج صفوف بين البنود.",
-        font(9, False, GOLD, True), fill("FFF3CD"), align("right", wrap=True, indent=1), merge="A4:L4")
+               "L": 11, "M": 20, "N": 24}, TEAL)
+    banner(ws, "A", "N", "📋 جدول الكميات والأسعار (BOQ) — ومتابعة تنفيذ البنود", SUBTITLE)
+    nav(ws, ["A3:B3", "C3", "D3:E3", "F3:G3", "H3:I3", "J3:K3", "L3:N3"], S_BOQ)
+    put(ws, "A4", f"أضف البنود في الصفوف الفارغة (حتى {N_ITEMS} بند). الأعمدة الصفراء إدخال، والأعمدة من I إلى M "
+                  f"تُحسب تلقائياً من المستخلصات. (نسبة الكمية) = ما تم تركيبه، و(نسبة الإنجاز الفعلية) = القيمة المستحقة "
+                  f"÷ قيمة البند، فتظهر النواقص (مثل الإكسسوارات) حتى لو اكتملت الكمية. لا تحذف صفوفاً ولا تُدرج صفوفاً بين البنود.",
+        font(9, False, GOLD, True), fill("FFF3CD"), align("right", wrap=True, indent=1), merge="A4:N4")
     ws.row_dimensions[4].height = 30
     headers(ws, 5, [("A", "رقم البند"), ("B", "القسم"), ("C", "بيان الأعمال"), ("D", "الوحدة"),
                     ("E", "الكمية التعاقدية"), ("F", "سعر الوحدة"), ("G", "الإجمالي"), ("H", "الوزن النسبي"),
-                    ("I", "الكمية المنفذة حتى تاريخه"), ("J", "نسبة الإنجاز"), ("K", "القيمة المنفذة حتى تاريخه"),
-                    ("L", "ملاحظات")])
+                    ("I", "الكمية المنفذة حتى تاريخه"), ("J", "نسبة الكمية المنفذة"),
+                    ("K", "القيمة المستحقة حتى تاريخه"), ("L", "نسبة الإنجاز الفعلية"), ("M", "حالة البند"),
+                    ("N", "ملاحظات / النواقص")], height=40)
     for i in range(N_ITEMS):
         r = B0 + i
         it = ITEMS[i] if (sample and i < len(ITEMS)) else None
@@ -431,22 +441,28 @@ def build(sample, out):
         calc(ws, f"I{r}", f"={R(INV_LAST)}H{r+OFF}", QTY, color=GREEN)
         calc(ws, f"J{r}", f"=IF(E{r}=0,0,I{r}/E{r})", PCT)
         calc(ws, f"K{r}", f"={R(INV_LAST)}N{r+OFF}", ACC, color=GREEN)
-        inp(ws, f"L{r}", None, h="right")
+        calc(ws, f"L{r}", f"=IF(G{r}=0,0,K{r}/G{r})", PCT, True)
+        calc(ws, f"M{r}", f'=IF(C{r}="","",IF(I{r}=0,"○ لم يبدأ",IF(AND(G{r}>0,K{r}>=G{r}),"✔ مكتمل",'
+                          f'IF(AND(E{r}>0,I{r}>=E{r}),"⚠ مركب بالكامل - نواقص","◔ جاري"))))', None)
+        inp(ws, f"N{r}", SAMPLE_NOTES.get(i) if it else None, h="right")
     put(ws, f"A{BT}", "الإجمالي", font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, merge=f"A{BT}:F{BT}")
     for col, f_, fmt in [("G", f"=SUM(G{B0}:G{B1})", ACC), ("H", f"=SUM(H{B0}:H{B1})", PCT),
-                         ("I", "", None), ("J", f"=IF(G{BT}=0,0,K{BT}/G{BT})", PCT), ("K", f"=SUM(K{B0}:K{B1})", ACC),
-                         ("L", "", None)]:
+                         ("I", "", None), ("J", "", None), ("K", f"=SUM(K{B0}:K{B1})", ACC),
+                         ("L", f"=IF(G{BT}=0,0,K{BT}/G{BT})", PCT), ("M", "", None), ("N", "", None)]:
         put(ws, f"{col}{BT}", f_ or None, font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, fmt)
     dv_list(ws, f"{R(S_SET)}$C${SET_SEC0}:$C${SET_SEC1}", f"B{B0}:B{B1}",
             prompt="اختر القسم من القائمة (تعدل الأقسام من صفحة الإعدادات)")
     dv_list(ws, '"م.ط,م2,م3,عدد,طقم,نقطة,طن,كجم,لتر,مقطوعية"', f"D{B0}:D{B1}", strict=False)
-    ws.conditional_formatting.add(f"J{B0}:J{B1}", DataBarRule(start_type="num", start_value=0, end_type="num",
+    ws.conditional_formatting.add(f"L{B0}:L{B1}", DataBarRule(start_type="num", start_value=0, end_type="num",
                                                               end_value=1, color="2E7D7A"))
+    for sym, bg, fc in (("✔", GREEN_L, GREEN), ("⚠", "FFF3CD", GOLD), ("◔", "E3F2FD", NAVY2)):
+        ws.conditional_formatting.add(f"M{B0}:M{B1}", FormulaRule(formula=[f'ISNUMBER(SEARCH("{sym}",M{B0}))'],
+                                                                  fill=fill(bg), font=Font(color=fc, bold=True)))
     ws.conditional_formatting.add(f"I{B0}:I{B1}", FormulaRule(formula=[f"AND(E{B0}>0,I{B0}>E{B0})"],
                                                               fill=fill(RED_L), font=Font(color=RED, bold=True)))
     ws.conditional_formatting.add(f"G{B0}:K{B1}", FormulaRule(formula=[f'$C{B0}=""'], font=Font(color="FFFFFF")))
     ws.freeze_panes = f"D{B0}"
-    ws.auto_filter.ref = f"A5:L{B1}"
+    ws.auto_filter.ref = f"A5:N{B1}"
     ws.print_title_rows = "5:5"
 
     # ============================================================ المستخلصات
@@ -500,11 +516,11 @@ def build(sample, out):
         hdr("E6", "سعر الوحدة", "E6:E7")
         hdr("F6", "الكمية المنفذة من واقع التمتير الفعلي", "F6:H6", NAVY2)
         hdr("F7", "سابق", c=NAVY2); hdr("G7", "حالي ✎", c=GOLD); hdr("H7", "إجمالي", c=NAVY2)
-        hdr("I6", "نسبة الصرف", "I6:K6", TEAL)
+        hdr("I6", "نسبة الإنجاز / الاستحقاق للبند", "I6:K6", TEAL)
         hdr("I7", "سابقة", c=TEAL); hdr("J7", "حالية ✎ (اختياري)", c=GOLD); hdr("K7", "المعتمدة", c=TEAL)
         hdr("L6", "قيمة الأعمال المنفذة", "L6:N6", NAVY2)
         hdr("L7", "سابقة", c=NAVY2); hdr("M7", "حالية", c=NAVY2); hdr("N7", "إجمالية", c=NAVY2)
-        hdr("O6", "نسبة الإنجاز", "O6:O7")
+        hdr("O6", "نسبة الإنجاز الفعلية", "O6:O7")
         hdr("P6", "ملاحظات", "P6:P7")
         ws.row_dimensions[6].height = 24
         ws.row_dimensions[7].height = 30
@@ -530,12 +546,12 @@ def build(sample, out):
             inp(ws, f"G{r}", q, QTY)
             calc(ws, f"H{r}", f"=F{r}+G{r}", QTY, True, fl=zebra)
             calc(ws, f"I{r}", f"={R(prev)}K{r}" if prev else 1, PCT0, fl=zebra, color=GREEN if prev else "1F2933")
-            inp(ws, f"J{r}", 0.9 if (it and n == 1 and i in (8, 9)) else None, PCT0)
+            inp(ws, f"J{r}", SAMPLE_PAY.get((n, i)) if it else None, PCT0)
             calc(ws, f"K{r}", f'=IF(J{r}="",I{r},J{r})', PCT0, True, fl=zebra)
             calc(ws, f"L{r}", f"={R(prev)}N{r}" if prev else 0, ACC, fl=zebra, color=GREEN if prev else "1F2933")
             calc(ws, f"M{r}", f"=N{r}-L{r}", ACC, True, fl=zebra)
             calc(ws, f"N{r}", f"=ROUND(H{r}*E{r}*K{r},2)", ACC, fl=zebra)
-            calc(ws, f"O{r}", f"=IF(D{r}=0,0,H{r}/D{r})", PCT, fl=zebra)
+            calc(ws, f"O{r}", f"=IF(D{r}*E{r}=0,0,N{r}/(D{r}*E{r}))", PCT, fl=zebra)
             inp(ws, f"P{r}", None, h="right")
         # إجمالي البنود
         put(ws, f"A{IT}", "إجمالي قيمة الأعمال", font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER,
@@ -552,12 +568,23 @@ def build(sample, out):
                                                                   stopIfTrue=True))
         ws.conditional_formatting.add(f"H{I0}:H{I1}", FormulaRule(formula=[f"AND(D{I0}>0,H{I0}>D{I0})"],
                                                                   fill=fill(RED_L), font=Font(color=RED, bold=True)))
+        ws.conditional_formatting.add(f"O{I0}:O{I1}", FormulaRule(
+            formula=[f"AND(D{I0}>0,H{I0}>=D{I0},O{I0}<1)"], fill=fill("FFF3CD"), font=Font(color=GOLD, bold=True)))
         ws.conditional_formatting.add(f"O{I0}:O{I1}", DataBarRule(start_type="num", start_value=0, end_type="num",
                                                                   end_value=1, color="2E7D7A"))
-        dv_num(ws, f"J{I0}:J{I1}", 0, 1, prompt="اتركها فارغة لتطبيق النسبة السابقة، أو أدخل نسبة صرف جديدة للبند "
-                                                 "(مثال: 90% عند التوريد دون التركيب)")
+        dv_num(ws, f"J{I0}:J{I1}", 0, 1, prompt="فارغة = نفس النسبة السابقة. مثال: 1000 شباك مركبة لكن تنقصها "
+                                                 "الإكسسوارات: الكمية 1000 والنسبة 70%. عند الاستكمال اكتب 100%")
         ws[f"G7"].comment = Comment("أدخل الكمية المنفذة خلال فترة هذا المستخلص فقط.\n"
                                     "الكمية السابقة تُسحب تلقائياً من المستخلص السابق.", "القالب")
+        ws["J7"].comment = Comment("نسبة الإنجاز/الاستحقاق للبند (اختياري):\n"
+                                   "مثال: تم تركيب 1000 شباك من 1000 لكن تنقصها الإكسسوارات.\n"
+                                   "• اكتب الكمية الحالية كاملة في عمود (حالي).\n"
+                                   "• واكتب هنا 70% ← تُحتسب القيمة 70% فقط.\n"
+                                   "• النسبة تنتقل تلقائياً للمستخلصات التالية.\n"
+                                   "• عند توريد الإكسسوارات اكتب 100% في المستخلص الجديد (بدون كمية) "
+                                   "فيُصرف الفرق 30% تلقائياً.", "القالب")
+        ws["O6"].comment = Comment("نسبة الإنجاز الفعلية = القيمة المستحقة ÷ (الكمية التعاقدية × سعر الوحدة).\n"
+                                   "تظهر باللون الأصفر إذا اكتملت الكمية وما زالت هناك نواقص.", "القالب")
         # ملخص المستخلص
         put(ws, f"I{SUMH}", "البيان", font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER,
             merge=f"I{SUMH}:K{SUMH}")
@@ -983,35 +1010,37 @@ def build(sample, out):
         calc(ws, f"G{r}", f"=IF($E$18=0,0,E{r}/$E$18)", PCT, fl=fill(TEAL_L) if key else None)
     # حالة البنود
     section(ws, "H17", "حالة تنفيذ البنود", "H17:M17", NAVY)
+    ST = f"{DB}M{B0}:M{B1}"
     stat = [
         ("إجمالي عدد البنود", f'=SUMPRODUCT(({DB}C{B0}:C{B1}<>"")*1)', NAVY),
-        ("بنود مكتملة 100%", f"=SUMPRODUCT(({DB}E{B0}:E{B1}>0)*({DB}I{B0}:I{B1}>={DB}E{B0}:E{B1}))", GREEN),
-        ("بنود جارية", f"=SUMPRODUCT(({DB}I{B0}:I{B1}>0)*({DB}I{B0}:I{B1}<{DB}E{B0}:E{B1}))", GOLD),
-        ("بنود لم تبدأ", f'=SUMPRODUCT(({DB}C{B0}:C{B1}<>"")*({DB}I{B0}:I{B1}=0))', GREY_TXT),
-        ("⚠ بنود تجاوزت الكمية التعاقدية", f"=SUMPRODUCT(({DB}E{B0}:E{B1}>0)*({DB}I{B0}:I{B1}>{DB}E{B0}:E{B1}))",
+        ("✔ بنود مكتملة 100%", f'=COUNTIF({ST},"✔*")', GREEN),
+        ("⚠ مركبة بالكامل وبها نواقص", f'=COUNTIF({ST},"⚠*")', GOLD),
+        ("◔ بنود جارية", f'=COUNTIF({ST},"◔*")', NAVY2),
+        ("○ بنود لم تبدأ", f'=COUNTIF({ST},"○*")', GREY_TXT),
+        ("✖ بنود تجاوزت الكمية التعاقدية", f"=SUMPRODUCT(({DB}E{B0}:E{B1}>0)*({DB}I{B0}:I{B1}>{DB}E{B0}:E{B1}))",
          RED),
-        ("متوسط نسبة إنجاز البنود (كمياً)",
-         f'=IF(J18=0,0,SUMPRODUCT(({DB}C{B0}:C{B1}<>"")*({DB}J{B0}:J{B1}))/J18)', TEAL),
+        ("متوسط نسبة الإنجاز الفعلية للبنود",
+         f'=IF(J18=0,0,SUMPRODUCT(({DB}C{B0}:C{B1}<>"")*({DB}L{B0}:L{B1}))/J18)', TEAL),
     ]
     for k, (t, f_, colr) in enumerate(stat):
         r = 18 + k
         put(ws, f"H{r}", t, font(10, True, NAVY), fill(SUB_BG), align("right", indent=1), BORDER, merge=f"H{r}:I{r}")
-        calc(ws, f"J{r}", f_, PCT if k == 5 else "0", True, color=colr)
-        if k < 5:
+        calc(ws, f"J{r}", f_, PCT if k == 6 else "0", True, color=colr)
+        if 0 < k < 6:
             calc(ws, f"K{r}", f"=IF($J$18=0,0,J{r}/$J$18)", PCT)
         else:
             calc(ws, f"K{r}", None, None)
         calc(ws, f"L{r}", None, None, merge=f"L{r}:M{r}")
-    ws.conditional_formatting.add("K19:K22", DataBarRule(start_type="num", start_value=0, end_type="num",
+    ws.conditional_formatting.add("K19:K23", DataBarRule(start_type="num", start_value=0, end_type="num",
                                                          end_value=1, color="2E7D7A"))
-    put(ws, "H24", "الأداء (الإنجاز المالي مقابل المدة)", font(10, True, NAVY), fill(SUB_BG), align("right", indent=1),
-        BORDER, merge="H24:I24")
-    calc(ws, "J24", "=H6-K6", '+0.0%;[Red]-0.0%;0.0%', True, merge="J24:K24")
-    calc(ws, "L24", '=IF(K6=0,"-",IF(H6>=K6,"✔ متقدم / حسب الجدول",IF(K6-H6<=0.1,"⚠ تأخر بسيط","✖ متأخر")))', None,
-         True, merge="L24:M24")
-    for a in ("L24",):
+    put(ws, "H25", "الأداء (الإنجاز المالي مقابل المدة)", font(10, True, NAVY), fill(SUB_BG), align("right", indent=1),
+        BORDER, merge="H25:I25")
+    calc(ws, "J25", "=H6-K6", '+0.0%;[Red]-0.0%;0.0%', True, merge="J25:K25")
+    calc(ws, "L25", '=IF(K6=0,"-",IF(H6>=K6,"✔ متقدم / حسب الجدول",IF(K6-H6<=0.1,"⚠ تأخر بسيط","✖ متأخر")))', None,
+         True, merge="L25:M25")
+    for a in ("L25",):
         for sym, bg, fc in (("✔", GREEN_L, GREEN), ("⚠", "FFF3CD", GOLD), ("✖", RED_L, RED)):
-            ws.conditional_formatting.add("L24:M24", FormulaRule(formula=[f'ISNUMBER(SEARCH("{sym}",$L$24))'],
+            ws.conditional_formatting.add("L25:M25", FormulaRule(formula=[f'ISNUMBER(SEARCH("{sym}",$L$25))'],
                                                                  fill=fill(bg), font=Font(color=fc, bold=True)))
     # الأقسام
     SEC_H = 29
@@ -1122,13 +1151,17 @@ def build(sample, out):
         ("3", "صفحة (الدفعات المقدمة): سجل الدفعات المقدمة وخطابات ضمانها ونسبة الاسترداد من كل مستخلص."),
         ("4", "صفحة (ضمان الأعمال): حدد نسبة الضمان والحد الأقصى، وسجل الإفراجات والضمانات البنكية."),
         ("5", "في كل مستخلص: أدخل التاريخ والحالة والفترة، ثم الكمية الحالية فقط لكل بند (العمود الأصفر 'حالي')."),
-        ("6", "نسبة الصرف (اختياري): لو بند صُرف جزئياً (مثل التوريد دون التركيب 80%) اكتب النسبة في عمود "
-              "'حالية'؛ وتنتقل للمستخلصات التالية تلقائياً حتى تغيّرها (مثلاً إلى 100% عند اكتمال التركيب)."),
-        ("7", "الخصومات الأخرى / الغرامات تُكتب يدوياً أسفل كل مستخلص في الخانة الصفراء."),
-        ("8", "صفحة (سجل المستخلصات): أدخل المبالغ المحصلة وتواريخها لمتابعة المستحقات."),
-        ("9", "صفحة (لوحة التحكم): تتحدث تلقائياً بالكامل ولا تحتاج أي إدخال."),
+        ("6", "نسبة الإنجاز/الاستحقاق للبند (اختياري): مثال 1000 شباك مركبة بالكامل لكن تنقصها الإكسسوارات ← اكتب "
+              "الكمية 1000 في عمود (حالي) واكتب 70% في عمود (حالية ✎)؛ تُحتسب القيمة 70% فقط، وتظهر نسبة الإنجاز الفعلية 70%، "
+              "ويظهر البند في لوحة التحكم ضمن (مركبة بالكامل وبها نواقص)."),
+        ("7", "عند استكمال النواقص: في المستخلص الجديد اكتب 100% في عمود (حالية ✎) بدون كمية؛ فيُصرف الفرق (30%) "
+              "تلقائياً في هذا المستخلص ويتحول البند إلى (مكتمل). النسبة تنتقل للمستخلصات التالية حتى تغيّرها."),
+        ("8", "الخصومات الأخرى / الغرامات تُكتب يدوياً أسفل كل مستخلص في الخانة الصفراء."),
+        ("9", "صفحة (سجل المستخلصات): أدخل المبالغ المحصلة وتواريخها لمتابعة المستحقات."),
+        ("10", "صفحة (لوحة التحكم): تتحدث تلقائياً بالكامل ولا تحتاج أي إدخال."),
         ("h", "المعادلات الأساسية"),
-        ("•", "قيمة البند الإجمالية = الكمية الإجمالية × سعر الوحدة × نسبة الصرف المعتمدة."),
+        ("•", "قيمة البند الإجمالية = الكمية الإجمالية × سعر الوحدة × نسبة الإنجاز/الاستحقاق المعتمدة."),
+        ("•", "نسبة الإنجاز الفعلية = القيمة المستحقة ÷ (الكمية التعاقدية × سعر الوحدة)؛ بينما نسبة الكمية = المنفذ ÷ التعاقدي."),
         ("•", "القيمة الحالية = القيمة الإجمالية − القيمة السابقة (من المستخلص السابق)."),
         ("•", "استرداد الدفعة المقدمة = قيمة الأعمال الحالية × نسبة الاسترداد، بحد أقصى الرصيد المتبقي من الدفعة."),
         ("•", "ضمان الأعمال = قيمة الأعمال الحالية × نسبة الضمان، بحد أقصى (اختياري) نسبة من قيمة العقد."),
