@@ -202,7 +202,7 @@ def add_name(wb, name, ref):
 
 
 def dv_list(ws, src, rng, prompt=None, strict=True, blank=True):
-    dv = DataValidation(type="list", formula1=src, allow_blank=blank,
+    dv = DataValidation(type="list", formula1=src.lstrip("="), allow_blank=blank,
                         showErrorMessage=True, errorStyle="stop" if strict else "warning")
     dv.errorTitle = "قيمة غير مسموحة"
     dv.error = "من فضلك اختر قيمة من القائمة المنسدلة."
@@ -213,7 +213,7 @@ def dv_list(ws, src, rng, prompt=None, strict=True, blank=True):
 
 
 def dv_custom(ws, formula, rng, err, title="قيمة غير صحيحة", prompt=None):
-    dv = DataValidation(type="custom", formula1=formula, allow_blank=True, showErrorMessage=True, errorStyle="stop")
+    dv = DataValidation(type="custom", formula1=formula.lstrip("="), allow_blank=True, showErrorMessage=True, errorStyle="stop")
     dv.errorTitle, dv.error = title, err
     if prompt:
         dv.promptTitle, dv.prompt, dv.showInputMessage = "تنبيه", prompt, True
@@ -279,6 +279,7 @@ def build_table(ws, name, hrow, cols, rows, max_rows):
     t.tableStyleInfo = TableStyleInfo(name="TableStyleLight15", showRowStripes=False)
     t._initialise_columns()
     for tc, c in zip(t.tableColumns, cols):
+        tc.name = c["name"]
         if c["kind"] != "in":
             tc.calculatedColumnFormula = TableFormula(attr_text=c["f"])
     ws.add_table(t)
@@ -476,6 +477,9 @@ def build(free, out):
             if ci < 3 and not free:
                 c.protection = Protection(locked=False)
     tb = Table(displayName="tblBuckets", ref=f"B{B0}:E{B0 + NB}")
+    tb._initialise_columns()
+    for tc, h in zip(tb.tableColumns, ["من يوم", "الفترة", "نسبة المخصص", "اللون"]):
+        tc.name = h
     tb.tableStyleInfo = TableStyleInfo(name="TableStyleLight15", showRowStripes=False)
     ws.add_table(tb)
     put(ws, f"B{B0 + NB + 2}",
@@ -492,6 +496,8 @@ def build(free, out):
                     fill(IN_BG), align(), BORDER)
             c.protection = Protection(locked=False)
         t = Table(displayName=nm, ref=f"{col}{B0}:{col}{B0 + n}")
+        t._initialise_columns()
+        t.tableColumns[0].name = title
         t.tableStyleInfo = TableStyleInfo(name="TableStyleLight15", showRowStripes=False)
         ws.add_table(t)
     section(ws, f"G{B0 - 1}", "القوائم (زوّد تحتها)", f"G{B0 - 1}:I{B0 - 1}")
@@ -628,7 +634,7 @@ def build(free, out):
     ws.conditional_formatting.add(f"D{r0}:D{r1}", FormulaRule(formula=[f'LEFT(D{r0},1)="⚠"'], font=Font(color=RED, bold=True)))
     for i, (_, light, _) in enumerate(BUCKET_COLORS):
         ws.conditional_formatting.add(f"N{r0}:N{r1}", FormulaRule(
-            formula=[f"N{r0}=INDEX(tblBuckets[الفترة],{i + 1})"], fill=fill(light)))
+            formula=[f"N{r0}='{S_SET}'!$C${B0 + 1 + i}"], fill=fill(light)))
     ws.conditional_formatting.add(f"N{r0}:N{r1}", FormulaRule(formula=[f'LEFT(N{r0},1)="⚠"'], fill=fill(RED_L), font=Font(color=RED, bold=True)))
     ws.conditional_formatting.add(f"M{r0}:M{r1}", FormulaRule(formula=[f"M{r0}>90"], font=Font(color=RED, bold=True)))
 
@@ -862,7 +868,7 @@ def build(free, out):
         put(ws, "I11", "💡 الأعمدة من A لـ G بس هي اللي بتتطبع (A4 عرضي).\nاحفظ PDF من File ← Export وابعته على الواتساب.",
             font(9, False, GREY_TXT, True), None, align(v="top", wrap=True), merge="I11:J14")
         for nm, ref in (("StCust", "$J$2"), ("StFrom", "$J$3"), ("StTo", "$J$4"), ("StName", "$J$5"), ("StVat", "$J$6"),
-                        ("StOpen", "$J$7"), ("StN", "$J$8"), ("StClose", "$J$9")):
+                        ("StOpen", "$J$7"), ("StCount", "$J$8"), ("StClose", "$J$9")):
             add_name(wb, nm, f"'{S_ST}'!{ref}")
         # صف الرصيد الافتتاحي
         S0 = 5
@@ -881,8 +887,8 @@ def build(free, out):
         for r in range(R0, R1 + 1):
             k = r - R0 + 1
             ws[f"L{r}"] = k
-            ws[f"M{r}"] = (f'=IF(L{r}<=StN,"m",IF(L{r}=StN+2,"t",IF(L{r}=StN+3,"l",IF(L{r}=StN+4,"v",'
-                           f'IF(L{r}=StN+6,"p","")))))')
+            ws[f"M{r}"] = (f'=IF(L{r}<=StCount,"m",IF(L{r}=StCount+2,"t",IF(L{r}=StCount+3,"l",IF(L{r}=StCount+4,"v",'
+                           f'IF(L{r}=StCount+6,"p","")))))')
             ws[f"N{r}"] = f'=IF(M{r}="m",IFERROR(MATCH(L{r},{T(I, "ترتيب الكشف")},0),""),"")'
             ws[f"O{r}"] = f'=IF(AND(M{r}="m",N{r}=""),IFERROR(MATCH(L{r},{T(Rc, "ترتيب الكشف")},0),""),"")'
             IN = lambda col: f'INDEX({T(I, col)},$N{r})'
@@ -930,7 +936,7 @@ def build(free, out):
         ws.print_title_rows = "1:4"
         ws.defined_names["_xlnm.Print_Area"] = DefinedName(
             "_xlnm.Print_Area", localSheetId=sheets.index(S_ST),
-            attr_text=f"OFFSET('{S_ST}'!$A$1,0,0,{R0 - 1}+StN+6,7)")
+            attr_text=f"OFFSET('{S_ST}'!$A$1,0,0,{R0 - 1}+StCount+6,7)")
         ws.oddFooter.center.text = MSG
         ws.oddFooter.left.text = "صفحة &P من &N"
         ws.oddHeader.right.text = "&D"
@@ -1056,12 +1062,12 @@ def build(free, out):
         put(ws, f"B{F0 + 3 + FU_SLOTS}", f'="عدد الفواتير المتأخرة كلها: "&COUNT({T(I, "ترتيب المتابعة")})&" — القايمة بتعرض أكبر {FU_SLOTS} بس"',
             font(9, False, GREY_TXT, True), None, align(), merge=f"B{F0 + 3 + FU_SLOTS}:M{F0 + 3 + FU_SLOTS}")
     else:
-        section(ws, "B19", "🔒 متاح في النسخة الكاملة", "B19:M19", GOLD)
-        put(ws, "B20", "• رسمة توزيع الأعمار بألوان الفترات   • رسمة أعلى 10 عملاء في المتأخر\n"
+        section(ws, "B22", "🔒 متاح في النسخة الكاملة", "B22:M22", GOLD)
+        put(ws, "B23", "• رسمة توزيع الأعمار بألوان الفترات   • رسمة أعلى 10 عملاء في المتأخر\n"
                        "• قايمة متابعة التحصيل بالإجراء المقترح (واتساب / اتصال / خطاب / إيقاف توريد)\n"
                        "• مخصص الخسائر الائتمانية المتوقعة وقيد التسوية الجاهز   • كشف حساب العميل جاهز PDF\n"
                        "• تقرير الأعمار بأي تاريخ سابق   • فترات ونسب قابلة للتعديل   • 500 عميل و5,000 فاتورة",
-            font(10, True, GOLD), fill(GOLD_L), align(v="top", wrap=True), merge="B20:M25")
+            font(10, True, GOLD), fill(GOLD_L), align(v="top", wrap=True), merge="B23:M28")
     ws.freeze_panes = "A4"
     ws.protection.sheet = True
 
