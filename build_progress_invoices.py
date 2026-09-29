@@ -7,7 +7,8 @@
 """
 import datetime as dt
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, Protection
+from openpyxl.workbook.protection import WorkbookProtection
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.formatting.rule import FormulaRule, DataBarRule, CellIsRule
 from openpyxl.worksheet.hyperlink import Hyperlink
@@ -16,8 +17,13 @@ from openpyxl.chart.label import DataLabelList
 from openpyxl.comments import Comment
 
 import os
-N_INV = int(os.environ.get("N_INV", 25))          # عدد المستخلصات
-N_ITEMS = int(os.environ.get("N_ITEMS", 100))       # عدد بنود جدول الكميات
+FREE = os.environ.get("FREE") == "1"                # النسخة المجانية المحدودة
+N_INV = int(os.environ.get("N_INV", 3 if FREE else 25))        # عدد المستخلصات
+N_ITEMS = int(os.environ.get("N_ITEMS", 10 if FREE else 100))  # عدد بنود جدول الكميات
+FULL_INV, FULL_ITEMS = 25, 100                       # حدود النسخة الكاملة (للعرض في رسائل الترقية)
+BUY_URL = "https://accopro.net/"
+FREE_PASS = os.environ.get("FREE_PASS", "AccoPro@2026")   # كلمة مرور حماية النسخة المجانية
+S_PRO = "⭐ النسخة الكاملة"
 N_SEC = 12          # عدد أقسام الأعمال
 
 # ---------------------------------------------------------------- الألوان والتنسيقات
@@ -100,8 +106,30 @@ def put(ws, ref, value, f=None, fl=None, al=None, bd=None, fmt=None, merge=None)
 
 
 def inp(ws, ref, value=None, fmt=None, merge=None, h="center"):
-    """خلية إدخال (خلفية صفراء فاتحة وخط أزرق)"""
-    return put(ws, ref, value, font(10, False, INPUT_FONT), fill(INPUT), align(h), BORDER, fmt, merge)
+    """خلية إدخال (خلفية صفراء فاتحة وخط أزرق) — غير مقفلة عند حماية الورقة"""
+    c = put(ws, ref, value, font(10, False, INPUT_FONT), fill(INPUT), align(h), BORDER, fmt, merge)
+    for row in ws[merge or ref] if merge else [[c]]:
+        for cell in row:
+            cell.protection = Protection(locked=False)
+    return c
+
+
+LOCK_BG = "E6E8EB"
+
+
+def locked(ws, ref, merge=None, text=None):
+    """خاصية مقفلة في النسخة المجانية (رمادية ومحمية)"""
+    return put(ws, ref, text, font(9, False, "8A94A0", True), fill(LOCK_BG), align("center"), BORDER, None, merge)
+
+
+def inp_or_lock(ws, ref, value=None, fmt=None, merge=None, h="center"):
+    """حقل إدخال في النسخة الكاملة، ومقفل في المجانية"""
+    return locked(ws, ref, merge) if FREE else inp(ws, ref, value, fmt, merge, h)
+
+
+def buy_link(cell):
+    cell.hyperlink = BUY_URL
+    return cell
 
 
 def calc(ws, ref, value, fmt=ACC, bold=False, fl=None, h="center", color="1F2933", merge=None):
@@ -128,8 +156,14 @@ def setup(ws, widths, tab, zoom=90):
 def banner(ws, first, last, title, subtitle):
     put(ws, f"{first}1", title, font(18, True, "FFFFFF"), fill(NAVY), align("center"), merge=f"{first}1:{last}1")
     ws.row_dimensions[1].height = 38
-    put(ws, f"{first}2", subtitle, font(10, False, "FFFFFF", True), fill(NAVY2), align("center"),
-        merge=f"{first}2:{last}2")
+    if FREE:
+        c = put(ws, f"{first}2", f"🎁 نسخة مجانية محدودة ({N_INV} مستخلصات • {N_ITEMS} بنود)   —   "
+                                 f"للنسخة الكاملة ({FULL_INV} مستخلص • {FULL_ITEMS} بند • بدون قيود) اضغط هنا ⬅ accopro.net",
+                font(10, True, "1F2933"), fill("FFD54F"), align("center"), merge=f"{first}2:{last}2")
+        buy_link(c)
+    else:
+        put(ws, f"{first}2", subtitle, font(10, False, "FFFFFF", True), fill(NAVY2), align("center"),
+            merge=f"{first}2:{last}2")
     ws.row_dimensions[2].height = 20
     ws.row_dimensions[3].height = 24
 
@@ -339,6 +373,11 @@ def sample_progress(i):
 SAMPLE_DATES = [dt.date(2026, 5, 31), dt.date(2026, 7, 15), dt.date(2026, 9, 10)]
 
 
+def sample_amount(pct=0.10):
+    total = sum(round(q * p, 2) for _, _, _, q, p in ITEMS[:N_ITEMS])
+    return round(total * pct, -3)
+
+
 def build(sample, out):
     wb = Workbook()
     wb._named_styles["Normal"].font = Font(name=FONT, size=10)
@@ -481,6 +520,8 @@ def build(sample, out):
             button(ws, "L3", f"◀ المستخلص السابق ({n-1})", prev, GOLD, merge="L3:M3")
         if n < N_INV:
             button(ws, "N3", f"المستخلص التالي ({n+1}) ▶", INV(n + 1), GOLD, merge="N3:P3")
+        elif FREE:
+            button(ws, "N3", f"🔒 مستخلص {n+1} حتى {FULL_INV} — النسخة الكاملة", S_PRO, RED, merge="N3:P3")
         # بيانات رأس المستخلص
         lab = lambda ref, t, m=None: put(ws, ref, t, font(10, True, NAVY), fill(SUB_BG), align("center"), BORDER,
                                          merge=m)
@@ -517,7 +558,7 @@ def build(sample, out):
         hdr("F6", "الكمية المنفذة من واقع التمتير الفعلي", "F6:H6", NAVY2)
         hdr("F7", "سابق", c=NAVY2); hdr("G7", "حالي ✎", c=GOLD); hdr("H7", "إجمالي", c=NAVY2)
         hdr("I6", "نسبة الإنجاز / الاستحقاق للبند", "I6:K6", TEAL)
-        hdr("I7", "سابقة", c=TEAL); hdr("J7", "حالية ✎ (اختياري)", c=GOLD); hdr("K7", "المعتمدة", c=TEAL)
+        hdr("I7", "سابقة", c=TEAL); hdr("J7", "حالية 🔒 النسخة الكاملة" if FREE else "حالية ✎ (اختياري)", c=GOLD); hdr("K7", "المعتمدة", c=TEAL)
         hdr("L6", "قيمة الأعمال المنفذة", "L6:N6", NAVY2)
         hdr("L7", "سابقة", c=NAVY2); hdr("M7", "حالية", c=NAVY2); hdr("N7", "إجمالية", c=NAVY2)
         hdr("O6", "نسبة الإنجاز الفعلية", "O6:O7")
@@ -546,7 +587,7 @@ def build(sample, out):
             inp(ws, f"G{r}", q, QTY)
             calc(ws, f"H{r}", f"=F{r}+G{r}", QTY, True, fl=zebra)
             calc(ws, f"I{r}", f"={R(prev)}K{r}" if prev else 1, PCT0, fl=zebra, color=GREEN if prev else "1F2933")
-            inp(ws, f"J{r}", SAMPLE_PAY.get((n, i)) if it else None, PCT0)
+            inp_or_lock(ws, f"J{r}", SAMPLE_PAY.get((n, i)) if it else None, PCT0)
             calc(ws, f"K{r}", f'=IF(J{r}="",I{r},J{r})', PCT0, True, fl=zebra)
             calc(ws, f"L{r}", f"={R(prev)}N{r}" if prev else 0, ACC, fl=zebra, color=GREEN if prev else "1F2933")
             calc(ws, f"M{r}", f"=N{r}-L{r}", ACC, True, fl=zebra)
@@ -721,7 +762,10 @@ def build(sample, out):
     lbl(6, "نسبة الاسترداد من قيمة أعمال كل مستخلص")
     inp(ws, "E6", 0.10, PCT0, merge="E6:F6")
     lbl(7, "بدء الاسترداد من المستخلص رقم")
-    inp(ws, "E7", 1, "0", merge="E7:F7")
+    if FREE:
+        calc(ws, "E7", 1, "0", merge="E7:F7")
+    else:
+        inp(ws, "E7", 1, "0", merge="E7:F7")
     lbl(8, "إجمالي الدفعات المقدمة المصروفة")
     calc(ws, "E8", f"=D{ADV_DT}", ACC, True, merge="E8:F8")
     lbl(9, "نسبة الدفعة المقدمة من قيمة العقد")
@@ -747,9 +791,13 @@ def build(sample, out):
     for i in range(ADV_D1 - ADV_D0 + 1):
         r = ADV_D0 + i
         ex = sample and i == 0
+        if FREE and i > 0:
+            calc(ws, f"B{r}", i + 1, "0")
+            locked(ws, f"C{r}", f"C{r}:L{r}", "🔒 دفعات مقدمة متعددة — متاحة في النسخة الكاملة")
+            continue
         calc(ws, f"B{r}", i + 1, "0")
         inp(ws, f"C{r}", dt.date(2026, 3, 10) if ex else None, DATE)
-        inp(ws, f"D{r}", 195000 if ex else None, ACC)
+        inp(ws, f"D{r}", sample_amount() if ex else None, ACC)
         calc(ws, f"E{r}", f"=IF({CONTRACT}=0,0,D{r}/{CONTRACT})", PCT)
         inp(ws, f"F{r}", "LG-558210" if ex else None)
         inp(ws, f"G{r}", "البنك الأهلي السعودي" if ex else None)
@@ -778,7 +826,7 @@ def build(sample, out):
         calc(ws, f"C{r}", f"={R(S_REG)}C{G0+n-1}", DATE, fl=zebra)
         calc(ws, f"D{r}", f"={R(INV(n))}M{S_WORK}", ACC, fl=zebra)
         calc(ws, f"E{r}", "=$E$6", PCT0, fl=zebra)
-        inp(ws, f"F{r}", None, PCT0)
+        inp_or_lock(ws, f"F{r}", None, PCT0)
         calc(ws, f"G{r}", f'=IF(B{r}<$E$7,0,IF(F{r}="",E{r},F{r}))', PCT0, fl=zebra)
         calc(ws, f"H{r}", f"=MAX(0,ROUND(D{r}*G{r},2))", ACC, fl=zebra)
         prev_cum = f"J{r-1}" if n > 1 else "0"
@@ -839,7 +887,7 @@ def build(sample, out):
     lbl(10, "إجمالي المفرج عنه")
     lbl(11, "الرصيد المحتجز لدى المالك حالياً")
     inp(ws, "E6", 0.10, PCT0, merge="E6:F6")
-    inp(ws, "E7", None, PCT0, merge="E7:F7")
+    inp_or_lock(ws, "E7", None, PCT0, merge="E7:F7")
     calc(ws, "E8", f'=IF(E7="","بدون حد",E7*{CONTRACT})', ACC, True, merge="E8:F8")
     calc(ws, "E9", f"=I{RET_TT}", ACC, True, merge="E9:F9")
     calc(ws, "E10", f"=F{RET_RT}", ACC, True, color=GREEN, merge="E10:F10")
@@ -875,7 +923,7 @@ def build(sample, out):
         calc(ws, f"C{r}", f"={R(S_REG)}C{G0+n-1}", DATE, fl=zebra)
         calc(ws, f"D{r}", f"={R(INV(n))}M{S_WORK}", ACC, fl=zebra)
         calc(ws, f"E{r}", "=$E$6", PCT0, fl=zebra)
-        inp(ws, f"F{r}", None, PCT0)
+        inp_or_lock(ws, f"F{r}", None, PCT0)
         calc(ws, f"G{r}", f'=IF(F{r}="",E{r},F{r})', PCT0, fl=zebra)
         calc(ws, f"H{r}", f"=MAX(0,ROUND(D{r}*G{r},2))", ACC, fl=zebra)
         prev_cum = f"J{r-1}" if n > 1 else "0"
@@ -900,6 +948,13 @@ def build(sample, out):
     for i in range(RET_R1 - RET_R0 + 1):
         r = RET_R0 + i
         calc(ws, f"B{r}", i + 1, "0")
+        if FREE:
+            locked(ws, f"C{r}", f"C{r}:E{r}", "🔒 النسخة الكاملة" if i == 0 else None)
+            locked(ws, f"F{r}")
+            calc(ws, f"G{r}", f"=IF($E$9=0,0,F{r}/$E$9)", PCT)
+            locked(ws, f"H{r}")
+            locked(ws, f"I{r}", f"I{r}:L{r}")
+            continue
         inp(ws, f"C{r}", None, DATE)
         inp(ws, f"D{r}", None, merge=f"D{r}:E{r}", h="right")
         inp(ws, f"F{r}", None, ACC)
@@ -925,10 +980,15 @@ def build(sample, out):
         r = RET_G0 + i
         ex = sample and i == 0
         calc(ws, f"B{r}", i + 1, "0")
+        if FREE and i > 0:
+            locked(ws, f"C{r}", f"C{r}:J{r}", "🔒 متابعة أكثر من ضمان بنكي — متاحة في النسخة الكاملة")
+            calc(ws, f"K{r}", f'=IF(J{r}="","",J{r}-TODAY())', "#,##0;[Red]-#,##0")
+            calc(ws, f"L{r}", f'=IF(J{r}="","",IF(K{r}<0,"✖ منتهي",IF(K{r}<=30,"⚠ ينتهي قريباً","✔ ساري")))', None)
+            continue
         inp(ws, f"C{r}", "ضمان نهائي (حسن تنفيذ)" if ex else None, merge=f"C{r}:D{r}", h="right")
         inp(ws, f"E{r}", "PB-771034" if ex else None)
         inp(ws, f"F{r}", "مصرف الراجحي" if ex else None)
-        inp(ws, f"G{r}", 195000 if ex else None, ACC)
+        inp(ws, f"G{r}", sample_amount() if ex else None, ACC)
         calc(ws, f"H{r}", f"=IF({CONTRACT}=0,0,G{r}/{CONTRACT})", PCT)
         inp(ws, f"I{r}", dt.date(2026, 2, 20) if ex else None, DATE)
         inp(ws, f"J{r}", dt.date(2026, 10, 20) if ex else None, DATE)
@@ -1098,6 +1158,19 @@ def build(sample, out):
         ws.column_dimensions[c].hidden = False
     CH = SEC_T + 3
     section(ws, f"B{CH-1}", "الرسوم البيانية", f"B{CH-1}:M{CH-1}", NAVY)
+    if FREE:
+        c = put(ws, f"B{CH}", "🔒  الرسوم البيانية التفاعلية (تطور المستخلصات • الأقسام • توزيع قيمة العقد)\n"
+                              "متاحة في النسخة الكاملة  —  اضغط هنا للشراء من accopro.net",
+                font(14, True, NAVY), fill("FFF8E1"), align("center", wrap=True), BORDER, merge=f"B{CH}:M{CH+8}")
+        buy_link(c)
+        ws.print_area = f"B1:M{CH+8}"
+    else:
+        build_charts(ws, CH, SEC_H, SEC_T)
+    ws.freeze_panes = "A4"
+    build_rest(wb, sample, ws_help, out)
+
+
+def build_charts(ws, CH, SEC_H, SEC_T):
     ch = BarChart()
     ch.type = "col"
     ch.title = "قيمة الأعمال لكل مستخلص والتراكمي"
@@ -1134,8 +1207,9 @@ def build(sample, out):
     ch3.legend.position = "b"
     ws.add_chart(ch3, f"I{CH+19}")
     ws.print_area = f"B1:M{CH+37}"
-    ws.freeze_panes = "A4"
 
+
+def build_rest(wb, sample, ws_help, out):
     # ============================================================ التعليمات
     ws = ws_help
     setup(ws, {"A": 2, "B": 6, "C": 110}, "5A6772")
@@ -1178,6 +1252,9 @@ def build(sample, out):
         ("•", "خلفية حمراء على الكمية الإجمالية = البند تجاوز الكمية التعاقدية."),
         ("•", "المستخلص يعتبر 'صادراً' بمجرد إدخال تاريخه؛ وغير الصادر يظهر رمادياً في السجل."),
         ("h", "ملاحظة"),
+        ("•", f"هذه نسخة مجانية محدودة ({N_INV} مستخلصات و{N_ITEMS} بنود) ببيانات مثال للتجربة؛ امسح الخلايا الصفراء "
+              f"وابدأ ببياناتك. الخصائص المقفلة 🔒 والنسخة الكاملة ({FULL_INV} مستخلص و{FULL_ITEMS} بند) من: {BUY_URL}")
+        if FREE else
         ("•", "الملف الذي يحتوي على بيانات مثال (35 بند و3 مستخلصات) للتوضيح؛ والنسخة (Blank) فارغة وجاهزة للعمل."),
     ]
     r = 5
@@ -1191,6 +1268,8 @@ def build(sample, out):
             ws.row_dimensions[r].height = 30 if len(t) > 110 else 18
         r += 1
 
+    if FREE:
+        free_edition(wb)
     wb.active = 0
     # نافذة بمقاس صريح داخل الشاشة (بدونها قد يفتح Excel نافذة غير مرئية / شاشة بيضاء)
     v = wb.views[0]
@@ -1201,8 +1280,60 @@ def build(sample, out):
     print("saved", out)
 
 
+def free_edition(wb):
+    """صفحة الترقية + حماية الأوراق وهيكل المصنف في النسخة المجانية"""
+    ws = wb.create_sheet(S_PRO, 1)
+    setup(ws, {"A": 2, "B": 44, "C": 22, "D": 22, "E": 2}, "FFB300")
+    put(ws, "B1", "⭐ احصل على النسخة الكاملة من قالب مستخلصات المقاولات", font(18, True, "FFFFFF"), fill(NAVY),
+        align("center"), merge="B1:D1")
+    ws.row_dimensions[1].height = 40
+    c = put(ws, "B3", "🛒  اضغط هنا للشراء:  accopro.net", font(16, True, "1F2933"), fill("FFD54F"),
+            align("center"), BORDER, merge="B3:D4")
+    buy_link(c)
+    put(ws, "B6", "الخاصية", font(11, True, "FFFFFF"), fill(TEAL), align("center"), BORDER)
+    put(ws, "C6", "النسخة المجانية", font(11, True, "FFFFFF"), fill(GREY_TXT), align("center"), BORDER)
+    put(ws, "D6", "النسخة الكاملة ⭐", font(11, True, "FFFFFF"), fill(GREEN), align("center"), BORDER)
+    rows = [
+        ("عدد المستخلصات المربوطة", f"{N_INV} مستخلصات", f"{FULL_INV} مستخلص"),
+        ("عدد بنود جدول الكميات", f"{N_ITEMS} بنود", f"{FULL_ITEMS} بند"),
+        ("ترحيل الكميات تلقائياً بين المستخلصات", "✔", "✔"),
+        ("الضريبة واسترداد الدفعة المقدمة وضمان الأعمال", "✔", "✔"),
+        ("نسبة الإنجاز/الاستحقاق للبند (نواقص مثل الإكسسوارات)", "🔒", "✔"),
+        ("نسب استرداد وضمان مخصصة لكل مستخلص", "🔒", "✔"),
+        ("بدء الاسترداد من مستخلص محدد وحد أقصى للضمان", "🔒", "✔"),
+        ("تعدد الدفعات المقدمة وخطابات ضمانها", "دفعة واحدة", "✔ حتى 6"),
+        ("سجل الإفراج عن ضمان الأعمال", "🔒", "✔"),
+        ("متابعة الضمانات البنكية وتنبيهات الانتهاء", "ضمان واحد", "✔ حتى 6"),
+        ("الرسوم البيانية في لوحة التحكم", "🔒", "✔"),
+        ("تعديل التصميم والمعادلات بحرية (بدون حماية)", "🔒", "✔"),
+        ("بدون علامة النسخة المجانية في الطباعة", "🔒", "✔"),
+    ]
+    for k, (a, b, c_) in enumerate(rows):
+        r = 7 + k
+        zebra = fill(ALT) if k % 2 else None
+        put(ws, f"B{r}", a, font(10, True, NAVY), zebra, align("right", indent=1), BORDER)
+        put(ws, f"C{r}", b, font(11, True, RED if "🔒" in b else GREY_TXT), zebra, align("center"), BORDER)
+        put(ws, f"D{r}", c_, font(11, True, GREEN), zebra, align("center"), BORDER)
+        ws.row_dimensions[r].height = 22
+    end = 7 + len(rows) + 1
+    c = put(ws, f"B{end}", "⬅ للترقية للنسخة الكاملة زُر الموقع:  https://accopro.net/", font(12, True, INPUT_FONT),
+            None, align("center"), merge=f"B{end}:D{end}")
+    buy_link(c)
+    ws.sheet_properties.tabColor = "FFB300"
+    # حماية: الخلايا الصفراء فقط قابلة للتعديل، ومنع إضافة/نسخ الأوراق لتجاوز الحدود
+    for sh in wb.worksheets:
+        sh.protection.sheet = True
+        sh.protection.password = FREE_PASS
+        sh.protection.autoFilter = False
+        sh.protection.sort = False
+        sh.oddFooter.left.text = "نسخة مجانية - accopro.net"
+    wb.security = WorkbookProtection(workbookPassword=FREE_PASS, lockStructure=True)
+
+
 if __name__ == "__main__":
     from finalize_workbook import finalize
-    for flag, name in ((True, "Progress_Invoices_Template.xlsx"), (False, "Progress_Invoices_Template_Blank.xlsx")):
+    jobs = ([(True, "Progress_Invoices_Template_Free.xlsx")] if FREE else
+            [(True, "Progress_Invoices_Template.xlsx"), (False, "Progress_Invoices_Template_Blank.xlsx")])
+    for flag, name in jobs:
         build(flag, name)
         finalize(name)   # قيم محسوبة مسبقاً + توافق كامل مع مخطط Excel
