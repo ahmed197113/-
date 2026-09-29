@@ -1084,11 +1084,12 @@ pie.add_data(Reference(ws, min_col=CI("J"), min_row=18, max_row=20), titles_from
 pie.set_categories(Reference(ws, min_col=CI("I"), min_row=19, max_row=20))
 pie.dataLabels = DataLabelList()
 pie.dataLabels.showPercent = True
+pie.dataLabels.showVal = pie.dataLabels.showCatName = pie.dataLabels.showSerName = pie.dataLabels.showLeaderLines = False
 pie.height, pie.width = 6.2, 9.5
 ws.add_chart(pie, "I21")
 
 # تحليل الأقسام
-DR0 = 27
+DR0 = 34
 section(ws, f"B{DR0}", '="🏢 تحليل التكلفة حسب القسم حتى "&INDEX(L_MONTH,cfg_VAL_M)', f"B{DR0}:G{DR0}", NAVY2)
 headers(ws, DR0 + 1, [("B", "القسم"), ("C", "عدد الموظفين"), ("D", "الرواتب الشهرية"), ("E", "المستحقات حتى تاريخه"),
                       ("F", "التكلفة الكاملة حتى تاريخه"), ("G", "النسبة من التكلفة")], NAVY2, 36)
@@ -1121,19 +1122,37 @@ ws.add_chart(bar, f"I{DR0}")
 
 # الاتجاه الشهري
 TR = DT + 3
-section(ws, f"B{TR}", "📈 الاتجاه الشهري للرواتب والتكلفة (12 شهراً)", f"B{TR}:N{TR}", PURPLE)
+section(ws, f"B{TR}", "📈 الاتجاه الشهري لمكونات تكلفة العمالة (12 شهراً)", f"B{TR}:N{TR}", PURPLE)
+headers(ws, TR + 1, [("B", "الشهر"), ("C", "صافي الرواتب"), ("D", "التأمينات (موظف + منشأة)"),
+                     ("E", "سلف وخصومات"), ("F", "المخصصات (نهاية خدمة + إجازات + تذاكر)"), ("G", "إجمالي التكلفة")],
+        PURPLE, 44)
+for i in range(12):
+    rr4, sr = TR + 2 + i, 6 + i
+    vals = [f"={MSR}B{sr}", f"={MSR}L{sr}", f"={MSR}J{sr}+{MSR}M{sr}", f"={MSR}K{sr}",
+            f"={MSR}N{sr}+{MSR}O{sr}+{MSR}P{sr}", f"=SUM(C{rr4}:F{rr4})"]
+    for c, v in zip("BCDEFG", vals):
+        put(ws, f"{c}{rr4}", v, font(10, c in "BG"), fill(ALT if i % 2 else CARD_BG), align("center"), BORDER,
+            None if c == "B" else ACC0)
+ws.conditional_formatting.add(f"B{TR+2}:G{TR+13}", FormulaRule(formula=[f"ROW()-{TR+1}=cfg_VAL_M"], fill=fill("FFF3CD")))
+TT = TR + 14
+put(ws, f"B{TT}", "إجمالي السنة", font(10, True, "FFFFFF"), fill(PURPLE), align("center"), BORDER)
+for c in "CDEFG":
+    put(ws, f"{c}{TT}", f"=SUM({c}{TR+2}:{c}{TR+13})", font(10, True, "FFFFFF"), fill(PURPLE), align("center"), BORDER, ACC0)
+put(ws, f"B{TT+1}", f'=IF(ROUND(G{TT}-{MSR}Q18,0)=0,"✔ مطابق لإجمالي تكلفة العمالة في الملخص الشهري","✖ غير مطابق")',
+    font(9, True), None, align(), merge=f"B{TT+1}:G{TT+1}")
+status_cf(ws, f"B{TT+1}", f"B{TT+1}")
 col = BarChart()
 col.type, col.grouping, col.overlap = "col", "stacked", 100
 col.title = "مكونات تكلفة العمالة شهرياً"
 col.y_axis.numFmt = "#,##0"
-for src, clr in (("L", GREEN), ("J", "E57373"), ("K", "F6AD55"), ("M", RED), ("N", GOLD), ("O", TEAL), ("P", "1A73E8")):
-    col.add_data(Reference(ws_msum, min_col=CI(src), min_row=5, max_row=17), titles_from_data=True)
-    col.series[-1].graphicalProperties.solidFill = clr
-col.set_categories(Reference(ws_msum, min_col=2, min_row=6, max_row=17))
-col.height, col.width = 10, 33
-ws.add_chart(col, f"B{TR+1}")
-note(ws, f"B{TR+22}", "كل الأرقام في هذه اللوحة معادلات مرتبطة بالأوراق الأخرى — لا تُدخل فيها أي بيانات. غيّر «شهر التقرير» من الإعدادات لتتحدث اللوحة والمخصصات والقيود.",
-     f"B{TR+22}:N{TR+22}", 26)
+col.add_data(Reference(ws, min_col=3, max_col=6, min_row=TR + 1, max_row=TR + 13), titles_from_data=True)
+col.set_categories(Reference(ws, min_col=2, min_row=TR + 2, max_row=TR + 13))
+for s_, clr in zip(col.series, [GREEN, RED, "F6AD55", GOLD]):
+    s_.graphicalProperties.solidFill = clr
+col.height, col.width = 8.5, 16
+ws.add_chart(col, f"I{TR+1}")
+note(ws, f"B{TT+3}", "كل الأرقام في هذه اللوحة معادلات مرتبطة بالأوراق الأخرى — لا تُدخل فيها أي بيانات. غيّر «شهر التقرير» من الإعدادات لتتحدث اللوحة والمخصصات والقيود. "
+     "الصف المظلل في جدول الاتجاه = شهر التقرير.", f"B{TT+3}:N{TT+3}", 26)
 
 # ================================================================ الرئيسية
 ws = ws_home
@@ -1169,7 +1188,7 @@ for i, (t, s) in enumerate([("📅 الملخص الشهري", S_MSUM), ("📑 �
 section(ws, "B16", "🎨 دليل الألوان", "B16:D16", NAVY)
 for i, (smp, fnt, fl, desc) in enumerate([
         ("123", INPUT_FONT, INPUT, "خلية إدخال — اكتب فيها (خط أزرق على خلفية صفراء)."),
-        ("=معادلة", "1F2933", FORMULA_BG, "خلية معادلة — لا تعدّلها؛ تتحدث تلقائياً."),
+        ("ƒx معادلة", "1F2933", FORMULA_BG, "خلية معادلة — لا تعدّلها؛ تتحدث تلقائياً."),
         ("✔ سليم", GREEN, GREEN_L, "فحص ناجح."),
         ("⚠ تنبيه", GOLD, "FFF3CD", "يحتاج مراجعة."),
         ("✖ خطأ", RED, RED_L, "خطأ يجب تصحيحه.")]):
