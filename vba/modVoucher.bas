@@ -95,7 +95,7 @@ Private Function SameNo(ByVal v As Variant, ByVal no As Variant) As Boolean
     SameNo = (CDbl(v) = CDbl(no))
 End Function
 
-Private Sub Go(ByVal addr As String)
+Private Sub SelectCell(ByVal addr As String)
     On Error Resume Next
     If ActiveSheet Is shForm Then shForm.Range(addr).Select
 End Sub
@@ -154,35 +154,52 @@ Private Function Validate() As Boolean
     Validate = False
     Application.Calculate
     If Trim$(CStr(shForm.Range(F_PAYEE).Value)) = "" Then
-        Info M(MSG_NEED_PAYEE), False: Go F_PAYEE: Exit Function
+        Info M(MSG_NEED_PAYEE), False
+        SelectCell F_PAYEE
+        Exit Function
     End If
     If Not IsDate(shForm.Range(F_DATE).Value) Then
-        Info M(MSG_NEED_DATE), False: Go F_DATE: Exit Function
+        Info M(MSG_NEED_DATE), False
+        SelectCell F_DATE
+        Exit Function
     End If
     For r = LN0 To LN0 + LNN - 1
         dr = shForm.Range(LC_DR & r).Value
         cr = shForm.Range(LC_CR & r).Value
         If Not IsBlankOrNumber(dr) Or Not IsBlankOrNumber(cr) Then
-            Info M(MSG_LINE_NUM) & (r - LN0 + 1), False: Go LC_DR & r: Exit Function
+            Info M(MSG_LINE_NUM) & (r - LN0 + 1), False
+            SelectCell LC_DR & r
+            Exit Function
         End If
         If Num(dr) < 0 Or Num(cr) < 0 Then
-            Info M(MSG_LINE_NUM) & (r - LN0 + 1), False: Go LC_DR & r: Exit Function
+            Info M(MSG_LINE_NUM) & (r - LN0 + 1), False
+            SelectCell LC_DR & r
+            Exit Function
         End If
         If Num(dr) > 0 And Num(cr) > 0 Then
-            Info M(MSG_LINE_BOTH) & (r - LN0 + 1), False: Go LC_DR & r: Exit Function
+            Info M(MSG_LINE_BOTH) & (r - LN0 + 1), False
+            SelectCell LC_DR & r
+            Exit Function
         End If
         If (Num(dr) > 0 Or Num(cr) > 0) And Trim$(CStr(shForm.Range(LC_DESC & r).Value)) = "" Then
-            Info M(MSG_LINE_DESC) & (r - LN0 + 1), False: Go LC_DESC & r: Exit Function
+            Info M(MSG_LINE_DESC) & (r - LN0 + 1), False
+            SelectCell LC_DESC & r
+            Exit Function
         End If
     Next r
     If Num(shForm.Range(F_TDR).Value) <= 0 Then
-        Info M(MSG_NEED_AMOUNT), False: Go LC_DR & LN0: Exit Function
+        Info M(MSG_NEED_AMOUNT), False
+        SelectCell LC_DR & LN0
+        Exit Function
     End If
     If Num(shForm.Range(F_AUTO).Value) > 0 And Trim$(CStr(shForm.Range(F_FROM).Value)) = "" Then
-        Info M(MSG_NEED_FROM), False: Go F_FROM: Exit Function
+        Info M(MSG_NEED_FROM), False
+        SelectCell F_FROM
+        Exit Function
     End If
     If Round(Num(shForm.Range(F_TDR).Value) - Num(shForm.Range(F_TCR).Value), 2) <> 0 Then
-        Info M(MSG_UNBAL), False: Exit Function
+        Info M(MSG_UNBAL), False
+        Exit Function
     End If
     chq = Trim$(CStr(shForm.Range(F_CHEQUE).Value))
     If chq <> "" Then
@@ -384,7 +401,7 @@ Public Sub SaveAndNew()
         Info M(MSG_SAVED) & ref & "   " & M(MSG_READY_NEW) & shForm.Range(F_REF).Value
     End If
     EndOp
-    Go F_PAYEE
+    SelectCell F_PAYEE
     Exit Sub
 EH:
     Fail "SaveAndNew"
@@ -458,7 +475,7 @@ Public Sub NewVoucher()
     Application.Calculate
     Info M(MSG_NEW) & shForm.Range(F_REF).Value
     EndOp
-    Go F_PAYEE
+    SelectCell F_PAYEE
     Exit Sub
 EH:
     Fail "NewVoucher"
@@ -504,7 +521,9 @@ Public Sub PrevVoucher()
     Dim v As Variant
     v = Neighbour(-1)
     If IsEmpty(v) Then
-        BeginOp: Info M(MSG_NO_PREV), False: EndOp
+        BeginOp
+        Info M(MSG_NO_PREV), False
+        EndOp
     Else
         LoadVoucher v
     End If
@@ -514,7 +533,9 @@ Public Sub NextVoucher()
     Dim v As Variant
     v = Neighbour(1)
     If IsEmpty(v) Then
-        BeginOp: Info M(MSG_NO_NEXT), False: EndOp
+        BeginOp
+        Info M(MSG_NO_NEXT), False
+        EndOp
     Else
         LoadVoucher v
     End If
@@ -524,7 +545,9 @@ Public Sub DeleteVoucher()
     Dim no As Double, ref As String, rg As Long
     On Error GoTo EH
     If Trim$(CStr(shForm.Range(F_LOADED).Value)) = "" Then
-        BeginOp: Info M(MSG_NOT_SAVED), False: EndOp
+        BeginOp
+        Info M(MSG_NOT_SAVED), False
+        EndOp
         Exit Sub
     End If
     no = shForm.Range(F_LOADED).Value
@@ -563,5 +586,5 @@ Public Sub OpenFromList(ByVal ws As Worksheet, ByVal r As Long)
     If IsEmpty(ws.Cells(r, 1).Value) Or Not IsNumeric(ws.Cells(r, 1).Value) Then Exit Sub
     LoadVoucher ws.Cells(r, 1).Value
     shForm.Activate
-    Go F_PAYEE
+    SelectCell F_PAYEE
 End Sub
