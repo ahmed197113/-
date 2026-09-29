@@ -20,6 +20,7 @@ from openpyxl.comments import Comment
 from openpyxl.formatting.rule import ColorScaleRule, FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Side
 from openpyxl.workbook.defined_name import DefinedName
+from openpyxl.workbook.protection import WorkbookProtection
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.hyperlink import Hyperlink
 from openpyxl.worksheet.table import Table, TableFormula, TableStyleInfo
@@ -28,10 +29,12 @@ from openpyxl.worksheet.table import Table, TableFormula, TableStyleInfo
 FONT = "Cairo"          # لو عاوز خط تاني (Tajawal / Calibri) غيّره هنا بس
 VIDEO_URL = ""          # لينك شرح الفيديو (فاضي = يظهر مكانه نص تذكير)
 LIBRARY_URL = ""        # لينك مكتبة القوالب
-FREE_PASSWORD = "free"  # باسورد حماية شيت الإعدادات في النسخة المجانية فقط
+DEMO_PASSWORD = "AccoPro@2026"   # باسورد قفل النسخة المجانية (الشيتات وهيكل الملف) — غيّره قبل النشر
+STORE_URL = "https://accopro.net/"
+PROMO = "🔒 نسخة تجريبية للعرض فقط — لشراء النسخة الكاملة اضغط هنا ◄ accopro.net"
 
-MAX_CUS = {False: 500, True: 30}      # حدود العملاء
-MAX_INV = {False: 5000, True: 300}    # حدود الفواتير
+MAX_CUS = 500                         # صفوف التحقق (Validation) للعملاء
+MAX_INV = 5000                        # صفوف التحقق للفواتير
 AGE_SLOTS = 500                       # صفوف تقرير الأعمار
 ST_SLOTS = 250                        # صفوف كشف الحساب
 FU_SLOTS = 30                         # صفوف قايمة متابعة التحصيل
@@ -416,10 +419,10 @@ def expected(customers, invoices, receipts, as_of, basis="من تاريخ الا
 
 
 # =================================================================== بناء الملف
-def build(free, out):
+def build(demo, out):
     reps, cities, customers, invoices, receipts = sample_data()
     exp = expected(customers, invoices, receipts, AS_OF)
-    sheets = [S_HELP, S_SET, S_CUS, S_INV, S_REC, S_AGE] + ([] if free else [S_PRV, S_ST]) + [S_DB]
+    sheets = [S_HELP, S_SET, S_CUS, S_INV, S_REC, S_AGE, S_PRV, S_ST, S_DB]
 
     wb = Workbook()
     wb._named_styles["Normal"].font = Font(name=FONT, size=10)
@@ -436,9 +439,8 @@ def build(free, out):
     nav(ws, list("BCDEGI"), S_SET, sheets)
     settings = [
         ("C4", "اسم الشركة", "شركة النور التجارية", "بيظهر في كل التقارير", "CompanyName", None),
-        ("C5", "تاريخ التقرير", "=TODAY()" if free else AS_OF,
-         "أهم خلية في الملف — غيّرها لأي تاريخ سابق وكل التقارير تتحسب كما في التاريخ ده"
-         if not free else "🔒 في النسخة المجانية = تاريخ اليوم. التقرير بأي تاريخ سابق في النسخة الكاملة",
+        ("C5", "تاريخ التقرير", AS_OF,
+         "أهم خلية في الملف — غيّرها لأي تاريخ سابق وكل التقارير تتحسب كما في التاريخ ده",
          "AsOf", DATE),
         ("C6", "العملة", "ر.س", "", "Currency", None),
         ("C7", "أساس حساب العمر", BASIS[0], "من تاريخ الاستحقاق (الأشيع) أو من تاريخ الفاتورة", "AgingBasis", None),
@@ -455,8 +457,7 @@ def build(free, out):
         put(ws, f"D{r}", note, font(9, False, GREY_TXT, True), None, align(wrap=True))
         add_name(wb, name, f"'{S_SET}'!$C${r}")
         ws.row_dimensions[r].height = 24
-        if not (free and ref == "C5"):
-            c.protection = Protection(locked=False)
+        c.protection = Protection(locked=False)
     ws["C5"].fill, ws["C5"].font = fill("FFE08A"), font(12, True, NAVY)
     ws["B5"].font = font(10, True, RED)
     dv_list(ws, f'"{",".join(BASIS)}"', "C7", "اختار أساس حساب عمر الدين")
@@ -465,7 +466,7 @@ def build(free, out):
     dv_simple(ws, "decimal", "C9", "نسبة من 0% لـ 100%", "between", "0", "1")
 
     B0 = 13
-    section(ws, f"B{B0 - 1}", "جدول الفترات ونسب المخصص" + (" (🔒 ثابتة في النسخة المجانية)" if free else " (تقدر تعدّل الأرقام والأسماء)"),
+    section(ws, f"B{B0 - 1}", "جدول الفترات ونسب المخصص (تقدر تعدّل الأرقام والأسماء)",
             f"B{B0 - 1}:E{B0 - 1}")
     for ci, h in enumerate(["من يوم", "الفترة", "نسبة المخصص", "اللون"]):
         hdr(ws, ws.cell(B0, 2 + ci).coordinate, h)
@@ -474,7 +475,7 @@ def build(free, out):
         for ci, (v, fmt) in enumerate(((frm, "0"), (lbl, None), (rate, "0.0%"), (cname, None))):
             c = put(ws, ws.cell(r, 2 + ci).coordinate, v, font(10, True, IN_FONT if ci < 3 else "1F2933"),
                     fill(IN_BG if ci < 3 else light), align("center"), BORDER, fmt)
-            if ci < 3 and not free:
+            if ci < 3:
                 c.protection = Protection(locked=False)
     tb = Table(displayName="tblBuckets", ref=f"B{B0}:E{B0 + NB}")
     tb._initialise_columns()
@@ -490,7 +491,7 @@ def build(free, out):
     # المندوبين والمدن
     for col, title, nm, vals in (("G", "المندوب", "tblReps", reps), ("I", "المدينة", "tblCities", cities)):
         hdr(ws, f"{col}{B0}", title)
-        n = len(vals) + (7 if free else 0)
+        n = len(vals)
         for i in range(n):
             c = put(ws, f"{col}{B0 + 1 + i}", vals[i] if i < len(vals) else None, font(10, color=IN_FONT),
                     fill(IN_BG), align(), BORDER)
@@ -513,10 +514,6 @@ def build(free, out):
     add_name(wb, "RepList", "tblReps[المندوب]")
     add_name(wb, "CityList", "tblCities[المدينة]")
     ws.freeze_panes = "A4"
-    if free:
-        ws.protection.sheet = True
-        ws.protection.password = FREE_PASSWORD
-
     # ============================================================ العملاء
     ws = ws_by[S_CUS]
     setup(ws, {}, TEAL)
@@ -558,10 +555,8 @@ def build(free, out):
     ]
     banner(ws, "L", "👥 العملاء", "أزرق = إدخال   |   أبيض = معادلة (ماتلمسهاش)   |   كل عميل مرة واحدة بكود مميز")
     nav(ws, list("ABCDEFGHIJKL"), S_CUS, sheets)
-    r0, r1 = build_table(ws, C, 4, cus_cols, customers, MAX_CUS[free])
-    lim = f",ROW()<={MAX_CUS[free] + 4}" if free else ""
-    dv_custom(ws, f"=AND(COUNTIF($A${r0}:$A${r1 + 500},A{r0})=1{lim})", f"A{r0}:A{r1}",
-              "الكود ده متكرر" + (f" أو وصلت للحد الأقصى في النسخة المجانية ({MAX_CUS[free]} عميل)" if free else ""))
+    r0, r1 = build_table(ws, C, 4, cus_cols, customers, MAX_CUS)
+    dv_custom(ws, f"=COUNTIF($A${r0}:$A${r1 + 500},A{r0})=1", f"A{r0}:A{r1}", "الكود ده متكرر")
     dv_custom(ws, f"=AND(LEN(C{r0})=15,ISNUMBER(--C{r0}))", f"C{r0}:C{r1}", "الرقم الضريبي لازم يكون 15 رقم")
     dv_list(ws, "=CityList", f"D{r0}:D{r1}", strict=False)
     dv_list(ws, "=RepList", f"E{r0}:E{r1}", "المندوب من القائمة (بتتعدل من الإعدادات)")
@@ -606,25 +601,22 @@ def build(free, out):
                f"IF({TR(I, 'المتبقي')}<{TR(I, 'الإجمالي')},\"◐ مسددة جزئياً\",IF({TR(I, 'أيام التأخير')}>0,\"● متأخرة\",\"○ غير مستحقة\"))))"),
         dict(name="ملاحظات", kind="in", width=34),
     ]
-    if not free:
-        inv_cols += [
-            dict(name="ترتيب المتابعة", kind="h", width=8,
-                 f=f"IF({TR(I, 'أيام التأخير')}>0,COUNTIFS({T(I, 'أيام التأخير')},\">0\",{T(I, 'المتبقي')},\">\"&{TR(I, 'المتبقي')})"
-                   f"+COUNTIFS(INDEX({T(I, 'أيام التأخير')},1):{TR(I, 'أيام التأخير')},\">0\",INDEX({T(I, 'المتبقي')},1):{TR(I, 'المتبقي')},{TR(I, 'المتبقي')}),\"\")"),
-            dict(name="مفتاح الكشف", kind="h", width=8,
-                 f=f"IF(AND({TR(I, 'كود العميل')}=StCust,{TR(I, 'تاريخ الفاتورة')}>=StFrom,{TR(I, 'تاريخ الفاتورة')}<=StTo),"
-                   f"{TR(I, 'تاريخ الفاتورة')}*100000+ROW(),\"\")"),
-            dict(name="ترتيب الكشف", kind="h", width=8,
-                 f=f"IF({TR(I, 'مفتاح الكشف')}=\"\",\"\",COUNTIF({T(I, 'مفتاح الكشف')},\"<\"&{TR(I, 'مفتاح الكشف')})"
-                   f"+COUNTIF({T(Rc, 'مفتاح الكشف')},\"<\"&{TR(I, 'مفتاح الكشف')})+1)"),
-        ]
+    inv_cols += [
+        dict(name="ترتيب المتابعة", kind="h", width=8,
+             f=f"IF({TR(I, 'أيام التأخير')}>0,COUNTIFS({T(I, 'أيام التأخير')},\">0\",{T(I, 'المتبقي')},\">\"&{TR(I, 'المتبقي')})"
+               f"+COUNTIFS(INDEX({T(I, 'أيام التأخير')},1):{TR(I, 'أيام التأخير')},\">0\",INDEX({T(I, 'المتبقي')},1):{TR(I, 'المتبقي')},{TR(I, 'المتبقي')}),\"\")"),
+        dict(name="مفتاح الكشف", kind="h", width=8,
+             f=f"IF(AND({TR(I, 'كود العميل')}=StCust,{TR(I, 'تاريخ الفاتورة')}>=StFrom,{TR(I, 'تاريخ الفاتورة')}<=StTo),"
+               f"{TR(I, 'تاريخ الفاتورة')}*100000+ROW(),\"\")"),
+        dict(name="ترتيب الكشف", kind="h", width=8,
+             f=f"IF({TR(I, 'مفتاح الكشف')}=\"\",\"\",COUNTIF({T(I, 'مفتاح الكشف')},\"<\"&{TR(I, 'مفتاح الكشف')})"
+               f"+COUNTIF({T(Rc, 'مفتاح الكشف')},\"<\"&{TR(I, 'مفتاح الكشف')})+1)"),
+    ]
     banner(ws, "P", "🧾 الفواتير", "قلب الملف — دخّل رقم الفاتورة والتاريخ وكود العميل والمبلغ بس، والباقي بيتحسب لوحده")
     nav(ws, list("ABCDEFGHIJKLMNOP"), S_INV, sheets)
     inv_rows = [{k: v for k, v in i.items() if not k.startswith("_")} for i in invoices]
-    r0, r1 = build_table(ws, I, 4, inv_cols, inv_rows, MAX_INV[free])
-    lim = f",ROW()<={MAX_INV[free] + 4}" if free else ""
-    dv_custom(ws, f"=AND(COUNTIF($A${r0}:$A${r1 + 1000},A{r0})=1{lim})", f"A{r0}:A{r1}",
-              "رقم الفاتورة متكرر" + (f" أو وصلت للحد الأقصى في النسخة المجانية ({MAX_INV[free]} فاتورة)" if free else ""))
+    r0, r1 = build_table(ws, I, 4, inv_cols, inv_rows, MAX_INV)
+    dv_custom(ws, f"=COUNTIF($A${r0}:$A${r1 + 1000},A{r0})=1", f"A{r0}:A{r1}", "رقم الفاتورة متكرر")
     dv_simple(ws, "date", f"B{r0}:B{r1}", "لازم يكون تاريخ صحيح", "greaterThan", "36526")
     add_name(wb, "CustCodes", f"{C}[كود العميل]")
     add_name(wb, "InvNos", f"{I}[رقم الفاتورة]")
@@ -657,18 +649,17 @@ def build(free, out):
                f"IF(COUNTIFS({T(I, 'رقم الفاتورة')},{TR(Rc, 'رقم الفاتورة')},{T(I, 'كود العميل')},{TR(Rc, 'كود العميل')})=0,\"⚠ الفاتورة مش لنفس العميل\","
                f"IF(INDEX({T(I, 'المتبقي')},MATCH({TR(Rc, 'رقم الفاتورة')},{T(I, 'رقم الفاتورة')},0))<0,\"⚠ تحصيل أكبر من الفاتورة\",\"✓\"))))"),
     ]
-    if not free:
-        rec_cols += [
-            dict(name="مفتاح الكشف", kind="h", width=8,
-                 f=f"IF(AND({TR(Rc, 'كود العميل')}=StCust,{TR(Rc, 'التاريخ')}>=StFrom,{TR(Rc, 'التاريخ')}<=StTo),"
-                   f"{TR(Rc, 'التاريخ')}*100000+50000+ROW(),\"\")"),
-            dict(name="ترتيب الكشف", kind="h", width=8,
-                 f=f"IF({TR(Rc, 'مفتاح الكشف')}=\"\",\"\",COUNTIF({T(I, 'مفتاح الكشف')},\"<\"&{TR(Rc, 'مفتاح الكشف')})"
-                   f"+COUNTIF({T(Rc, 'مفتاح الكشف')},\"<\"&{TR(Rc, 'مفتاح الكشف')})+1)"),
-        ]
+    rec_cols += [
+        dict(name="مفتاح الكشف", kind="h", width=8,
+             f=f"IF(AND({TR(Rc, 'كود العميل')}=StCust,{TR(Rc, 'التاريخ')}>=StFrom,{TR(Rc, 'التاريخ')}<=StTo),"
+               f"{TR(Rc, 'التاريخ')}*100000+50000+ROW(),\"\")"),
+        dict(name="ترتيب الكشف", kind="h", width=8,
+             f=f"IF({TR(Rc, 'مفتاح الكشف')}=\"\",\"\",COUNTIF({T(I, 'مفتاح الكشف')},\"<\"&{TR(Rc, 'مفتاح الكشف')})"
+               f"+COUNTIF({T(Rc, 'مفتاح الكشف')},\"<\"&{TR(Rc, 'مفتاح الكشف')})+1)"),
+    ]
     banner(ws, "I", "💵 التحصيلات", "كل تحصيل أو إشعار دائن أو خصم أو شطب — اربطه برقم الفاتورة، أو سيبه فاضي لو دفعة على الحساب")
     nav(ws, list("ABCDEFGHI"), S_REC, sheets)
-    r0, r1 = build_table(ws, Rc, 4, rec_cols, receipts, MAX_INV[free] * 2)
+    r0, r1 = build_table(ws, Rc, 4, rec_cols, receipts, MAX_INV * 2)
     dv_simple(ws, "date", f"B{r0}:B{r1}", "لازم يكون تاريخ صحيح", "greaterThan", "36526")
     dv_list(ws, "=CustCodes", f"C{r0}:C{r1}", "اختار كود العميل")
     dv_list(ws, "=InvNos", f"E{r0}:E{r1}", "رقم الفاتورة (فاضي = دفعة على الحساب)", strict=False)
@@ -767,180 +758,178 @@ def build(free, out):
     ws.protection.autoFilter = False
 
     # ============================================================ المخصص
-    if not free:
-        ws = ws_by[S_PRV]
-        setup(ws, {"A": 34, "B": 20, "C": 16, "D": 22, "E": 3, "F": 36}, NAVY2)
-        banner(ws, "D", "🛡 مخصص الخسائر الائتمانية المتوقعة (IFRS 9 — المدخل المبسّط)", SUBTITLE)
-        nav(ws, list("ABCD"), S_PRV, sheets)
-        for col, t in zip("ABCD", ["الفترة", "الرصيد", "نسبة الخسارة", "المخصص المطلوب"]):
-            hdr(ws, f"{col}4", t)
-        for i in range(NB):
-            r = 5 + i
-            put(ws, f"A{r}", f"=INDEX(tblBuckets[الفترة],{i + 1})", font(10, True), fill(BUCKET_COLORS[i][1]), align(indent=1), BORDER)
-            put(ws, f"B{r}", f"=SUMIFS({T(I, 'المتبقي')},{T(I, 'الفترة')},A{r})", font(10), None, align("center"), BORDER, AMT0)
-            put(ws, f"C{r}", f"=INDEX(tblBuckets[نسبة المخصص],{i + 1})", font(10), None, align("center"), BORDER, "0.0%")
-            put(ws, f"D{r}", f"=ROUND(B{r}*C{r},2)", font(10, True), None, align("center"), BORDER, AMT0)
-        T_ = 5 + NB
-        put(ws, f"A{T_}", "الإجمالي", font(11, True, WHITE), fill(NAVY), align(indent=1), BORDER)
-        put(ws, f"B{T_}", f"=SUM(B5:B{T_ - 1})", font(11, True, WHITE), fill(NAVY), align("center"), BORDER, AMT0)
-        put(ws, f"C{T_}", f"=IFERROR(D{T_}/B{T_},0)", font(11, True, WHITE), fill(NAVY), align("center"), BORDER, "0.0%")
-        put(ws, f"D{T_}", f"=SUM(D5:D{T_ - 1})", font(11, True, WHITE), fill(NAVY), align("center"), BORDER, AMT0)
-        add_name(wb, "ProvRequired", f"'{S_PRV}'!$D${T_}")
-        r = T_ + 2
-        for lab, val, nm in (("المخصص المطلوب", "=ProvRequired", None), ("رصيد المخصص في الدفاتر", "=ProvBalance", None),
-                             ("المطلوب تكوينه (أو ردّه)", "=ProvRequired-ProvBalance", "ProvDiff")):
-            put(ws, f"A{r}", lab, font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-            put(ws, f"B{r}", val, font(11, True, NAVY), None, align("center"), BORDER, AMT)
-            if nm:
-                add_name(wb, nm, f"'{S_PRV}'!$B${r}")
-                put(ws, f"C{r}", '=IF(ROUND(ProvDiff,2)=0,"لا يلزم قيد",IF(ProvDiff>0,"▲ تكوين","▼ رد"))',
-                    font(10, True), None, align("center"), BORDER, merge=f"C{r}:D{r}")
-                ws.conditional_formatting.add(f"B{r}:D{r}", FormulaRule(formula=["ProvDiff>0"], font=Font(color=RED, bold=True)))
-                ws.conditional_formatting.add(f"B{r}:D{r}", FormulaRule(formula=["ProvDiff<0"], font=Font(color=GREEN, bold=True)))
-            r += 1
+    ws = ws_by[S_PRV]
+    setup(ws, {"A": 34, "B": 20, "C": 16, "D": 22, "E": 3, "F": 36}, NAVY2)
+    banner(ws, "D", "🛡 مخصص الخسائر الائتمانية المتوقعة (IFRS 9 — المدخل المبسّط)", SUBTITLE)
+    nav(ws, list("ABCD"), S_PRV, sheets)
+    for col, t in zip("ABCD", ["الفترة", "الرصيد", "نسبة الخسارة", "المخصص المطلوب"]):
+        hdr(ws, f"{col}4", t)
+    for i in range(NB):
+        r = 5 + i
+        put(ws, f"A{r}", f"=INDEX(tblBuckets[الفترة],{i + 1})", font(10, True), fill(BUCKET_COLORS[i][1]), align(indent=1), BORDER)
+        put(ws, f"B{r}", f"=SUMIFS({T(I, 'المتبقي')},{T(I, 'الفترة')},A{r})", font(10), None, align("center"), BORDER, AMT0)
+        put(ws, f"C{r}", f"=INDEX(tblBuckets[نسبة المخصص],{i + 1})", font(10), None, align("center"), BORDER, "0.0%")
+        put(ws, f"D{r}", f"=ROUND(B{r}*C{r},2)", font(10, True), None, align("center"), BORDER, AMT0)
+    T_ = 5 + NB
+    put(ws, f"A{T_}", "الإجمالي", font(11, True, WHITE), fill(NAVY), align(indent=1), BORDER)
+    put(ws, f"B{T_}", f"=SUM(B5:B{T_ - 1})", font(11, True, WHITE), fill(NAVY), align("center"), BORDER, AMT0)
+    put(ws, f"C{T_}", f"=IFERROR(D{T_}/B{T_},0)", font(11, True, WHITE), fill(NAVY), align("center"), BORDER, "0.0%")
+    put(ws, f"D{T_}", f"=SUM(D5:D{T_ - 1})", font(11, True, WHITE), fill(NAVY), align("center"), BORDER, AMT0)
+    add_name(wb, "ProvRequired", f"'{S_PRV}'!$D${T_}")
+    r = T_ + 2
+    for lab, val, nm in (("المخصص المطلوب", "=ProvRequired", None), ("رصيد المخصص في الدفاتر", "=ProvBalance", None),
+                         ("المطلوب تكوينه (أو ردّه)", "=ProvRequired-ProvBalance", "ProvDiff")):
+        put(ws, f"A{r}", lab, font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+        put(ws, f"B{r}", val, font(11, True, NAVY), None, align("center"), BORDER, AMT)
+        if nm:
+            add_name(wb, nm, f"'{S_PRV}'!$B${r}")
+            put(ws, f"C{r}", '=IF(ROUND(ProvDiff,2)=0,"لا يلزم قيد",IF(ProvDiff>0,"▲ تكوين","▼ رد"))',
+                font(10, True), None, align("center"), BORDER, merge=f"C{r}:D{r}")
+            ws.conditional_formatting.add(f"B{r}:D{r}", FormulaRule(formula=["ProvDiff>0"], font=Font(color=RED, bold=True)))
+            ws.conditional_formatting.add(f"B{r}:D{r}", FormulaRule(formula=["ProvDiff<0"], font=Font(color=GREEN, bold=True)))
         r += 1
-        section(ws, f"A{r}", "قيد التسوية (جاهز للترحيل)", f"A{r}:D{r}", NAVY2)
-        r += 1
-        for col, t in zip("ABC", ["الحساب", "مدين", "دائن"]):
-            hdr(ws, f"{col}{r}", t, TEAL)
-        hdr(ws, f"D{r}", "", TEAL)
-        z = 'ROUND(ProvDiff,2)=0'
-        put(ws, f"A{r + 1}", f'=IF({z},"—",IF(ProvDiff>0,"مصروف خسائر ائتمانية متوقعة","مخصص خسائر ائتمانية متوقعة"))',
-            font(10, True), None, align(indent=1), BORDER)
-        put(ws, f"B{r + 1}", f"=IF({z},0,ABS(ProvDiff))", font(10, True), None, align("center"), BORDER, AMT)
-        put(ws, f"C{r + 1}", None, None, None, None, BORDER)
-        put(ws, f"A{r + 2}", f'=IF({z},"—",IF(ProvDiff>0,"مخصص خسائر ائتمانية متوقعة","رد مخصص / إيرادات أخرى"))',
-            font(10, True), None, align(indent=3), BORDER)
-        put(ws, f"B{r + 2}", None, None, None, None, BORDER)
-        put(ws, f"C{r + 2}", f"=IF({z},0,ABS(ProvDiff))", font(10, True), None, align("center"), BORDER, AMT)
-        put(ws, f"A{r + 3}", '="البيان: تسوية مخصص الخسائر الائتمانية المتوقعة عن الفترة المنتهية في "&TEXT(AsOf,"dd/mm/yyyy")',
-            font(10, False, GREY_TXT, True), None, align(wrap=True), BORDER, merge=f"A{r + 3}:D{r + 3}")
-        ws.row_dimensions[r + 3].height = 30
-        put(ws, "F4", "ملاحظات", font(10, True, WHITE), fill(TEAL), align(indent=1))
-        put(ws, "F5", "• الرصيد في كل فترة جاي من عمود «المتبقي» في الفواتير.\n"
-                      "• النسب من جدول الفترات في الإعدادات.\n"
-                      "• الدفعات غير المخصصة مابتدخلش في وعاء المخصص.\n"
-                      "• لو «المطلوب تكوينه» موجب = تكوين مصروف، ولو سالب = رد مخصص.",
-            font(9, False, GREY_TXT), None, align(v="top", wrap=True), merge="F5:F11")
-        ws.freeze_panes = "A5"
-        ws.protection.sheet = True
+    r += 1
+    section(ws, f"A{r}", "قيد التسوية (جاهز للترحيل)", f"A{r}:D{r}", NAVY2)
+    r += 1
+    for col, t in zip("ABC", ["الحساب", "مدين", "دائن"]):
+        hdr(ws, f"{col}{r}", t, TEAL)
+    hdr(ws, f"D{r}", "", TEAL)
+    z = 'ROUND(ProvDiff,2)=0'
+    put(ws, f"A{r + 1}", f'=IF({z},"—",IF(ProvDiff>0,"مصروف خسائر ائتمانية متوقعة","مخصص خسائر ائتمانية متوقعة"))',
+        font(10, True), None, align(indent=1), BORDER)
+    put(ws, f"B{r + 1}", f"=IF({z},0,ABS(ProvDiff))", font(10, True), None, align("center"), BORDER, AMT)
+    put(ws, f"C{r + 1}", None, None, None, None, BORDER)
+    put(ws, f"A{r + 2}", f'=IF({z},"—",IF(ProvDiff>0,"مخصص خسائر ائتمانية متوقعة","رد مخصص / إيرادات أخرى"))',
+        font(10, True), None, align(indent=3), BORDER)
+    put(ws, f"B{r + 2}", None, None, None, None, BORDER)
+    put(ws, f"C{r + 2}", f"=IF({z},0,ABS(ProvDiff))", font(10, True), None, align("center"), BORDER, AMT)
+    put(ws, f"A{r + 3}", '="البيان: تسوية مخصص الخسائر الائتمانية المتوقعة عن الفترة المنتهية في "&TEXT(AsOf,"dd/mm/yyyy")',
+        font(10, False, GREY_TXT, True), None, align(wrap=True), BORDER, merge=f"A{r + 3}:D{r + 3}")
+    ws.row_dimensions[r + 3].height = 30
+    put(ws, "F4", "ملاحظات", font(10, True, WHITE), fill(TEAL), align(indent=1))
+    put(ws, "F5", "• الرصيد في كل فترة جاي من عمود «المتبقي» في الفواتير.\n"
+                  "• النسب من جدول الفترات في الإعدادات.\n"
+                  "• الدفعات غير المخصصة مابتدخلش في وعاء المخصص.\n"
+                  "• لو «المطلوب تكوينه» موجب = تكوين مصروف، ولو سالب = رد مخصص.",
+        font(9, False, GREY_TXT), None, align(v="top", wrap=True), merge="F5:F11")
+    ws.freeze_panes = "A5"
+    ws.protection.sheet = True
 
     # ============================================================ كشف حساب عميل
-    if not free:
-        ws = ws_by[S_ST]
-        setup(ws, {"A": 12, "B": 15, "C": 15, "D": 62, "E": 15, "F": 15, "G": 16, "H": 3, "I": 14, "J": 22,
-                   "L": 6, "M": 6, "N": 6, "O": 6}, NAVY2)
-        put(ws, "A1", "=CompanyName", font(16, True, WHITE), fill(NAVY), align("center"), merge="A1:G1")
-        ws.row_dimensions[1].height = 32
-        put(ws, "A2", '="كشف حساب: "&StName&"   |   كود: "&StCust&IF(StVat<>"","   |   الرقم الضريبي: "&StVat,"")',
-            font(11, True, WHITE), fill(NAVY2), align("center"), merge="A2:G2")
-        ws.row_dimensions[2].height = 24
-        put(ws, "A3", '="عن الفترة من "&TEXT(StFrom,"dd/mm/yyyy")&" إلى "&TEXT(StTo,"dd/mm/yyyy")&"     |     الرصيد الافتتاحي: "'
-                      '&TEXT(StOpen,"#,##0.00")&"     |     الرصيد الختامي: "&TEXT(StClose,"#,##0.00")&" "&Currency',
-            font(10, True, NAVY), fill("D6E4F0"), align("center"), merge="A3:G3")
-        ws.row_dimensions[3].height = 22
-        for col, t in zip("ABCDEFG", ["التاريخ", "النوع", "المرجع", "البيان", "مدين", "دائن", "الرصيد"]):
-            hdr(ws, f"{col}4", t)
-        ws.row_dimensions[4].height = 26
-        # المدخلات (برّه منطقة الطباعة)
-        put(ws, "I1", "📄 اختيارات الكشف", font(11, True, WHITE), fill(TEAL), align("center"), merge="I1:J1")
-        default_cus = "C002"
-        for r, lab, val, fmt in ((2, "كود العميل", default_cus, "@"), (3, "من تاريخ", dt.date(2026, 1, 1), DATE),
-                                 (4, "إلى تاريخ", "=AsOf", DATE)):
-            put(ws, f"I{r}", lab, font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-            put(ws, f"J{r}", val, font(11, True, IN_FONT), fill(IN_BG), align("center"), BORDER, fmt)
-        unlock(ws, "J2:J4")
-        dv_list(ws, "=CustCodes", "J2", "اختار العميل")
-        dv_simple(ws, "date", "J3:J4", "لازم يكون تاريخ", "greaterThan", "36526")
-        put(ws, "I5", "اسم العميل", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-        put(ws, "J5", f'=IFERROR(INDEX({T(C, "اسم العميل")},MATCH(StCust,{T(C, "كود العميل")},0)),"⚠ اختار عميل")',
-            font(10, True, NAVY), None, align(wrap=True), BORDER)
-        put(ws, "I6", "الرقم الضريبي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-        put(ws, "J6", f'=IFERROR(INDEX({T(C, "الرقم الضريبي")},MATCH(StCust,{T(C, "كود العميل")},0))&"","")',
-            font(10), None, align("center"), BORDER)
-        put(ws, "I7", "الرصيد الافتتاحي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-        put(ws, "J7", f'=SUMIFS({T(I, "الإجمالي")},{T(I, "كود العميل")},StCust,{T(I, "تاريخ الفاتورة")},"<"&StFrom)'
-                      f'-SUMIFS({T(Rc, "المبلغ")},{T(Rc, "كود العميل")},StCust,{T(Rc, "التاريخ")},"<"&StFrom)',
-            font(10, True), None, align("center"), BORDER, AMT)
-        put(ws, "I8", "عدد الحركات", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-        put(ws, "J8", f'=COUNT({T(I, "ترتيب الكشف")})+COUNT({T(Rc, "ترتيب الكشف")})', font(10, True), None, align("center"), BORDER, "0")
-        put(ws, "I9", "الرصيد الختامي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-        put(ws, "I11", "💡 الأعمدة من A لـ G بس هي اللي بتتطبع (A4 عرضي).\nاحفظ PDF من File ← Export وابعته على الواتساب.",
-            font(9, False, GREY_TXT, True), None, align(v="top", wrap=True), merge="I11:J14")
-        for nm, ref in (("StCust", "$J$2"), ("StFrom", "$J$3"), ("StTo", "$J$4"), ("StName", "$J$5"), ("StVat", "$J$6"),
-                        ("StOpen", "$J$7"), ("StCount", "$J$8"), ("StClose", "$J$9")):
-            add_name(wb, nm, f"'{S_ST}'!{ref}")
-        # صف الرصيد الافتتاحي
-        S0 = 5
-        put(ws, f"A{S0}", "=StFrom", font(10, True), fill("EEF2F6"), align("center"), BORDER, DATE)
-        put(ws, f"B{S0}", "—", font(10, True), fill("EEF2F6"), align("center"), BORDER)
-        put(ws, f"C{S0}", "—", font(10, True), fill("EEF2F6"), align("center"), BORDER)
-        put(ws, f"D{S0}", "رصيد افتتاحي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
-        put(ws, f"E{S0}", None, None, fill("EEF2F6"), None, BORDER)
-        put(ws, f"F{S0}", None, None, fill("EEF2F6"), None, BORDER)
-        put(ws, f"G{S0}", "=StOpen", font(10, True), fill("EEF2F6"), align("center"), BORDER, AMT)
-        # الحركات + ملخص الأعمار + العبارة (كلها ديناميكية تحت آخر حركة)
-        # أعمدة مساعدة: L = رقم الصف k، M = نوع الصف، N = صف الفاتورة، O = صف التحصيل
-        R0 = S0 + 1
-        R1 = R0 + ST_SLOTS - 1
-        MSG = "يُرجى مطابقة الرصيد وإفادتنا خلال 15 يوماً، وإلا اعتُبر الرصيد صحيحاً."
-        for r in range(R0, R1 + 1):
-            k = r - R0 + 1
-            ws[f"L{r}"] = k
-            ws[f"M{r}"] = (f'=IF(L{r}<=StCount,"m",IF(L{r}=StCount+2,"t",IF(L{r}=StCount+3,"l",IF(L{r}=StCount+4,"v",'
-                           f'IF(L{r}=StCount+6,"p","")))))')
-            ws[f"N{r}"] = f'=IF(M{r}="m",IFERROR(MATCH(L{r},{T(I, "ترتيب الكشف")},0),""),"")'
-            ws[f"O{r}"] = f'=IF(AND(M{r}="m",N{r}=""),IFERROR(MATCH(L{r},{T(Rc, "ترتيب الكشف")},0),""),"")'
-            IN = lambda col: f'INDEX({T(I, col)},$N{r})'
-            RC = lambda col: f'INDEX({T(Rc, col)},$O{r})'
-            BK = lambda i: f'INDEX(tblBuckets[الفترة],{i})'
-            BV = lambda i: f'TEXT(SUMIFS({T(I, "المتبقي")},{T(I, "كود العميل")},StCust,{T(I, "الفترة")},{BK(i)}),"#,##0.00;-#,##0.00;-")'
-            M_ = f"$M{r}"
-            ws[f"A{r}"] = (f'=IF({M_}="m",IF($N{r}<>"",{IN("تاريخ الفاتورة")},{RC("التاريخ")}),'
-                           f'IF({M_}="l",{BK(1)},IF({M_}="v",{BV(1)},"")))')
-            ws[f"B{r}"] = (f'=IF({M_}="m",IF($N{r}<>"","فاتورة",{RC("النوع")}),'
-                           f'IF({M_}="l",{BK(2)},IF({M_}="v",{BV(2)},"")))')
-            ws[f"C{r}"] = (f'=IF({M_}="m",IF($N{r}<>"",{IN("رقم الفاتورة")},{RC("رقم السند")}),'
-                           f'IF({M_}="l",{BK(3)},IF({M_}="v",{BV(3)},"")))')
-            ws[f"D{r}"] = (f'=IF({M_}="m",IF($N{r}<>"","فاتورة مبيعات — استحقاق "&TEXT({IN("تاريخ الاستحقاق")},"dd/mm/yyyy")'
-                           f'&IF({IN("ملاحظات")}&""<>""," — "&{IN("ملاحظات")},""),'
-                           f'{RC("النوع")}&IF({RC("طريقة الدفع")}&""<>""," ("&{RC("طريقة الدفع")}&")","")'
-                           f'&IF({RC("رقم الفاتورة")}&""<>""," — عن فاتورة "&{RC("رقم الفاتورة")}," — دفعة على الحساب")),'
-                           f'IF({M_}="l",{BK(4)},IF({M_}="v",{BV(4)},IF({M_}="t","ملخص أعمار رصيد العميل كما في "&TEXT(AsOf,"dd/mm/yyyy"),'
-                           f'IF({M_}="p","{MSG}","")))))')
-            ws[f"E{r}"] = (f'=IF({M_}="m",IF($N{r}<>"",{IN("الإجمالي")},0),'
-                           f'IF({M_}="l",{BK(5)},IF({M_}="v",{BV(5)},"")))')
-            ws[f"F{r}"] = (f'=IF({M_}="m",IF($O{r}<>"",{RC("المبلغ")},0),'
-                           f'IF({M_}="l",{BK(6)},IF({M_}="v",{BV(6)},"")))')
-            prev = f"G{r - 1}" if r > R0 else f"G{S0}"
-            ws[f"G{r}"] = (f'=IF({M_}="m",N({prev})+E{r}-F{r},'
-                           f'IF({M_}="l",{BK(7)},IF({M_}="v",{BV(7)},"")))')
-            for col in "ABCDEFG":
-                c = ws[f"{col}{r}"]
-                c.font = font(10, col == "G")
-                c.alignment = align("right" if col == "D" else "center", wrap=(col == "D"))
-                c.number_format = {"A": DATE, "B": "General", "C": "General", "D": "General"}.get(col, AMT)
-        put(ws, "J9", f'=G{S0}+SUMIF($M${R0}:$M${R1},"m",$E${R0}:$E${R1})-SUMIF($M${R0}:$M${R1},"m",$F${R0}:$F${R1})',
-            font(11, True, NAVY), None, align("center"), BORDER, AMT)
-        for col in "LMNO":
-            ws.column_dimensions[col].hidden = True
-        RG = f"A{R0}:G{R1}"
-        ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="m"'], border=BORDER))
-        ws.conditional_formatting.add(RG, FormulaRule(formula=[f'AND($M{R0}="m",MOD($L{R0},2)=0)'], fill=fill(ALT)))
-        ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="t"'], font=Font(bold=True, color=NAVY)))
-        ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="l"'], fill=fill(NAVY2), font=Font(bold=True, color=WHITE), border=BORDER))
-        ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="v"'], fill=fill("D6E4F0"), font=Font(bold=True, color=NAVY), border=BORDER,
-                                                      ))
-        ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="p"'], font=Font(bold=True, italic=True, color=RED)))
-        ws.freeze_panes = f"A{S0}"
-        ws.print_title_rows = "1:4"
-        ws.defined_names["_xlnm.Print_Area"] = DefinedName(
-            "_xlnm.Print_Area", localSheetId=sheets.index(S_ST),
-            attr_text=f"OFFSET('{S_ST}'!$A$1,0,0,{R0 - 1}+StCount+6,7)")
-        ws.oddFooter.center.text = MSG
-        ws.oddFooter.left.text = "صفحة &P من &N"
-        ws.oddHeader.right.text = "&D"
-        ws.protection.sheet = True
+    ws = ws_by[S_ST]
+    setup(ws, {"A": 12, "B": 15, "C": 15, "D": 62, "E": 15, "F": 15, "G": 16, "H": 3, "I": 14, "J": 22,
+               "L": 6, "M": 6, "N": 6, "O": 6}, NAVY2)
+    put(ws, "A1", "=CompanyName", font(16, True, WHITE), fill(NAVY), align("center"), merge="A1:G1")
+    ws.row_dimensions[1].height = 32
+    put(ws, "A2", '="كشف حساب: "&StName&"   |   كود: "&StCust&IF(StVat<>"","   |   الرقم الضريبي: "&StVat,"")',
+        font(11, True, WHITE), fill(NAVY2), align("center"), merge="A2:G2")
+    ws.row_dimensions[2].height = 24
+    put(ws, "A3", '="عن الفترة من "&TEXT(StFrom,"dd/mm/yyyy")&" إلى "&TEXT(StTo,"dd/mm/yyyy")&"     |     الرصيد الافتتاحي: "'
+                  '&TEXT(StOpen,"#,##0.00")&"     |     الرصيد الختامي: "&TEXT(StClose,"#,##0.00")&" "&Currency',
+        font(10, True, NAVY), fill("D6E4F0"), align("center"), merge="A3:G3")
+    ws.row_dimensions[3].height = 22
+    for col, t in zip("ABCDEFG", ["التاريخ", "النوع", "المرجع", "البيان", "مدين", "دائن", "الرصيد"]):
+        hdr(ws, f"{col}4", t)
+    ws.row_dimensions[4].height = 26
+    # المدخلات (برّه منطقة الطباعة)
+    put(ws, "I1", "📄 اختيارات الكشف", font(11, True, WHITE), fill(TEAL), align("center"), merge="I1:J1")
+    default_cus = "C002"
+    for r, lab, val, fmt in ((2, "كود العميل", default_cus, "@"), (3, "من تاريخ", dt.date(2026, 1, 1), DATE),
+                             (4, "إلى تاريخ", "=AsOf", DATE)):
+        put(ws, f"I{r}", lab, font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+        put(ws, f"J{r}", val, font(11, True, IN_FONT), fill(IN_BG), align("center"), BORDER, fmt)
+    unlock(ws, "J2:J4")
+    dv_list(ws, "=CustCodes", "J2", "اختار العميل")
+    dv_simple(ws, "date", "J3:J4", "لازم يكون تاريخ", "greaterThan", "36526")
+    put(ws, "I5", "اسم العميل", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+    put(ws, "J5", f'=IFERROR(INDEX({T(C, "اسم العميل")},MATCH(StCust,{T(C, "كود العميل")},0)),"⚠ اختار عميل")',
+        font(10, True, NAVY), None, align(wrap=True), BORDER)
+    put(ws, "I6", "الرقم الضريبي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+    put(ws, "J6", f'=IFERROR(INDEX({T(C, "الرقم الضريبي")},MATCH(StCust,{T(C, "كود العميل")},0))&"","")',
+        font(10), None, align("center"), BORDER)
+    put(ws, "I7", "الرصيد الافتتاحي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+    put(ws, "J7", f'=SUMIFS({T(I, "الإجمالي")},{T(I, "كود العميل")},StCust,{T(I, "تاريخ الفاتورة")},"<"&StFrom)'
+                  f'-SUMIFS({T(Rc, "المبلغ")},{T(Rc, "كود العميل")},StCust,{T(Rc, "التاريخ")},"<"&StFrom)',
+        font(10, True), None, align("center"), BORDER, AMT)
+    put(ws, "I8", "عدد الحركات", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+    put(ws, "J8", f'=COUNT({T(I, "ترتيب الكشف")})+COUNT({T(Rc, "ترتيب الكشف")})', font(10, True), None, align("center"), BORDER, "0")
+    put(ws, "I9", "الرصيد الختامي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+    put(ws, "I11", "💡 الأعمدة من A لـ G بس هي اللي بتتطبع (A4 عرضي).\nاحفظ PDF من File ← Export وابعته على الواتساب.",
+        font(9, False, GREY_TXT, True), None, align(v="top", wrap=True), merge="I11:J14")
+    for nm, ref in (("StCust", "$J$2"), ("StFrom", "$J$3"), ("StTo", "$J$4"), ("StName", "$J$5"), ("StVat", "$J$6"),
+                    ("StOpen", "$J$7"), ("StCount", "$J$8"), ("StClose", "$J$9")):
+        add_name(wb, nm, f"'{S_ST}'!{ref}")
+    # صف الرصيد الافتتاحي
+    S0 = 5
+    put(ws, f"A{S0}", "=StFrom", font(10, True), fill("EEF2F6"), align("center"), BORDER, DATE)
+    put(ws, f"B{S0}", "—", font(10, True), fill("EEF2F6"), align("center"), BORDER)
+    put(ws, f"C{S0}", "—", font(10, True), fill("EEF2F6"), align("center"), BORDER)
+    put(ws, f"D{S0}", "رصيد افتتاحي", font(10, True), fill("EEF2F6"), align(indent=1), BORDER)
+    put(ws, f"E{S0}", None, None, fill("EEF2F6"), None, BORDER)
+    put(ws, f"F{S0}", None, None, fill("EEF2F6"), None, BORDER)
+    put(ws, f"G{S0}", "=StOpen", font(10, True), fill("EEF2F6"), align("center"), BORDER, AMT)
+    # الحركات + ملخص الأعمار + العبارة (كلها ديناميكية تحت آخر حركة)
+    # أعمدة مساعدة: L = رقم الصف k، M = نوع الصف، N = صف الفاتورة، O = صف التحصيل
+    R0 = S0 + 1
+    R1 = R0 + ST_SLOTS - 1
+    MSG = "يُرجى مطابقة الرصيد وإفادتنا خلال 15 يوماً، وإلا اعتُبر الرصيد صحيحاً."
+    for r in range(R0, R1 + 1):
+        k = r - R0 + 1
+        ws[f"L{r}"] = k
+        ws[f"M{r}"] = (f'=IF(L{r}<=StCount,"m",IF(L{r}=StCount+2,"t",IF(L{r}=StCount+3,"l",IF(L{r}=StCount+4,"v",'
+                       f'IF(L{r}=StCount+6,"p","")))))')
+        ws[f"N{r}"] = f'=IF(M{r}="m",IFERROR(MATCH(L{r},{T(I, "ترتيب الكشف")},0),""),"")'
+        ws[f"O{r}"] = f'=IF(AND(M{r}="m",N{r}=""),IFERROR(MATCH(L{r},{T(Rc, "ترتيب الكشف")},0),""),"")'
+        IN = lambda col: f'INDEX({T(I, col)},$N{r})'
+        RC = lambda col: f'INDEX({T(Rc, col)},$O{r})'
+        BK = lambda i: f'INDEX(tblBuckets[الفترة],{i})'
+        BV = lambda i: f'TEXT(SUMIFS({T(I, "المتبقي")},{T(I, "كود العميل")},StCust,{T(I, "الفترة")},{BK(i)}),"#,##0.00;-#,##0.00;-")'
+        M_ = f"$M{r}"
+        ws[f"A{r}"] = (f'=IF({M_}="m",IF($N{r}<>"",{IN("تاريخ الفاتورة")},{RC("التاريخ")}),'
+                       f'IF({M_}="l",{BK(1)},IF({M_}="v",{BV(1)},"")))')
+        ws[f"B{r}"] = (f'=IF({M_}="m",IF($N{r}<>"","فاتورة",{RC("النوع")}),'
+                       f'IF({M_}="l",{BK(2)},IF({M_}="v",{BV(2)},"")))')
+        ws[f"C{r}"] = (f'=IF({M_}="m",IF($N{r}<>"",{IN("رقم الفاتورة")},{RC("رقم السند")}),'
+                       f'IF({M_}="l",{BK(3)},IF({M_}="v",{BV(3)},"")))')
+        ws[f"D{r}"] = (f'=IF({M_}="m",IF($N{r}<>"","فاتورة مبيعات — استحقاق "&TEXT({IN("تاريخ الاستحقاق")},"dd/mm/yyyy")'
+                       f'&IF({IN("ملاحظات")}&""<>""," — "&{IN("ملاحظات")},""),'
+                       f'{RC("النوع")}&IF({RC("طريقة الدفع")}&""<>""," ("&{RC("طريقة الدفع")}&")","")'
+                       f'&IF({RC("رقم الفاتورة")}&""<>""," — عن فاتورة "&{RC("رقم الفاتورة")}," — دفعة على الحساب")),'
+                       f'IF({M_}="l",{BK(4)},IF({M_}="v",{BV(4)},IF({M_}="t","ملخص أعمار رصيد العميل كما في "&TEXT(AsOf,"dd/mm/yyyy"),'
+                       f'IF({M_}="p","{MSG}","")))))')
+        ws[f"E{r}"] = (f'=IF({M_}="m",IF($N{r}<>"",{IN("الإجمالي")},0),'
+                       f'IF({M_}="l",{BK(5)},IF({M_}="v",{BV(5)},"")))')
+        ws[f"F{r}"] = (f'=IF({M_}="m",IF($O{r}<>"",{RC("المبلغ")},0),'
+                       f'IF({M_}="l",{BK(6)},IF({M_}="v",{BV(6)},"")))')
+        prev = f"G{r - 1}" if r > R0 else f"G{S0}"
+        ws[f"G{r}"] = (f'=IF({M_}="m",N({prev})+E{r}-F{r},'
+                       f'IF({M_}="l",{BK(7)},IF({M_}="v",{BV(7)},"")))')
+        for col in "ABCDEFG":
+            c = ws[f"{col}{r}"]
+            c.font = font(10, col == "G")
+            c.alignment = align("right" if col == "D" else "center", wrap=(col == "D"))
+            c.number_format = {"A": DATE, "B": "General", "C": "General", "D": "General"}.get(col, AMT)
+    put(ws, "J9", f'=G{S0}+SUMIF($M${R0}:$M${R1},"m",$E${R0}:$E${R1})-SUMIF($M${R0}:$M${R1},"m",$F${R0}:$F${R1})',
+        font(11, True, NAVY), None, align("center"), BORDER, AMT)
+    for col in "LMNO":
+        ws.column_dimensions[col].hidden = True
+    RG = f"A{R0}:G{R1}"
+    ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="m"'], border=BORDER))
+    ws.conditional_formatting.add(RG, FormulaRule(formula=[f'AND($M{R0}="m",MOD($L{R0},2)=0)'], fill=fill(ALT)))
+    ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="t"'], font=Font(bold=True, color=NAVY)))
+    ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="l"'], fill=fill(NAVY2), font=Font(bold=True, color=WHITE), border=BORDER))
+    ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="v"'], fill=fill("D6E4F0"), font=Font(bold=True, color=NAVY), border=BORDER,
+                                                  ))
+    ws.conditional_formatting.add(RG, FormulaRule(formula=[f'$M{R0}="p"'], font=Font(bold=True, italic=True, color=RED)))
+    ws.freeze_panes = f"A{S0}"
+    ws.print_title_rows = "1:4"
+    ws.defined_names["_xlnm.Print_Area"] = DefinedName(
+        "_xlnm.Print_Area", localSheetId=sheets.index(S_ST),
+        attr_text=f"OFFSET('{S_ST}'!$A$1,0,0,{R0 - 1}+StCount+6,7)")
+    ws.oddFooter.center.text = MSG
+    ws.oddFooter.left.text = "صفحة &P من &N"
+    ws.oddHeader.right.text = "&D"
+    ws.protection.sheet = True
 
     # ============================================================ لوحة التحكم
     ws = ws_by[S_DB]
@@ -956,8 +945,7 @@ def build(free, out):
     card(ws, 5, "H", "I", "متوسط فترة التحصيل DSO (يوم)",
          f'=IFERROR(ARTotal/SUMIFS({T(I, "الإجمالي")},{T(I, "تاريخ الفاتورة")},">"&(AsOf-90),{T(I, "تاريخ الفاتورة")},"<="&AsOf)*90,0)',
          '0" يوم"', TEAL)
-    card(ws, 5, "J", "K", "المخصص المطلوب", "🔒 النسخة الكاملة" if free else "=ProvRequired", "@" if free else AMT0, NAVY2,
-         11 if free else 15)
+    card(ws, 5, "J", "K", "المخصص المطلوب", "=ProvRequired", AMT0, NAVY2)
     card(ws, 5, "L", "M", "عملاء متجاوزين الحد", f'=COUNTIFS({T(C, "استخدام الحد %")},">1")', '0" عميل";;"✓ لا يوجد"', RED)
     ws["H5"].comment = Comment("إجمالي الذمم ÷ مبيعات آخر 90 يوم × 90", "القالب")
     ws.row_dimensions[4].height = 8
@@ -986,99 +974,104 @@ def build(free, out):
         put(ws, f"I{r}", f'=IFERROR(INDEX({T(C, "اسم العميل")},{idx}),"")', font(10), None, align(indent=1), BORDER, merge=f"I{r}:K{r}")
         put(ws, f"L{r}", f'=IFERROR(INDEX({T(C, "المتأخر")},{idx}),0)', font(10, True, RED), None, align("center"), BORDER, AMT0)
         put(ws, f"M{r}", f'=IFERROR(INDEX({T(C, "أقدم فاتورة (يوم)")},{idx}),"")', font(10), None, align("center"), BORDER, DAYS)
-    if not free:
-        ch = BarChart()
-        ch.type, ch.style = "col", 10
-        ch.title = "الذمم حسب الفترة"
-        ch.y_axis.title = None
-        ch.legend = None
-        data = Reference(ws, min_col=5, min_row=10, max_row=9 + NB)
-        cats = Reference(ws, min_col=2, min_row=10, max_row=9 + NB)
-        ch.add_data(data, titles_from_data=False)
-        ch.set_categories(cats)
-        s = ch.series[0]
-        for i, (_, _, dark) in enumerate(BUCKET_COLORS):
-            pt = DataPoint(idx=i)
-            pt.graphicalProperties.solidFill = dark
-            pt.graphicalProperties.line.solidFill = dark
-            s.dPt.append(pt)
-        s.dLbls = DataLabelList()
-        s.dLbls.showVal = True
-        s.dLbls.showSerName = s.dLbls.showCatName = s.dLbls.showLegendKey = False
-        s.dLbls.numFmt = "#,##0"
-        ch.y_axis.numFmt = "#,##0"
-        ch.y_axis.majorGridlines = None
-        ch.x_axis.delete = False
-        ch.y_axis.delete = False
-        ch.gapWidth = 50
-        ch.height, ch.width = 7.5, 15.5
-        ws.add_chart(ch, "B19")
-        ch2 = BarChart()
-        ch2.type, ch2.style = "bar", 10
-        ch2.title = "أعلى 10 عملاء في المتأخر"
-        ch2.legend = None
-        ch2.add_data(Reference(ws, min_col=12, min_row=10, max_row=19), titles_from_data=False)
-        ch2.set_categories(Reference(ws, min_col=9, min_row=10, max_row=19))
-        ch2.series[0].graphicalProperties.solidFill = "C62828"
-        ch2.series[0].graphicalProperties.line.solidFill = "C62828"
-        ch2.x_axis.scaling.orientation = "maxMin"
-        ch2.y_axis.numFmt = "#,##0"
-        ch2.y_axis.majorGridlines = None
-        ch2.x_axis.delete = False
-        ch2.y_axis.delete = False
-        ch2.gapWidth = 40
-        ch2.height, ch2.width = 7.5, 15.5
-        ws.add_chart(ch2, "H21")
-        # قايمة متابعة التحصيل
-        F0 = 37
-        section(ws, f"B{F0}", "📋 قايمة متابعة التحصيل — الفواتير المتأخرة مرتبة بالمتبقي (من الأكبر)", f"B{F0}:M{F0}", NAVY2)
-        heads = [("B", "#", None), ("C", "رقم الفاتورة", None), ("D", "الاستحقاق", None), ("E", "العميل", f"E{F0 + 1}:F{F0 + 1}"),
-                 ("G", "المتبقي", None), ("H", "أيام التأخير", None), ("I", "الجوال", None), ("J", "الإجراء المقترح", f"J{F0 + 1}:M{F0 + 1}")]
-        for col, t, m in heads:
-            hdr(ws, f"{col}{F0 + 1}", t, NAVY, m)
-        for i in range(FU_SLOTS):
-            r = F0 + 2 + i
-            idx = f'MATCH({i + 1},{T(I, "ترتيب المتابعة")},0)'
-            ws[f"P{r}"] = f'=IFERROR({idx},"")'
-            ws.column_dimensions["P"].hidden = True
-            X = lambda col: f'IF($P{r}="","",INDEX({T(I, col)},$P{r}))'
-            put(ws, f"B{r}", f'=IF($P{r}="","",{i + 1})', font(9, color=GREY_TXT), None, align("center"))
-            put(ws, f"C{r}", f"={X('رقم الفاتورة')}", font(10), None, align("center"))
-            put(ws, f"D{r}", f"={X('تاريخ الاستحقاق')}", font(10), None, align("center"), fmt=DATE)
-            put(ws, f"E{r}", f"={X('اسم العميل')}", font(10), None, align(indent=1), merge=f"E{r}:F{r}")
-            put(ws, f"G{r}", f"={X('المتبقي')}", font(10, True), None, align("center"), fmt=AMT0)
-            put(ws, f"H{r}", f"={X('أيام التأخير')}", font(10, True), None, align("center"), fmt=DAYS)
-            put(ws, f"I{r}", f'=IF($P{r}="","",IFERROR(INDEX({T(C, "الجوال")},MATCH(INDEX({T(I, "كود العميل")},$P{r}),{T(C, "كود العميل")},0))&"",""))',
-                font(10), None, align("center"))
-            put(ws, f"J{r}", f'=IF(H{r}="","",IF(H{r}<=30,"📱 تذكير ودي على الواتساب",IF(H{r}<=60,"☎️ اتصال ومتابعة الوعد بالسداد",'
-                             f'IF(H{r}<=90,"✉️ خطاب مطالبة رسمي","⛔ إيقاف التوريد وتصعيد للإدارة أو الإجراء القانوني"))))',
-                font(10, True), None, align(indent=1), merge=f"J{r}:M{r}")
-        FR = f"B{F0 + 2}:M{F0 + 1 + FU_SLOTS}"
-        ws.conditional_formatting.add(FR, FormulaRule(formula=[f'$P{F0 + 2}<>""'], border=BORDER))
-        ws.conditional_formatting.add(FR, FormulaRule(formula=[f'AND($P{F0 + 2}<>"",$H{F0 + 2}>90)'], fill=fill(RED_L), font=Font(color=RED)))
-        ws.conditional_formatting.add(FR, FormulaRule(formula=[f'AND($P{F0 + 2}<>"",$H{F0 + 2}>60)'], fill=fill("FFE0B2")))
-        ws.conditional_formatting.add(FR, FormulaRule(formula=[f'AND($P{F0 + 2}<>"",$H{F0 + 2}>30)'], fill=fill(GOLD_L)))
-        ws.conditional_formatting.add(FR, FormulaRule(formula=[f'$P{F0 + 2}<>""'], fill=fill(GREEN_L)))
-        put(ws, f"B{F0 + 3 + FU_SLOTS}", f'="عدد الفواتير المتأخرة كلها: "&COUNT({T(I, "ترتيب المتابعة")})&" — القايمة بتعرض أكبر {FU_SLOTS} بس"',
-            font(9, False, GREY_TXT, True), None, align(), merge=f"B{F0 + 3 + FU_SLOTS}:M{F0 + 3 + FU_SLOTS}")
-    else:
-        section(ws, "B22", "🔒 متاح في النسخة الكاملة", "B22:M22", GOLD)
-        put(ws, "B23", "• رسمة توزيع الأعمار بألوان الفترات   • رسمة أعلى 10 عملاء في المتأخر\n"
-                       "• قايمة متابعة التحصيل بالإجراء المقترح (واتساب / اتصال / خطاب / إيقاف توريد)\n"
-                       "• مخصص الخسائر الائتمانية المتوقعة وقيد التسوية الجاهز   • كشف حساب العميل جاهز PDF\n"
-                       "• تقرير الأعمار بأي تاريخ سابق   • فترات ونسب قابلة للتعديل   • 500 عميل و5,000 فاتورة",
-            font(10, True, GOLD), fill(GOLD_L), align(v="top", wrap=True), merge="B23:M28")
+    ch = BarChart()
+    ch.type, ch.style = "col", 10
+    ch.title = "الذمم حسب الفترة"
+    ch.y_axis.title = None
+    ch.legend = None
+    data = Reference(ws, min_col=5, min_row=10, max_row=9 + NB)
+    cats = Reference(ws, min_col=2, min_row=10, max_row=9 + NB)
+    ch.add_data(data, titles_from_data=False)
+    ch.set_categories(cats)
+    s = ch.series[0]
+    for i, (_, _, dark) in enumerate(BUCKET_COLORS):
+        pt = DataPoint(idx=i)
+        pt.graphicalProperties.solidFill = dark
+        pt.graphicalProperties.line.solidFill = dark
+        s.dPt.append(pt)
+    s.dLbls = DataLabelList()
+    s.dLbls.showVal = True
+    s.dLbls.showSerName = s.dLbls.showCatName = s.dLbls.showLegendKey = False
+    s.dLbls.numFmt = "#,##0"
+    ch.y_axis.numFmt = "#,##0"
+    ch.y_axis.majorGridlines = None
+    ch.x_axis.delete = False
+    ch.y_axis.delete = False
+    ch.gapWidth = 50
+    ch.height, ch.width = 7.5, 15.5
+    ws.add_chart(ch, "B19")
+    ch2 = BarChart()
+    ch2.type, ch2.style = "bar", 10
+    ch2.title = "أعلى 10 عملاء في المتأخر"
+    ch2.legend = None
+    ch2.add_data(Reference(ws, min_col=12, min_row=10, max_row=19), titles_from_data=False)
+    ch2.set_categories(Reference(ws, min_col=9, min_row=10, max_row=19))
+    ch2.series[0].graphicalProperties.solidFill = "C62828"
+    ch2.series[0].graphicalProperties.line.solidFill = "C62828"
+    ch2.x_axis.scaling.orientation = "maxMin"
+    ch2.y_axis.numFmt = "#,##0"
+    ch2.y_axis.majorGridlines = None
+    ch2.x_axis.delete = False
+    ch2.y_axis.delete = False
+    ch2.gapWidth = 40
+    ch2.height, ch2.width = 7.5, 15.5
+    ws.add_chart(ch2, "H21")
+    # قايمة متابعة التحصيل
+    F0 = 37
+    section(ws, f"B{F0}", "📋 قايمة متابعة التحصيل — الفواتير المتأخرة مرتبة بالمتبقي (من الأكبر)", f"B{F0}:M{F0}", NAVY2)
+    heads = [("B", "#", None), ("C", "رقم الفاتورة", None), ("D", "الاستحقاق", None), ("E", "العميل", f"E{F0 + 1}:F{F0 + 1}"),
+             ("G", "المتبقي", None), ("H", "أيام التأخير", None), ("I", "الجوال", None), ("J", "الإجراء المقترح", f"J{F0 + 1}:M{F0 + 1}")]
+    for col, t, m in heads:
+        hdr(ws, f"{col}{F0 + 1}", t, NAVY, m)
+    for i in range(FU_SLOTS):
+        r = F0 + 2 + i
+        idx = f'MATCH({i + 1},{T(I, "ترتيب المتابعة")},0)'
+        ws[f"P{r}"] = f'=IFERROR({idx},"")'
+        ws.column_dimensions["P"].hidden = True
+        X = lambda col: f'IF($P{r}="","",INDEX({T(I, col)},$P{r}))'
+        put(ws, f"B{r}", f'=IF($P{r}="","",{i + 1})', font(9, color=GREY_TXT), None, align("center"))
+        put(ws, f"C{r}", f"={X('رقم الفاتورة')}", font(10), None, align("center"))
+        put(ws, f"D{r}", f"={X('تاريخ الاستحقاق')}", font(10), None, align("center"), fmt=DATE)
+        put(ws, f"E{r}", f"={X('اسم العميل')}", font(10), None, align(indent=1), merge=f"E{r}:F{r}")
+        put(ws, f"G{r}", f"={X('المتبقي')}", font(10, True), None, align("center"), fmt=AMT0)
+        put(ws, f"H{r}", f"={X('أيام التأخير')}", font(10, True), None, align("center"), fmt=DAYS)
+        put(ws, f"I{r}", f'=IF($P{r}="","",IFERROR(INDEX({T(C, "الجوال")},MATCH(INDEX({T(I, "كود العميل")},$P{r}),{T(C, "كود العميل")},0))&"",""))',
+            font(10), None, align("center"))
+        put(ws, f"J{r}", f'=IF(H{r}="","",IF(H{r}<=30,"📱 تذكير ودي على الواتساب",IF(H{r}<=60,"☎️ اتصال ومتابعة الوعد بالسداد",'
+                         f'IF(H{r}<=90,"✉️ خطاب مطالبة رسمي","⛔ إيقاف التوريد وتصعيد للإدارة أو الإجراء القانوني"))))',
+            font(10, True), None, align(indent=1), merge=f"J{r}:M{r}")
+    FR = f"B{F0 + 2}:M{F0 + 1 + FU_SLOTS}"
+    ws.conditional_formatting.add(FR, FormulaRule(formula=[f'$P{F0 + 2}<>""'], border=BORDER))
+    ws.conditional_formatting.add(FR, FormulaRule(formula=[f'AND($P{F0 + 2}<>"",$H{F0 + 2}>90)'], fill=fill(RED_L), font=Font(color=RED)))
+    ws.conditional_formatting.add(FR, FormulaRule(formula=[f'AND($P{F0 + 2}<>"",$H{F0 + 2}>60)'], fill=fill("FFE0B2")))
+    ws.conditional_formatting.add(FR, FormulaRule(formula=[f'AND($P{F0 + 2}<>"",$H{F0 + 2}>30)'], fill=fill(GOLD_L)))
+    ws.conditional_formatting.add(FR, FormulaRule(formula=[f'$P{F0 + 2}<>""'], fill=fill(GREEN_L)))
+    put(ws, f"B{F0 + 3 + FU_SLOTS}", f'="عدد الفواتير المتأخرة كلها: "&COUNT({T(I, "ترتيب المتابعة")})&" — القايمة بتعرض أكبر {FU_SLOTS} بس"',
+        font(9, False, GREY_TXT, True), None, align(), merge=f"B{F0 + 3 + FU_SLOTS}:M{F0 + 3 + FU_SLOTS}")
     ws.freeze_panes = "A4"
     ws.protection.sheet = True
 
     # ============================================================ التعليمات
     ws = ws_by[S_HELP]
     setup(ws, {"A": 3, "B": 6, "C": 34, "D": 70, "E": 3}, NAVY)
-    banner(ws, "D", "📘 قالب أعمار الديون — " + ("النسخة المجانية" if free else "النسخة الكاملة"),
+    banner(ws, "D", "📘 قالب أعمار الديون — " + ("النسخة التجريبية المجانية" if demo else "النسخة الكاملة"),
            "=CompanyName", first="B")
     nav(ws, [], S_HELP, sheets)
+    top = 4
+    if demo:
+        section(ws, "B4", "🔒 دي نسخة تجريبية للعرض فقط", "B4:D4", GOLD)
+        put(ws, "B5", "• كل التقارير شغالة قدامك بالبيانات التجريبية: تقرير الأعمار، المخصص والقيد، كشف الحساب، ولوحة التحكم.\n"
+                      "• تقدر تجرب فلتر المندوب والمدينة في تقرير الأعمار، وتختار أي عميل في كشف الحساب.\n"
+                      "• الإدخال مقفول: مش هتقدر تضيف عملاءك أو فواتيرك أو تحصيلاتك، ولا تغيّر تاريخ التقرير أو الفترات ونسب المخصص.\n"
+                      "• المعادلات مخفية والملف مقفول.\n"
+                      "• النسخة الكاملة: إدخال مفتوح لـ 500 عميل و5,000 فاتورة، تقرير بأي تاريخ سابق، فترات ونسب قابلة للتعديل، ومن غير باسورد.",
+            font(10, True, GOLD), fill(GOLD_L), align(v="top", wrap=True), merge="B5:D9")
+        c = put(ws, "B10", "🛒  لشراء النسخة الكاملة اضغط هنا  ◄  accopro.net", font(14, True, WHITE), fill(GREEN),
+                align("center"), merge="B10:D11")
+        c.hyperlink = STORE_URL
+        top = 13
     for i, (t, s, c) in enumerate([n for n in NAV_ALL if n[1] in sheets and n[1] != S_HELP]):
-        r = 4 + i
+        r = top + i
         button(ws, f"C{r}", t, s, c)
         put(ws, f"D{r}", {S_SET: "اسم الشركة، تاريخ التقرير، الفترات ونسب المخصص، المندوبين والمدن",
                           S_CUS: "بيانات العملاء وحد الائتمان ومدة السداد + الرصيد والمتأخر أوتوماتيك",
@@ -1089,14 +1082,14 @@ def build(free, out):
                           S_ST: "كشف حساب عميل برصيد متراكم وملخص أعمار — جاهز PDF",
                           S_DB: "المؤشرات والرسومات وقايمة متابعة التحصيل"}[s],
             font(10, False, GREY_TXT), None, align(indent=1))
-    r = 5 + len(sheets)
-    section(ws, f"B{r}", "5 خطوات وتبدأ", f"B{r}:D{r}")
+    r = top + 1 + len(sheets)
+    section(ws, f"B{r}", "5 خطوات وتبدأ" + (" (في النسخة الكاملة)" if demo else ""), f"B{r}:D{r}")
     steps = [("الإعدادات", "اكتب اسم الشركة والعملة ونسبة الضريبة ومدة السداد الافتراضية، وراجع جدول الفترات ونسب المخصص."),
              ("العملاء", "امسح البيانات التجريبية ودخّل عملاءك (كود مميز لكل عميل). المندوب والمدينة من القوائم."),
              ("الفواتير", "رقم الفاتورة + التاريخ + كود العميل + المبلغ قبل الضريبة بس. اكتب في أول صف فاضي تحت الجدول وهو هيكبر لوحده."),
              ("التحصيلات", "كل سند مربوط برقم الفاتورة. لو دفعة على الحساب سيب رقم الفاتورة فاضي. راجع عمود «فحص»."),
              ("غيّر تاريخ التقرير", "من الإعدادات (C5): حط آخر يوم في الشهر، وكل التقارير تطلع كما في التاريخ ده بالظبط."
-              if not free else "في النسخة المجانية التاريخ = النهارده. التقرير بأي تاريخ سابق في النسخة الكاملة.")]
+)]
     for i, (t, d) in enumerate(steps):
         rr = r + 1 + i
         put(ws, f"B{rr}", i + 1, font(14, True, WHITE), fill(TEAL), align("center"), BORDER)
@@ -1131,7 +1124,7 @@ def build(free, out):
              "المحصّل والمتبقي مربوطين بتاريخ التقرير: الفواتير والتحصيلات اللي بعده مابتدخلش في الحساب.",
              "مابيستخدمش ماكرو ولا دوال Spill — شغال على Excel 2010 وما بعده و Excel 365 و Google Sheets والموبايل.",
              "الباسورد: مفيش. الشيتات مقفولة من غير باسورد عشان تحميك من المسح بالغلط بس."
-             if not free else "الإعدادات مقفولة في النسخة المجانية. الشيتات التانية مقفولة من غير باسورد."]
+             if not demo else "النسخة التجريبية مقفولة بالكامل وفيها بيانات تجريبية بس. النسخة الكاملة مفتوحة للإدخال ومن غير باسورد."]
     for i, d in enumerate(notes):
         rr = r + 1 + i
         put(ws, f"B{rr}", "•", font(12, True, TEAL), None, align("center"))
@@ -1149,10 +1142,47 @@ def build(free, out):
     ws.freeze_panes = "A4"
     ws.protection.sheet = True
 
+    if demo:
+        lock_demo(wb, ws_by)
     wb.calculation.fullCalcOnLoad = True
     wb.active = sheets.index(S_HELP)
     wb.save(out)
     return exp
+
+
+def lock_demo(wb, ws_by):
+    """النسخة المجانية = نفس النسخة الكاملة بالظبط، بس مقفولة بباسورد والمعادلات مخفية ولينك الشراء في كل شيت"""
+    allowed = {S_AGE: ["A5", "C5"], S_ST: ["J2", "J3", "J4"]}   # الحاجات اللي العميل يقدر يجربها
+    for name, ws in ws_by.items():
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=ws.max_column):
+            for c in row:
+                is_f = isinstance(c.value, str) and c.value.startswith("=")
+                c.protection = Protection(locked=True, hidden=is_f)
+        for ref in allowed.get(name, []):
+            ws[ref].protection = Protection(locked=False)
+        ws.protection.sheet = True
+        ws.protection.password = DEMO_PASSWORD
+        ws.protection.selectUnlockedCells = False
+        ws.protection.selectLockedCells = False
+        ws.oddHeader.center.text = "نسخة تجريبية — النسخة الكاملة: accopro.net"
+        # صف 2 = لينك الشراء (ماعدا كشف الحساب لأن صف 2 فيه بيانات العميل)
+        if name != S_ST:
+            anchor = "B2" if name == S_HELP else "A2"
+            c = ws[anchor]
+            c.value = PROMO
+            c.hyperlink = STORE_URL
+            c.font = font(11, True, WHITE)
+            for m in ws.merged_cells.ranges:
+                if anchor in m:
+                    style(ws, m.coord, fl=fill(GREEN))
+            ws.row_dimensions[2].height = 24
+    ws = ws_by[S_ST]
+    c = put(ws, "I16", "🛒 لشراء النسخة الكاملة اضغط هنا\naccopro.net", font(12, True, WHITE), fill(GREEN),
+            align("center", wrap=True), merge="I16:J19")
+    c.hyperlink = STORE_URL
+    put(ws, "I20", "في النسخة الكاملة تقدر تطبع كشف حساب لعملاءك الحقيقيين.", font(9, False, GREY_TXT, True), None,
+        align(wrap=True), merge="I20:J21")
+    wb.security = WorkbookProtection(workbookPassword=DEMO_PASSWORD, lockStructure=True)
 
 
 if __name__ == "__main__":
