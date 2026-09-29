@@ -5,6 +5,8 @@
 ينتج: HR_Payroll_Provisions_System.xlsx
 """
 import datetime as dt
+import os
+import sys
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -16,7 +18,17 @@ from openpyxl.chart.label import DataLabelList
 from openpyxl.comments import Comment
 from openpyxl.utils import get_column_letter as CL, column_index_from_string as CI
 
-OUT = "HR_Payroll_Provisions_System.xlsx"
+FULL_OUT = "HR_Payroll_Provisions_System.xlsx"
+DEMO_OUT = "HR_Payroll_Free_Demo.xlsx"
+DEMO = "--demo" in sys.argv          # python build_hr_payroll_system.py --demo  ← النسخة المجانية
+OUT = DEMO_OUT if DEMO else FULL_OUT
+BUY_URL = "https://accopro.net/"
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "AccoPro@2026")
+TRIAL_EMP, TRIAL_REG, TRIAL_MOV = 5, 10, 20   # خانات التجربة المفتوحة في النسخة المجانية
+# خطوات البناء:
+#   python build_hr_payroll_system.py                  ← النسخة الكاملة ثم أعد احتسابها (recalc)
+#   python build_hr_payroll_system.py --demo           ← النسخة التجريبية ثم أعد احتسابها
+#   python build_hr_payroll_system.py --finalize-demo  ← إعادة قفل هيكل المصنف بعد إعادة الاحتساب
 
 # ---------------------------------------------------------------- الألوان والتنسيقات
 FONT = "Arial"
@@ -1553,6 +1565,173 @@ for i, (q, a) in enumerate(EX):
 note(ws, "B36", "البيانات الحالية (12 موظفاً وإجازاتهم وحركاتهم) أمثلة توضيحية لإظهار طريقة العمل — امسح خلايا الإدخال الصفراء في «الموظفون» و«سجل الإجازات» و«الحركات الشهرية» وأدخل بياناتك. "
      "يستوعب الملف 100 موظف و500 إجازة و1,000 حركة. الأحكام مبنية على نظام العمل السعودي (المواد 84، 85، 98، 107، 109، 113، 116، 117) ونظام التأمينات الاجتماعية، وجميع النسب والرسوم قابلة للتعديل من الإعدادات.",
      "B36:G36", 50)
+
+
+
+# ================================================================ النسخة المجانية (عرض فقط)
+def apply_demo(wb):
+    """يحوّل الملف إلى نسخة عرض: نتائج بدون معادلات + خلايا مقفلة + إعلان النسخة الكاملة."""
+    from openpyxl import load_workbook
+    from openpyxl.cell.cell import MergedCell
+    from openpyxl.styles import Protection
+    from openpyxl.workbook.protection import WorkbookProtection
+
+    if not os.path.exists(FULL_OUT):
+        sys.exit(f"أنشئ النسخة الكاملة وأعد احتسابها أولاً: {FULL_OUT}")
+    cached = load_workbook(FULL_OUT, data_only=True)
+
+    # 1) إخفاء المعادلات من شريط الصيغة + قفل كل الخلايا، وفتح خانات التجربة فقط
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for c in row:
+                if not isinstance(c, MergedCell) and isinstance(c.value, str) and c.value.startswith("="):
+                    c.protection = Protection(locked=True, hidden=True)
+    LOCKED_FILL, LOCKED_FONT = fill("ECEFF1"), font(10, False, "90A4AE")
+
+    def open_cells(ws, cols, r0, r1, trial_rows, max_row):
+        for r in range(r0, max_row + 1):
+            for col in cols:
+                c = ws[f"{col}{r}"]
+                if r < r0 + trial_rows:
+                    c.protection = Protection(locked=False)
+                else:
+                    c.fill, c.font = LOCKED_FILL, LOCKED_FONT
+
+    emp_in = [EC[k] for k, _, _, kd, _ in EMP_COLS if kd == "in"]
+    open_cells(ws_emp, emp_in, E0, E1, TRIAL_EMP, E1)
+    open_cells(ws_reg, [c for c, _, _, kd, _ in REG_COLS if kd == "in"], G0, G1, TRIAL_REG, G1)
+    open_cells(ws_mov, [c for c, _, _, kd, _ in MOV_COLS if kd == "in"], M0, M1, TRIAL_MOV, M1)
+    ws_set["C9"].protection = Protection(locked=False)
+    for ws, ref, txt in ((ws_emp, "A4", f"🧪 خانات التجربة: أول {TRIAL_EMP} موظفين (الخلايا الصفراء) — باقي الصفوف مقفلة في النسخة المجانية"),
+                         (ws_reg, "A4", f"🧪 خانات التجربة: أول {TRIAL_REG} سجلات — للمزيد اشترِ النسخة الكاملة"),
+                         (ws_mov, "A4", f"🧪 خانات التجربة: أول {TRIAL_MOV} حركة — للمزيد اشترِ النسخة الكاملة")):
+        put(ws, ref, txt, font(10, True, "E65100"), fill("FFF3E0"), align(), merge=f"A4:G4")
+        ws.row_dimensions[4].height = 20
+    # الإعدادات: كل القيم مقفلة ما عدا شهر التقرير
+    for r in range(6, 50):
+        c = ws_set[f"C{r}"]
+        if r != 9 and c.fill is not None and c.fill.start_color.rgb in ("00" + INPUT, "FF" + INPUT, INPUT):
+            c.fill, c.font = LOCKED_FILL, font(11, True, "90A4AE")
+    put(ws_set, "E9", "🧪", font(12), None, align("center"))
+
+    # 2) إخفاء الأعمدة المساعدة التي تكشف منطق الاحتساب
+    for ws in ws_months:
+        for c in ["AH", "AI", "AJ", "AK", "AL", "AM", "AN"]:
+            ws.column_dimensions[c].hidden = True
+    for c in ["R", "S", "T", "U"] + REG_A + REG_B + REG_C:
+        ws_reg.column_dimensions[c].hidden = True
+
+    # 3) شريط الإعلان في رأس كل ورقة + ترويسة الطباعة
+    promo = "🛒 نسخة تجريبية — للنسخة الكاملة اضغط هنا ← accopro.net"
+    for ws in wb.worksheets:
+        for mr in ws.merged_cells.ranges:
+            if mr.min_row == 1 and mr.max_row == 1:
+                a = ws.cell(1, mr.min_col)
+                v = str(a.value or "")
+                a.value = v + '&"   🔒 نسخة تجريبية"' if v.startswith("=") else v + "   🔒 نسخة تجريبية"
+            if mr.min_row == 2 and mr.max_row == 2:
+                a = ws.cell(2, mr.min_col)
+                v = str(a.value or "")
+                a.value = f'="{promo}   |   "&' + v[1:] if v.startswith("=") else promo
+                a.font = font(11, True, "FFD54F")
+                a.hyperlink = BUY_URL
+        ws.oddHeader.center.text = "نسخة تجريبية — النسخة الكاملة: accopro.net"
+        ws.oddFooter.center.text = "AccoPro — https://accopro.net"
+
+    def buy_button(ws, ref, text, merge=None, size=11):
+        c = put(ws, ref, text, font(size, True, "FFFFFF"), fill("E65100"), align("center", wrap=True),
+                Border(bottom=Side("medium", "BF360C")), merge=merge)
+        c.hyperlink = BUY_URL
+        return c
+
+    buy_button(ws_home, "B3", "🛒 نسخة تجريبية كاملة الوظائف بخانات محدودة — اشترِ النسخة الكاملة من accopro.net (اضغط هنا)", "B3:G3")
+    ws_dash["M3"].hyperlink = None
+    buy_button(ws_dash, "M3", "🛒 اشترِ الكاملة")
+
+    # 4) ورقة «النسخة الكاملة»
+    ws = wb.create_sheet("🛒 النسخة الكاملة", 1)
+    setup(ws, {"A": 2, "B": 46, "C": 24, "D": 24, "E": 2}, "E65100")
+    put(ws, "B1", "🛒 احصل على النسخة الكاملة من نظام الرواتب والمخصصات", font(18, True, "FFFFFF"), fill(NAVY),
+        align("center"), merge="B1:D1")
+    ws.row_dimensions[1].height = 40
+    put(ws, "B2", f"النسخة التجريبية تعمل بكامل المعادلات والتقارير، لكن الخلايا مقفلة ما عدا خانات التجربة: {TRIAL_EMP} موظفين، {TRIAL_REG} إجازات، {TRIAL_MOV} حركة، وشهر التقرير.",
+        font(10, False, "FFFFFF", True), fill(NAVY2), align("center", wrap=True), merge="B2:D2")
+    ws.row_dimensions[2].height = 30
+    buy_button(ws, "B4", "🛒 اضغط هنا لشراء النسخة الكاملة ← https://accopro.net/", "B4:D5", 16)
+    ws.row_dimensions[4].height = 30
+    ws.row_dimensions[5].height = 30
+    headers(ws, 7, [("B", "الميزة"), ("C", "النسخة المجانية"), ("D", "النسخة الكاملة")], NAVY, 28)
+    FEATS = [
+        ("مسير رواتب 12 شهراً بكل المعادلات", "✔ يعمل", "✔ يعمل"),
+        ("عدد الموظفين القابل للإدخال والتعديل", f"🧪 {TRIAL_EMP} موظفين", "✔ حتى 100 موظف"),
+        ("سجل الإجازات والإيقاف ووقف الراتب بالتواريخ", f"🧪 {TRIAL_REG} سجلات", "✔ حتى 500 سجل"),
+        ("الحركات الشهرية (غياب، إضافي، سلف، مكافآت...)", f"🧪 {TRIAL_MOV} حركة", "✔ حتى 1,000 حركة"),
+        ("الإقامات ورخص العمل وتكلفتها وتنبيهات الانتهاء", "✔ يعمل", "✔ يعمل"),
+        ("مخصصات نهاية الخدمة والإجازات والتذاكر", "✔ يعمل", "✔ يعمل"),
+        ("القيود المحاسبية الشهرية ولوحة التحكم", "✔ يعمل", "✔ يعمل"),
+        ("قسيمة الراتب لأي موظف وأي شهر", "✔ يعمل", "✔ يعمل"),
+        ("تغيير شهر التقرير", "✔ متاح", "✔ متاح"),
+        ("تعديل اسم المنشأة والسنة والنسب والرسوم وأنواع الإجازات", "✖ مقفل", "✔"),
+        ("رؤية المعادلات وتعديلها وتخصيص الملف", "✖ مخفية ومقفلة", "✔ مفتوحة بالكامل"),
+        ("إضافة أوراق أو أعمدة أو صفوف", "✖ مقفل", "✔"),
+        ("الدعم الفني والتحديثات", "✖", "✔"),
+    ]
+    for i, (f_, a_, b_) in enumerate(FEATS):
+        a_ = a_
+        r = 8 + i
+        put(ws, f"B{r}", f_, font(10, True), fill(ALT if i % 2 else CARD_BG), align(wrap=True), BORDER)
+        put(ws, f"C{r}", a_, font(10, True, RED if "✖" in a_ else GREY_TXT), fill(RED_L if "✖" in a_ else CARD_BG),
+            align("center"), BORDER)
+        put(ws, f"D{r}", b_, font(10, True, GREEN), fill(GREEN_L), align("center"), BORDER)
+        ws.row_dimensions[r].height = 24
+    r = 8 + len(FEATS) + 1
+    buy_button(ws, f"B{r}", "🛒 اشترِ الآن من accopro.net", f"B{r}:D{r+1}", 14)
+    button(ws, f"B{r+3}", "🏠 العودة إلى الرئيسية", S_HOME, NAVY, merge=f"B{r+3}:D{r+3}")
+    ws.sheet_view.showGridLines = False
+
+    # 5) قفل كل الأوراق — المفتوح فقط: اختيار الشهر والموظف في قسيمة الراتب
+    for c in ("C5", "F5"):
+        ws_slip[c].protection = Protection(locked=False)
+    for ws in wb.worksheets:
+        p = ws.protection
+        p.sheet = True
+        p.password = DEMO_PASSWORD
+        p.selectLockedCells = False      # يسمح بالتنقل والضغط على الأزرار
+        p.selectUnlockedCells = False
+        p.formatCells = p.formatColumns = p.formatRows = True
+        p.insertColumns = p.insertRows = p.insertHyperlinks = True
+        p.deleteColumns = p.deleteRows = p.sort = p.autoFilter = p.pivotTables = p.objects = p.scenarios = True
+    wb.security = WorkbookProtection(workbookPassword=DEMO_PASSWORD, lockStructure=True)
+    wb.properties.title = "نظام الرواتب والمخصصات — نسخة تجريبية"
+    wb.properties.creator = "AccoPro — accopro.net"
+
+
+def finalize_demo(path=DEMO_OUT):
+    """بعد إعادة الاحتساب بـ LibreOffice: إعادة قفل هيكل المصنف (LibreOffice يُسقطه عند الحفظ)."""
+    import re
+    import shutil
+    import zipfile
+    from openpyxl.utils.protection import hash_password
+    tag = f'<workbookProtection workbookPassword="{hash_password(DEMO_PASSWORD)}" lockStructure="1"/>'
+    tmp = path + ".tmp"
+    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "xl/workbook.xml":
+                xml = re.sub(r"<workbookProtection[^>]*/>", "", data.decode("utf-8"))
+                xml = xml.replace("<bookViews>", tag + "<bookViews>", 1)
+                data = xml.encode("utf-8")
+            zout.writestr(item, data)
+    shutil.move(tmp, path)
+    print("structure locked:", path)
+
+
+if DEMO:
+    apply_demo(wb)
+
+if "--finalize-demo" in sys.argv:
+    finalize_demo()
+    sys.exit(0)
 
 wb.active = 0
 for s in wb.worksheets:
