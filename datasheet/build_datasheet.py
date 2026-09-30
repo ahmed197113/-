@@ -103,7 +103,7 @@ def build_content(buf):
     st = []
     st.append(Paragraph("TECHNICAL DATA SHEET", s["kicker"]))
     st.append(Spacer(1, 3))
-    st.append(Paragraph("Square Hollow Section (SHS) &mdash; 200 &times; 200 &times; 3 mm", s["title"]))
+    st.append(Paragraph("Square Hollow Section (SHS) &mdash; 200 mm &times; 200 mm &times; 3 mm", s["title"]))
     st.append(Spacer(1, 8))
     st.append(Paragraph(
         "<b>Description:</b> Cold-formed or hot-finished structural steel square tube with a "
@@ -119,10 +119,10 @@ def build_content(buf):
             ["Outer Width &times; Height", "200 mm &times; 200 mm", "7.874 in &times; 7.874 in"],
             ["Wall Thickness (t)", "3.0 mm", "0.118 in (approx. 11 Gauge)"],
             ["Nominal Mass per Meter", "~18.3 kg/m", "~12.3 lbs/ft"],
-            ["Cross-Sectional Area (A)", "23.3 cm<super>2</super>", "3.61 in<super>2</super>"],
-            ["Moment of Inertia (I<sub>x</sub> / I<sub>y</sub>)", "1480 cm<super>4</super>",
-             "35.56 in<super>4</super>"],
-            ["Section Modulus (W<sub>el</sub>)", "148 cm<super>3</super>", "9.03 in<super>3</super>"],
+            ["Cross-Sectional Area (A)", "23.3 cm\u00b2", "3.61 in\u00b2"],
+            ["Moment of Inertia (I_x / I_y)", "1480 cm<super rise='2.6' size='6.2'>4</super>",
+             "35.56 in<super rise='2.6' size='6.2'>4</super>"],
+            ["Section Modulus (W_el)", "148 cm\u00b3", "9.03 in\u00b3"],
             ["Radius of Gyration (i)", "7.96 cm", "3.13 in"],
         ], [0.40, 0.28, 0.32], s))
 
@@ -146,16 +146,16 @@ def build_content(buf):
     st.append(KeepTogether([
         section_heading("3. Mechanical &amp; Chemical Characteristics (Typical)", s),
         Spacer(1, 2),
-        Paragraph("Values below reflect common high-strength variations "
+        Paragraph("Values mapped below reflect common high-strength variations "
                   "(e.g., S355J2H or ASTM A500 Grade C):", s["body"]),
         Spacer(1, 5),
         data_table(
             ["Property Description", "Typical Limit (Metric)", "Typical Limit (Imperial)"],
             [
-                ["Minimum Yield Strength (R<sub>e</sub>)", "355 MPa", "51,500 psi"],
-                ["Ultimate Tensile Strength (R<sub>m</sub>)", "470 &ndash; 630 MPa",
+                ["Minimum Yield Strength (R_e)", "355 MPa", "51,500 psi"],
+                ["Ultimate Tensile Strength (R_m)", "470 &ndash; 630 MPa",
                  "68,000 &ndash; 91,300 psi"],
-                ["Minimum Elongation (A<sub>5</sub>)", "20%", "20%"],
+                ["Minimum Elongation (A_5)", "20%", "20%"],
                 ["Carbon Equivalent Value (CEV max)", "0.45%", "0.45%"],
             ], [0.44, 0.28, 0.28], s),
     ]))
@@ -169,38 +169,10 @@ def build_content(buf):
                                     "Hot-Dip Galvanized (HDG), or mill varnished priming."),
     ]
     st.append(KeepTogether(
-        [section_heading("4. Standard Tolerances &amp; Surface Options", s), Spacer(1, 4)]
+        [section_heading("4. Standard Tolerances &amp; Surface Customization Options", s), Spacer(1, 4)]
         + [Paragraph(f"<b>{k}</b> {v}", s["bullet"], bulletText="•") for k, v in bullets]
     ))
 
-    st.append(section_heading("5. Notes", s))
-    st.append(Spacer(1, 4))
-    for note in [
-        "All values are nominal and given for guidance; actual properties depend on the "
-        "applicable standard, grade and mill certificate supplied with each delivery.",
-        "Specifications are subject to change without prior notice.",
-    ]:
-        st.append(Paragraph(note, s["bullet"], bulletText="•"))
-
-    st.append(Spacer(1, 28))
-    body_w = PAGE_W - 2 * MARGIN_X
-    lbl = ParagraphStyle("lbl", parent=s["cellb"], textColor=NAVY)
-    sign = Table(
-        [[Paragraph("Prepared by", lbl), Paragraph("Approved by", lbl),
-          Paragraph("Company Stamp", lbl)],
-         ["", "", ""],
-         [Paragraph("Name / Date", s["cell"]), Paragraph("Name / Date", s["cell"]), ""]],
-        colWidths=[body_w / 3] * 3, rowHeights=[20, 62, 18])
-    sign.setStyle(TableStyle([
-        ("BOX", (0, 0), (-1, -1), 0.8, GRID),
-        ("INNERGRID", (0, 0), (-1, -1), 0.5, GRID),
-        ("BACKGROUND", (0, 0), (-1, 0), SAND),
-        ("LINEBELOW", (0, 0), (-1, 0), 1.2, COPPER),
-        ("SPAN", (2, 1), (2, 2)),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 7),
-    ]))
-    st.append(sign)
 
     def footer(canvas, doc_):
         canvas.saveState()
@@ -210,8 +182,8 @@ def build_content(buf):
         canvas.setStrokeColor(GRID)
         canvas.setLineWidth(0.5)
         canvas.line(MARGIN_X, y + 10, PAGE_W - MARGIN_X, y + 10)
-        canvas.drawString(MARGIN_X, y, "TECHNICAL DATA SHEET — SHS 200 × 200 × 3 mm  |  "
-                                       "CONFIDENTIAL & PROPRIETARY")
+        canvas.drawString(MARGIN_X, y, "CONFIDENTIAL & PROPRIETARY | STANDARD SPECIFICATION DATA")
+        canvas.drawRightString(PAGE_W - MARGIN_X, PAGE_H - 114, "TECHNICAL DATA SHEET \u2014 SQUARE HOLLOW SECTION")
         canvas.drawRightString(PAGE_W - MARGIN_X, y, f"Page {doc_.page} of {{NP}}")
         canvas.restoreState()
 
