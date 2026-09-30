@@ -1,11 +1,12 @@
 """Build the Metal Lines Co. product document on the company letterhead.
 
-Source order (as numbered by the client):
-  1. SeCTA Element Pole EB723122 (3 pages, Canva) - supplier branding and contact
-     details are removed; every product text, image and drawing is kept.
+Page order:
+  0. SHS 200x200x3 data sheet (2 pages) - content from build_datasheet.py.
+  1. Element Pole EB723122 (3 pages, Canva) - supplier branding, contact details and
+     company names are removed; every product text, image and drawing is kept.
   2. Pole elevation drawing with dimensions (1 page) - placed as is.
-  3. Philips UNILinear Flex BGC401 datasheet (2 pages) - typeset on the letterhead
-     with its text unchanged.
+  3. UNILinear Flex BGC401 LED strip datasheet (2 pages) - typeset on the letterhead
+     with its text unchanged apart from the manufacturer's name.
 
 Each page is flattened at 300 DPI with the letterhead (its faint centre logo is the
 watermark) and the PDF is AES-256 encrypted, print-only.
@@ -25,7 +26,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (Image as RLImage, PageBreak, Paragraph,
                                 SimpleDocTemplate, Spacer)
 
-from build_datasheet import (DPI, MARGIN_X, PAGE_H, PAGE_W,
+from build_datasheet import (DPI, MARGIN_X, PAGE_H, PAGE_W, datasheet_marks, datasheet_story,
                              composite_page, data_table, section_heading, styles)
 
 MARGIN_TOP = 122
@@ -111,12 +112,12 @@ def file3_story(s):
     body = ParagraphStyle("b3", parent=s["body"])
     title = ParagraphStyle("t3", parent=s["title"], fontSize=18, leading=22)
     st = [
-        Paragraph("PHILIPS UNILinear Flex LED Strip Light", title),
+        Paragraph("UNILinear Flex LED Strip Light", title),
         Spacer(1, 6),
         Paragraph("<b>Model:</b> BGC401 400LM 10W 3000K L5 0612 S G", body),
         Spacer(1, 6),
         Paragraph(
-            "The Philips UNILinear Flex BGC401 is a professional-grade, highly durable "
+            "The UNILinear Flex BGC401 is a professional-grade, highly durable "
             "waterproof and dustproof LED strip light. Designed specifically for outdoor "
             "architectural decoration, cove lighting, and path guidance, it utilizes advanced "
             "anti-UV polyurethane irrigation sealing glue technology to preserve pristine color "
@@ -157,16 +158,17 @@ def file3_story(s):
 
 def build_content(buf, f1, f2):
     s = styles()
-    kicker = ParagraphStyle("k", parent=s["kicker"], fontSize=10)
     title = ParagraphStyle("t", parent=s["title"], fontSize=19, leading=22)
     title_block_h = 44
-    st = []
+    # Old file: SHS 200x200x3 data sheet, then the client files in order
+    st = datasheet_story(s)
+    st.append(PageBreak())
+    shs_pages = 2
 
     # File 1: cleaned supplier pages
     for i, cfg in enumerate(FILE1_PAGES):
         page = f1[i]
         clean_file1_page(page, cfg)
-        st.append(Paragraph("SeCTA", kicker))
         st.append(Paragraph(f"{cfg['title']} &nbsp;<font color='#B4683E'>EB723122</font>", title))
         st.append(Spacer(1, 8))
         buf_img, w, h = render_crop(page, cfg["crop"])
@@ -179,7 +181,7 @@ def build_content(buf, f1, f2):
     st.append(fit_image(buf_img, w, h, BODY_W, BODY_H - 30))
     st.append(PageBreak())
 
-    # File 3: Philips datasheet
+    # File 3: LED strip datasheet
     st.extend(file3_story(s))
 
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=MARGIN_X, rightMargin=MARGIN_X,
@@ -191,6 +193,8 @@ def build_content(buf, f1, f2):
         canvas.setFillColor(colors.HexColor("#6B6B6B"))
         canvas.drawRightString(PAGE_W - MARGIN_X, MARGIN_BOTTOM - 16,
                                f"Page {doc_.page} of {{NP}}")
+        if doc_.page <= shs_pages:
+            datasheet_marks(canvas, MARGIN_BOTTOM + 6)
         canvas.restoreState()
 
     doc.build(st, onFirstPage=footer, onLaterPages=footer)

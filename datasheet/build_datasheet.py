@@ -19,7 +19,6 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import mm
 from reportlab.platypus import (KeepTogether, PageBreak, Paragraph,
                                 SimpleDocTemplate, Spacer, Table, TableStyle)
 
@@ -94,12 +93,8 @@ def data_table(header, rows, widths, s):
     return t
 
 
-def build_content(buf):
-    s = styles()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=MARGIN_X, rightMargin=MARGIN_X,
-                            topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM,
-                            title="Technical Data Sheet - SHS 200x200x3",
-                            author="Metal Lines Co.")
+def datasheet_story(s):
+    """SHS 200x200x3 data sheet content, identical to the source document (2 pages)."""
     st = []
     st.append(Paragraph("TECHNICAL DATA SHEET", s["kicker"]))
     st.append(Spacer(1, 3))
@@ -172,22 +167,38 @@ def build_content(buf):
         [section_heading("4. Standard Tolerances &amp; Surface Customization Options", s), Spacer(1, 4)]
         + [Paragraph(f"<b>{k}</b> {v}", s["bullet"], bulletText="•") for k, v in bullets]
     ))
+    return st
 
+
+def datasheet_marks(canvas, bottom):
+    """The data sheet's own running header and footer text."""
+    canvas.saveState()
+    canvas.setFont("Helvetica", 7.5)
+    canvas.setFillColor(colors.HexColor("#6B6B6B"))
+    y = bottom - 22
+    canvas.setStrokeColor(GRID)
+    canvas.setLineWidth(0.5)
+    canvas.line(MARGIN_X, y + 10, PAGE_W - MARGIN_X, y + 10)
+    canvas.drawString(MARGIN_X, y, "CONFIDENTIAL & PROPRIETARY | STANDARD SPECIFICATION DATA")
+    canvas.drawRightString(PAGE_W - MARGIN_X, PAGE_H - 114, "TECHNICAL DATA SHEET \u2014 SQUARE HOLLOW SECTION")
+    canvas.restoreState()
+
+
+def build_content(buf):
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=MARGIN_X, rightMargin=MARGIN_X,
+                            topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM,
+                            title="Technical Data Sheet - SHS 200x200x3",
+                            author="Metal Lines Co.")
 
     def footer(canvas, doc_):
+        datasheet_marks(canvas, MARGIN_BOTTOM)
         canvas.saveState()
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(colors.HexColor("#6B6B6B"))
-        y = MARGIN_BOTTOM - 22
-        canvas.setStrokeColor(GRID)
-        canvas.setLineWidth(0.5)
-        canvas.line(MARGIN_X, y + 10, PAGE_W - MARGIN_X, y + 10)
-        canvas.drawString(MARGIN_X, y, "CONFIDENTIAL & PROPRIETARY | STANDARD SPECIFICATION DATA")
-        canvas.drawRightString(PAGE_W - MARGIN_X, PAGE_H - 114, "TECHNICAL DATA SHEET \u2014 SQUARE HOLLOW SECTION")
-        canvas.drawRightString(PAGE_W - MARGIN_X, y, f"Page {doc_.page} of {{NP}}")
+        canvas.drawRightString(PAGE_W - MARGIN_X, MARGIN_BOTTOM - 22, f"Page {doc_.page} of {{NP}}")
         canvas.restoreState()
 
-    doc.build(st, onFirstPage=footer, onLaterPages=footer)
+    doc.build(datasheet_story(styles()), onFirstPage=footer, onLaterPages=footer)
 
 
 def composite_page(letterhead, content_png):
