@@ -2,7 +2,7 @@
 
 Page order:
   0. SHS 200x200x3 data sheet (2 pages) - content from build_datasheet.py.
-  1. Element Pole EB723122 (3 pages, Canva) - supplier branding, contact details and
+  1. Element Pole (3 pages, Canva) - supplier branding, contact details and
      company names are removed; every product text, image and drawing is kept.
   2. Pole elevation drawing with dimensions (1 page) - placed as is.
   3. UNILinear Flex BGC401 LED strip datasheet (2 pages) - typeset on the letterhead
@@ -169,7 +169,7 @@ def build_content(buf, f1, f2):
     for i, cfg in enumerate(FILE1_PAGES):
         page = f1[i]
         clean_file1_page(page, cfg)
-        st.append(Paragraph(f"{cfg['title']} &nbsp;<font color='#B4683E'>EB723122</font>", title))
+        st.append(Paragraph(cfg['title'], title))
         st.append(Spacer(1, 8))
         buf_img, w, h = render_crop(page, cfg["crop"])
         st.append(fit_image(buf_img, w, h, BODY_W, BODY_H - title_block_h - 14))
