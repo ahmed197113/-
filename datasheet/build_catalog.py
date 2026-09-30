@@ -8,7 +8,8 @@ Page order:
      with its text unchanged apart from the manufacturer's name.
   4. SHS 200x200x3 data sheet (2 pages) - content from build_datasheet.py.
 
-Each page is flattened at 300 DPI with the letterhead (its faint centre logo is the
+Every page carries the company stamp (assets/company_stamp.png) and is flattened at
+300 DPI with the letterhead (its faint centre logo is the
 watermark) and the PDF is AES-256 encrypted, print-only.
 
 Usage: python3 build_catalog.py <letterhead.pdf> <file1.pdf> <file2.pdf> <file3.pdf>
@@ -18,8 +19,9 @@ import io
 import re
 import sys
 
+import numpy as np
 import pymupdf
-from PIL import Image
+from PIL import Image, ImageChops
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
@@ -200,6 +202,51 @@ def build_content(buf, f1, f2):
     doc.build(st, onFirstPage=footer, onLaterPages=footer)
 
 
+STAMP_PATH = "assets/company_stamp.png"     # 300 DPI scan, real size (~37 mm)
+STAMP_ANGLES = [-7, 5, -3, 8, -5, 4, -9, 6]
+
+
+FOOTER_BAND_TOP = 786                         # pt from top, where the letterhead footer starts
+
+
+def place_stamp(page_img, ink_map, stamp, angle):
+    """Multiply the company stamp onto the page, like ink, on empty space in the body
+    area (nearest the bottom-right corner). Only the stamp's round ink area is tested,
+    so it can sit close to text, images, drawings and the page number without covering
+    them; if a page has no such space, the least covered spot is used."""
+    st = stamp.rotate(angle, resample=Image.BICUBIC, expand=True, fillcolor="white")
+    sw, sh = st.size
+    W, H = page_img.size
+    px = DPI / 72
+    edge = int(16 * px)
+    x_min, x_max = edge, W - edge - sw
+    y_min, y_max = int(MARGIN_TOP * px), int(FOOTER_BAND_TOP * px) - sh
+
+    step = 4                                   # test on a 1/4 grid for speed
+    ink = np.asarray(ink_map.reduce(step)) > 12
+    stamp_ink = np.asarray(st.convert("L").reduce(step)) < 235
+    yy, xx = np.ogrid[:stamp_ink.shape[0], :stamp_ink.shape[1]]
+    cy, cx = stamp_ink.shape[0] / 2, stamp_ink.shape[1] / 2
+    r = min(cy, cx) - 1
+    disc = (yy - cy) ** 2 + (xx - cx) ** 2 <= (r + 3) ** 2   # stamp circle + small gap
+    h4, w4 = disc.shape
+
+    best_empty, best_any = None, None
+    for y in range(y_max, y_min, -20):
+        for x in range(x_max, x_min, -20):
+            win = ink[y // step:y // step + h4, x // step:x // step + w4]
+            cov = int(np.count_nonzero(win & disc[:win.shape[0], :win.shape[1]]))
+            dist = (x_max - x) + 1.4 * (y_max - y)
+            if cov == 0 and (best_empty is None or dist < best_empty[0]):
+                best_empty = (dist, x, y)
+            if best_any is None or (cov, dist) < best_any[:2]:
+                best_any = (cov, dist, x, y)
+    x, y = (best_empty[1:] if best_empty else best_any[2:])
+    region = page_img.crop((x, y, x + sw, y + sh))
+    page_img.paste(ImageChops.multiply(region, st.convert("RGB")), (x, y))
+    return page_img
+
+
 def main():
     lh_path, f1_path, f2_path, f3_path, out_path, owner_pw = sys.argv[1:7]
     _ = f3_path  # file 3 is plain text/table content, typeset in file3_story()
@@ -212,6 +259,7 @@ def main():
     content = pymupdf.open("pdf", buf.getvalue())
     n = content.page_count
 
+    stamp = Image.open(STAMP_PATH).convert("RGB")
     out = pymupdf.open()
     for page in content:
         for r in page.search_for("{NP}"):
@@ -221,6 +269,12 @@ def main():
                              color=(0.42, 0.42, 0.42))
         pm = page.get_pixmap(dpi=DPI, alpha=True)
         img = composite_page(letterhead.resize((pm.width, pm.height)), pm.tobytes("png"))
+        rgba = Image.open(io.BytesIO(pm.tobytes("png")))
+        on_white = Image.new("RGBA", rgba.size, "white")
+        on_white.alpha_composite(rgba)
+        # anything visibly darker than paper counts as content (text, lines, photos)
+        ink_map = on_white.convert("L").point(lambda v: 255 if v < 238 else 0)
+        img = place_stamp(img, ink_map, stamp, STAMP_ANGLES[page.number % len(STAMP_ANGLES)])
         jpg = io.BytesIO()
         img.save(jpg, "JPEG", quality=93, subsampling=0, dpi=(DPI, DPI))
         p = out.new_page(width=PAGE_W, height=PAGE_H)
