@@ -236,6 +236,14 @@
     }
     if (mv.piece === 'n' && ('ah'.indexOf(mv.to[0]) >= 0) && !mv.captured && !c.isCheck() && tags.indexOf('fork') < 0) T('rim', 'ملاحظة: "الحصان على الحافة ضعيف" — يتحكم بمربعات أقل.', -0.5);
 
+    // أخطاء الافتتاح الشائعة
+    if (moveNo <= 10 && mv.piece === 'p' && !mv.captured) {
+      var kh = kingSq(before, me);
+      var home = me === 'w' ? 'e1' : 'e8';
+      if (kh === home && (mv.from[0] === 'f' || mv.from[0] === 'g')) T('kingweak', 'يُضعف حماية الملك: فتح بيادق جناح الملك مبكرًا يكشف الأقطار نحو ملكك (تذكّر مات الأحمق!).', -1.6);
+      else if ('ah'.indexOf(mv.from[0]) >= 0) T('rimpawn', 'نقلة بيدق جانبية لا تساعد على التطوير أو السيطرة على المركز.', -1.2);
+    }
+    if (moveNo <= 8 && mv.piece !== 'p' && mv.piece !== 'k' && mv.from[1] !== backRank && !mv.captured && !c.isCheck() && tags.length === 0) T('twice', 'تحريك نفس القطعة مرة أخرى في الافتتاح يضيّع الوقت بدل تطوير قطعة جديدة.', -1.1);
     // تحذير: ترك القطعة معلّقة
     if (isHanging(c, mv.to) && tags.indexOf('sac') < 0 && !c.isCheck()) T('hang', 'تحذير: ' + pn + ' يصبح عرضة للأسر في ' + S(mv.to) + '.', -2);
 
@@ -427,7 +435,7 @@
     if (key === 'book') body.push('نقلة معروفة في نظرية الافتتاحات، يلعبها الأساتذة كثيرًا.');
     if (d) {
       var good = isBest || drop < 5;
-      d.items.filter(function (x) { return good || (x.tag !== 'sac' && x.w > 1.5) || x.w < 0; }).slice(0, 2).forEach(function (x) { body.push(x.t); });
+      d.items.filter(function (x) { return good || (x.tag !== 'sac' && x.w > 1.5); }).slice(0, 2).forEach(function (x) { body.push(x.t); });
       if (!good && d.tags.indexOf('sac') >= 0) body.push('تحذير: ' + NAME[mv.piece] + ' أصبح عرضة للأسر دون تعويض كافٍ.');
     }
     if (key !== 'best' && key !== 'brilliant' && key !== 'book' && !isBest) {
@@ -436,10 +444,12 @@
       body.push('<b>الأفضل كان</b> ' + sanHtml(bd.san, turn) + (why ? ': ' + why : '.'));
       if (afterBest && drop >= 5) {
         var refut = describeMove(c1.fen(), afterBest.pv[0]);
-        if (refut) {
-          var rr = refut.lines.filter(function (x) { return x.indexOf('تحذير') !== 0 && x.indexOf('ملاحظة') !== 0; })[0];
-          body.push('<b>المشكلة:</b> نقلتك تسمح للخصم بـ ' + sanHtml(refut.san, other(turn)) + (rr ? ' — ' + rr : '') + '.');
-        }
+        var TACT = ['mate', 'win', 'fork', 'pin', 'skewer', 'discovered', 'dcheck', 'discheck', 'promo', 'check', 'threat', 'sac', 'passer', 'seventh'];
+        var rt = refut && refut.items.filter(function (x) { return TACT.indexOf(x.tag) >= 0; })[0];
+        var neg = d && d.items.filter(function (x) { return x.w < 0; })[0];
+        if (rt) body.push('<b>المشكلة:</b> نقلتك تسمح للخصم بـ ' + sanHtml(refut.san, other(turn)) + ' — ' + rt.t);
+        else if (neg) body.push('<b>المشكلة:</b> ' + neg.t);
+        else if (refut) body.push('<b>المشكلة:</b> نقلة سلبية تمنح الخصم المبادرة، وأفضل رد له ' + sanHtml(refut.san, other(turn)) + '.');
         var ins = pvInsights(c1.fen(), afterBest.pv);
         if (ins.length) body.push('بالنسبة للخصم: ' + ins[0]);
       }

@@ -7,9 +7,9 @@
   var KEY = 'shatranj.v1';
   var DEF = {
     xp: 0, streak: 0, lastDay: '', days: 0,
-    lessons: {}, puzzles: {}, pRating: 800, pSolved: 0, pFailed: 0, rushBest: 0, coordBest: 0, quizBest: 0,
+    lessons: {}, puzzles: {}, pRating: 600, streakBest: 0, pSolved: 0, pFailed: 0, rushBest: 0, coordBest: 0, quizBest: 0,
     games: { played: 0, won: 0, lost: 0, drawn: 0, bestLevel: -1 }, openings: {}, brilliants: 0, ach: {},
-    set: { sound: true, vib: true, voice: false, coords: true, theme: 'classic', lowfx: false, evalbar: true, coachEvery: true, autoThreat: false, level: 2, color: 'w' },
+    set: { sound: true, pack: 'real', pdiff: 1, vib: true, voice: false, coords: true, theme: 'green', lowfx: false, evalbar: true, coachEvery: true, autoThreat: false, level: 2, color: 'w' },
     saved: null
   };
   var S;
@@ -136,19 +136,48 @@
     fl.type = 'bandpass'; fl.frequency.value = f || 1800; g.gain.value = vol || .8;
     s.buffer = b; s.connect(fl); fl.connect(g); g.connect(a.destination); s.start();
   }
+  /* عينات صوتية حقيقية تُحمَّل مسبقًا لتشغيل فوري بلا تأخير */
+  var SAMPLES = { move: 'Move', capture: 'Capture', check: 'Check', win: 'Victory', loss: 'Defeat', draw: 'Draw', notify: 'GenericNotify', low: 'LowTime' };
+  var buf = {}, bufPack = null;
+  function loadPack() {
+    var pack = S.set.pack === 'future' ? 'future' : 'real';
+    if (bufPack === pack) return;
+    bufPack = pack; buf = {};
+    var a = ac(); if (!a) return;
+    Object.keys(SAMPLES).forEach(function (k) {
+      fetch('sounds/' + pack + '/' + SAMPLES[k] + '.mp3').then(function (r) { return r.arrayBuffer(); })
+        .then(function (d) { return new Promise(function (res, rej) { a.decodeAudioData(d, res, rej); }); })
+        .then(function (b) { if (bufPack === pack) buf[k] = b; }).catch(function () {});
+    });
+  }
+  function play(k, vol, rate) {
+    var a = ac(); if (!a || !buf[k]) return false;
+    if (a.state === 'suspended') a.resume();
+    var s = a.createBufferSource(), g = a.createGain();
+    s.buffer = buf[k]; s.playbackRate.value = rate || 1; g.gain.value = vol == null ? 1 : vol;
+    s.connect(g); g.connect(a.destination); s.start();
+    return true;
+  }
   function sfx(k) {
     if (!S.set.sound) return;
     try {
-      if (k === 'move') knock(.9, 1500);
-      else if (k === 'capture') { knock(1.2, 900); knock(.6, 2200); }
-      else if (k === 'check') { tone(880, .12, 'square', .08); tone(660, .18, 'square', .07, .1); }
-      else if (k === 'ok') { tone(660, .12, 'sine', .18); tone(990, .2, 'sine', .16, .1); }
-      else if (k === 'win') { [523, 659, 784, 1047].forEach(function (f, i) { tone(f, .25, 'triangle', .15, i * .09); }); }
+      loadPack();
+      if (k === 'move') { if (!play('move')) knock(.9, 1500); }
+      else if (k === 'capture') { if (!play('capture')) { knock(1.2, 900); knock(.6, 2200); } }
+      else if (k === 'check') { if (!play('check')) { tone(880, .12, 'square', .08); tone(660, .18, 'square', .07, .1); } }
+      else if (k === 'castle') { if (play('move')) setTimeout(function () { play('move', .8, 1.05); }, 90); else knock(.9, 1500); }
+      else if (k === 'promote') { play('move'); tone(784, .15, 'triangle', .12, .05); tone(1175, .25, 'triangle', .12, .15); }
+      else if (k === 'ok') { tone(784, .14, 'sine', .16); tone(1175, .22, 'sine', .14, .09); }
+      else if (k === 'win') { if (!play('win')) [523, 659, 784, 1047].forEach(function (f, i) { tone(f, .25, 'triangle', .15, i * .09); }); }
+      else if (k === 'lose') { if (!play('loss')) tone(220, .4, 'triangle', .12); }
+      else if (k === 'drawn') { if (!play('draw')) tone(440, .3, 'triangle', .1); }
+      else if (k === 'start') { if (!play('notify', .7)) tone(660, .1, 'sine', .1); }
       else if (k === 'level') { [392, 523, 659, 784, 1047, 1319].forEach(function (f, i) { tone(f, .3, 'triangle', .13, i * .07); }); }
-      else if (k === 'bad') { tone(330, .18, 'sawtooth', .07); tone(220, .3, 'sawtooth', .07, .12); }
-      else if (k === 'tap') tone(1200, .04, 'sine', .05);
+      else if (k === 'bad') { tone(196, .16, 'triangle', .14); tone(147, .22, 'triangle', .12, .08); }
+      else if (k === 'tap') tone(1400, .03, 'sine', .035);
     } catch (e) {}
-    if (S.set.vib && (k === 'bad' || k === 'check')) vibrate(k === 'bad' ? 60 : 25);
+    if (S.set.vib && (k === 'bad' || k === 'check')) vibrate(k === 'bad' ? 70 : 25);
+    else if (S.set.vib && (k === 'move' || k === 'capture' || k === 'castle')) vibrate(k === 'capture' ? 14 : 8);
   }
   function vibrate(ms) {
     try { if (window.Android && Android.vibrate) Android.vibrate(ms); else if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
@@ -167,14 +196,26 @@
   }
   function soundFor(mv, c) {
     if (c && c.isCheck()) sfx('check');
+    else if (mv && mv.promotion) sfx('promote');
     else if (mv && mv.captured) sfx('capture');
+    else if (mv && mv.flags && (mv.flags.indexOf('k') >= 0 || mv.flags.indexOf('q') >= 0)) sfx('castle');
     else sfx('move');
   }
 
   /* ===== التنقل ===== */
   var routes = {}, stack = [], cleanup = null;
   var NAV = [['home', '🏠', 'الرئيسية'], ['academy', '🎓', 'الأكاديمية'], ['puzzles', '🧩', 'الألغاز'], ['play', '♟️', 'العب'], ['more', '✨', 'المزيد']];
+  var TAB = { home: 'home', academy: 'academy', course: 'academy', lesson: 'academy', puzzles: 'puzzles', puzzle: 'puzzles', play: 'play', game: 'play' };
+  var FOCUS = { lesson: 1, puzzle: 1, game: 1, analysis: 1, opening: 1, coords: 1, vision: 1 };
   function route(name, fn) { routes[name] = fn; }
+  /* شريط أزرار سفلي ثابت: [[id, icon, label, pri]] */
+  function actionbar(items) {
+    var old = $('.actionbar'); if (old) old.remove();
+    var d = document.createElement('div'); d.className = 'actionbar';
+    d.innerHTML = items.map(function (x) { return '<button id="' + x[0] + '"' + (x[3] ? ' class="pri"' : '') + '><span class="i">' + x[1] + '</span>' + x[2] + '</button>'; }).join('');
+    document.body.appendChild(d);
+    return d;
+  }
   function go(name, params, replace) {
     if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; }
     if (!replace && stack.length) stack[stack.length - 1].scroll = $('#view').scrollTop;
@@ -200,8 +241,10 @@
     v.className = '';
     v.innerHTML = '';
     var top = e.name;
-    var root = stack[0].name;
+    var root = TAB[top] || stack[0].name;
     $$('nav.bottom button').forEach(function (b) { b.classList.toggle('on', b.dataset.r === root); });
+    document.body.classList.toggle('focus', !!FOCUS[top]);
+    var ab = $('.actionbar'); if (ab) ab.remove();
     $('header.top .back').style.visibility = stack.length > 1 ? 'visible' : 'hidden';
     var r = routes[top](v, e.params) || {};
     $('header.top h1').textContent = r.title || 'أكاديمية الشطرنج';
@@ -298,15 +341,17 @@
   route('settings', function (v) {
     var st = S.set;
     function sw(k, label, sub) { return '<label class="switch"><span><b>' + label + '</b>' + (sub ? '<br><small class="mut">' + sub + '</small>' : '') + '</span><input type="checkbox" data-k="' + k + '" ' + (st[k] ? 'checked' : '') + '></label>'; }
-    var themes = [['classic', '#c9d3f2', '#5a6aa8', 'مستقبلي'], ['wood', '#f0d9b5', '#b58863', 'خشبي'], ['emerald', '#e6f2e2', '#4f8a6d', 'زمردي'], ['neon', '#1c2350', '#0e1333', 'نيون'], ['marble', '#eceff4', '#8c96ad', 'رخامي']];
+    var themes = [['green', '#ebecd0', '#739552', 'أخضر'], ['brown', '#f0d9b5', '#b58863', 'بني'], ['blue', '#dee3e6', '#8ca2ad', 'أزرق'], ['future', '#c9d3f2', '#5a6aa8', 'مستقبلي'], ['neon', '#1c2350', '#0e1333', 'نيون'], ['marble', '#eceff4', '#8c96ad', 'رخامي']];
     v.innerHTML = '<div class="card">' +
-      sw('sound', '🔊 المؤثرات الصوتية') + sw('vib', '📳 الاهتزاز') + sw('voice', '🗣️ القراءة الصوتية بالعربية', 'يقرأ المدرب الشرح بصوت عالٍ (يتطلب محرك نطق عربي في الهاتف)') +
+      sw('sound', '🔊 المؤثرات الصوتية') + '<div class="switch"><span><b>🎵 نوع الأصوات</b></span><div class="seg" id="pk" style="width:170px"><button data-p="real">واقعي</button><button data-p="future">مستقبلي</button></div></div>' + sw('vib', '📳 الاهتزاز') + sw('voice', '🗣️ القراءة الصوتية بالعربية', 'يقرأ المدرب الشرح بصوت عالٍ (يتطلب محرك نطق عربي في الهاتف)') +
       sw('coords', '🔤 إظهار الإحداثيات') + sw('evalbar', '📊 شريط التقييم أثناء اللعب') + sw('coachEvery', '🤖 تقييم كل نقلة', 'المدرب يعلّق على كل نقلة تلعبها') + sw('autoThreat', '🛡️ تنبيه التهديدات تلقائيًا', 'ينبهك المدرب عندما يهدد الخصم شيئًا مهمًا') + sw('lowfx', '🔋 وضع توفير الطاقة', 'إيقاف المؤثرات المتحركة') +
       '</div><div class="card"><h2>🎨 شكل الرقعة</h2><div class="themes">' + themes.map(function (t) {
         return '<button data-t="' + t[0] + '" class="' + (st.theme === t[0] ? 'on' : '') + '" title="' + t[3] + '"><i style="background:' + t[1] + '"></i><i style="background:' + t[2] + '"></i><i style="background:' + t[2] + '"></i><i style="background:' + t[1] + '"></i></button>';
       }).join('') + '</div></div>' +
       '<div class="card"><h2>🗑️ البيانات</h2><p>يتم حفظ تقدمك على هذا الهاتف فقط.</p><button class="btn bad" id="reset">إعادة ضبط كل التقدم</button></div>';
     $$('input[data-k]', v).forEach(function (i) { i.onchange = function () { st[i.dataset.k] = i.checked; save(); applySettings(); if (i.dataset.k === 'voice' && i.checked) speak('مرحبًا! سأشرح لك النقلات بصوتي.'); }; });
+    function pk() { $$('#pk button', v).forEach(function (b) { b.classList.toggle('on', b.dataset.p === (st.pack || 'real')); }); }
+    pk(); $$('#pk button', v).forEach(function (b) { b.onclick = function () { st.pack = b.dataset.p; save(); pk(); sfx('move'); setTimeout(function () { sfx('capture'); }, 400); }; });
     $$('.themes button', v).forEach(function (b) { b.onclick = function () { st.theme = b.dataset.t; save(); applySettings(); $$('.themes button', v).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
     $('#reset', v).onclick = function () {
       var m = modal('<h2>هل أنت متأكد؟</h2><p class="mut">سيتم حذف كل النقاط والدروس والألغاز المحلولة.</p><div class="row"><button class="btn bad" id="yes">نعم، احذف</button><button class="btn" data-close>إلغاء</button></div>');
@@ -316,8 +361,8 @@
   });
 
   route('about', function (v) {
-    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.0 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
-      '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
+    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.1 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
+      '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• أصوات القطع: مجموعتا sfx و futuristic من lichess.org (Enigmahack) — رخصة AGPLv3+.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
       '<div class="card"><h2>📜 الشطرنج والعرب</h2><p>انتقل الشطرنج من الهند إلى فارس، ثم طوّره العرب في العصر العباسي وألّفوا فيه الكتب، وكان <b>الصولي</b> و<b>العدلي</b> من أعظم لاعبيه. ومن الأندلس انتقل إلى أوروبا. كلمة "شاه مات" و"رخ" من أصول فارسية-عربية.</p></div>';
     return { title: 'عن التطبيق' };
   });
@@ -328,6 +373,7 @@
 
   /* ===== التشغيل ===== */
   function boot() {
+    document.addEventListener('pointerdown', function unlock() { var a = ac(); if (a && a.state === 'suspended') a.resume(); loadPack(); }, { once: true, capture: true });
     applySettings();
     touchStreak();
     $$('nav.bottom button').forEach(function (b) { b.onclick = function () { sfx('tap'); go(b.dataset.r); }; });
@@ -346,7 +392,7 @@
   self.App = {
     S: S, save: save, go: go, back: back, route: route, render: render, onCleanup: onCleanup,
     $: $, $$: $$, esc: esc, toast: toast, modal: modal, confetti: confetti, sfx: sfx, soundFor: soundFor, speak: speak, vibrate: vibrate,
-    addXp: addXp, levelInfo: levelInfo, checkAch: checkAch, today: today, dailyIndex: dailyIndex, tile: tile, bindTiles: bindTiles, cnt: cnt,
+    addXp: addXp, actionbar: actionbar, levelInfo: levelInfo, checkAch: checkAch, today: today, dailyIndex: dailyIndex, tile: tile, bindTiles: bindTiles, cnt: cnt,
     boot: boot, Chess: Chess
   };
 })();

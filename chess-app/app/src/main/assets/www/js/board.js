@@ -212,6 +212,7 @@
   };
 
   Board.prototype.down = function (e) {
+    if (this.lock) return;
     var s = this.sqAt(e);
     if (!s) return;
     if (this.o.onSquare) this.o.onSquare(s);
@@ -224,7 +225,7 @@
       else { this.pendingDeselect = false; this.select(s); }
       var el = this.pieces[s];
       if (el) {
-        this.drag = { s: s, el: el, x0: e.clientX, y0: e.clientY, moved: false };
+        this.drag = { s: s, el: el, x0: e.clientX, y0: e.clientY, moved: false, rect: this.root.getBoundingClientRect() };
         try { this.root.setPointerCapture(e.pointerId); } catch (err) {}
       }
     } else {
@@ -238,9 +239,9 @@
     if (!d.moved && Math.abs(dx) + Math.abs(dy) < 6) return;
     d.moved = true;
     d.el.classList.add('drag');
-    var r = this.root.getBoundingClientRect(), sz = r.width / 8;
+    var r = d.rect, sz = r.width / 8;
     var px = e.clientX - r.left - sz / 2, py = e.clientY - r.top - sz / 2 - (e.pointerType === 'touch' ? sz * .35 : 0);
-    d.el.style.transform = 'translate(' + px + 'px,' + py + 'px) scale(1.18)';
+    d.el.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0) scale(1.15)';
   };
 
   Board.prototype.up = function (e) {
@@ -298,6 +299,19 @@
     });
     ov.addEventListener('pointerdown', function (e) { e.stopPropagation(); if (e.target === ov) { ov.remove(); cb(null); } });
     this.root.appendChild(ov);
+  };
+
+  /* نقلة خاطئة: تظهر القطعة على المربع بعلامة ✕ ثم تعود لمكانها */
+  Board.prototype.snapBack = function (position, badSq, prevLast, cb) {
+    var self = this;
+    this.lock = true;
+    this.mark('bad', [badSq]);
+    setTimeout(function () {
+      self.marks = {};
+      self.set(position, prevLast || null);
+      self.lock = false;
+      if (cb) cb();
+    }, 420);
   };
 
   self.Board = Board;

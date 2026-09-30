@@ -74,7 +74,7 @@
   /* ===== المباراة ===== */
   A.route('game', function (v, p) {
     var L = Engine.LEVELS[p.level], user = p.color, eng = user === 'w' ? 'b' : 'w';
-    var ch = new Chess(), hist = [], gen = 0, over = false, thinking = false;
+    var ch = new Chess(p.fen || undefined), hist = [], gen = 0, over = false, thinking = false;
     var pre = null; // {fen, res}
     var evalW = { cp: 20 };
 
@@ -83,10 +83,9 @@
       '<div class="bwrap" id="bd"></div>' +
       '<div class="plr" id="pu"><div class="av">🧑</div><div><b>أنت</b><div class="cap" id="cu"></div></div><span class="sp"></span><span class="tag v" id="md"></span></div>' +
       '<div class="evalbar" id="evb"><i style="width:50%"></i><span id="evt">0.0</span></div>' +
-      '<div class="panel"><div class="tools">' +
-      '<button class="btn sm" id="hint">💡 أفضل نقلة؟</button><button class="btn sm" id="thr">🛡️ تهديد الخصم</button><button class="btn sm" id="und">↩️ تراجع</button><button class="btn sm" id="flp">🔄 قلب</button><button class="btn sm" id="res">🏳️ استسلام</button></div>' +
-      '<div class="coachbox" id="cb" style="margin-top:8px"></div><div class="moves" id="ml" style="margin-top:8px"></div></div>';
+      '<div class="panel"><div class="coachbox" id="cb"></div><div class="moves" id="ml" style="margin-top:8px"></div></div>';
     var board = newBoard($('#bd', v), { orientation: user });
+    var bar = A.actionbar([['hint', '💡', 'أفضل نقلة'], ['thr', '🛡️', 'التهديد'], ['und', '↩️', 'تراجع'], ['flp', '🔄', 'قلب'], ['res', '🏳️', 'استسلام']]);
     $('#evb', v).style.display = S.set.evalbar ? '' : 'none';
     function cb(html) { $('#cb', v).innerHTML = '<div class="who"><span class="bot">🤖</span> المدرب</div>' + html; }
     function status(t) { $('#st', v).innerHTML = t ? '<span class="spin"></span> ' + t : ''; }
@@ -156,7 +155,15 @@
             if (cls.key === 'brilliant') { S.brilliants++; A.save(); A.checkAch(); A.confetti(); }
             if (!ch.isCheckmate() && aft.lines[0]) setEval(Coach.toWhite(aft.lines[0].score, after.split(' ')[1]));
             drawList();
-            if (hist.indexOf(rec) >= 0) { cb(cls.html); A.speak(cls.cls.label + '. ' + Coach.stripTags(cls.html).slice(0, 220)); }
+            if (hist.indexOf(rec) >= 0) {
+              var bad = ['mistake', 'blunder', 'miss', 'inaccuracy'].indexOf(cls.key) >= 0;
+              cb(cls.html + (bad && !over ? '<div class="chips"><button class="btn sm pri" id="retry">↩️ جرّب مجددًا</button><button class="btn sm" id="showb">👁️ أرني الأفضل</button></div>' : ''));
+              if (bad && !over) {
+                $('#retry', v).onclick = function () { takeBack(true); };
+                $('#showb', v).onclick = function () { takeBack(false, preRes.lines[0].pv[0]); };
+              }
+              A.speak(cls.cls.label + '. ' + Coach.stripTags(cls.html).slice(0, 220));
+            }
             if (cls.key === 'blunder' || cls.key === 'mistake') A.sfx('bad');
           });
         }).catch(function () {});
@@ -174,7 +181,7 @@
       var t0 = Date.now(), fen = ch.fen();
       Engine.play(fen, p.level).then(function (u) {
         if (myGen !== gen || ch.fen() !== fen) return;
-        var wait = Math.max(0, 450 - (Date.now() - t0));
+        var wait = Math.max(0, 500 + Math.random() * 500 - (Date.now() - t0));
         setTimeout(function () {
           if (myGen !== gen || ch.fen() !== fen) return;
           var before = ch.fen();
@@ -233,7 +240,7 @@
       hist.forEach(function (h) { if (h.color === user && h.cls) counts[h.cls.key] = (counts[h.cls.key] || 0) + 1; });
       var xp = res === 'win' ? 40 + p.level * 10 : res === 'draw' ? 20 : 10;
       A.addXp(xp, res === 'win' ? 'فوز!' : 'مباراة مكتملة');
-      if (res === 'win') { A.sfx('win'); A.confetti(); } else A.sfx(res === 'loss' ? 'bad' : 'ok');
+      if (res === 'win') { A.sfx('win'); A.confetti(); } else A.sfx(res === 'loss' ? 'lose' : 'drawn');
       var t = res === 'win' ? ['🏆', 'فزت!'] : res === 'loss' ? ['💪', 'خسرت هذه المرة'] : ['🤝', 'تعادل'];
       var rows = ['brilliant', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'blunder', 'miss'].filter(function (k) { return counts[k]; }).map(function (k) {
         var C = Coach.CLASSES[k]; return '<div class="row nw"><span class="cls ' + C.cls + '"><span class="sym">' + C.sym + '</span> ' + C.label + '</span><span class="sp"></span><b>' + counts[k] + '</b></div>';
@@ -249,7 +256,22 @@
       cb(t[1] + ' — ' + why);
     }
 
-    $('#hint', v).onclick = function () {
+    function takeBack(retry, show) {
+      if (!hist.length) return;
+      gen++; Engine.stopPlayer(); thinking = false; status('');
+      over = false;
+      while (hist.length && hist[hist.length - 1].color !== user) { ch.undo(); hist.pop(); }
+      if (hist.length) { ch.undo(); hist.pop(); }
+      refresh(hist.length ? { from: hist[hist.length - 1].uci.slice(0, 2), to: hist[hist.length - 1].uci.slice(2, 4) } : null);
+      if (show) {
+        board.arrows([{ from: show.slice(0, 2), to: show.slice(2, 4), c: 'g' }]);
+        var d = Coach.describeMove(ch.fen(), show);
+        cb('👁️ الأفضل كان ' + Coach.sanHtml(d.san, d.move.color) + (d.lines[0] ? ' — ' + d.lines[0] : '') + '<br><small class="mut">العبها بنفسك لتثبت الفكرة.</small>');
+      } else cb('↩️ حاول إيجاد نقلة أفضل. فكّر: كش؟ أسر؟ تهديد؟ وماذا يريد الخصم؟');
+      getPre(ch.fen());
+    }
+
+    $('#hint', bar).onclick = function () {
       if (over || ch.turn() !== user || thinking) return;
       var fen = ch.fen();
       cb('<span class="think"><span class="spin"></span> المدرب يبحث عن أفضل نقلة...</span>');
@@ -261,20 +283,10 @@
         A.speak(e.speech);
       }).catch(function () { cb('تعذّر التحليل الآن.'); });
     };
-    $('#thr', v).onclick = function () { if (!over) threat(false); };
-    $('#und', v).onclick = function () {
-      if (!hist.length) return;
-      gen++; Engine.stopPlayer(); thinking = false; status('');
-      over = false;
-      var n = hist[hist.length - 1].color === user ? 1 : 2;
-      if (hist.length < n) n = hist.length;
-      for (var i = 0; i < n; i++) { ch.undo(); hist.pop(); }
-      refresh(hist.length ? { from: hist[hist.length - 1].uci.slice(0, 2), to: hist[hist.length - 1].uci.slice(2, 4) } : null);
-      cb('↩️ تراجعت. فكّر جيدًا هذه المرة: كش؟ أسر؟ تهديد؟');
-      if (ch.turn() === eng) engineTurn(gen); else getPre(ch.fen());
-    };
-    $('#flp', v).onclick = function () { board.setOrientation(board.orient === 'w' ? 'b' : 'w'); };
-    $('#res', v).onclick = function () {
+    $('#thr', bar).onclick = function () { if (!over) threat(false); };
+    $('#und', bar).onclick = function () { if (hist.some(function (h) { return h.color === user; })) takeBack(true); };
+    $('#flp', bar).onclick = function () { board.setOrientation(board.orient === 'w' ? 'b' : 'w'); };
+    $('#res', bar).onclick = function () {
       if (over) return;
       var m = A.modal('<h2>🏳️ الاستسلام؟</h2><p class="mut">لا تستسلم بسرعة! الأساتذة يقولون: "لم يفز أحد بالاستسلام".</p><div class="row"><button class="btn bad" id="y">استسلم</button><button class="btn pri" data-close>سأقاتل!</button></div>');
       $('#y', m).onclick = function () { m.close(); gen++; Engine.stopPlayer(); finish('loss', 'استسلام'); };
@@ -285,6 +297,7 @@
     var lm = hist.length ? { from: hist[hist.length - 1].uci.slice(0, 2), to: hist[hist.length - 1].uci.slice(2, 4) } : null;
     refresh(lm);
     cb(hist.length ? 'تابع المباراة. دورك!' : 'مرحبًا! أنا مدربك. العب نقلتك وسأخبرك برأيي فيها. استخدم 💡 إذا احتجت مساعدة. ' + (user === 'w' ? 'أنت الأبيض، ابدأ!' : 'أنت الأسود، سأبدأ أنا.'));
+    if (!hist.length) A.sfx('start');
     if (ch.turn() === eng) engineTurn(gen); else getPre(ch.fen());
 
     return { title: 'ضد ' + L.name, cleanup: function () { gen++; Engine.stopPlayer(); Engine.stop(); } };
@@ -301,7 +314,7 @@
 
     v.innerHTML = '<div class="bwrap" id="bd"></div><div class="evalbar" id="evb"><i style="width:50%"></i><span id="evt">0.0</span></div>' +
       '<div class="panel"><div class="row nw" style="gap:6px"><button class="btn sm" id="fst">⏮</button><button class="btn sm" id="prv">▶</button><button class="btn sm" id="nxt">◀</button><button class="btn sm" id="lst">⏭</button><span class="sp"></span><button class="btn sm" id="flp">🔄</button><button class="btn sm" id="io">📋</button><button class="btn sm" id="new">🆕</button></div>' +
-      '<div class="tools" style="margin-top:6px"><button class="btn sm pri" id="exp">🧠 اشرح أفضل نقلة</button><button class="btn sm" id="thr">🛡️ التهديد</button>' + (p.moves ? '<button class="btn sm" id="rev">📈 مراجعة المباراة</button>' : '') + '</div>' +
+      '<div class="tools" style="margin-top:6px"><button class="btn sm pri" id="exp">🧠 اشرح أفضل نقلة</button><button class="btn sm" id="thr">🛡️ التهديد</button><button class="btn sm" id="pfh">♟️ العب من هنا</button>' + (p.moves ? '<button class="btn sm" id="rev">📈 مراجعة المباراة</button><button class="btn sm" id="lfm" style="display:none">🎯 تعلّم من أخطائك</button>' : '') + '</div>' +
       '<div class="coachbox" id="cb" style="margin-top:8px"></div><div class="card" id="lines" style="margin-top:8px;padding:10px"></div><div class="moves" id="ml"></div></div>';
     var board = newBoard($('#bd', v), { orientation: p.orient || (root.split(' ')[1]) });
     function cb(h) { $('#cb', v).innerHTML = '<div class="who"><span class="bot">🔬</span> المحلل</div>' + h; }
@@ -328,6 +341,7 @@
     function analyse() {
       var fen = fenAt(cur), my = ++token;
       board.arrows([]);
+      if (lmode) { $('#lines', v).innerHTML = '<span class="mut">🎯 وضع التعلّم: التحليل مخفي حتى تجد النقلة.</span>'; return; }
       if (ch.isGameOver()) {
         $('#lines', v).innerHTML = '<b>' + (ch.isCheckmate() ? 'كش مات!' : 'تعادل') + '</b>';
         return;
@@ -365,10 +379,30 @@
 
     board.o.movable = function () { return 'both'; };
     board.o.dests = function (s) { var pc = ch.get(s); if (!pc || pc.color !== ch.turn()) return []; return ch.moves({ square: s, verbose: true }).map(function (m) { return m.to; }); };
+    var lmode = null;
     board.o.onMove = function (from, to, pr) {
       var c = new Chess(fenAt(cur)), r;
       try { r = c.move({ from: from, to: to, promotion: pr || 'q' }); } catch (e) { return false; }
-      return play(r.from + r.to + (r.promotion || ''));
+      var u = r.from + r.to + (r.promotion || '');
+      if (lmode) {
+        var m = lmode.m, fen0 = fenAt(cur);
+        var okm = u === m.best || m.good.indexOf(u) >= 0 || c.isCheckmate();
+        if (okm) {
+          A.sfx('ok'); A.soundFor(r, c);
+          var d = Coach.describeMove(fen0, u);
+          board.set(c.fen(), { from: r.from, to: r.to });
+          cb('✅ ممتاز! ' + Coach.sanHtml(d.san, d.move.color) + (d.lines[0] ? ' — ' + d.lines[0] : '') + '<div class="chips"><button class="btn sm pri" id="lnx">التالي ◀</button></div>');
+          var ii = lmode.i; lmode = null;
+          $('#lnx', v).onclick = function () { learn(ii + 1); };
+        } else {
+          A.sfx('bad'); lmode.tries++;
+          board.set(c.fen(), { from: r.from, to: r.to });
+          board.snapBack(fen0, r.to, cur ? { from: line[cur - 1].uci.slice(0, 2), to: line[cur - 1].uci.slice(2, 4) } : null);
+          A.toast('❌ ليست الأفضل، حاول مجددًا' + (lmode.tries >= 2 ? ' — أو اضغط "أرني"' : ''));
+        }
+        return true;
+      }
+      return play(u);
     };
 
     $('#fst', v).onclick = function () { cur = 0; draw(); };
@@ -410,6 +444,23 @@
       };
     };
     if ($('#rev', v)) $('#rev', v).onclick = function () { review(); };
+    $('#pfh', v).onclick = function () {
+      var fen = fenAt(cur), c = new Chess(fen);
+      if (c.isGameOver()) { A.toast('المباراة منتهية في هذا الموقف'); return; }
+      A.go('game', { level: S.set.level, color: c.turn(), fen: fen });
+    };
+    var mistakes = [];
+    if ($('#lfm', v)) $('#lfm', v).onclick = function () { learn(0); };
+    /* تعلّم من أخطائك: أعد الموقف قبل الخطأ واطلب النقلة الأفضل */
+    function learn(i) {
+      if (i >= mistakes.length) { lmode = null; cb('🎉 انتهيت من مراجعة أخطائك! كل خطأ فهمته اليوم لن تكرره غدًا.'); A.addXp(10, 'تعلّم من أخطائك'); draw(); return; }
+      var m = mistakes[i];
+      cur = m.k - 1; lmode = { i: i, m: m, tries: 0 };
+      draw();
+      cb('🎯 <b>تعلّم من أخطائك (' + (i + 1) + '/' + mistakes.length + ')</b><br>هنا لعب ' + (m.x.color === 'w' ? 'الأبيض' : 'الأسود') + ' ' + Coach.sanHtml(m.x.san, m.x.color) + ' وكانت ' + m.cls.cls.label + '. ابحث عن نقلة أفضل!<div class="chips"><button class="btn sm" id="lsk">تخطَّ</button><button class="btn sm" id="lsh">👁️ أرني</button></div>');
+      $('#lsk', v).onclick = function () { learn(i + 1); };
+      $('#lsh', v).onclick = function () { board.arrows([{ from: m.best.slice(0, 2), to: m.best.slice(2, 4), c: 'g' }]); };
+    }
 
     /* مراجعة المباراة: تقييم كل نقلة */
     function review() {
@@ -429,7 +480,10 @@
           var cls = Coach.classify(fenAt(k), x.uci, pre, evals[k + 1] || null, isBook(line.slice(0, k + 1).map(function (y) { return y.uci.slice(0, 4); })));
           gameEvals[k + 1] = { cls: cls };
           sum[x.color].push(accuracy(cls.drop));
-          if (cls.key === 'blunder' || cls.key === 'mistake' || cls.key === 'miss') bad.push({ k: k + 1, x: x, cls: cls });
+          if (cls.key === 'blunder' || cls.key === 'mistake' || cls.key === 'miss') {
+            var wb0 = Coach.winPct(pre.lines[0].score);
+            bad.push({ k: k + 1, x: x, cls: cls, best: pre.lines[0].pv[0], good: pre.lines.filter(function (l) { return wb0 - Coach.winPct(l.score) < 4; }).map(function (l) { return l.pv[0]; }) });
+          }
         });
         function avg(a) { return a.length ? Math.round(a.reduce(function (s, y) { return s + y; }, 0) / a.length) : 0; }
         var h = '<div class="exp-head">📈 تقرير المباراة</div><div class="stats"><div class="stat"><b>' + avg(sum.w) + '%</b><small>دقة الأبيض</small></div><div class="stat"><b>' + avg(sum.b) + '%</b><small>دقة الأسود</small></div></div>';
@@ -438,6 +492,8 @@
         cb(h);
         $$('#cb [data-k]', v).forEach(function (e) { e.onclick = function () { cur = +e.dataset.k; draw(); }; });
         btn.disabled = false;
+        mistakes = bad;
+        if (bad.length && $('#lfm', v)) $('#lfm', v).style.display = '';
         drawListOnly();
       }
       nextPos();

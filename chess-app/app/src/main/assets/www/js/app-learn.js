@@ -55,8 +55,9 @@
   A.route('lesson', function (v, p) {
     var c = course(p.c), les = c.lessons.filter(function (l) { return l.id === p.l; })[0];
     var idx = 0, doneSteps = {};
-    v.innerHTML = '<div class="stepdots" id="dots"></div><div class="card" style="padding:12px 14px"><div class="lesson-text" id="lt"></div></div><div class="bwrap" id="bd"></div><div class="panel"><div class="feedback" id="fb"></div><div class="row" style="margin-top:10px"><button class="btn" id="prev">▶ السابق</button><button class="btn" id="hint">💡 تلميح</button><span class="sp"></span><button class="btn pri" id="next">التالي ◀</button></div></div>';
+    v.innerHTML = '<div class="stepdots" id="dots"></div><div class="card" style="padding:12px 14px"><div class="lesson-text" id="lt"></div></div><div class="bwrap" id="bd"></div><div class="panel"><div class="feedback" id="fb"></div></div>';
     var board = newBoard($('#bd', v), {});
+    var bar = A.actionbar([['prev', '▶', 'السابق'], ['hint', '💡', 'تلميح'], ['next', '◀', 'التالي', true]]);
     var ch = null, task = null, stars = null, starPiece = null, moves = 0, solved = false;
 
     function fb(cls, msg) { var f = $('#fb', v); f.className = 'feedback ' + (cls || ''); f.innerHTML = msg || ''; }
@@ -120,14 +121,15 @@
           board.o.movable = function () { return solved ? null : ch.turn(); };
           board.o.dests = dests(ch);
           board.o.onMove = function (from, to, pr) {
+            var prevFen = ch.fen(), prevLast = board.last;
             var mv = parseMove(ch, from, to, pr);
             if (!mv) return false;
             var u = from + to + (mv.promotion || '');
             var okMove = task.ans.some(function (a) { return a === u || (a.length === 4 && a === from + to); });
             if (task.mate && !ch.isCheckmate()) okMove = false;
             board.set(ch.fen(), { from: from, to: to });
-            A.soundFor(mv, ch);
             if (okMove) {
+              A.soundFor(mv, ch);
               var marks2 = {}; if (ch.isCheck()) marks2.chk = [kingSq(ch, ch.turn())];
               board.setMarks(marks2);
               success(task.ok || 'أحسنت!');
@@ -142,8 +144,9 @@
               var msg = task.no || 'ليست النقلة المطلوبة، حاول مرة أخرى.';
               if (ch.isStalemate()) msg = '😱 إغلاق! الخصم لا يملك نقلات وليس في كش = تعادل. حاول مجددًا.';
               else if (task.mate && ch.isCheck()) msg = 'كش، لكن الملك يستطيع الهرب. ابحث عن كش مات.';
-              fb('bad', msg);
-              setTimeout(function () { ch.undo(); board.set(ch.fen()); }, 900);
+              fb('bad', '❌ ' + msg);
+              ch.undo();
+              board.snapBack(prevFen, to, prevLast);
             }
             return true;
           };
@@ -151,10 +154,10 @@
           board.o.movable = function () { return null; };
         }
       }
-      $('#prev', v).disabled = idx === 0;
-      $('#hint', v).style.display = task ? '' : 'none';
-      $('#next', v).textContent = idx === les.steps.length - 1 ? 'إنهاء الدرس ✔' : 'التالي ◀';
-      $('#next', v).classList.toggle('pri', solved);
+      $('#prev', bar).disabled = idx === 0;
+      $('#hint', bar).disabled = !task;
+      $('#next', bar).innerHTML = idx === les.steps.length - 1 ? '<span class="i">✔</span>إنهاء' : '<span class="i">◀</span>التالي';
+      $('#next', bar).classList.toggle('pri', solved);
       A.speak(st.t);
     }
 
@@ -168,18 +171,18 @@
       solved = true; doneSteps[idx] = true;
       A.sfx('ok');
       fb('ok', '✅ ' + msg + (sub ? '<br><small>' + sub + '</small>' : ''));
-      $('#next', v).classList.add('pri');
+      $('#next', bar).classList.add('pri');
       dots();
       A.speak(msg);
     }
 
-    $('#prev', v).onclick = function () { if (idx > 0) { idx--; show(); } };
-    $('#next', v).onclick = function () {
+    $('#prev', bar).onclick = function () { if (idx > 0) { idx--; show(); } };
+    $('#next', bar).onclick = function () {
       if (!solved) { fb('bad', 'أكمل المهمة أولًا، أو استخدم التلميح 💡'); A.sfx('bad'); return; }
       if (idx < les.steps.length - 1) { idx++; show(); return; }
       finish();
     };
-    $('#hint', v).onclick = function () {
+    $('#hint', bar).onclick = function () {
       if (!task) return;
       if (task.type === 'click') board.mark('hint', [task.ans[0]]);
       else if (task.type === 'move') board.arrows([{ from: task.ans[0].slice(0, 2), to: task.ans[0].slice(2, 4), c: 'b' }]);
@@ -288,8 +291,9 @@
         var tmp = new Chess(fens[ply]), r = null;
         try { r = tmp.move({ from: from, to: to, promotion: pr || 'q' }); } catch (e) {}
         cb('❌ ' + (r ? Coach.sanHtml(r.san, r.color) + ' ليست نقلة هذه الافتتاحية.' : '') + ' النقلة النظرية: ' + Coach.sanHtml(exp.san, exp.color) + ' — ' + o.moves[ply][1]);
-        board.arrows([{ from: exp.from, to: exp.to, c: 'g' }]);
-        board.set(fens[ply]);
+        var mm = {}; mm[to] = board.map[from]; var tmpMap = Object.assign({}, board.map); delete tmpMap[from]; tmpMap[to] = mm[to];
+        board.set(tmpMap);
+        board.snapBack(fens[ply], to, ply ? { from: mvs[ply - 1].from, to: mvs[ply - 1].to } : null, function () { board.arrows([{ from: exp.from, to: exp.to, c: 'g' }]); });
       }
       return true;
     };
