@@ -170,20 +170,6 @@ def datasheet_story(s):
     return st
 
 
-def datasheet_marks(canvas, bottom):
-    """The data sheet's own running header and footer text."""
-    canvas.saveState()
-    canvas.setFont("Helvetica", 7.5)
-    canvas.setFillColor(colors.HexColor("#6B6B6B"))
-    y = bottom - 22
-    canvas.setStrokeColor(GRID)
-    canvas.setLineWidth(0.5)
-    canvas.line(MARGIN_X, y + 10, PAGE_W - MARGIN_X, y + 10)
-    canvas.drawString(MARGIN_X, y, "CONFIDENTIAL & PROPRIETARY | STANDARD SPECIFICATION DATA")
-    canvas.drawRightString(PAGE_W - MARGIN_X, PAGE_H - 114, "TECHNICAL DATA SHEET \u2014 SQUARE HOLLOW SECTION")
-    canvas.restoreState()
-
-
 def build_content(buf):
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=MARGIN_X, rightMargin=MARGIN_X,
                             topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM,
@@ -191,7 +177,6 @@ def build_content(buf):
                             author="Metal Lines Co.")
 
     def footer(canvas, doc_):
-        datasheet_marks(canvas, MARGIN_BOTTOM)
         canvas.saveState()
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(colors.HexColor("#6B6B6B"))

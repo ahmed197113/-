@@ -26,7 +26,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import (Image as RLImage, PageBreak, Paragraph,
                                 SimpleDocTemplate, Spacer)
 
-from build_datasheet import (DPI, MARGIN_X, PAGE_H, PAGE_W, datasheet_marks, datasheet_story,
+from build_datasheet import (DPI, MARGIN_X, PAGE_H, PAGE_W, datasheet_story,
                              composite_page, data_table, section_heading, styles)
 
 MARGIN_TOP = 122
@@ -162,7 +162,6 @@ def build_content(buf, f1, f2):
     title_block_h = 44
     # Client files in order, then the SHS 200x200x3 data sheet at the end
     st = []
-    shs_first = len(FILE1_PAGES) + 1 + 1 + 1   # after file 1, file 2 and file 3 (one page)
 
     # File 1: cleaned supplier pages
     for i, cfg in enumerate(FILE1_PAGES):
@@ -196,8 +195,6 @@ def build_content(buf, f1, f2):
         canvas.setFillColor(colors.HexColor("#6B6B6B"))
         canvas.drawRightString(PAGE_W - MARGIN_X, MARGIN_BOTTOM - 16,
                                f"Page {doc_.page} of {{NP}}")
-        if doc_.page >= shs_first:
-            datasheet_marks(canvas, MARGIN_BOTTOM + 6)
         canvas.restoreState()
 
     doc.build(st, onFirstPage=footer, onLaterPages=footer)
