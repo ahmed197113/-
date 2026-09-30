@@ -1,12 +1,12 @@
 """Build the Metal Lines Co. product document on the company letterhead.
 
 Page order:
-  0. SHS 200x200x3 data sheet (2 pages) - content from build_datasheet.py.
   1. Element Pole (3 pages, Canva) - supplier branding, contact details and
      company names are removed; every product text, image and drawing is kept.
   2. Pole elevation drawing with dimensions (1 page) - placed as is.
   3. UNILinear Flex BGC401 LED strip datasheet (2 pages) - typeset on the letterhead
      with its text unchanged apart from the manufacturer's name.
+  4. SHS 200x200x3 data sheet (2 pages) - content from build_datasheet.py.
 
 Each page is flattened at 300 DPI with the letterhead (its faint centre logo is the
 watermark) and the PDF is AES-256 encrypted, print-only.
@@ -160,10 +160,9 @@ def build_content(buf, f1, f2):
     s = styles()
     title = ParagraphStyle("t", parent=s["title"], fontSize=19, leading=22)
     title_block_h = 44
-    # Old file: SHS 200x200x3 data sheet, then the client files in order
-    st = datasheet_story(s)
-    st.append(PageBreak())
-    shs_pages = 2
+    # Client files in order, then the SHS 200x200x3 data sheet at the end
+    st = []
+    shs_first = len(FILE1_PAGES) + 1 + 1 + 1   # after file 1, file 2 and file 3 (one page)
 
     # File 1: cleaned supplier pages
     for i, cfg in enumerate(FILE1_PAGES):
@@ -183,6 +182,10 @@ def build_content(buf, f1, f2):
 
     # File 3: LED strip datasheet
     st.extend(file3_story(s))
+    st.append(PageBreak())
+
+    # Old file: SHS 200x200x3 data sheet
+    st.extend(datasheet_story(s))
 
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=MARGIN_X, rightMargin=MARGIN_X,
                             topMargin=MARGIN_TOP, bottomMargin=MARGIN_BOTTOM)
@@ -193,7 +196,7 @@ def build_content(buf, f1, f2):
         canvas.setFillColor(colors.HexColor("#6B6B6B"))
         canvas.drawRightString(PAGE_W - MARGIN_X, MARGIN_BOTTOM - 16,
                                f"Page {doc_.page} of {{NP}}")
-        if doc_.page <= shs_pages:
+        if doc_.page >= shs_first:
             datasheet_marks(canvas, MARGIN_BOTTOM + 6)
         canvas.restoreState()
 
