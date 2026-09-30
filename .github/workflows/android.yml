@@ -1,0 +1,51 @@
+name: Build Android APK
+
+on:
+  push:
+    paths:
+      - 'chess-app/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: chess-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build release APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk ChessAcademy.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChessAcademy-apk
+          path: chess-app/ChessAcademy.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: أكاديمية الشطرنج الذكية v1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: chess-app/ChessAcademy.apk
+          body: |
+            ملف التثبيت لهواتف أندرويد (8.0 فما فوق) بما فيها هواتف هونر.
+            حمّل ChessAcademy.apk على هاتفك وافتحه لتثبيته.

@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.shatranj.academy'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.shatranj.academy'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('release.keystore')
+            storePassword 'shatranj2026'
+            keyAlias 'shatranj'
+            keyPassword 'shatranj2026'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    androidResources {
+        noCompress += ['wasm']
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}
