@@ -2,8 +2,8 @@
 
 Pipeline:
   1. Typeset the data-sheet content on A4 inside the letterhead's safe area (reportlab).
-  2. For every page, composite at 300 DPI: letterhead + content + diagonal
-     company-name watermark (taken from the letterhead's own logotype).
+  2. For every page, composite at 300 DPI: letterhead (with its faint centre
+     logo acting as the watermark) multiplied over the content.
   3. Write each composite as a single flattened image page and encrypt the PDF
      (AES-256, print-only) so the letterhead/watermark cannot be separated.
 
@@ -14,7 +14,7 @@ import secrets
 import sys
 
 import pymupdf
-from PIL import Image, ImageChops, ImageOps
+from PIL import Image, ImageChops
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
@@ -218,44 +218,13 @@ def build_content(buf):
     doc.build(st, onFirstPage=footer, onLaterPages=footer)
 
 
-def watermark_tile(letterhead_img):
-    """Company logotype cut from the letterhead, recoloured as a faint stamp."""
-    s = DPI / 110
-    crop = letterhead_img.crop((int(530 * s), int(28 * s), int(868 * s), int(118 * s)))
-    gray = ImageOps.grayscale(crop)
-    # Ink mask: dark pixels -> opaque
-    mask = ImageOps.invert(gray).point(lambda v: 0 if v < 40 else min(255, int(v * 1.2)))
-    return mask
-
-
-def composite_page(letterhead, content_png, mask):
-    page = letterhead.copy().convert("RGBA")
+def composite_page(letterhead, content_png):
+    """Multiply the letterhead over the content so its faint centre logo shows
+    through table fills as a quiet watermark, and is baked into the page image."""
     content = Image.open(io.BytesIO(content_png)).convert("RGBA")
-    page.alpha_composite(content)
-
-    # Diagonal tiled watermark on top of everything
-    W, H = page.size
-    layer = Image.new("L", (W * 2, H * 2), 0)
-    tw, th = mask.size
-    scale = 0.62
-    m = mask.resize((int(tw * scale), int(th * scale)), Image.LANCZOS)
-    tw, th = m.size
-    gap_x, gap_y = int(tw * 0.35), int(th * 1.9)
-    for row, y in enumerate(range(0, H * 2, th + gap_y)):
-        off = (row % 2) * (tw + gap_x) // 2
-        for x in range(-tw + off, W * 2, tw + gap_x):
-            layer.paste(m, (x, y), m)
-    layer = layer.rotate(35, resample=Image.BICUBIC)
-    layer = layer.crop((W // 2, H // 2, W // 2 + W, H // 2 + H))
-    alpha = layer.point(lambda v: int(v * 0.12))
-    # Keep the watermark within the body so the letterhead header/footer stay crisp
-    body = Image.new("L", (W, H), 0)
-    body.paste(255, (0, int(H * 0.132), W, int(H * 0.935)))
-    alpha = ImageChops.multiply(alpha, body)
-    tint = Image.new("RGBA", (W, H), (30, 27, 75, 0))
-    tint.putalpha(alpha)
-    page.alpha_composite(tint)
-    return page.convert("RGB")
+    sheet = Image.new("RGBA", content.size, "white")
+    sheet.alpha_composite(content)
+    return ImageChops.multiply(letterhead.convert("RGB"), sheet.convert("RGB"))
 
 
 def main():
@@ -265,7 +234,6 @@ def main():
     lh_doc = pymupdf.open(lh_path)
     lh_pm = lh_doc[0].get_pixmap(dpi=DPI)
     letterhead = Image.frombytes("RGB", (lh_pm.width, lh_pm.height), lh_pm.samples)
-    mask = watermark_tile(letterhead)
 
     buf = io.BytesIO()
     build_content(buf)
@@ -281,7 +249,7 @@ def main():
             page.insert_text((r.x0, r.y1 - 1.6), str(n), fontname="helv", fontsize=7.5,
                              color=(0.42, 0.42, 0.42))
         pm = page.get_pixmap(dpi=DPI, alpha=True)
-        img = composite_page(letterhead.resize((pm.width, pm.height)), pm.tobytes("png"), mask)
+        img = composite_page(letterhead.resize((pm.width, pm.height)), pm.tobytes("png"))
         jpg = io.BytesIO()
         img.save(jpg, "JPEG", quality=93, subsampling=0, dpi=(DPI, DPI))
         p = out.new_page(width=PAGE_W, height=PAGE_H)
