@@ -1,0 +1,31 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["rating"],
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
+    },
+    "usernames": {
+      ".read": "auth != null",
+      "$name": { ".write": "auth != null && (!data.exists() || data.val() === auth.uid)" }
+    },
+    "queue": {
+      "$tc": { ".read": "auth != null", ".write": "auth != null" }
+    },
+    "userGames": {
+      "$uid": { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null" }
+    },
+    "challenges": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$from": { ".write": "auth != null && (auth.uid === $from || auth.uid === $uid)" }
+      }
+    },
+    "games": {
+      "$gid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('w').val() === auth.uid || data.child('b').val() === auth.uid)"
+      }
+    }
+  }
+}

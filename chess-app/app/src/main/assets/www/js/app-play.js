@@ -42,7 +42,7 @@
 
   /* ===== إعداد المباراة ===== */
   A.route('play', function (v) {
-    v.innerHTML = '<button class="bigbtn main" id="on"><span class="ic">🌍</span><span><b>العب أونلاين</b><small>ضد لاعبين حقيقيين عبر lichess.org</small></span></button>' +
+    v.innerHTML = '<button class="bigbtn main" id="on"><span class="ic">🌍</span><span><b>العب أونلاين</b><small>سجّل حسابك والعب ضد لاعبين حقيقيين</small></span></button>' +
       '<button class="bigbtn" id="ai"><span class="ic">🤖</span><span><b>العب ضد الكمبيوتر</b><small>9 مستويات · المدرب يشرح نقلاتك</small></span></button>' +
       '<button class="bigbtn" id="fr"><span class="ic">👥</span><span><b>صديق على نفس الهاتف</b><small>لاعبان على جهاز واحد</small></span></button>' +
       '<button class="bigbtn" id="an"><span class="ic">🔬</span><span><b>المحلل</b><small>حلّل أي موقف أو مباراة</small></span></button>';

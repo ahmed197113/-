@@ -1,260 +1,332 @@
-/* اللعب أونلاين عبر lichess.org (مجاني، لاعبون حقيقيون) + اللعب مع صديق على نفس الهاتف */
+/* اللعب أونلاين بحسابات التطبيق نفسه (Firebase) + اللعب مع صديق على نفس الهاتف */
 (function () {
   'use strict';
   var A = App, S = App.S, $ = A.$, $$ = A.$$, Chess = ChessJS.Chess;
-  var HOST = 'https://lichess.org';
-  var CLIENT = 'shatranj-academy';
 
-  /* ===== الحساب ===== */
-  function token() { return S.lichess && S.lichess.token; }
-  function redirectUri() { return location.origin + location.pathname; }
-  function b64url(buf) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
-  function randStr(n) { var a = new Uint8Array(n); crypto.getRandomValues(a); return b64url(a).slice(0, n); }
+  /* ===== الاتصال بالسيرفر ===== */
+  var Net = { ok: false, auth: null, db: null, offset: 0, user: null, profile: null };
+  function initNet() {
+    var cfg = self.FIREBASE_CONFIG;
+    var emu = /[?&]emu=1/.test(location.search);
+    if (emu) cfg = { apiKey: 'demo-key', authDomain: 'demo-chess.firebaseapp.com', projectId: 'demo-chess', databaseURL: 'http://127.0.0.1:9000/?ns=demo-chess' };
+    if (!cfg || !self.firebase) return;
+    try {
+      firebase.initializeApp(cfg);
+      Net.auth = firebase.auth(); Net.db = firebase.database();
+      if (emu) { Net.auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true }); Net.db.useEmulator('127.0.0.1', 9000); }
+      Net.ok = true;
+      Net.db.ref('.info/serverTimeOffset').on('value', function (s) { Net.offset = s.val() || 0; });
+      Net.auth.onAuthStateChanged(function (u) {
+        Net.user = u; Net.profile = null;
+        if (u) Net.db.ref('users/' + u.uid).on('value', function (s) { Net.profile = s.val(); });
+      });
+    } catch (e) { Net.ok = false; }
+  }
+  function now() { return Date.now() + Net.offset; }
+  function ref(p) { return Net.db.ref(p); }
+  function uid() { return Net.user && Net.user.uid; }
 
-  function login() {
-    var verifier = randStr(64), state = randStr(16);
-    try { localStorage.setItem('li.pkce', JSON.stringify({ v: verifier, s: state })); } catch (e) {}
-    crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)).then(function (h) {
-      location.href = HOST + '/oauth?response_type=code&client_id=' + CLIENT +
-        '&redirect_uri=' + encodeURIComponent(redirectUri()) + '&code_challenge_method=S256&code_challenge=' + b64url(h) +
-        '&scope=' + encodeURIComponent('board:play challenge:write') + '&state=' + state;
-    });
+  var ERR = {
+    'auth/email-already-in-use': 'هذا البريد مسجّل مسبقًا، جرّب تسجيل الدخول.',
+    'auth/invalid-email': 'البريد الإلكتروني غير صحيح.',
+    'auth/weak-password': 'كلمة المرور ضعيفة (6 أحرف على الأقل).',
+    'auth/wrong-password': 'كلمة المرور غير صحيحة.',
+    'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة.',
+    'auth/invalid-login-credentials': 'البريد أو كلمة المرور غير صحيحة.',
+    'auth/user-not-found': 'لا يوجد حساب بهذا البريد.',
+    'auth/too-many-requests': 'محاولات كثيرة، انتظر قليلًا ثم حاول.',
+    'auth/network-request-failed': 'لا يوجد اتصال بالإنترنت.'
+  };
+  function errMsg(e) { return ERR[e && e.code] || (e && e.message) || 'حدث خطأ، حاول مرة أخرى.'; }
+
+  var TCS = [[5, 0, '5 دقائق'], [10, 0, '10 دقائق'], [10, 5, '10+5'], [15, 10, '15+10']];
+  function tcKey(i) { return TCS[i][0] + '_' + TCS[i][1]; }
+
+  /* ===== إنشاء مباراة بين لاعبين ===== */
+  function createGame(a, b, tcI) {
+    var white = Math.random() < .5 ? a : b, black = white === a ? b : a;
+    var t = TCS[tcI], gid = ref('games').push().key;
+    var g = { w: white.uid, b: black.uid, wn: white.name, bn: black.name, wr: white.rating || 1200, br: black.rating || 1200,
+      tc: { m: t[0], i: t[1] }, moves: '', wtime: t[0] * 60000, btime: t[0] * 60000, lastTs: now(), created: now(), status: 'started' };
+    return ref('games/' + gid).set(g).then(function () {
+      return Promise.all([ref('userGames/' + a.uid).set(gid), ref('userGames/' + b.uid).set(gid)]);
+    }).then(function () { return gid; });
   }
 
-  /* يُستدعى عند فتح التطبيق: إكمال تسجيل الدخول بعد العودة من lichess */
-  function handleRedirect() {
-    var q = new URLSearchParams(location.search);
-    var code = q.get('code'), st = q.get('state');
-    if (!code && !q.get('error')) return false;
-    history.replaceState(null, '', location.pathname);
-    var saved = null; try { saved = JSON.parse(localStorage.getItem('li.pkce')); } catch (e) {}
-    if (!code || !saved || saved.s !== st) { A.toast('تم إلغاء تسجيل الدخول'); return false; }
-    var body = new URLSearchParams({ grant_type: 'authorization_code', code: code, code_verifier: saved.v, redirect_uri: redirectUri(), client_id: CLIENT });
-    fetch(HOST + '/api/token', { method: 'POST', body: body }).then(function (r) { return r.json(); }).then(function (j) {
-      if (!j.access_token) throw new Error('no token');
-      S.lichess = { token: j.access_token };
-      return api('/api/account');
-    }).then(function (acc) {
-      S.lichess.user = acc.username; S.lichess.id = acc.id; A.save();
-      A.toast('مرحبًا ' + acc.username + '! جاهز للعب أونلاين');
-      A.go('online');
-    }).catch(function () { A.toast('تعذّر تسجيل الدخول، حاول مرة أخرى'); });
-    return true;
-  }
-
-  function api(path, opts) {
-    opts = opts || {};
-    var h = { Authorization: 'Bearer ' + token() };
-    if (opts.form) { opts.body = new URLSearchParams(opts.form); delete opts.form; }
-    opts.headers = h;
-    return fetch(HOST + path, opts).then(function (r) {
-      if (r.status === 401) { S.lichess = null; A.save(); throw new Error('auth'); }
-      if (!r.ok) return r.text().then(function (t) { var e = new Error(t); e.status = r.status; throw e; });
-      var ct = r.headers.get('content-type') || '';
-      return ct.indexOf('json') >= 0 ? r.json() : r.text();
-    });
-  }
-
-  /* تدفق ndjson: كل سطر حدث */
-  function stream(path, onEvent, ctrl, opts) {
-    opts = opts || {};
-    return fetch(HOST + path, { method: opts.method || 'GET', body: opts.form ? new URLSearchParams(opts.form) : undefined, headers: { Authorization: 'Bearer ' + token() }, signal: ctrl.signal }).then(function (r) {
-      if (!r.ok) return r.text().then(function (t) { var e = new Error(t); e.status = r.status; throw e; });
-      var reader = r.body.getReader(), dec = new TextDecoder(), buf = '';
-      function pump() {
-        return reader.read().then(function (x) {
-          if (x.done) return;
-          buf += dec.decode(x.value, { stream: true });
-          var parts = buf.split('\n'); buf = parts.pop();
-          parts.forEach(function (l) { if (l.trim()) { try { onEvent(JSON.parse(l)); } catch (e) {} } });
-          return pump();
-        });
+  /* ===== الحساب: تسجيل ودخول ===== */
+  function authView(v) {
+    var mode = 'reg';
+    function draw() {
+      v.innerHTML = '<div class="card"><h2>🌍 العب أونلاين</h2><p>أنشئ حسابك في <b>أكاديمية الشطرنج</b> والعب ضد لاعبين حقيقيين وتحدَّ أصدقاءك.</p></div>' +
+        '<div class="seg" style="margin-bottom:12px"><button data-m="reg" class="' + (mode === 'reg' ? 'on' : '') + '">حساب جديد</button><button data-m="in" class="' + (mode === 'in' ? 'on' : '') + '">تسجيل الدخول</button></div>' +
+        '<div class="card">' +
+        (mode === 'reg' ? '<label class="mut">اسم اللاعب (يظهر لخصومك)</label><input type="text" id="un" maxlength="16" style="direction:rtl;margin:6px 0 12px" placeholder="مثال: أحمد_2026">' : '') +
+        '<label class="mut">البريد الإلكتروني</label><input type="text" id="em" inputmode="email" autocomplete="email" style="margin:6px 0 12px" placeholder="name@gmail.com">' +
+        '<label class="mut">كلمة المرور</label><input type="password" id="pw" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.3);color:var(--txt);margin:6px 0 14px;direction:ltr" placeholder="6 أحرف على الأقل">' +
+        '<button class="btn pri block" id="go">' + (mode === 'reg' ? 'إنشاء الحساب' : 'دخول') + '</button>' +
+        (mode === 'in' ? '<button class="btn block" style="margin-top:8px" id="fg">نسيت كلمة المرور؟</button>' : '') +
+        '<p class="feedback" id="fb"></p></div>';
+      $$('.seg button', v).forEach(function (b) { b.onclick = function () { mode = b.dataset.m; draw(); }; });
+      $('#go', v).onclick = submit;
+      if ($('#fg', v)) $('#fg', v).onclick = function () {
+        var em = $('#em', v).value.trim(); if (!em) return fb('bad', 'اكتب بريدك أولًا');
+        Net.auth.sendPasswordResetEmail(em).then(function () { fb('ok', 'أرسلنا رابط تغيير كلمة المرور إلى بريدك.'); }).catch(function (e) { fb('bad', errMsg(e)); });
+      };
+    }
+    function fb(c, m) { var f = $('#fb', v); f.className = 'feedback ' + c; f.textContent = m; }
+    function submit() {
+      var em = $('#em', v).value.trim(), pw = $('#pw', v).value;
+      var btn = $('#go', v); btn.disabled = true;
+      var done = function () { btn.disabled = false; };
+      if (mode === 'in') {
+        Net.auth.signInWithEmailAndPassword(em, pw).then(function () { A.toast('أهلًا بعودتك!'); A.go('online', {}, true); }).catch(function (e) { fb('bad', errMsg(e)); done(); });
+        return;
       }
-      return pump();
-    });
-  }
-
-  function errText(e) {
-    var m = String(e && e.message || '');
-    try { var j = JSON.parse(m); m = j.error || m; } catch (x) {}
-    if (e && e.name === 'AbortError') return '';
-    if (/Failed to fetch|NetworkError/i.test(m)) return 'لا يوجد اتصال بالإنترنت.';
-    return m.slice(0, 120);
+      var name = $('#un', v).value.trim();
+      if (!/^[A-Za-z0-9_؀-ۿ]{3,16}$/.test(name)) { fb('bad', 'الاسم من 3 إلى 16 حرفًا (حروف وأرقام و _ فقط).'); done(); return; }
+      var key = name.toLowerCase();
+      Net.auth.createUserWithEmailAndPassword(em, pw).then(function (cr) {
+        var u = cr.user;
+        return ref('usernames/' + key).transaction(function (cur) { return cur ? undefined : u.uid; }).then(function (r) {
+          if (!r.committed) { return u.delete().then(function () { throw { message: 'هذا الاسم مستخدم، اختر اسمًا آخر.' }; }); }
+          return u.updateProfile({ displayName: name }).then(function () {
+            return ref('users/' + u.uid).set({ name: name, rating: 1200, played: 0, wins: 0, losses: 0, draws: 0, created: now() });
+          });
+        });
+      }).then(function () { A.toast('🎉 تم إنشاء حسابك!'); A.go('online', {}, true); }).catch(function (e) { fb('bad', errMsg(e)); done(); });
+    }
+    draw();
   }
 
   /* ===== شاشة اللعب أونلاين ===== */
-  var TCS = [[10, 0, '10 دقائق'], [10, 5, '10+5'], [15, 10, '15+10'], [30, 0, '30 دقيقة']];
-
   A.route('online', function (v) {
-    var ctrl = null;
-    if (!token()) {
-      v.innerHTML = '<div class="card"><h2>🌍 العب ضد لاعبين حقيقيين</h2><p>اللعب أونلاين يتم عبر موقع <b>lichess.org</b> المجاني (بدون إعلانات، ملايين اللاعبين). تحتاج حسابًا مجانيًا هناك — يمكنك إنشاؤه من صفحة الدخول.</p></div>' +
-        '<button class="bigbtn main" id="li"><span class="ic">🔑</span><span><b>تسجيل الدخول بحساب lichess</b><small>أو أنشئ حسابًا جديدًا مجانًا</small></span></button>' +
-        '<p class="mut center" style="font-size:12.5px">يحتاج اتصالًا بالإنترنت. باقي التطبيق يعمل دون إنترنت.</p>';
-      $('#li', v).onclick = login;
+    if (!Net.ok) {
+      v.innerHTML = '<div class="card"><h2>🌍 اللعب أونلاين</h2><p>اللعب أونلاين قيد التفعيل وسيكون متاحًا قريبًا. يمكنك الآن اللعب ضد الكمبيوتر أو مع صديق على نفس الهاتف.</p></div>';
       return { title: 'العب أونلاين' };
     }
-    var tc = S.liTc || 0, rated = !!S.liRated;
-    v.innerHTML = '<div class="card"><div class="row nw"><div class="sp"><small class="mut">متصل باسم</small><h2 style="margin:0">' + A.esc(S.lichess.user || '') + '</h2></div><button class="btn sm" id="out">خروج</button></div></div>' +
-      '<div id="ongoing"></div>' +
-      '<div class="sec-t">⏱️ مدة المباراة</div><div class="diff" id="tcs">' + TCS.map(function (t, i) { return '<button data-i="' + i + '" class="' + (i === tc ? 'on' : '') + '">' + t[2] + '</button>'; }).join('') + '</div>' +
-      '<label class="switch"><span><b>مباراة مصنّفة</b><br><small class="mut">تؤثر على تصنيفك في lichess</small></span><input type="checkbox" id="rt" ' + (rated ? 'checked' : '') + '></label>' +
-      '<button class="bigbtn main" id="seek" style="margin-top:12px"><span class="ic">⚔️</span><span><b>ابحث عن خصم</b><small>لاعب حقيقي بمستوى قريب منك</small></span></button>' +
-      '<div class="card" style="margin-top:6px"><h2>👥 تحدَّ صديقًا</h2><p>اكتب اسم صديقك في lichess:</p><div class="row nw"><input type="text" id="fr" placeholder="username"><button class="btn pri" id="ch">تحدَّ</button></div></div>' +
-      '<div id="incoming"></div>' +
-      '<p class="mut center" style="font-size:12px">⚖️ أثناء اللعب أونلاين تُعطَّل مساعدة المدرب احترامًا لقواعد اللعب النظيف. بعد المباراة يمكنك تحليلها بالكامل.</p>';
-    $$('#tcs button', v).forEach(function (b) { b.onclick = function () { tc = +b.dataset.i; S.liTc = tc; A.save(); $$('#tcs button', v).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
-    $('#rt', v).onchange = function () { rated = this.checked; S.liRated = rated; A.save(); };
-    $('#out', v).onclick = function () { S.lichess = null; A.save(); A.go('online', {}, true); };
-
-    // تدفق الأحداث: بدء المباريات والتحديات الواردة
-    var evCtrl = new AbortController();
-    stream('/api/stream/event', function (ev) {
-      if (ev.type === 'gameStart') {
-        var g = ev.game || {};
-        if (ctrl) { stopSearch(); A.go('ogame', { id: g.gameId || g.id }); return; }
-        var o = $('#ongoing', v);
-        if (o) {
-          o.innerHTML = '<button class="bigbtn" id="resume"><span class="ic">⏯️</span><span><b>لديك مباراة جارية</b><small>ضد ' + A.esc((g.opponent && g.opponent.username) || '') + ' — اضغط للمتابعة</small></span></button>';
-          $('#resume', v).onclick = function () { A.go('ogame', { id: g.gameId || g.id }); };
-        }
-      } else if (ev.type === 'challenge' && ev.challenge && ev.challenge.challenger && ev.challenge.challenger.id !== S.lichess.id) {
-        var c = ev.challenge, inc = $('#incoming', v);
-        if (!inc) return;
-        inc.innerHTML = '<div class="card glow"><h2>📩 تحدٍّ من ' + A.esc(c.challenger.name) + '</h2><p>' + A.esc((c.timeControl && c.timeControl.show) || '') + (c.rated ? ' · مصنّفة' : ' · ودّية') + '</p><div class="row"><button class="btn pri" id="acc">قبول</button><button class="btn" id="dec">رفض</button></div></div>';
-        $('#acc', v).onclick = function () { api('/api/challenge/' + c.id + '/accept', { method: 'POST' }).catch(function (e) { A.toast(errText(e)); }); inc.innerHTML = '<p class="center mut">جارٍ بدء المباراة...</p>'; ctrl = ctrl || { abort: function () {} }; };
-        $('#dec', v).onclick = function () { api('/api/challenge/' + c.id + '/decline', { method: 'POST' }).catch(function () {}); inc.innerHTML = ''; };
-      }
-    }, evCtrl).catch(function (e) { var m = errText(e); if (m) A.toast(m); });
-
-    var challengeId = null;
-    function searching(text) {
-      var m = A.modal('<div class="center"><div class="spin" style="width:42px;height:42px;border-width:4px"></div><h2 style="margin-top:14px">' + text + '</h2><p class="mut">' + TCS[tc][2] + (rated ? ' · مصنّفة' : ' · ودّية') + '</p><button class="btn block" data-close>إلغاء</button></div>', function () { stopSearch(); });
-      return m;
+    if (!Net.user) {
+      v.innerHTML = '<p class="center"><span class="spin"></span></p>';
+      var t = setTimeout(function () { if (!Net.user) authView(v); else A.go('online', {}, true); }, Net.auth.currentUser === null ? 600 : 0);
+      return { title: 'العب أونلاين', cleanup: function () { clearTimeout(t); } };
     }
-    var modalRef = null;
-    function stopSearch() {
-      if (ctrl) { try { ctrl.abort(); } catch (e) {} ctrl = null; }
-      if (challengeId) { api('/api/challenge/' + challengeId + '/cancel', { method: 'POST' }).catch(function () {}); challengeId = null; }
-      if (modalRef && modalRef.parentNode) modalRef.remove();
+    var me = uid(), offs = [], seeking = null, beat = null;
+    function on(r, ev, fn) { r.on(ev, fn); offs.push(function () { r.off(ev, fn); }); }
+    var tc = S.onTc == null ? 1 : S.onTc;
+    v.innerHTML = '<div class="card" id="prof"></div><div id="cur"></div>' +
+      '<div class="sec-t">⏱️ مدة المباراة</div><div class="diff" id="tcs">' + TCS.map(function (x, i) { return '<button data-i="' + i + '" class="' + (i === tc ? 'on' : '') + '">' + x[2] + '</button>'; }).join('') + '</div>' +
+      '<button class="bigbtn main" id="seek"><span class="ic">⚔️</span><span><b>ابحث عن خصم</b><small>لاعب حقيقي من مستخدمي التطبيق</small></span></button>' +
+      '<div id="inc"></div>' +
+      '<div class="card"><h2>👥 تحدَّ صديقًا</h2><p>اكتب اسم صديقك في التطبيق:</p><div class="row nw"><input type="text" id="fr" style="direction:rtl" placeholder="اسم اللاعب"><button class="btn pri" id="ch">تحدَّ</button></div></div>' +
+      '<div class="card"><h2>🏆 أفضل اللاعبين</h2><div id="lb"><span class="spin"></span></div></div>' +
+      '<button class="btn block" id="out" style="margin-bottom:10px">تسجيل الخروج</button>';
+    $$('#tcs button', v).forEach(function (b) { b.onclick = function () { tc = +b.dataset.i; S.onTc = tc; A.save(); $$('#tcs button', v).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+    $('#out', v).onclick = function () { Net.auth.signOut().then(function () { A.go('online', {}, true); }); };
+
+    on(ref('users/' + me), 'value', function (s) {
+      var p = s.val() || {}; Net.profile = p;
+      $('#prof', v).innerHTML = '<div class="row nw"><div class="av" style="width:44px;height:44px;border-radius:14px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:22px">♞</div><div class="sp"><b style="font-size:17px">' + A.esc(p.name || '') + '</b><br><small class="mut">التصنيف ' + (p.rating || 1200) + ' · ' + (p.wins || 0) + ' فوز · ' + (p.losses || 0) + ' خسارة · ' + (p.draws || 0) + ' تعادل</small></div></div>';
+    });
+    // مباراة جارية أو مباراة بدأت للتو
+    var startGid = null, firstSnap = true;
+    on(ref('userGames/' + me), 'value', function (s) {
+      var gid = s.val();
+      if (firstSnap) { firstSnap = false; startGid = gid; if (gid) ref('games/' + gid + '/status').once('value').then(function (st) { if (st.val() === 'started' && $('#cur', v)) { $('#cur', v).innerHTML = '<button class="bigbtn" id="rs"><span class="ic">⏯️</span><span><b>لديك مباراة جارية</b><small>اضغط للمتابعة</small></span></button>'; $('#rs', v).onclick = function () { A.go('ngame', { id: gid }); }; } }); return; }
+      if (gid && gid !== startGid) { stopSeek(true); A.go('ngame', { id: gid }); }
+    });
+    // التحديات الواردة
+    on(ref('challenges/' + me), 'value', function (s) {
+      var list = s.val() || {}, h = '';
+      Object.keys(list).forEach(function (from) {
+        var c = list[from]; if (now() - c.ts > 120000) return;
+        h += '<div class="card glow"><b>📩 ' + A.esc(c.name) + ' (' + c.rating + ') يتحداك</b><p>' + TCS[c.tc][2] + '</p><div class="row"><button class="btn pri" data-a="' + from + '">قبول</button><button class="btn" data-d="' + from + '">رفض</button></div></div>';
+      });
+      $('#inc', v).innerHTML = h;
+      $$('#inc [data-a]', v).forEach(function (b) { b.onclick = function () { var from = b.dataset.a, c = list[from]; ref('challenges/' + me + '/' + from).remove(); createGame({ uid: from, name: c.name, rating: c.rating }, { uid: me, name: Net.profile.name, rating: Net.profile.rating }, c.tc).catch(function (e) { A.toast(errMsg(e)); }); }; });
+      $$('#inc [data-d]', v).forEach(function (b) { b.onclick = function () { ref('challenges/' + me + '/' + b.dataset.d).remove(); }; });
+    });
+    // لوحة الصدارة
+    ref('users').orderByChild('rating').limitToLast(20).once('value').then(function (s) {
+      var arr = []; s.forEach(function (c) { arr.push(c.val()); });
+      arr.reverse();
+      var el = $('#lb', v); if (!el) return;
+      el.innerHTML = arr.map(function (u, i) { return '<div class="row nw" style="padding:6px 0;border-bottom:1px solid var(--line)"><b style="width:26px">' + (i + 1) + '</b><span class="sp">' + A.esc(u.name || '') + '</span><b>' + (u.rating || 1200) + '</b></div>'; }).join('') || '<p class="mut">لا يوجد لاعبون بعد</p>';
+    }).catch(function () { var el = $('#lb', v); if (el) el.innerHTML = ''; });
+
+    var waitModal = null, challengeTo = null;
+    function stopSeek(silent) {
+      if (seeking) { ref('queue/' + seeking + '/' + me).remove(); seeking = null; }
+      if (challengeTo) { ref('challenges/' + challengeTo + '/' + me).remove(); challengeTo = null; }
+      clearInterval(beat); beat = null;
+      if (waitModal && waitModal.parentNode) waitModal.remove();
+      waitModal = null;
+    }
+    function wait(text) {
+      waitModal = A.modal('<div class="center"><div class="spin" style="width:42px;height:42px;border-width:4px"></div><h2 style="margin-top:14px">' + text + '</h2><p class="mut">' + TCS[tc][2] + '</p><button class="btn block" data-close>إلغاء</button></div>', function () { stopSeek(); });
     }
     $('#seek', v).onclick = function () {
-      ctrl = new AbortController();
-      modalRef = searching('نبحث عن خصم...');
-      stream('/api/board/seek', function () {}, ctrl, { method: 'POST', form: { rated: rated, time: TCS[tc][0], increment: TCS[tc][1], variant: 'standard', color: 'random' } })
-        .catch(function (e) { var m = errText(e); if (m) { A.toast(m); stopSearch(); } });
+      var p = Net.profile || {}, key = tcKey(tc), opp = null, mine = { name: p.name || Net.user.displayName || 'لاعب', rating: p.rating || 1200, ts: now() };
+      wait('نبحث عن خصم...');
+      ref('queue/' + key).transaction(function (q) {
+        q = q || {}; opp = null;
+        var t = now();
+        Object.keys(q).forEach(function (k) {
+          if (k === me) { delete q[k]; return; }
+          if (t - (q[k].ts || 0) > 45000) { delete q[k]; return; }
+          if (!opp) opp = k;
+        });
+        if (opp) { opp = { uid: opp, name: q[opp].name, rating: q[opp].rating }; delete q[opp]; }
+        else q[me] = mine;
+        return q;
+      }).then(function (r) {
+        if (!r.committed) throw new Error('retry');
+        if (opp) return createGame(opp, { uid: me, name: mine.name, rating: mine.rating }, tc);
+        seeking = key;
+        beat = setInterval(function () { ref('queue/' + key + '/' + me + '/ts').set(now()); }, 15000);
+      }).catch(function (e) { stopSeek(); A.toast(errMsg(e)); });
     };
     $('#ch', v).onclick = function () {
-      var u = $('#fr', v).value.trim();
-      if (!u) { A.toast('اكتب اسم المستخدم'); return; }
-      ctrl = new AbortController();
-      modalRef = searching('بانتظار قبول ' + A.esc(u) + '...');
-      api('/api/challenge/' + encodeURIComponent(u), { method: 'POST', form: { rated: rated, 'clock.limit': TCS[tc][0] * 60, 'clock.increment': TCS[tc][1], color: 'random', variant: 'standard' } })
-        .then(function (j) { challengeId = (j.challenge || j).id; A.toast('أُرسل التحدي! أرسل لصديقك الرابط: lichess.org/' + challengeId, 5000); })
-        .catch(function (e) { A.toast(errText(e) || 'تعذّر إرسال التحدي'); stopSearch(); });
+      var name = $('#fr', v).value.trim().toLowerCase();
+      if (!name) return A.toast('اكتب اسم صديقك');
+      ref('usernames/' + name).once('value').then(function (s) {
+        var to = s.val();
+        if (!to) { A.toast('لا يوجد لاعب بهذا الاسم'); return; }
+        if (to === me) { A.toast('لا يمكنك تحدي نفسك 😄'); return; }
+        var p = Net.profile || {};
+        challengeTo = to;
+        wait('بانتظار قبول صديقك...');
+        return ref('challenges/' + to + '/' + me).set({ name: p.name, rating: p.rating || 1200, tc: tc, ts: now() });
+      }).catch(function (e) { stopSeek(); A.toast(errMsg(e)); });
     };
-    return { title: 'العب أونلاين', cleanup: function () { stopSearch(); evCtrl.abort(); } };
+    return { title: 'العب أونلاين', cleanup: function () { stopSeek(); offs.forEach(function (f) { f(); }); } };
   });
 
   /* ===== المباراة أونلاين ===== */
-  A.route('ogame', function (v, p) {
-    var id = p.id, ctrl = new AbortController();
-    var me = null, initFen = new Chess().fen(), ch = new Chess(), moves = [], st = {}, over = false, clockT = null, lastTick = Date.now();
-    var names = { w: '', b: '' };
-    v.innerHTML = '<div class="plr" id="pt"></div><div class="bwrap" id="bd"></div><div class="plr" id="pb"></div><div class="panel"><div class="coachbox" id="cb"><span class="think"><span class="spin"></span> جارٍ الاتصال بالمباراة...</span></div><div class="moves" id="ml" style="margin-top:8px"></div></div>';
+  A.route('ngame', function (v, p) {
+    var gid = p.id, me = uid(), g = null, my = null, ch = new Chess(), over = false, tick = null, gref = ref('games/' + gid);
+    v.innerHTML = '<div class="plr" id="pt"></div><div class="bwrap" id="bd"></div><div class="plr" id="pb"></div><div class="panel"><div class="coachbox" id="cb"><span class="think"><span class="spin"></span> جارٍ تحميل المباراة...</span></div><div class="moves" id="ml" style="margin-top:8px"></div></div>';
     var board = newBoard($('#bd', v), {});
     var bar = A.actionbar([['drw', '🤝', 'تعادل'], ['res', '🏳️', 'استسلام'], ['flp', '🔄', 'قلب']]);
     function msg(h) { $('#cb', v).innerHTML = h; }
-
     function fmt(ms) { ms = Math.max(0, ms); var s = Math.ceil(ms / 1000), m = Math.floor(s / 60); s %= 60; return m + ':' + (s < 10 ? '0' : '') + s; }
-    function bars() {
-      if (!me) return;
-      var opp = me === 'w' ? 'b' : 'w', turn = ch.turn();
-      var el = Date.now() - lastTick;
-      function t(c) { var x = c === 'w' ? st.wtime : st.btime; if (!over && turn === c && moves.length >= 2) x -= el; return x; }
-      function bar(c) { var tm = t(c); return '<div class="av">' + (c === 'w' ? '♔' : '♚') + '</div><b>' + A.esc(names[c]) + '</b><span class="sp"></span><span class="clock' + (turn === c && !over ? ' on' : '') + (tm < 20000 ? ' low' : '') + '">' + fmt(tm) + '</span>'; }
-      $('#pt', v).innerHTML = bar(opp); $('#pb', v).innerHTML = bar(me);
+    function list() { return g && g.moves ? g.moves.split(' ') : []; }
+    function remaining(c) {
+      if (!g) return 0;
+      var t = c === 'w' ? g.wtime : g.btime;
+      if (g.status === 'started' && ch.turn() === c && list().length >= 2) t -= now() - g.lastTs;
+      return t;
     }
-    function applyMoves(list, animate) {
-      var prev = moves.length;
-      ch = new Chess(initFen); var last = null, mv = null;
-      list.forEach(function (u) { mv = ch.move(Coach.parseUci(u)); last = { from: mv.from, to: mv.to }; });
-      moves = list.slice();
+    function bars() {
+      if (!g) return;
+      var opp = my === 'w' ? 'b' : 'w';
+      function row(c) { var t = remaining(c), nm = c === 'w' ? g.wn + ' (' + g.wr + ')' : g.bn + ' (' + g.br + ')'; return '<div class="av">' + (c === 'w' ? '♔' : '♚') + '</div><b>' + A.esc(nm) + '</b><span class="sp"></span><span class="clock' + (ch.turn() === c && !over ? ' on' : '') + (t < 20000 ? ' low' : '') + '">' + fmt(t) + '</span>'; }
+      $('#pt', v).innerHTML = row(opp); $('#pb', v).innerHTML = row(my);
+      // المطالبة بالفوز عند انتهاء وقت الخصم
+      if (!over && ch.turn() === opp && list().length >= 2 && remaining(opp) <= 0) claim('timeout', my);
+    }
+    var lastLen = -1;
+    function render() {
+      var mv = null, last = null;
+      ch = new Chess();
+      list().forEach(function (u) { mv = ch.move(Coach.parseUci(u)); last = { from: mv.from, to: mv.to }; });
       board.set(ch.fen(), last);
       var mk = {}; if (ch.isCheck()) mk.chk = [kingSq(ch, ch.turn())]; board.setMarks(mk);
-      if (animate && list.length > prev && mv) A.soundFor(mv, ch);
-      var h = '', c2 = new Chess(initFen);
-      list.forEach(function (u, i) { var r = c2.move(Coach.parseUci(u)); if (r.color === 'w') h += '<span class="mn">' + Math.ceil((i + 1) / 2) + '.</span>'; h += '<span class="mv' + (i === list.length - 1 ? ' cur' : '') + '">' + Coach.sanHtml(r.san, r.color) + '</span>'; });
+      if (list().length !== lastLen && lastLen >= 0 && mv) A.soundFor(mv, ch);
+      lastLen = list().length;
+      var h = '', c2 = new Chess();
+      list().forEach(function (u, i) { var r = c2.move(Coach.parseUci(u)); if (r.color === 'w') h += '<span class="mn">' + Math.ceil((i + 1) / 2) + '.</span>'; h += '<span class="mv' + (i === list().length - 1 ? ' cur' : '') + '">' + Coach.sanHtml(r.san, r.color) + '</span>'; });
       var ml = $('#ml', v); ml.innerHTML = h; ml.scrollTop = ml.scrollHeight;
-      lastTick = Date.now();
     }
-    function onState(s) {
-      st = s;
-      var list = s.moves ? s.moves.split(' ') : [];
-      if (list.length !== moves.length || list.join() !== moves.join()) applyMoves(list, true);
-      else lastTick = Date.now();
-      if (s.status && s.status !== 'started' && s.status !== 'created') return finish(s);
-      var oppDraw = me === 'w' ? s.bdraw : s.wdraw;
-      if (oppDraw) {
-        msg('🤝 خصمك يعرض التعادل.<div class="chips"><button class="btn sm pri" id="dy">قبول</button><button class="btn sm" id="dn">رفض</button></div>');
-        $('#dy', v).onclick = function () { api('/api/board/game/' + id + '/draw/yes', { method: 'POST' }).catch(function () {}); };
-        $('#dn', v).onclick = function () { api('/api/board/game/' + id + '/draw/no', { method: 'POST' }).catch(function () {}); msg('رفضت التعادل.'); };
-      } else msg(ch.turn() === me ? '<b>دورك</b>' : '<span class="mut">ينتظر نقلة الخصم...</span>');
-      bars();
+    function claim(status, winner) {
+      gref.transaction(function (x) { if (!x || x.status !== 'started') return; x.status = status; x.winner = winner || null; return x; });
     }
-    var STATUS = { mate: 'كش مات', resign: 'استسلام', stalemate: 'إغلاق (تعادل)', timeout: 'انتهاء الوقت', draw: 'تعادل', outoftime: 'انتهاء الوقت', aborted: 'أُلغيت المباراة', noStart: 'لم تبدأ المباراة', cheat: 'غش' };
-    function finish(s) {
+    var STATUS = { mate: 'كش مات', resign: 'استسلام', stalemate: 'إغلاق', timeout: 'انتهاء الوقت', draw: 'تعادل بالاتفاق', drawn: 'تعادل', aborted: 'أُلغيت المباراة' };
+
+    function finish() {
       if (over) return; over = true; bars();
-      var res = s.winner ? (s.winner === (me === 'w' ? 'white' : 'black') ? 'win' : 'loss') : 'draw';
-      if (s.status === 'aborted') res = 'aborted';
+      var res = g.status === 'aborted' ? 'aborted' : !g.winner ? 'draw' : g.winner === my ? 'win' : 'loss';
       A.sfx(res === 'win' ? 'win' : res === 'loss' ? 'lose' : 'drawn');
       if (res === 'win') A.confetti();
-      if (res !== 'aborted') { S.games.played++; if (res === 'win') S.games.won++; else if (res === 'loss') S.games.lost++; else S.games.drawn++; A.save(); A.addXp(res === 'win' ? 30 : 15, 'مباراة أونلاين'); }
-      var t = { win: ['🏆', 'فزت!'], loss: ['💪', 'خسرت هذه المرة'], draw: ['🤝', 'تعادل'], aborted: ['⏹️', 'أُلغيت المباراة'] }[res];
-      var m = A.modal('<div class="big-emoji">' + t[0] + '</div><h2 class="center">' + t[1] + '</h2><p class="center mut">' + (STATUS[s.status] || s.status) + '</p>' +
-        (moves.length > 1 ? '<button class="btn pri block" id="anl">🔬 حلّل المباراة مع المدرب</button>' : '') + '<button class="btn block" style="margin-top:8px" id="nw">مباراة جديدة</button>');
-      if ($('#anl', m)) $('#anl', m).onclick = function () { m.close(); A.go('analysis', { moves: moves.slice(), orient: me }); };
+      if (res !== 'aborted') {
+        // تحديث تصنيفي مرة واحدة فقط لكل مباراة
+        var oppR = my === 'w' ? g.br : g.wr, myR = my === 'w' ? g.wr : g.br;
+        var score = res === 'win' ? 1 : res === 'draw' ? .5 : 0;
+        var exp = 1 / (1 + Math.pow(10, (oppR - myR) / 400));
+        var delta = Math.round(32 * (score - exp));
+        ref('users/' + me).transaction(function (u) {
+          if (!u) return u;
+          u.done = u.done || {};
+          if (u.done[gid]) return;
+          u.done[gid] = true;
+          u.rating = (u.rating || 1200) + delta; u.played = (u.played || 0) + 1;
+          if (res === 'win') u.wins = (u.wins || 0) + 1; else if (res === 'loss') u.losses = (u.losses || 0) + 1; else u.draws = (u.draws || 0) + 1;
+          return u;
+        });
+        S.games.played++; if (res === 'win') S.games.won++; else if (res === 'loss') S.games.lost++; else S.games.drawn++; A.save();
+        A.addXp(res === 'win' ? 30 : 15, 'مباراة أونلاين');
+        var t0 = { win: ['🏆', 'فزت!'], loss: ['💪', 'خسرت هذه المرة'], draw: ['🤝', 'تعادل'] }[res];
+        showEnd(t0, (STATUS[g.status] || '') + ' · التصنيف ' + (delta >= 0 ? '+' : '') + delta);
+      } else showEnd(['⏹️', 'أُلغيت المباراة'], '');
+    }
+    function showEnd(t, sub) {
+      msg(t[1] + ' — ' + sub);
+      var m = A.modal('<div class="big-emoji">' + t[0] + '</div><h2 class="center">' + t[1] + '</h2><p class="center mut">' + sub + '</p>' +
+        (list().length > 1 ? '<button class="btn pri block" id="anl">🔬 حلّل المباراة مع المدرب</button>' : '') + '<button class="btn block" style="margin-top:8px" id="nw">مباراة جديدة</button>');
+      if ($('#anl', m)) $('#anl', m).onclick = function () { m.close(); A.go('analysis', { moves: list(), orient: my }); };
       $('#nw', m).onclick = function () { m.close(); A.go('online', {}, true); };
-      msg(t[1] + ' — ' + (STATUS[s.status] || ''));
     }
 
-    board.o.movable = function () { return !over && me && ch.turn() === me ? me : null; };
+    var listener = function (s) {
+      g = s.val();
+      if (!g) { msg('المباراة غير موجودة.'); return; }
+      if (!my) { my = g.w === me ? 'w' : 'b'; board.setOrientation(my); A.sfx('start'); }
+      render(); bars();
+      if (g.status !== 'started') { finish(); return; }
+      var opp = my === 'w' ? 'b' : 'w';
+      if (g.drawOffer === opp) {
+        msg('🤝 خصمك يعرض التعادل.<div class="chips"><button class="btn sm pri" id="dy">قبول</button><button class="btn sm" id="dn">رفض</button></div>');
+        $('#dy', v).onclick = function () { claim('draw', null); };
+        $('#dn', v).onclick = function () { gref.child('drawOffer').remove(); };
+      } else msg(ch.turn() === my ? '<b>دورك</b>' + (list().length < 2 ? ' <small class="mut">(الوقت يبدأ بعد أول نقلتين)</small>' : '') : '<span class="mut">ينتظر نقلة الخصم...</span>');
+    };
+    gref.on('value', listener);
+
+    board.o.movable = function () { return !over && g && ch.turn() === my ? my : null; };
     board.o.dests = chessDests({ moves: function (o) { return ch.moves(o); } });
     board.o.onMove = function (from, to, pr) {
-      var mv; try { mv = ch.move({ from: from, to: to, promotion: pr || 'q' }); } catch (e) { return false; }
+      var c = new Chess(ch.fen()), mv;
+      try { mv = c.move({ from: from, to: to, promotion: pr || 'q' }); } catch (e) { return false; }
       var u = mv.from + mv.to + (mv.promotion || '');
-      var before = moves.slice();
-      moves.push(u); applyMoves(moves, false); A.soundFor(mv, ch); bars();
-      api('/api/board/game/' + id + '/move/' + u, { method: 'POST' }).catch(function (e) {
-        A.toast('لم تُرسل النقلة: ' + errText(e)); applyMoves(before, false);
-      });
+      board.set(c.fen(), { from: from, to: to }); A.soundFor(mv, c); lastLen = list().length + 1;
+      gref.transaction(function (x) {
+        if (!x || x.status !== 'started') return;
+        var cc = new Chess(), ms = x.moves ? x.moves.split(' ') : [];
+        ms.forEach(function (m) { cc.move(Coach.parseUci(m)); });
+        if (cc.turn() !== my) return;
+        try { cc.move(Coach.parseUci(u)); } catch (e) { return; }
+        var t = now(), key = my === 'w' ? 'wtime' : 'btime';
+        if (ms.length >= 2) {
+          x[key] -= t - x.lastTs;
+          if (x[key] <= 0) { x[key] = 0; x.status = 'timeout'; x.winner = my === 'w' ? 'b' : 'w'; return x; }
+          x[key] += (x.tc.i || 0) * 1000;
+        }
+        ms.push(u); x.moves = ms.join(' '); x.lastTs = t; x.drawOffer = null;
+        if (cc.isCheckmate()) { x.status = 'mate'; x.winner = my; }
+        else if (cc.isStalemate()) x.status = 'stalemate';
+        else if (cc.isDraw()) x.status = 'drawn';
+        return x;
+      }).then(function (r) { if (!r.committed) { A.toast('لم تُقبل النقلة'); render(); } }).catch(function () { A.toast('لا يوجد اتصال'); render(); });
       return true;
     };
     $('#flp', bar).onclick = function () { board.setOrientation(board.orient === 'w' ? 'b' : 'w'); };
-    $('#drw', bar).onclick = function () { if (over) return; api('/api/board/game/' + id + '/draw/yes', { method: 'POST' }).then(function () { A.toast('أرسلت عرض التعادل'); }).catch(function (e) { A.toast(errText(e)); }); };
+    $('#drw', bar).onclick = function () { if (over || !g) return; gref.child('drawOffer').set(my); A.toast('أرسلت عرض التعادل'); };
     $('#res', bar).onclick = function () {
-      if (over) return;
-      var abort = moves.length < 2;
+      if (over || !g) return;
+      var abort = list().length < 2;
       var m = A.modal('<h2>' + (abort ? 'إلغاء المباراة؟' : 'الاستسلام؟') + '</h2><div class="row"><button class="btn bad" id="y">' + (abort ? 'إلغاء' : 'استسلم') + '</button><button class="btn" data-close>رجوع</button></div>');
-      $('#y', m).onclick = function () { m.close(); api('/api/board/game/' + id + (abort ? '/abort' : '/resign'), { method: 'POST' }).catch(function (e) { A.toast(errText(e)); }); };
+      $('#y', m).onclick = function () { m.close(); if (abort) claim('aborted', null); else claim('resign', my === 'w' ? 'b' : 'w'); };
     };
-
-    stream('/api/board/game/stream/' + id, function (ev) {
-      if (ev.type === 'gameFull') {
-        var myId = S.lichess.id || (S.lichess.user || '').toLowerCase();
-        me = ev.white && ev.white.id === myId ? 'w' : 'b';
-        names.w = (ev.white.name || ev.white.id || 'الأبيض') + (ev.white.rating ? ' (' + ev.white.rating + ')' : '');
-        names.b = (ev.black.name || ev.black.id || 'الأسود') + (ev.black.rating ? ' (' + ev.black.rating + ')' : '');
-        if (ev.initialFen && ev.initialFen !== 'startpos') initFen = ev.initialFen;
-        board.setOrientation(me);
-        A.sfx('start');
-        onState(ev.state);
-      } else if (ev.type === 'gameState') onState(ev);
-      else if (ev.type === 'opponentGone' && ev.gone) msg('⚠️ خصمك غادر المباراة. ' + (ev.claimWinInSeconds ? 'يمكنك المطالبة بالفوز خلال ' + ev.claimWinInSeconds + ' ثانية.' : ''));
-    }, ctrl).catch(function (e) { var m = errText(e); if (m) msg('⚠️ ' + m); });
-
-    clockT = setInterval(bars, 250);
-    return { title: 'مباراة أونلاين', cleanup: function () { ctrl.abort(); clearInterval(clockT); } };
+    tick = setInterval(bars, 250);
+    return { title: 'مباراة أونلاين', cleanup: function () { gref.off('value', listener); clearInterval(tick); } };
   });
 
   /* ===== صديق على نفس الهاتف ===== */
@@ -296,5 +368,6 @@
     return { title: 'صديق على نفس الهاتف' };
   });
 
-  self.Lichess = { handleRedirect: handleRedirect, login: login };
+  initNet();
+  self.Net = Net;
 })();
