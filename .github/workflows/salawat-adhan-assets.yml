@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - run: salawat-app/tools/prepare_adhans.sh "$RUNNER_TEMP/adhan"
       - uses: softprops/action-gh-release@v2
         with:
