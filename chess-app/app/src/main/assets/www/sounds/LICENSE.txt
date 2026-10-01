@@ -1,1 +1,1 @@
-Sounds: lichess.org sound sets "sfx" and "futuristic" by Enigmahack — AGPLv3+ (https://github.com/lichess-org/lila/blob/master/COPYING.md)
+Sounds: lichess.org sound sets "sfx", "futuristic", "piano" and "nes" by Enigmahack — AGPLv3+ (https://github.com/lichess-org/lila/blob/master/COPYING.md)

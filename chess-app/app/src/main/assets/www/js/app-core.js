@@ -9,7 +9,7 @@
     xp: 0, streak: 0, lastDay: '', days: 0,
     lessons: {}, puzzles: {}, pRating: 600, streakBest: 0, pSolved: 0, pFailed: 0, rushBest: 0, coordBest: 0, quizBest: 0,
     games: { played: 0, won: 0, lost: 0, drawn: 0, bestLevel: -1 }, openings: {}, brilliants: 0, ach: {},
-    set: { sound: true, pack: 'real', pdiff: 1, vib: true, voice: false, coords: true, theme: 'green', lowfx: false, evalbar: false, coachEvery: true, autoThreat: false, level: 2, color: 'w' },
+    set: { sound: true, pack: 'wood', pieces: 'cburnett', pdiff: 1, vib: true, voice: false, coords: true, theme: 'green', lowfx: false, evalbar: false, coachEvery: true, autoThreat: false, level: 2, color: 'w' },
     saved: null
   };
   var S;
@@ -139,13 +139,15 @@
   /* عينات صوتية حقيقية تُحمَّل مسبقًا لتشغيل فوري بلا تأخير */
   var SAMPLES = { move: 'Move', capture: 'Capture', check: 'Check', win: 'Victory', loss: 'Defeat', draw: 'Draw', notify: 'GenericNotify', low: 'LowTime' };
   var buf = {}, bufPack = null;
+  var PACKS = ['wood', 'real', 'future', 'piano', 'nes'];
   function loadPack() {
-    var pack = S.set.pack === 'future' ? 'future' : 'real';
+    var pack = PACKS.indexOf(S.set.pack) >= 0 ? S.set.pack : 'wood';
     if (bufPack === pack) return;
     bufPack = pack; buf = {};
     var a = ac(); if (!a) return;
     Object.keys(SAMPLES).forEach(function (k) {
-      fetch('sounds/' + pack + '/' + SAMPLES[k] + '.mp3').then(function (r) { return r.arrayBuffer(); })
+      var dir = pack === 'wood' && ['move', 'capture', 'check'].indexOf(k) < 0 ? 'real' : pack;
+      fetch('sounds/' + dir + '/' + SAMPLES[k] + '.mp3').then(function (r) { return r.arrayBuffer(); })
         .then(function (d) { return new Promise(function (res, rej) { a.decodeAudioData(d, res, rej); }); })
         .then(function (b) { if (bufPack === pack) buf[k] = b; }).catch(function () {});
     });
@@ -331,17 +333,26 @@
   route('settings', function (v) {
     var st = S.set;
     function sw(k, label, sub) { return '<label class="switch"><span><b>' + label + '</b>' + (sub ? '<br><small class="mut">' + sub + '</small>' : '') + '</span><input type="checkbox" data-k="' + k + '" ' + (st[k] ? 'checked' : '') + '></label>'; }
-    var themes = [['green', '#ebecd0', '#739552', 'أخضر'], ['brown', '#f0d9b5', '#b58863', 'بني'], ['blue', '#dee3e6', '#8ca2ad', 'أزرق'], ['future', '#c9d3f2', '#5a6aa8', 'مستقبلي'], ['neon', '#1c2350', '#0e1333', 'نيون'], ['marble', '#eceff4', '#8c96ad', 'رخامي']];
-    v.innerHTML = '<div class="card">' +
-      sw('sound', '🔊 المؤثرات الصوتية') + '<div class="switch"><span><b>🎵 نوع الأصوات</b></span><div class="seg" id="pk" style="width:170px"><button data-p="real">واقعي</button><button data-p="future">مستقبلي</button></div></div>' + sw('vib', '📳 الاهتزاز') + sw('voice', '🗣️ القراءة الصوتية بالعربية', 'يقرأ المدرب الشرح بصوت عالٍ (يتطلب محرك نطق عربي في الهاتف)') +
-      sw('coords', '🔤 إظهار الإحداثيات') + sw('evalbar', '📊 شريط التقييم أثناء اللعب') + sw('coachEvery', '🤖 تقييم كل نقلة', 'المدرب يعلّق على كل نقلة تلعبها') + sw('autoThreat', '🛡️ تنبيه التهديدات تلقائيًا', 'ينبهك المدرب عندما يهدد الخصم شيئًا مهمًا') + sw('lowfx', '🔋 وضع توفير الطاقة', 'إيقاف المؤثرات المتحركة') +
-      '</div><div class="card"><h2>🎨 شكل الرقعة</h2><div class="themes">' + themes.map(function (t) {
+    var themes = [['green', '#ebecd0', '#739552', 'أخضر'], ['brown', '#f0d9b5', '#b58863', 'بني'], ['blue', '#dee3e6', '#8ca2ad', 'أزرق'], ['walnut', '#e8c99b', '#8a5a36', 'جوزي'], ['purple', '#e9e2f3', '#8877b7', 'بنفسجي'], ['ice', '#e4f0f5', '#6d9eb3', 'جليدي'], ['coral', '#f2e4d6', '#d08a6a', 'مرجاني'], ['marble', '#eceff4', '#8c96ad', 'رخامي'], ['future', '#c9d3f2', '#5a6aa8', 'مستقبلي'], ['neon', '#1c2350', '#0e1333', 'نيون']];
+    var sets = [['cburnett', 'كلاسيكي'], ['merida', 'ميريدا'], ['chessnut', 'شيستنات'], ['mpchess', 'أنيق'], ['fantasy', 'خيالي'], ['celtic', 'سلتي'], ['spatial', 'فضائي'], ['pirouetti', 'دائري'], ['rhosgfx', 'رسومي'], ['pixel', 'بكسل'], ['kiwen-suwi', 'مبسّط']];
+    var packs = [['wood', 'خشبي كلاسيكي'], ['real', 'واقعي'], ['piano', 'بيانو'], ['future', 'مستقبلي'], ['nes', 'ألعاب قديمة']];
+    v.innerHTML = '<div class="card"><h2>🎨 المظهر</h2><div id="pvb" style="max-width:220px;margin:6px auto 12px"></div>' +
+      '<b>لون الرقعة</b><div class="themes" style="margin:8px 0 14px">' + themes.map(function (t) {
         return '<button data-t="' + t[0] + '" class="' + (st.theme === t[0] ? 'on' : '') + '" title="' + t[3] + '"><i style="background:' + t[1] + '"></i><i style="background:' + t[2] + '"></i><i style="background:' + t[2] + '"></i><i style="background:' + t[1] + '"></i></button>';
+      }).join('') + '</div><b>شكل القطع</b><div class="psets">' + sets.map(function (x) {
+        return '<button data-s="' + x[0] + '" class="' + ((st.pieces || 'cburnett') === x[0] ? 'on' : '') + '"><i class="pc wn pv pv-' + x[0] + '"></i><i class="pc bq pv pv-' + x[0] + '"></i><small>' + x[1] + '</small></button>';
       }).join('') + '</div></div>' +
+      '<div class="card"><h2>🔊 الأصوات</h2>' + sw('sound', 'أصوات تحريك القطع') + '<div class="psets" id="pk" style="margin-top:10px">' + packs.map(function (x) { return '<button data-p="' + x[0] + '" style="padding:12px 6px">' + x[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="card">' + sw('vib', '📳 الاهتزاز') + sw('voice', '🗣️ القراءة الصوتية بالعربية', 'يقرأ المدرب الشرح بصوت عالٍ (يتطلب محرك نطق عربي في الهاتف)') +
+      sw('coords', '🔤 إظهار الإحداثيات') + sw('evalbar', '📊 شريط التقييم أثناء اللعب') + sw('coachEvery', '🤖 تقييم كل نقلة', 'المدرب يعلّق على كل نقلة تلعبها') + sw('autoThreat', '🛡️ تنبيه التهديدات تلقائيًا', 'ينبهك المدرب عندما يهدد الخصم شيئًا مهمًا') + sw('lowfx', '🔋 وضع توفير الطاقة', 'إيقاف المؤثرات المتحركة') +
+      '</div>' +
       '<div class="card"><h2>🗑️ البيانات</h2><p>يتم حفظ تقدمك على هذا الهاتف فقط.</p><button class="btn bad" id="reset">إعادة ضبط كل التقدم</button></div>';
     $$('input[data-k]', v).forEach(function (i) { i.onchange = function () { st[i.dataset.k] = i.checked; save(); applySettings(); if (i.dataset.k === 'voice' && i.checked) speak('مرحبًا! سأشرح لك النقلات بصوتي.'); }; });
-    function pk() { $$('#pk button', v).forEach(function (b) { b.classList.toggle('on', b.dataset.p === (st.pack || 'real')); }); }
-    pk(); $$('#pk button', v).forEach(function (b) { b.onclick = function () { st.pack = b.dataset.p; save(); pk(); sfx('move'); setTimeout(function () { sfx('capture'); }, 400); }; });
+    var pvb = new Board($('#pvb', v), { coords: false });
+    pvb.set('r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 0 1', { from: 'e1', to: 'g1' });
+    $$('.psets button[data-s]', v).forEach(function (b) { b.onclick = function () { st.pieces = b.dataset.s; save(); applySettings(); sfx('move'); $$('.psets button[data-s]', v).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+    function pk() { $$('#pk button', v).forEach(function (b) { b.classList.toggle('on', b.dataset.p === (PACKS.indexOf(st.pack) >= 0 ? st.pack : 'wood')); }); }
+    pk(); $$('#pk button', v).forEach(function (b) { b.onclick = function () { st.pack = b.dataset.p; save(); pk(); setTimeout(function () { sfx('move'); }, 250); setTimeout(function () { sfx('capture'); }, 750); setTimeout(function () { sfx('check'); }, 1250); }; });
     $$('.themes button', v).forEach(function (b) { b.onclick = function () { st.theme = b.dataset.t; save(); applySettings(); $$('.themes button', v).forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
     $('#reset', v).onclick = function () {
       var m = modal('<h2>هل أنت متأكد؟</h2><p class="mut">سيتم حذف كل النقاط والدروس والألغاز المحلولة.</p><div class="row"><button class="btn bad" id="yes">نعم، احذف</button><button class="btn" data-close>إلغاء</button></div>');
@@ -351,14 +362,15 @@
   });
 
   route('about', function (v) {
-    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.2 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
-      '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• أصوات القطع: مجموعتا sfx و futuristic من lichess.org (Enigmahack) — رخصة AGPLv3+.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
+    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.3 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
+      '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• أصوات: الخشبي من تصميم التطبيق، والباقي من lichess.org (Enigmahack) — AGPLv3+.<br>• أطقم القطع الإضافية من lichess.org (merida وchessnut وfantasy وغيرها) برخص حرة.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
       '<div class="card"><h2>📜 الشطرنج والعرب</h2><p>انتقل الشطرنج من الهند إلى فارس، ثم طوّره العرب في العصر العباسي وألّفوا فيه الكتب، وكان <b>الصولي</b> و<b>العدلي</b> من أعظم لاعبيه. ومن الأندلس انتقل إلى أوروبا. كلمة "شاه مات" و"رخ" من أصول فارسية-عربية.</p></div>';
     return { title: 'عن التطبيق' };
   });
 
   function applySettings() {
-    document.body.className = 't-' + S.set.theme + (S.set.lowfx ? ' lowfx' : '');
+    var keep = document.body.classList.contains('focus');
+    document.body.className = 't-' + S.set.theme + ' ps-' + (S.set.pieces || 'cburnett') + (S.set.lowfx ? ' lowfx' : '') + (keep ? ' focus' : '');
   }
 
   /* ===== التشغيل ===== */

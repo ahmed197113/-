@@ -324,3 +324,12 @@ nav.bottom button.on::after{box-shadow:none}
 .clock.on{background:#fff;color:#111}
 .clock.low{background:#c33;color:#fff}
 details.more summary{cursor:pointer;font-size:13px;margin-top:4px}
+body.t-walnut{--light:#e8c99b;--dark:#8a5a36;--sel:rgba(255,255,51,.45);--last:rgba(255,255,51,.38)}
+body.t-purple{--light:#e9e2f3;--dark:#8877b7;--sel:rgba(255,255,51,.45);--last:rgba(255,255,51,.4)}
+body.t-ice{--light:#e4f0f5;--dark:#6d9eb3;--sel:rgba(255,255,51,.45);--last:rgba(255,255,51,.4)}
+body.t-coral{--light:#f2e4d6;--dark:#d08a6a;--sel:rgba(255,255,51,.45);--last:rgba(255,255,51,.4)}
+.psets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.psets button{padding:8px 4px 6px;border-radius:12px;border:2px solid var(--line);background:var(--card2);display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0}
+.psets button i.pc{width:34px;height:34px;display:inline-block}
+.psets button small{width:100%;font-size:11.5px;color:var(--mut);margin-top:2px}
+.psets button.on{border-color:var(--neon)}
