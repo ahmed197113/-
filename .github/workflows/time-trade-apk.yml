@@ -7,6 +7,9 @@ on:
       - '.github/workflows/time-trade-apk.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,3 +32,13 @@ jobs:
         with:
           name: TimeTrade-apk
           path: time-trade-game/TimeTrade.apk
+      - name: Commit APK to branch
+        working-directory: .
+        run: |
+          mkdir -p apk
+          cp time-trade-game/TimeTrade.apk apk/TimeTrade.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apk/TimeTrade.apk
+          git commit -m "Update built APK [skip ci]" || exit 0
+          git push origin HEAD:${{ github.ref_name }}
