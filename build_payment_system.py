@@ -217,7 +217,7 @@ from openpyxl.packaging.relationship import Relationship
 from openpyxl.worksheet.pagebreak import Break
 
 OUT_DIR = "Payment_Certificates_System"
-N_PROJ = 50
+N_PROJ = int(os.environ.get("PCS_N_PROJ", 50))
 N_IPC = 20
 CERT_FILE = "IPC_Project_{:02d}.xlsx"
 PROJ_DIR = "Project_{:02d}"
@@ -234,6 +234,25 @@ S_BOQ = "جدول الكميات"
 S_VO = "الأوامر التغييرية"
 S_TD = "الاستقطاعات الفنية"
 S_REG = "سجل المستخلصات"
+S_BUD = "الموازنة والتكاليف"
+ELEMENTS = ["المواد", "العمالة", "مقاولو الباطن", "المعدات", "مصروفات الموقع"]
+# نسب توزيع التكلفة المباشرة على العناصر لكل قسم (للبيانات التوضيحية)
+ELEM_SPLIT = {0: [.15, .15, .20, .45, .05], 1: [.55, .20, .10, .10, .05], 2: [.50, .35, .05, .03, .07],
+              3: [.50, .20, .25, .00, .05], 4: [.50, .25, .18, .02, .05], 5: [.40, .10, .45, .00, .05],
+              6: [.40, .10, .45, .00, .05], 7: [.45, .05, .45, .00, .05], 8: [.40, .20, .20, .15, .05]}
+COST_RATIO = {1: 0.83, 2: 0.91, 3: 0.79}     # التكلفة الفعلية المباشرة ÷ قيمة الأعمال (مثال)
+# مواقع شيت الموازنة
+BG_SET = 5
+BM_HDR, BM_R1 = 10, 11
+BM_RN = BM_R1 + 12 - 1                       # 22
+BM_TOT, BM_GA, BM_CT, BM_BAC, BM_PP = 23, 24, 25, 26, 27
+BA_HDR, BA_R1 = 30, 31
+BA_RN = BA_R1 + N_IPC - 1                       # 50
+BA_TOT = BA_RN + 1                           # 51
+BE_HDR, BE_R1 = 54, 55                       # مقارنة العناصر
+BK_R1 = 66                                   # ملخص المؤشرات (D66..)
+BK = dict(bac=66, rev_c=67, pprofit=68, pmargin=69, cost=70, revenue=71, profit=72, margin=73, cpi=74, eac=75,
+          fprofit=76, fmargin=77, cash=78, status=79)
 S_ALL = "الإجمالي العام"
 
 
@@ -419,13 +438,14 @@ def build_cert(p, paid=None):
     wsB = wb.create_sheet(S_BOQ)
     wsV = wb.create_sheet(S_VO)
     wsT = wb.create_sheet(S_TD)
+    wsC = wb.create_sheet(S_BUD)
     wsR = wb.create_sheet(S_REG)
     ipc_ws = [wb.create_sheet(S_IPC(n)) for n in range(1, N_IPC + 1)]
 
     SUB = (f"=IF({R(S_SET)}$C$5=\"\",\"مشروع رقم {p:02d} — أدخل بيانات العقد\",{R(S_SET)}$C$5&\"   |   عقد رقم: \"&{R(S_SET)}$C$6)"
            f"&\"   |   المبالغ بـ \"&{R(S_SET)}$C$14")
     NAV = [("🗂 سجل المستخلصات", S_REG, NAVY), ("⚙ بيانات العقد", S_SET, TEAL), ("📋 جدول الكميات", S_BOQ, TEAL),
-           ("🔁 التغييرية", S_VO, TEAL), ("✂ الاستقطاعات", S_TD, TEAL), ("🧾 مستخلص 01", S_IPC(1), GOLD)]
+           ("🔁 التغييرية", S_VO, TEAL), ("✂ الاستقطاعات", S_TD, TEAL), ("💰 الموازنة", S_BUD, "6A1B9A"), ("🧾 مستخلص 01", S_IPC(1), GOLD)]
 
     def nav(ws, cols, skip):
         for col, (t, s, c) in zip(cols, [n for n in NAV if n[1] != skip]):
@@ -508,7 +528,7 @@ def build_cert(p, paid=None):
     for name, ref in [("ContractValue", "C16"), ("VOApproved", "C17"), ("RevisedContract", "C18"),
                       ("AdvPct", "C20"), ("AdvAmount", "C21"), ("RecRate", "C23"), ("RecStart", "C24"),
                       ("RecFull", "C25"), ("RetPct", "C27"), ("RetCap", "C29"), ("VATPct", "C31"),
-                      ("VATBeforeRet", "C32"), ("WHTPct", "C33"), ("PenInVAT", "C34"), ("PenCap", "C45"), ("StartDate", "C11"), ("EndDate", "C13")]:
+                      ("VATBeforeRet", "C32"), ("WHTPct", "C33"), ("PenInVAT", "C34"), ("PenCap", "C45"), ("StartDate", "C11"), ("EndDate", "C13"), ("AdvDate", "C22")]:
         add_name(wb, name, f"{R(S_SET)}${ref[0]}${ref[1:]}")
     section(ws, "F4", "القوائم المنسدلة (قابلة للتعديل)", "F4:I4", NAVY2)
     for col, title, items in [("F", "أقسام الأعمال", SECTIONS), ("G", "حالة المستخلص", IPC_STATUS),
@@ -971,6 +991,185 @@ def build_cert(p, paid=None):
     ws.freeze_panes = f"G{REG_FIRST}"
     ws.print_title_rows = "4:5"
 
+    # ------------------------------------------------------------- الموازنة والتكاليف (داخلي — لا يُطبع مع المستخلص)
+    ws = wsC
+    RS = R(S_REG)
+    setup(ws, {"A": 2, "B": 14, "C": 24, **{CL(c): 14.5 for c in range(4, 20)}, "T": 2}, "6A1B9A", zoom=85)
+    banner(ws, "B", "S", "💰 الموازنة التقديرية والتكاليف الفعلية والربحية (Budget & Cost Control) — داخلي", SUB)
+    nav(ws, ["B", "C", "D", "F", "G", "H"], S_BUD)
+    section(ws, f"B{BG_SET}", "إعدادات الموازنة", f"B{BG_SET}:L{BG_SET}", "6A1B9A")
+    for r, lab, ref, v, note in [(6, "نسبة المصروفات العمومية والإدارية (من التكلفة المباشرة)", "E6", 0.06, "تُحمّل على الموازنة وعلى التكلفة الفعلية لكل مستخلص"),
+                                 (7, "نسبة احتياطي الطوارئ (من التكلفة المباشرة)", "E7", 0.03, "تُضاف للموازنة فقط"),
+                                 (8, "نسبة الربح المستهدفة من الإدارة", "E8", 0.12, "للمقارنة مع الربح المخطط والفعلي")]:
+        put(ws, f"B{r}", lab, font(10, True, NAVY), fill(ALT), align("right", indent=1), BORDER, merge=f"B{r}:D{r}")
+        put(ws, ref, v)
+        inp(ws[ref], PCT)
+        put(ws, f"F{r}", note, font(9, False, GREY_TXT, True), al=align("right"), merge=f"F{r}:L{r}")
+    dv_num(ws, "E6:E8", lo=0, hi=1)
+    add_name(wb, "GAPct", f"{R(S_BUD)}$E$6")
+    add_name(wb, "ContPct", f"{R(S_BUD)}$E$7")
+    # --- أولاً: مصفوفة الموازنة
+    section(ws, f"B{BM_HDR-1}", "أولاً: الموازنة التقديرية حسب أقسام الأعمال وعناصر التكلفة (إدخال)", f"B{BM_HDR-1}:L{BM_HDR-1}", "6A1B9A")
+    headers(ws, BM_HDR, [("B", "القسم"), ("D", "القيمة التعاقدية للقسم")] + [(CL(5 + i), e) for i, e in enumerate(ELEMENTS)]
+            + [("J", "إجمالي التكلفة المباشرة"), ("K", "الربح المباشر للقسم"), ("L", "هامش القسم")], height=36)
+    ws.merge_cells(f"B{BM_HDR}:C{BM_HDR}")
+    for i in range(N_SEC):
+        r = BM_R1 + i
+        put(ws, f"B{r}", f'=IF({R(S_SET)}F{6+i}="","",{R(S_SET)}F{6+i})', font(10, True, LINK_FONT), fill(ALT),
+            align("right", indent=1), BORDER, merge=f"B{r}:C{r}")
+        put(ws, f"D{r}", f'=IF(B{r}="",0,SUMIF({BS}$C${BOQ_FIRST}:$C${BOQ_LAST},B{r},{BS}$H${BOQ_FIRST}:$H${BOQ_LAST}))',
+            font(10, False, LINK_FONT), None, align("center"), BORDER, ACC0)
+        for k in range(5):
+            c = ws.cell(r, 5 + k)
+            if sp and i < len(SECTIONS):
+                sec_val = sum(it[4] * it[5] for it in items if it[1] == i)
+                c.value = round(sec_val * (0.80 + 0.02 * ((i % 3) - 1)) * ELEM_SPLIT[i][k], -2) or None
+            inp(c, ACC0)
+        put(ws, f"J{r}", f"=SUM(E{r}:I{r})", font(10, True), None, align("center"), BORDER, ACC0)
+        put(ws, f"K{r}", f"=D{r}-J{r}", font(10), None, align("center"), BORDER, ACC0)
+        put(ws, f"L{r}", f"=IF(D{r}>0,K{r}/D{r},0)", font(10), None, align("center"), BORDER, PCT)
+    dv_num(ws, f"E{BM_R1}:I{BM_RN}", lo=0)
+    tot_rows = [(BM_TOT, "إجمالي التكلفة المباشرة", f"=SUM(J{BM_R1}:J{BM_RN})"),
+                (BM_GA, "يُضاف: المصروفات العمومية والإدارية", f"=ROUND(J{BM_TOT}*GAPct,2)"),
+                (BM_CT, "يُضاف: احتياطي الطوارئ", f"=ROUND(J{BM_TOT}*ContPct,2)"),
+                (BM_BAC, "إجمالي الموازنة عند الإنجاز (BAC)", f"=SUM(J{BM_TOT}:J{BM_CT})"),
+                (BM_PP, "الربح المخطط (قيمة العقد الأصلية − الموازنة)", f"=D{BM_TOT}-J{BM_BAC}")]
+    for r, lab, f in tot_rows:
+        big = r in (BM_BAC, BM_PP)
+        put(ws, f"B{r}", lab, font(10, True, "FFFFFF" if big else NAVY), fill(NAVY if big else TOTAL_BG), align("right", indent=1),
+            BORDER, merge=f"B{r}:{'C' if r == BM_TOT else 'I'}{r}")
+        put(ws, f"J{r}", f, font(11 if big else 10, True, "FFFFFF" if big else "1F2933"), fill(NAVY if big else TOTAL_BG),
+            align("center"), BORDER, ACC0)
+    for k in range(5):
+        col = CL(5 + k)
+        put(ws, f"{col}{BM_TOT}", f"=SUM({col}{BM_R1}:{col}{BM_RN})", font(10, True), fill(TOTAL_BG), align("center"), BORDER, ACC0)
+    put(ws, f"D{BM_TOT}", f"=SUM(D{BM_R1}:D{BM_RN})", font(10, True), fill(TOTAL_BG), align("center"), BORDER, ACC0)
+    put(ws, f"K{BM_PP}", f"=IF(D{BM_TOT}>0,J{BM_PP}/D{BM_TOT},0)", font(11, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, PCT)
+    put(ws, f"L{BM_PP}", f'=IF(J{BM_BAC}=0,"",IF(K{BM_PP}>=$E$8,"✔ يحقق المستهدف","⚠ أقل من المستهدف"))', font(9, True, GOLD), None, align("center"), BORDER)
+    add_name(wb, "BAC", f"{R(S_BUD)}$J${BM_BAC}")
+    # --- ثانياً: التكاليف الفعلية لكل مستخلص
+    section(ws, f"B{BA_HDR-1}", "ثانياً: التكاليف الفعلية لكل فترة مستخلص (إدخال التكاليف المباشرة) والربحية والقيمة المكتسبة", f"B{BA_HDR-1}:S{BA_HDR-1}", "6A1B9A")
+    headers(ws, BA_HDR, [("B", "رقم المستخلص"), ("C", "الفترة إلى")] + [(CL(4 + i), e) for i, e in enumerate(ELEMENTS)]
+            + [("I", "مصروفات عمومية (محسوبة)"), ("J", "إجمالي تكلفة الفترة"), ("K", "التكلفة التراكمية"),
+               ("L", "الإيراد التراكمي (إجمالي قيمة الأعمال)"), ("M", "الربح التراكمي"), ("N", "هامش الربح"),
+               ("O", "القيمة المكتسبة بالتكلفة (EV)"), ("P", "مؤشر أداء التكلفة CPI"), ("Q", "التكلفة المتوقعة عند الإنجاز EAC"),
+               ("R", "الربح المتوقع عند الإنجاز"), ("S", "الموقف النقدي (محصل + مقدمة − تكلفة)")], height=52)
+    ratio = COST_RATIO.get(p, 0.85)
+    elem_w = None
+    if sp:
+        tot_dir = {k: sum(sum(it[4] * it[5] for it in items if it[1] == i) * ELEM_SPLIT[i][k] for i in range(len(SECTIONS))) for k in range(5)}
+        sm = sum(tot_dir.values())
+        elem_w = [tot_dir[k] / sm for k in range(5)]
+    for n in range(1, N_IPC + 1):
+        r, rr = BA_R1 + n - 1, REG_FIRST + n - 1
+        put(ws, f"B{r}", n, font(10, True, NAVY), fill(ALT), align("center"), BORDER, '"مستخلص "0')
+        put(ws, f"C{r}", f'=IF({RS}C{rr}="","",{RS}C{rr})', font(10, False, LINK_FONT), None, align("center"), BORDER, DATE)
+        period_val = sum(q * items[i][5] for (i, m), q in aq.items() if m == n) if sp else 0
+        for k in range(5):
+            c = ws.cell(r, 4 + k)
+            if sp and period_val and n <= n_act:
+                c.value = round(period_val * ratio * elem_w[k], 2)
+            inp(c, ACC0)
+        a = f'C{r}=""'
+        F = {"I": f"=ROUND(SUM(D{r}:H{r})*GAPct,2)", "J": f"=SUM(D{r}:I{r})",
+             "K": f'=IF(AND({a},J{r}=0),"",SUM($J${BA_R1}:J{r}))',
+             "L": f'=IF({a},"",N({RS}K{rr}))', "M": f'=IF(OR(L{r}="",K{r}=""),"",L{r}-K{r})',
+             "N": f'=IF(OR(M{r}="",N(L{r})=0),"",M{r}/L{r})', "O": f'=IF({a},"",BAC*N({RS}L{rr}))',
+             "P": f'=IF(OR(O{r}="",N(K{r})=0),"",O{r}/K{r})', "Q": f'=IF(P{r}="","",IF(P{r}>0,BAC/P{r},BAC))',
+             "R": f'=IF(Q{r}="","",RevisedContract-Q{r})',
+             "S": (f'=IF({a},"",SUMIF({RS}$A${REG_FIRST}:$A${REG_LAST},"<="&B{r},{RS}$AA${REG_FIRST}:$AA${REG_LAST})'
+                   f'+IF(AND(AdvDate<>"",N(AdvDate)<=N(C{r})),AdvAmount,0)-N(K{r}))')}
+        for col, f in F.items():
+            put(ws, f"{col}{r}", f, font(10, col in ("M", "R")), None, align("center"), BORDER,
+                PCT if col == "N" else ("0.00" if col == "P" else ACC0))
+    dv_num(ws, f"D{BA_R1}:H{BA_RN}", lo=0, msg="التكاليف المباشرة الفعلية خلال فترة هذا المستخلص")
+    put(ws, f"B{BA_TOT}", "الإجمالي", font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, merge=f"B{BA_TOT}:C{BA_TOT}")
+    for col in "DEFGHIJ":
+        put(ws, f"{col}{BA_TOT}", f"=SUM({col}{BA_R1}:{col}{BA_RN})", font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, ACC0)
+    for col in "KLMNOPQRS":
+        put(ws, f"{col}{BA_TOT}", None, font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER)
+    ws.conditional_formatting.add(f"P{BA_R1}:P{BA_RN}", CellIsRule(operator="lessThan", formula=["0.95"], fill=fill(RED_L), font=Font(color=RED, bold=True)))
+    ws.conditional_formatting.add(f"P{BA_R1}:P{BA_RN}", CellIsRule(operator="greaterThanOrEqual", formula=["1"], fill=fill(GREEN_L), font=Font(color=GREEN, bold=True)))
+    ws.conditional_formatting.add(f"M{BA_R1}:M{BA_RN}", CellIsRule(operator="lessThan", formula=["0"], font=Font(color=RED, bold=True)))
+    ws.conditional_formatting.add(f"S{BA_R1}:S{BA_RN}", CellIsRule(operator="lessThan", formula=["0"], fill=fill(RED_L), font=Font(color=RED, bold=True)))
+    # --- ثالثاً: مقارنة الموازنة بالفعلي حسب العنصر
+    section(ws, f"B{BE_HDR-1}", "ثالثاً: مقارنة الموازنة بالفعلي حسب عنصر التكلفة", f"B{BE_HDR-1}:H{BE_HDR-1}", "6A1B9A")
+    headers(ws, BE_HDR, [("B", "عنصر التكلفة"), ("D", "الموازنة"), ("E", "الفعلي التراكمي"), ("F", "المتبقي من الموازنة"),
+                         ("G", "نسبة الاستهلاك"), ("H", "مقارنة بنسبة الإنجاز")], height=34)
+    ws.merge_cells(f"B{BE_HDR}:C{BE_HDR}")
+    rows_e = [(e, f"={CL(5 + k)}{BM_TOT}", f"={CL(4 + k)}{BA_TOT}") for k, e in enumerate(ELEMENTS)]
+    rows_e += [("المصروفات العمومية والإدارية", f"=J{BM_GA}", f"=I{BA_TOT}"), ("احتياطي الطوارئ", f"=J{BM_CT}", "=0")]
+    for i, (lab, b, a_) in enumerate(rows_e):
+        r = BE_R1 + i
+        put(ws, f"B{r}", lab, font(10, True), fill(ALT), align("right", indent=1), BORDER, merge=f"B{r}:C{r}")
+        put(ws, f"D{r}", b, font(10), None, align("center"), BORDER, ACC0)
+        put(ws, f"E{r}", a_, font(10), None, align("center"), BORDER, ACC0)
+        put(ws, f"F{r}", f"=D{r}-E{r}", font(10), None, align("center"), BORDER, ACC0)
+        put(ws, f"G{r}", f"=IF(D{r}>0,E{r}/D{r},0)", font(10, True), None, align("center"), BORDER, PCT)
+        put(ws, f"H{r}", f'=IF(D{r}=0,"",IF(G{r}>N({RS}L{REG_TOT})+0.05,"⚠ استهلاك أعلى من الإنجاز","✔ ضمن المعدل"))',
+            font(9, True), None, align("center"), BORDER)
+    BE_T = BE_R1 + len(rows_e)
+    put(ws, f"B{BE_T}", "الإجمالي", font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, merge=f"B{BE_T}:C{BE_T}")
+    for col, f, fmt in [("D", f"=SUM(D{BE_R1}:D{BE_T-1})", ACC0), ("E", f"=SUM(E{BE_R1}:E{BE_T-1})", ACC0),
+                        ("F", f"=D{BE_T}-E{BE_T}", ACC0), ("G", f"=IF(D{BE_T}>0,E{BE_T}/D{BE_T},0)", PCT), ("H", None, None)]:
+        put(ws, f"{col}{BE_T}", f, font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, fmt)
+    ws.conditional_formatting.add(f"G{BE_R1}:G{BE_T-1}", DataBarRule(start_type="num", start_value=0, end_type="num", end_value=1, color="9575CD"))
+    for sym, fc in (("⚠", RED), ("✔", GREEN)):
+        ws.conditional_formatting.add(f"H{BE_R1}:H{BE_T-1}", FormulaRule(formula=[f'ISNUMBER(SEARCH("{sym}",H{BE_R1}))'], font=Font(color=fc, bold=True)))
+    # --- رابعاً: ملخص المؤشرات (يغذي ملف التقارير)
+    section(ws, f"B{BK_R1-1}", "رابعاً: ملخص الربحية ومؤشرات التكلفة", f"B{BK_R1-1}:E{BK_R1-1}", "6A1B9A")
+    lastreg = lambda col: f"N({RS}{col}{REG_TOT})"
+    kp = [("bac", "إجمالي الموازنة عند الإنجاز (BAC)", "=BAC", ACC0),
+          ("rev_c", "قيمة العقد المعدلة", "=RevisedContract", ACC0),
+          ("pprofit", "الربح المخطط (على العقد المعدل)", f"=D{BK['rev_c']}-D{BK['bac']}", ACC0),
+          ("pmargin", "هامش الربح المخطط", f"=IF(D{BK['rev_c']}>0,D{BK['pprofit']}/D{BK['rev_c']},0)", PCT),
+          ("cost", "التكلفة الفعلية التراكمية", f"=J{BA_TOT}", ACC0),
+          ("revenue", "الإيراد التراكمي (إجمالي قيمة الأعمال)", f"={lastreg('K')}", ACC0),
+          ("profit", "الربح الفعلي التراكمي", f"=D{BK['revenue']}-D{BK['cost']}", ACC0),
+          ("margin", "هامش الربح الفعلي", f"=IF(D{BK['revenue']}>0,D{BK['profit']}/D{BK['revenue']},0)", PCT),
+          ("cpi", "مؤشر أداء التكلفة (CPI)", f"=IF(D{BK['cost']}>0,BAC*{lastreg('L')}/D{BK['cost']},0)", "0.00"),
+          ("eac", "التكلفة المتوقعة عند الإنجاز (EAC)", f"=IF(D{BK['cpi']}>0,BAC/D{BK['cpi']},BAC)", ACC0),
+          ("fprofit", "الربح المتوقع عند الإنجاز", f"=D{BK['rev_c']}-D{BK['eac']}", ACC0),
+          ("fmargin", "هامش الربح المتوقع", f"=IF(D{BK['rev_c']}>0,D{BK['fprofit']}/D{BK['rev_c']},0)", PCT),
+          ("cash", "الموقف النقدي الحالي", f"=SUM({RS}AA{REG_FIRST}:AA{REG_LAST})+IF(AdvDate<>\"\",AdvAmount,0)-D{BK['cost']}", ACC0),
+          ("status", "حالة التكلفة", f'=IF(D{BK["cost"]}=0,"لا توجد تكاليف مسجلة",IF(D{BK["cpi"]}<0.95,"⚠ تجاوز في التكاليف",IF(D{BK["cpi"]}<1,"متابعة — قريب من الموازنة","✔ ضمن الموازنة")))', None)]
+    for key, lab, f, fmt in kp:
+        r = BK[key]
+        put(ws, f"B{r}", lab, font(10, True, NAVY), fill(ALT), align("right", indent=1), BORDER, merge=f"B{r}:C{r}")
+        put(ws, f"D{r}", f, font(11, True, "6A1B9A"), None, align("center"), BORDER, fmt, merge=f"D{r}:E{r}")
+    for ref, rule in ((f"D{BK['profit']}", "lessThan"), (f"D{BK['fprofit']}", "lessThan"), (f"D{BK['cash']}", "lessThan")):
+        ws.conditional_formatting.add(ref, CellIsRule(operator=rule, formula=["0"], font=Font(color=RED, bold=True)))
+    ws.conditional_formatting.add(f"D{BK['status']}", FormulaRule(formula=[f'ISNUMBER(SEARCH("⚠",D{BK["status"]}))'], fill=fill(RED_L), font=Font(color=RED, bold=True)))
+    ws.conditional_formatting.add(f"D{BK['status']}", FormulaRule(formula=[f'ISNUMBER(SEARCH("✔",D{BK["status"]}))'], fill=fill(GREEN_L), font=Font(color=GREEN, bold=True)))
+    chb = BarChart()
+    chb.type = "col"
+    chb.title = "الموازنة مقابل الفعلي حسب عنصر التكلفة"
+    chb.add_data(Reference(ws, min_col=4, max_col=5, min_row=BE_HDR, max_row=BE_T - 1), titles_from_data=True)
+    chb.set_categories(Reference(ws, min_col=2, min_row=BE_R1, max_row=BE_T - 1))
+    chb.series[0].graphicalProperties.solidFill = "B39DDB"
+    chb.series[1].graphicalProperties.solidFill = "6A1B9A"
+    chb.y_axis.numFmt = "#,##0"
+    chb.y_axis.majorGridlines = None
+    for ax in (chb.x_axis, chb.y_axis):
+        ax.delete = False
+    chb.legend.position = "b"
+    chb.height, chb.width = 9, 18
+    ws.add_chart(chb, f"G{BK_R1-1}")
+    chp = LineChart()
+    chp.title = "التكلفة التراكمية مقابل الإيراد التراكمي"
+    chp.add_data(Reference(ws, min_col=11, max_col=12, min_row=BA_HDR, max_row=BA_RN), titles_from_data=True)
+    chp.set_categories(Reference(ws, min_col=2, min_row=BA_R1, max_row=BA_RN))
+    chp.series[0].graphicalProperties.line.solidFill = "C0504D"
+    chp.series[1].graphicalProperties.line.solidFill = "2E7D7A"
+    chp.y_axis.numFmt = "#,##0"
+    chp.y_axis.majorGridlines = None
+    for ax in (chp.x_axis, chp.y_axis):
+        ax.delete = False
+    chp.legend.position = "b"
+    chp.height, chp.width = 9, 18
+    ws.add_chart(chp, f"M{BK_R1-1}")
+    ws.freeze_panes = "A4"
+
     # ------------------------------------------------------------- التعليمات
     ws = wsG
     setup(ws, {"A": 2, "B": 26, "C": 95}, GOLD)
@@ -995,6 +1194,8 @@ def build_cert(p, paid=None):
                             "«السابق» يُسحب آلياً من المستخلص الذي قبله، والتراكمي = السابق + الحالي."),
                  (S_VO, "سجل الأوامر التغييرية واختر رقم المستخلص الذي تُدرج به."),
                  (S_TD, "سجل الاستقطاعات الفنية برقم المستخلص، وحدد مستخلص الإفراج عند المعالجة."),
+                 (S_BUD, "أدخل الموازنة التقديرية لكل قسم حسب عناصر التكلفة مرة واحدة، ثم التكاليف الفعلية المباشرة لكل فترة مستخلص؛ "
+                         "يحسب الشيت الربح والهامش وCPI والتكلفة المتوقعة عند الإنجاز والموقف النقدي (شيت داخلي لا يُطبع مع المستخلص)."),
                  (S_REG, "يتجمع كل شيء آلياً في السجل، ومنه ينتقل إلى ملف التقارير المجمع لكل المشاريع.")]:
         r += 1
         c = put(ws, f"B{r}", s, font(10, True, "FFFFFF"), fill(TEAL), align("center"), BORDER)
@@ -1092,7 +1293,7 @@ def build_report(cert_values):
         ("U", "Z", "المستحق للمستخلص الحالي", ACC), ("V", "AA", "المحصل", ACC), ("W", "AC", "المتبقي", ACC),
         ("X", "AD", "مدة التحصيل (يوم)", '0;-0;"-"'), ("Y", "AE", "حالة التحصيل", None),
     ]
-    T1, TN = 22, 22 + N_IPC - 1
+    T1, TN = 25, 25 + N_IPC - 1
     TT = TN + 1
     SH = TT + 3          # عنوان جدول الأقسام
     S1 = SH + 1
@@ -1179,6 +1380,7 @@ def build_report(cert_values):
         ws.conditional_formatting.add(f"K{T1}:K{TN}", DataBarRule(start_type="num", start_value=0, end_type="num", end_value=1, color="63BE7B"))
         # بطاقات المؤشرات
         K = {}
+        bud = lambda key: f"=N({E(p, S_BUD, '$D$' + str(BK[key]))})"
         spans = [("B", "E"), ("F", "I"), ("J", "M"), ("N", "Q"), ("R", "U"), ("V", "Y")]
         cards = [
             (8, [("cv", "قيمة العقد الأصلية", f"={L['ContractValue']}", ACC, NAVY),
@@ -1209,6 +1411,12 @@ def build_report(cert_values):
                   ("pen", "الغرامات والخصومات", f"={last('Q')}", ACC, "C0504D"),
                   ("cur", "مستحق آخر مستخلص", f"={last('U')}", ACC, TEAL),
                   ("napp", "عدد المستخلصات المعتمدة", f'=COUNTIF(E{T1}:E{TN},"معتمد")', "0", NAVY)]),
+            (20, [("bac", "الموازنة التقديرية (BAC)", bud("bac"), ACC, "6A1B9A"),
+                  ("cost", "التكلفة الفعلية التراكمية", bud("cost"), ACC, "6A1B9A"),
+                  ("profit", "الربح الفعلي التراكمي", bud("profit"), ACC, "6A1B9A"),
+                  ("margin", "هامش الربح الفعلي", bud("margin"), PCT, "6A1B9A"),
+                  ("cpi", "مؤشر أداء التكلفة (CPI)", bud("cpi"), "0.00", "6A1B9A"),
+                  ("fprofit", "الربح المتوقع عند الإنجاز", bud("fprofit"), ACC, "6A1B9A")]),
         ]
         for row, items_ in cards:
             for (c1, c2), (key, lab, f, fmt, colr) in zip(spans, items_):
@@ -1280,11 +1488,13 @@ def build_report(cert_values):
             ("O", "صافي المستحق التراكمي", 15, ACC0), ("P", "المحصل", 15, ACC0), ("Q", "غير المحصل", 14, ACC0),
             ("R", "نسبة التحصيل", 9, PCT), ("S", "الضمان المحتجز", 13, ACC0), ("T", "رصيد الدفعة المقدمة", 13, ACC0),
             ("U", "الاستقطاعات الفنية", 12, ACC0), ("V", "الغرامات", 11, ACC0), ("W", "حالة المشروع", 15, None),
-            ("X", "التنبيهات النظامية", 34, None)]
-    setup(ws, {"A": 2, **{c: w for c, _, w, _ in COLS}, "Y": 2}, NAVY, zoom=80)
-    banner(ws, "B", "X", "🏢 الإجمالي العام — ملخص المستخلصات لكل المشاريع (Portfolio Billing Summary)", SUB)
+            ("X", "التنبيهات النظامية", 34, None), ("Y", "الموازنة التقديرية", 15, ACC0), ("Z", "التكلفة الفعلية", 15, ACC0),
+            ("AA", "الربح الفعلي", 14, ACC0), ("AB", "هامش الربح", 9, PCT), ("AC", "CPI", 7, "0.00"),
+            ("AD", "الربح المتوقع عند الإنجاز", 15, ACC0)]
+    setup(ws, {"A": 2, **{c: w for c, _, w, _ in COLS}, "AE": 2}, NAVY, zoom=80)
+    banner(ws, "B", "AD", "🏢 الإجمالي العام — ملخص المستخلصات لكل المشاريع (Portfolio Billing Summary)", SUB)
     nav_top(ws)
-    A1, AN = 14, 14 + N_PROJ - 1
+    A1, AN = 17, 17 + N_PROJ - 1
     AT = AN + 1
     cards = [
         (5, [("B", "D", "إجمالي قيمة العقود المعدلة", f"=H{AT}", ACC0, NAVY),
@@ -1301,12 +1511,19 @@ def build_report(cert_values):
              ("N", "P", "ضمان الأعمال المحتجز", f"=S{AT}", ACC0, "C0504D"),
              ("Q", "S", "أرصدة الدفعات المقدمة", f"=T{AT}", ACC0, "C0504D"),
              ("T", "X", "الاستقطاعات الفنية + الغرامات", f"=U{AT}+V{AT}", ACC0, "C0504D")]),
+        (11, [("B", "D", "إجمالي الموازنات التقديرية", f"=Y{AT}", ACC0, "6A1B9A"),
+              ("E", "G", "إجمالي التكاليف الفعلية", f"=Z{AT}", ACC0, "6A1B9A"),
+              ("H", "J", "الربح الفعلي الإجمالي", f"=AA{AT}", ACC0, "6A1B9A"),
+              ("K", "M", "هامش الربح الإجمالي", f"=AB{AT}", PCT, "6A1B9A"),
+              ("N", "P", "مؤشر أداء التكلفة المرجح", f"=AC{AT}", "0.00", "6A1B9A"),
+              ("Q", "S", "مشاريع تتجاوز الموازنة", f'=COUNTIFS(Z{A1}:Z{AN},">0",AC{A1}:AC{AN},"<0.95")', "0", RED),
+              ("T", "X", "الربح المتوقع عند الإنجاز", f"=AD{AT}", ACC0, "6A1B9A")]),
     ]
     for row, its in cards:
         for c1, c2, lab, f, fmt, colr in its:
             card(ws, row, c1, c2, lab, f, fmt, colr, 14)
     put(ws, f"B{A1-2}", "ملخص المشاريع (اضغط على اسم المشروع للانتقال إلى تقريره)", font(11, True, "FFFFFF"), fill(TEAL),
-        align("right", indent=1), merge=f"B{A1-2}:X{A1-2}")
+        align("right", indent=1), merge=f"B{A1-2}:AD{A1-2}")
     headers(ws, A1 - 1, [(c, t) for c, t, _, _ in COLS], height=44)
     for p in range(1, N_PROJ + 1):
         r = A1 + p - 1
@@ -1316,7 +1533,9 @@ def build_report(cert_values):
                 "F": f"={K['cv']}", "G": f"={K['vo']}", "H": f"={K['rev']}", "I": f"={K['gross']}",
                 "J": f"={K['act']}", "K": f"={K['pln']}", "L": f"=J{r}-K{r}", "M": f"={K['spi']}", "N": f"={K['lat']}",
                 "O": f"={K['due']}", "P": f"={K['paid']}", "Q": f"={K['out']}", "R": f"=IF(O{r}>0,P{r}/O{r},0)",
-                "S": f"={K['ret']}", "T": f"={K['advb']}", "U": f"={K['td']}", "V": f"={K['pen']}", "W": f"={K['st']}", "X": f"={K['alert']}"}
+                "S": f"={K['ret']}", "T": f"={K['advb']}", "U": f"={K['td']}", "V": f"={K['pen']}", "W": f"={K['st']}", "X": f"={K['alert']}",
+                "Y": f"={K['bac']}", "Z": f"={K['cost']}", "AA": f"={K['profit']}", "AB": f"={K['margin']}", "AC": f"={K['cpi']}",
+                "AD": f"={K['fprofit']}"}
         vals["C"] = f'=IF({PS}$C$5="","مشروع رقم {p:02d}",{PS}$C$5)'
         for c, _, _, fmt in COLS:
             ws[f"{c}{r}"] = vals[c]
@@ -1337,6 +1556,10 @@ def build_report(cert_values):
             v = f"=IF(O{AT}>0,P{AT}/O{AT},0)"
         elif c in ("N", "W", "X"):
             v = None
+        elif c == "AB":
+            v = f"=IF(I{AT}>0,AA{AT}/I{AT},0)"
+        elif c == "AC":
+            v = f"=IF(Z{AT}>0,SUMPRODUCT(Y{A1}:Y{AN},J{A1}:J{AN})/Z{AT},0)"
         else:
             v = f"=SUM({c}{A1}:{c}{AN})"
         put(ws, f"{c}{AT}", v, font(10, True, "FFFFFF"), fill(NAVY), align("center"), BORDER, fmt)
@@ -1346,7 +1569,7 @@ def build_report(cert_values):
     ws.conditional_formatting.add(f"R{A1}:R{AN}", DataBarRule(start_type="num", start_value=0, end_type="num", end_value=1, color="5B9BD5"))
     ws.conditional_formatting.add(f"W{A1}:W{AN}", FormulaRule(formula=[f'ISNUMBER(SEARCH("متأخر",W{A1}))'], fill=fill(RED_L), font=Font(color=RED, bold=True)))
     ws.conditional_formatting.add(f"W{A1}:W{AN}", FormulaRule(formula=[f'ISNUMBER(SEARCH("✔",W{A1}))'], fill=fill(GREEN_L), font=Font(color=GREEN, bold=True)))
-    ws.conditional_formatting.add(f"B{A1}:X{AN}", FormulaRule(formula=[f'$W{A1}="غير مُفعّل"'], font=Font(color="A0A0A0")))
+    ws.conditional_formatting.add(f"B{A1}:AD{AN}", FormulaRule(formula=[f'$W{A1}="غير مُفعّل"'], font=Font(color="A0A0A0")))
     # الرسوم
     CR = AT + 3
     cats = Reference(ws, min_col=3, min_row=A1, max_row=AN)
@@ -1379,6 +1602,23 @@ def build_report(cert_values):
     c2.legend.position = "b"
     c2.height, c2.width = 12, 34
     ws.add_chart(c2, f"J{CR}")
+    ws.conditional_formatting.add(f"AC{A1}:AC{AN}", FormulaRule(formula=[f"AND(Z{A1}>0,AC{A1}<0.95)"], fill=fill(RED_L), font=Font(color=RED, bold=True)))
+    ws.conditional_formatting.add(f"AA{A1}:AA{AN}", CellIsRule(operator="lessThan", formula=["0"], font=Font(color=RED, bold=True)))
+    ws.conditional_formatting.add(f"AD{A1}:AD{AN}", CellIsRule(operator="lessThan", formula=["0"], font=Font(color=RED, bold=True)))
+    c3 = BarChart()
+    c3.type = "col"
+    c3.title = "الموازنة مقابل التكلفة الفعلية والربح لكل مشروع"
+    c3.add_data(Reference(ws, min_col=25, max_col=27, min_row=A1 - 1, max_row=AN), titles_from_data=True)
+    c3.set_categories(cats)
+    for s_, colr in zip(c3.series, ["B39DDB", "6A1B9A", "2E7D7A"]):
+        s_.graphicalProperties.solidFill = colr
+    c3.y_axis.numFmt = "#,##0"
+    c3.y_axis.majorGridlines = None
+    for ax in (c3.x_axis, c3.y_axis):
+        ax.delete = False
+    c3.legend.position = "b"
+    c3.height, c3.width = 12, 34
+    ws.add_chart(c3, f"J{CR+26}")
     ws.freeze_panes = "A4"
 
     # ------------------------------------------------------------- التعليمات
@@ -1427,6 +1667,8 @@ def build_report(cert_values):
                  ("الاستقطاعات الفنية", "المستقطع حتى المستخلص − المفرج عنه حتى المستخلص."),
                  ("الضرائب", "ض.ق.م على الصافي (+ الضمان إن كان الإعداد «نعم»)، وضريبة الاستقطاع (لغير المقيم فقط) على الصافي قبل خصم الضمان، والغرامات لا تُخفض وعاء الضريبة افتراضياً."),
                  ("SPI", "الإنجاز الفعلي ÷ المخطط — أقل من 1 = تأخر."),
+                 ("الموازنة والربحية", "BAC = التكلفة المباشرة + العمومية + الطوارئ. الربح = إجمالي قيمة الأعمال − التكلفة الفعلية. "
+                                       "CPI = (BAC × نسبة الإنجاز) ÷ التكلفة الفعلية؛ أقل من 0.95 = تجاوز. EAC = BAC ÷ CPI."),
                  ("الإجمالي العام", "متوسطات الإنجاز مرجحة بقيمة العقد المعدلة لكل مشروع.")]:
         r += 1
         put(ws, f"B{r}", a, font(10, True, NAVY), fill(ALT), align("right", indent=1), BORDER)
