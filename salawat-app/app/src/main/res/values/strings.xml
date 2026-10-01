@@ -92,6 +92,26 @@
     <string name="azkar_done">✓ تم</string>
     <string name="azkar_search_hint">ابحث في الأقسام…</string>
 
+    <string name="adhan_title">صوت الأذان</string>
+    <string name="adhan_choose">اختيار صوت الأذان والمؤذن</string>
+    <string name="adhan_current">الأذان: %1$s</string>
+    <string name="adhan_slot_others">أذان الصلوات</string>
+    <string name="adhan_slot_fajr">أذان الفجر</string>
+    <string name="adhan_notification_only">صوت الإشعار فقط (بدون أذان)</string>
+    <string name="adhan_same_as_others">نفس أذان باقي الصلوات</string>
+    <string name="adhan_custom">ملف من الهاتف</string>
+    <string name="adhan_pick_file">اختيار ملف صوت من الهاتف</string>
+    <string name="adhan_test">تجربة الأذان الآن</string>
+    <string name="adhan_stop">إيقاف الأذان</string>
+    <string name="adhan_preview">استماع</string>
+    <string name="adhan_status_ready">جاهز ✓ (يعمل بدون إنترنت)</string>
+    <string name="adhan_status_bundled">مدمج في التطبيق ✓</string>
+    <string name="adhan_status_download">اضغط للتحميل والاختيار</string>
+    <string name="adhan_status_downloading">جاري التحميل… %1$d٪</string>
+    <string name="adhan_download_failed">تعذّر تحميل الأذان — تأكد من الاتصال بالإنترنت</string>
+    <string name="adhan_note">يُشغَّل الأذان كاملاً بصوت المنبّه عند دخول الوقت، ويمكن إيقافه من الإشعار. يُحمَّل كل أذان مرة واحدة ويعمل بعدها بدون إنترنت</string>
+    <string name="adhan_channel_name">الأذان</string>
+    <string name="adhan_channel_desc">إشعار تشغيل الأذان مع زر الإيقاف</string>
     <string name="retry">إعادة المحاولة</string>
 
     <string name="quran_title">القرآن الكريم</string>
@@ -111,6 +131,25 @@
     <string name="quran_font_smaller">تصغير الخط</string>
     <string name="quran_font_bigger">تكبير الخط</string>
     <string name="quran_surah_meta">%1$s • %2$d آية</string>
+    <string name="quran_index">الفهرس</string>
+    <string name="quran_reciter">القارئ: %1$s</string>
+    <string name="quran_choose_reciter">اختر القارئ</string>
+    <string name="quran_choose_tafsir">اختر التفسير</string>
+    <string name="quran_play_page">▶ تشغيل الصفحة</string>
+    <string name="quran_listen_ayah">▶ استماع</string>
+    <string name="quran_play_from_here">تشغيل متواصل من هنا</string>
+    <string name="quran_share">مشاركة</string>
+    <string name="quran_page_title">%1$s — الجزء %2$s</string>
+    <string name="quran_page_number">صفحة %1$s</string>
+    <string name="quran_sheet_title">%1$s — الآية %2$s</string>
+    <string name="quran_now_playing">%1$s — آية %2$s\n%3$s</string>
+    <string name="quran_audio_error">تعذّر تشغيل التلاوة — تأكد من الاتصال بالإنترنت</string>
+    <string name="quran_tafsir_header">%1$s ▾</string>
+    <string name="quran_juz_list">الأجزاء</string>
+    <string name="quran_juz">الجزء %1$s</string>
+    <string name="quran_continue_page">متابعة القراءة — صفحة %1$s</string>
+    <string name="quran_go_bookmark">العلامة: %1$s — آية %2$s</string>
+    <string name="quran_surah_meta_page">%1$s • %2$d آية • صفحة %3$d</string>
     <string name="meccan">مكية</string>
     <string name="medinan">مدنية</string>
 

@@ -18,6 +18,13 @@ object Prefs {
     const val KEY_LAST_SURAH = "last_surah"
     const val KEY_LAST_SURAH_NAME = "last_surah_name"
     const val KEY_LAST_AYAH = "last_ayah"
+    const val KEY_LAST_PAGE = "last_page"
+    const val KEY_BOOKMARK_GLOBAL = "bookmark_global"
+    const val KEY_RECITER = "reciter"
+    const val KEY_TAFSIR = "tafsir"
+    const val KEY_ADHAN = "adhan_id"
+    const val KEY_ADHAN_FAJR = "adhan_fajr_id"
+    const val KEY_ADHAN_CUSTOM_URI = "adhan_custom_uri"
 
     val INTERVAL_OPTIONS = longArrayOf(15, 30, 60, 120, 180)
 

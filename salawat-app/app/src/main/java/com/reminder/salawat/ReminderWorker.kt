@@ -71,6 +71,7 @@ class ReminderWorker(context: Context, params: WorkerParameters) : Worker(contex
 object Notifications {
     const val CHANNEL_REMINDER = "salawat_reminder_channel"
     const val CHANNEL_PRAYER = "prayer_times_channel"
+    const val CHANNEL_ADHAN = "adhan_playback_channel"
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -84,7 +85,15 @@ object Notifications {
             description = context.getString(R.string.prayer_channel_desc)
             enableVibration(true)
         }
-        manager.createNotificationChannels(listOf(reminder, prayer))
+        // The adhan audio itself is played by AdhanService, so this channel is silent.
+        val adhan = android.app.NotificationChannel(
+            CHANNEL_ADHAN, context.getString(R.string.adhan_channel_name), android.app.NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.adhan_channel_desc)
+            setSound(null, null)
+            enableVibration(true)
+        }
+        manager.createNotificationChannels(listOf(reminder, prayer, adhan))
     }
 
     fun canPost(context: Context): Boolean =

@@ -10,4 +10,7 @@
     <color name="accent_text">#7fd3c8</color>
     <color name="highlight">#3a3a1e</color>
     <color name="error_text">#ff8a80</color>
+    <color name="page_background">#071a18</color>
+    <color name="page_paper">#0f2a26</color>
+    <color name="ayah_highlight">#66d4af37</color>
 </resources>

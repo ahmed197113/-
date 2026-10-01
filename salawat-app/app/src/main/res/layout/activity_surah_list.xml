@@ -31,6 +31,37 @@
         android:textColor="@color/text_primary_light"
         android:textColorHint="@color/text_secondary_light" />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnJuz"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/quran_juz_list"
+            android:textColor="@color/accent_text"
+            app:strokeColor="@color/teal_primary" />
+
+        <Button
+            android:id="@+id/btnBookmark"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/accent_text"
+            android:visibility="gone"
+            app:strokeColor="@color/gold" />
+    </LinearLayout>
+
     <Button
         android:id="@+id/btnContinue"
         android:layout_width="match_parent"

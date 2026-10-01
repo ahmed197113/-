@@ -149,6 +149,7 @@ class PrayerTimesActivity : AppCompatActivity() {
                 setAlertsEnabled(checked)
             }
         }
+        binding.btnAdhanSettings.setOnClickListener { startActivity(Intent(this, AdhanSettingsActivity::class.java)) }
         binding.btnExactAlarm.setOnClickListener {
             if (Build.VERSION.SDK_INT >= 31) {
                 runCatching {

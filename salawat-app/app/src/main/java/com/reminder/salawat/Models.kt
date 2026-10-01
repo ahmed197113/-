@@ -9,10 +9,6 @@ data class SurahRef(
     val revelationType: String
 )
 
-data class Ayah(val numberInSurah: Int, val text: String, val audioUrl: String)
-
-data class SurahDetail(val number: Int, val name: String, val ayahs: List<Ayah>)
-
 data class AzkarCategoryRef(val id: Int, val title: String)
 
 data class AzkarItem(val text: String, val repeat: Int, val audioUrl: String)

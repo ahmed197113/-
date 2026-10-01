@@ -27,11 +27,8 @@ object QuranApi {
         return list
     }
 
-    suspend fun fetchSurahText(context: Context, number: Int): SurahDetail =
-        fetchCached(cacheFile(context, number, "text"), "$BASE_URL$number/ar.alafasy", ::parseText)
-
-    suspend fun fetchTafsir(context: Context, number: Int): Map<Int, String> =
-        fetchCached(cacheFile(context, number, "tafsir"), "$BASE_URL$number/ar.muyassar", ::parseTafsir)
+    suspend fun fetchTafsir(context: Context, number: Int, edition: String): Map<Int, String> =
+        fetchCached(cacheFile(context, number, "tafsir_$edition"), "$BASE_URL$number/$edition", ::parseTafsir)
 
     private suspend fun <T> fetchCached(file: File, url: String, parser: (String) -> T): T {
         val cached = withContext(Dispatchers.IO) {
@@ -42,16 +39,6 @@ object QuranApi {
         val parsed = parser(body)
         withContext(Dispatchers.IO) { file.writeTextAtomic(body) }
         return parsed
-    }
-
-    private fun parseText(body: String): SurahDetail {
-        val data = JSONObject(body.stripBom()).getJSONObject("data")
-        val ayahsJson = data.getJSONArray("ayahs")
-        val ayahs = (0 until ayahsJson.length()).map { i ->
-            val o = ayahsJson.getJSONObject(i)
-            Ayah(o.getInt("numberInSurah"), o.getString("text"), o.optString("audio", ""))
-        }
-        return SurahDetail(data.getInt("number"), data.getString("name"), ayahs)
     }
 
     private fun parseTafsir(body: String): Map<Int, String> {

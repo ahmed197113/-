@@ -77,24 +77,30 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, false)
         // Skip stale alarms (e.g. delivered long after the device was off).
         if (prayer != null && enabled && System.currentTimeMillis() - millis < 30 * 60_000L) {
-            val name = context.getString(prayer.nameRes)
-            val openApp = PendingIntent.getActivity(
-                context, 1, Intent(context, PrayerTimesActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_PRAYER)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(context.getString(R.string.prayer_notif_title, name))
-                .setContentText(context.getString(R.string.prayer_notif_text))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_REMINDER)
-                .setContentIntent(openApp)
-                .setAutoCancel(true)
-                .build()
-            Notifications.notify(context, 3000 + prayer.ordinal, notification)
+            val adhan = AdhanCatalog.sourceFor(context, prayer)
+            val playing = adhan != null && Notifications.canPost(context) && AdhanService.start(context, prayer)
+            if (!playing) postPrayerNotification(context, prayer)
         }
         PrayerScheduler.refreshDependents(context)
     }
+}
+
+fun postPrayerNotification(context: Context, prayer: Prayer) {
+    val name = context.getString(prayer.nameRes)
+    val openApp = PendingIntent.getActivity(
+        context, 1, Intent(context, PrayerTimesActivity::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_PRAYER)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(context.getString(R.string.prayer_notif_title, name))
+        .setContentText(context.getString(R.string.prayer_notif_text))
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setCategory(NotificationCompat.CATEGORY_REMINDER)
+        .setContentIntent(openApp)
+        .setAutoCancel(true)
+        .build()
+    Notifications.notify(context, 3000 + prayer.ordinal, notification)
 }
 
 class BootReceiver : BroadcastReceiver() {

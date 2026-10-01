@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnPrayerTimes.setOnClickListener { startActivity(Intent(this, PrayerTimesActivity::class.java)) }
         binding.cardNextPrayer.setOnClickListener { startActivity(Intent(this, PrayerTimesActivity::class.java)) }
         binding.btnAzkar.setOnClickListener { startActivity(Intent(this, AzkarCategoriesActivity::class.java)) }
-        binding.btnQuran.setOnClickListener { startActivity(Intent(this, SurahListActivity::class.java)) }
+        binding.btnQuran.setOnClickListener { startActivity(Intent(this, QuranPagerActivity::class.java)) }
         binding.btnQibla.setOnClickListener { startActivity(Intent(this, QiblaActivity::class.java)) }
 
         // Keep the next-prayer countdown current while the screen is visible.
