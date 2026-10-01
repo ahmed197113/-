@@ -155,20 +155,31 @@
       el.innerHTML = arr.map(function (u, i) { return '<div class="row nw" style="padding:6px 0;border-bottom:1px solid var(--line)"><b style="width:26px">' + (i + 1) + '</b><span class="sp">' + A.esc(u.name || '') + '</span><b>' + (u.rating || 1200) + '</b></div>'; }).join('') || '<p class="mut">لا يوجد لاعبون بعد</p>';
     }).catch(function () { var el = $('#lb', v); if (el) el.innerHTML = ''; });
 
-    var waitModal = null, challengeTo = null;
+    var waitModal = null, challengeTo = null, botT = null;
+    var BOT_WAIT = 25;
     function stopSeek(silent) {
       if (seeking) { ref('queue/' + seeking + '/' + me).remove(); seeking = null; }
       if (challengeTo) { ref('challenges/' + challengeTo + '/' + me).remove(); challengeTo = null; }
-      clearInterval(beat); beat = null;
+      clearInterval(beat); beat = null; clearInterval(botT); botT = null;
       if (waitModal && waitModal.parentNode) waitModal.remove();
       waitModal = null;
     }
-    function wait(text) {
-      waitModal = A.modal('<div class="center"><div class="spin" style="width:42px;height:42px;border-width:4px"></div><h2 style="margin-top:14px">' + text + '</h2><p class="mut">' + TCS[tc][2] + '</p><button class="btn block" data-close>إلغاء</button></div>', function () { stopSeek(); });
+    function wait(text, bot) {
+      waitModal = A.modal('<div class="center"><div class="spin" style="width:42px;height:42px;border-width:4px"></div><h2 style="margin-top:14px">' + text + '</h2><p class="mut">' + TCS[tc][2] + '</p>' + (bot ? '<p class="mut" style="font-size:12.5px">إذا لم يتوفر لاعب خلال <b id="bc">' + BOT_WAIT + '</b> ثانية ستبدأ مباراة ضد الكمبيوتر بمستواك.</p>' : '') + '<button class="btn block" data-close>إلغاء</button></div>', function () { stopSeek(); });
+    }
+    /* لا يوجد لاعب متاح: مباراة مباشرة ضد الكمبيوتر بمستوى قريب من تصنيف اللاعب */
+    function startBot() {
+      var r = (Net.profile && Net.profile.rating) || 1200;
+      var lv = r < 700 ? 1 : r < 1000 ? 2 : r < 1300 ? 3 : r < 1600 ? 4 : r < 1900 ? 5 : 6;
+      stopSeek(true);
+      A.toast('🤖 لا يوجد لاعب متاح الآن — بدأت مباراة ضد الكمبيوتر');
+      A.go('game', { level: lv, color: Math.random() < .5 ? 'w' : 'b', bot: true });
     }
     $('#seek', v).onclick = function () {
       var p = Net.profile || {}, key = tcKey(tc), opp = null, mine = { name: p.name || Net.user.displayName || 'لاعب', rating: p.rating || 1200, ts: now() };
-      wait('نبحث عن خصم...');
+      wait('نبحث عن خصم...', true);
+      var left = BOT_WAIT;
+      botT = setInterval(function () { left--; var el = document.getElementById('bc'); if (el) el.textContent = left; if (left <= 0) startBot(); }, 1000);
       ref('queue/' + key).transaction(function (q) {
         q = q || {}; opp = null;
         var t = now();

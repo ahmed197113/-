@@ -312,7 +312,7 @@
     if (!hist.length) A.sfx('start');
     if (ch.turn() === eng) engineTurn(gen); else getPre(ch.fen());
 
-    return { title: 'ضد ' + L.name, cleanup: function () { gen++; Engine.stopPlayer(); Engine.stop(); } };
+    return { title: p.bot ? '🤖 ضد الكمبيوتر (' + L.name + ')' : 'ضد ' + L.name, cleanup: function () { gen++; Engine.stopPlayer(); Engine.stop(); } };
   });
 
   /* ===== المحلل الذكي ===== */
