@@ -1,0 +1,27 @@
+name: Salawat adhan assets
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/adhans.tsv"
+      - "salawat-app/tools/prepare_adhans.sh"
+      - ".github/workflows/salawat-adhan-assets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  adhans:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: salawat-app/tools/prepare_adhans.sh "$RUNNER_TEMP/adhan"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: salawat-adhan-v1
+          name: Salawat adhan audio (v1)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/adhan/*
