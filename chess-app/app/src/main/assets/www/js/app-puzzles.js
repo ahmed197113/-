@@ -77,7 +77,7 @@
       '<div class="plr" id="who"></div><div class="bwrap" id="bd"></div>' +
       '<div class="panel"><div class="coachbox" id="cb"></div></div>';
     board = newBoard($('#bd', v), {});
-    var bar = A.actionbar([['h1', '💡', 'تلميح'], ['sol', '👁️', 'الحل'], ['ana', '🔬', 'تحليل'], ['nx', '⏭️', 'التالي', true]]);
+    var bar = A.actionbar([['h1', '💡', 'تلميح'], ['ana', '🔬', 'تحليل'], ['nx', '⏭️', 'التالي', true]]);
     var cbEl = $('#cb', v);
     function cb(html) { cbEl.innerHTML = '<div class="who"><span class="bot">🤖</span> المدرب</div>' + html; }
     function btn(id, on) { var b = $('#' + id, bar); if (b) b.disabled = !on; }
@@ -109,7 +109,7 @@
       $('#who', v).innerHTML = '<div class="av">' + (userSide === 'w' ? '♔' : '♚') + '</div><b>دورك: ' + (userSide === 'w' ? 'الأبيض' : 'الأسود') + '</b><span class="sp"></span>' + (rush || streak ? '' : '<span class="tag v">تصنيف ' + pz.r + '</span>');
       var goal = pz.mate ? 'ابحث عن <b>كش مات في ' + (pz.mate === 1 ? 'نقلة واحدة' : pz.mate + ' نقلات') + '</b>.' : 'ابحث عن <b>أفضل نقلة</b>.' + (pz.th.indexOf('hanging') >= 0 && S.set.pdiff === 0 ? ' 💡 انظر: هل توجد قطعة غير محمية؟' : '');
       cb((pz.t ? '<b>' + pz.t + '</b><br>' : '') + goal);
-      btn('h1', !rush); btn('sol', !rush && !streak); btn('ana', false); btn('nx', !rush && !streak);
+      btn('h1', !rush); btn('ana', false); btn('nx', !rush && !streak);
     }
 
     function marks(extra) {
@@ -301,7 +301,6 @@
     }
 
     $('#h1', bar).onclick = hint;
-    $('#sol', bar).onclick = showSol;
     $('#nx', bar).onclick = function () { load(); };
     $('#ana', bar).onclick = function () { A.go('analysis', { fen: startFen }); };
 
