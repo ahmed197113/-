@@ -71,7 +71,9 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
-                if ("appassets.androidplatform.net".equals(url.getHost())) return false;
+                String host = url.getHost() == null ? "" : url.getHost();
+                // تسجيل الدخول إلى lichess يتم داخل التطبيق
+                if ("appassets.androidplatform.net".equals(host) || host.equals("lichess.org") || host.endsWith(".lichess.org")) return false;
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW, url));
                 } catch (Exception ignored) {
@@ -103,6 +105,11 @@ public class MainActivity extends Activity {
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
+        String cur = web.getUrl();
+        if (cur != null && !cur.startsWith("https://appassets.androidplatform.net/")) {
+            if (web.canGoBack()) web.goBack(); else web.loadUrl(HOME);
+            return;
+        }
         web.evaluateJavascript("(window.appBack ? window.appBack() : false)", value -> {
             if (!"true".equals(value)) MainActivity.super.onBackPressed();
         });

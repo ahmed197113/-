@@ -42,6 +42,18 @@
 
   /* ===== إعداد المباراة ===== */
   A.route('play', function (v) {
+    v.innerHTML = '<button class="bigbtn main" id="on"><span class="ic">🌍</span><span><b>العب أونلاين</b><small>ضد لاعبين حقيقيين عبر lichess.org</small></span></button>' +
+      '<button class="bigbtn" id="ai"><span class="ic">🤖</span><span><b>العب ضد الكمبيوتر</b><small>9 مستويات · المدرب يشرح نقلاتك</small></span></button>' +
+      '<button class="bigbtn" id="fr"><span class="ic">👥</span><span><b>صديق على نفس الهاتف</b><small>لاعبان على جهاز واحد</small></span></button>' +
+      '<button class="bigbtn" id="an"><span class="ic">🔬</span><span><b>المحلل</b><small>حلّل أي موقف أو مباراة</small></span></button>';
+    $('#on', v).onclick = function () { A.go('online'); };
+    $('#ai', v).onclick = function () { A.go('vsai'); };
+    $('#fr', v).onclick = function () { A.go('friend'); };
+    $('#an', v).onclick = function () { A.go('analysis'); };
+    return { title: 'العب' };
+  });
+
+  A.route('vsai', function (v) {
     var st = S.set;
     var html = '';
     if (S.saved && S.saved.moves && S.saved.moves.length) html += '<div class="card glow" id="resume"><div class="row nw"><div style="font-size:30px">⏯️</div><div class="sp"><h2>أكمل مباراتك</h2><p>ضد ' + Engine.LEVELS[S.saved.level].name + ' · ' + Math.ceil(S.saved.moves.length / 2) + ' نقلة</p></div><button class="btn pri sm">متابعة</button></div></div>';
@@ -68,7 +80,7 @@
       A.go('game', { level: st.level, color: c });
     };
     if ($('#resume', v)) $('#resume', v).onclick = function () { A.go('game', { level: S.saved.level, color: S.saved.color, moves: S.saved.moves }); };
-    return { title: 'العب مع المدرب' };
+    return { title: 'ضد الكمبيوتر' };
   });
 
   /* ===== المباراة ===== */

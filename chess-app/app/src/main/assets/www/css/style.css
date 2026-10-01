@@ -274,3 +274,53 @@ body.focus #view{padding:8px 8px calc(84px + var(--safe-b))}
 .diff{display:flex;gap:6px;margin:4px 0 12px}
 .diff button{flex:1;padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:12.5px}
 .diff button.on{border-color:var(--ok);background:rgba(61,255,168,.14);color:var(--ok)}
+
+/* ===== التصميم المبسّط (v1.2): ألوان هادئة بلا توهج ===== */
+:root{--bg:#18191d;--bg2:#202227;--card:#23252b;--card2:#2c2f36;--line:rgba(255,255,255,.07);--txt:#eceef3;--mut:#9a9fab;--neon:#81b64c;--neon2:#5b9bd5;--neon3:#e0a43c;--ok:#81b64c}
+#bg{display:none}
+body{background:var(--bg)}
+header.top{background:var(--bg);border-bottom:1px solid var(--line);backdrop-filter:none;-webkit-backdrop-filter:none;min-height:54px;padding-top:calc(8px + var(--safe-t));padding-bottom:8px}
+header.top h1{font-size:18px}
+header.top .xpchip{background:none;border:0;font-size:12px;color:var(--mut)}
+nav.bottom{background:#1d1f24;backdrop-filter:none;-webkit-backdrop-filter:none}
+nav.bottom button .i{filter:none;opacity:.55}
+nav.bottom button.on .i{opacity:1;transform:none;text-shadow:none}
+nav.bottom button.on::after{box-shadow:none}
+.card,.list .it,.tile{background:var(--card);border-color:var(--line)}
+.card.glow{box-shadow:none;border-color:rgba(129,182,76,.35)}
+.tile::before,.hero::after{display:none}
+.hero{background:var(--card);border:1px solid var(--line)}
+.ring{box-shadow:none}
+.ring span{background:var(--card)}
+.btn.pri,.actionbar button.pri{background:var(--neon);color:#fff;box-shadow:none}
+.timer,.bigsq{text-shadow:none}
+.coachbox{background:var(--card);border-color:var(--line)}
+.coachbox .who{color:var(--txt)}
+.coachbox .who .bot{background:var(--card2);box-shadow:none}
+.exp-t{color:var(--txt)}
+.splash .logo{background:var(--neon);box-shadow:none;animation:none}
+.splash h1{background:none;color:var(--txt);-webkit-background-clip:initial;background-clip:initial}
+.seg button.on{background:var(--card2);color:var(--txt)}
+.lvgrid button.on{box-shadow:none;background:rgba(129,182,76,.15)}
+.plr.turn .av{box-shadow:0 0 0 2px var(--neon)}
+.stepdots i.on{box-shadow:none}
+.tag{background:rgba(255,255,255,.06);border-color:var(--line);color:var(--mut)}
+/* الشاشة الرئيسية المبسطة */
+.bigbtn{display:flex;align-items:center;gap:14px;width:100%;padding:18px 16px;margin-bottom:10px;border-radius:16px;border:1px solid var(--line);background:var(--card);text-align:right;font-family:inherit;color:var(--txt);cursor:pointer}
+.bigbtn:active{transform:scale(.98)}
+.bigbtn .ic{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--card2);flex-shrink:0}
+.bigbtn b{display:block;font-size:16.5px}
+.bigbtn small{color:var(--mut);font-size:12.5px}
+.bigbtn.main{background:var(--neon);border:0}
+.bigbtn.main .ic{background:rgba(0,0,0,.15)}
+.bigbtn.main small{color:rgba(255,255,255,.85)}
+.mini{display:flex;gap:8px;margin:4px 0 16px}
+.mini div{flex:1;text-align:center;padding:10px 4px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.mini b{display:block;font-size:17px}
+.mini small{color:var(--mut);font-size:11px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links button{flex:1 1 30%;padding:12px 6px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:13px;font-weight:600}
+.clock{font-variant-numeric:tabular-nums;font-weight:800;font-size:18px;padding:4px 10px;border-radius:8px;background:var(--card2);direction:ltr}
+.clock.on{background:#fff;color:#111}
+.clock.low{background:#c33;color:#fff}
+details.more summary{cursor:pointer;font-size:13px;margin-top:4px}

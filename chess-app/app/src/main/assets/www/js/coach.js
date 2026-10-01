@@ -455,7 +455,19 @@
       }
       if (drop >= 5) body.push('خسرت تقريبًا ' + Math.round(drop) + '% من فرص الفوز بهذه النقلة.');
     }
-    return { key: key, cls: C, drop: drop, html: html + '<ul>' + body.map(function (b) { return '<li>' + b + '</li>'; }).join('') + '</ul>', playedScore: playedScore, turn: turn };
+    return { key: key, cls: C, drop: drop, html: html + simpleBody(body), playedScore: playedScore, turn: turn };
+  }
+
+  /* سطر واحد واضح + التفاصيل عند الطلب */
+  function simpleBody(body) {
+    if (!body.length) return '';
+    var main = body.filter(function (b) { return b.indexOf('<b>الأفضل كان') === 0 || b.indexOf('<b>المشكلة') === 0; });
+    var first = main.length ? main : body.slice(0, 1);
+    var rest = body.filter(function (b) { return first.indexOf(b) < 0; });
+    var h = first.slice(0, 2).map(function (b) { return '<div style="margin:3px 0">' + b + '</div>'; }).join('');
+    rest = rest.concat(first.slice(2));
+    if (rest.length) h += '<details class="more"><summary class="mut">المزيد</summary><ul>' + rest.map(function (b) { return '<li>' + b + '</li>'; }).join('') + '</ul></details>';
+    return h;
   }
 
   /* ===== ما هو تهديد الخصم؟ (نقلة فارغة) ===== */

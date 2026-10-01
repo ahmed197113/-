@@ -14,15 +14,17 @@
 
   /* ===== الأكاديمية ===== */
   A.route('academy', function (v) {
-    var html = '<div class="card glow"><h2>🎓 أكاديمية الشطرنج</h2><p>مسار تعليمي متكامل من الصفر إلى الاحتراف، بدروس تفاعلية تتدرب فيها بيدك على الرقعة.</p></div>';
+    var html = '';
     COURSES.forEach(function (c) {
       var done = c.lessons.filter(function (l) { return S.lessons[l.id]; }).length;
       var pct = Math.round(done / c.lessons.length * 100);
       html += '<div class="list"><div class="it" data-c="' + c.id + '"><div class="ic" style="background:' + c.color + '22">' + c.icon + '</div><div class="tx"><b>' + c.title + '</b><small>' + c.desc + '</small><div class="progress" style="margin-top:6px"><i style="width:' + pct + '%"></i></div></div><div class="mut" style="font-size:12px">' + done + '/' + c.lessons.length + '</div></div></div>';
     });
+    html += '<div class="list"><div class="it" id="ops"><div class="ic">📖</div><div class="tx"><b>الافتتاحات</b><small>' + OPENINGS.length + ' افتتاحية مشروحة نقلة بنقلة</small></div></div></div>';
     v.innerHTML = html;
     $$('[data-c]', v).forEach(function (e) { e.onclick = function () { A.sfx('tap'); A.go('course', { c: e.dataset.c }); }; });
-    return { title: 'الأكاديمية' };
+    $('#ops', v).onclick = function () { A.go('openings'); };
+    return { title: 'تعلّم' };
   });
 
   function course(id) { return COURSES.filter(function (c) { return c.id === id; })[0]; }

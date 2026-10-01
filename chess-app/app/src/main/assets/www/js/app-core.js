@@ -9,7 +9,7 @@
     xp: 0, streak: 0, lastDay: '', days: 0,
     lessons: {}, puzzles: {}, pRating: 600, streakBest: 0, pSolved: 0, pFailed: 0, rushBest: 0, coordBest: 0, quizBest: 0,
     games: { played: 0, won: 0, lost: 0, drawn: 0, bestLevel: -1 }, openings: {}, brilliants: 0, ach: {},
-    set: { sound: true, pack: 'real', pdiff: 1, vib: true, voice: false, coords: true, theme: 'green', lowfx: false, evalbar: true, coachEvery: true, autoThreat: false, level: 2, color: 'w' },
+    set: { sound: true, pack: 'real', pdiff: 1, vib: true, voice: false, coords: true, theme: 'green', lowfx: false, evalbar: false, coachEvery: true, autoThreat: false, level: 2, color: 'w' },
     saved: null
   };
   var S;
@@ -204,9 +204,9 @@
 
   /* ===== التنقل ===== */
   var routes = {}, stack = [], cleanup = null;
-  var NAV = [['home', '🏠', 'الرئيسية'], ['academy', '🎓', 'الأكاديمية'], ['puzzles', '🧩', 'الألغاز'], ['play', '♟️', 'العب'], ['more', '✨', 'المزيد']];
-  var TAB = { home: 'home', academy: 'academy', course: 'academy', lesson: 'academy', puzzles: 'puzzles', puzzle: 'puzzles', play: 'play', game: 'play' };
-  var FOCUS = { lesson: 1, puzzle: 1, game: 1, analysis: 1, opening: 1, coords: 1, vision: 1 };
+  var NAV = [['home'], ['academy'], ['puzzles'], ['play']];
+  var TAB = { home: 'home', academy: 'academy', course: 'academy', lesson: 'academy', openings: 'academy', opening: 'academy', puzzles: 'puzzles', puzzle: 'puzzles', play: 'play', game: 'play', vsai: 'play', online: 'play', ogame: 'play', friend: 'play', analysis: 'play' };
+  var FOCUS = { lesson: 1, puzzle: 1, game: 1, ogame: 1, friend: 1, analysis: 1, opening: 1, coords: 1, vision: 1 };
   function route(name, fn) { routes[name] = fn; }
   /* شريط أزرار سفلي ثابت: [[id, icon, label, pri]] */
   function actionbar(items) {
@@ -256,7 +256,8 @@
   function updateChip() {
     var li = levelInfo(S.xp);
     var c = $('header.top .xpchip');
-    if (c) c.innerHTML = '⚡ ' + S.xp + ' <span class="mut">· مستوى ' + li.lv + '</span>';
+    if (c) c.innerHTML = '<button class="back" id="gear" aria-label="الإعدادات">⚙️</button>';
+    var g = $('#gear'); if (g) g.onclick = function () { go('settings'); };
   }
 
   /* ===== الرئيسية ===== */
@@ -264,28 +265,17 @@
   function dailyIndex(n) { var d = new Date(); var s = d.getFullYear() * 400 + d.getMonth() * 31 + d.getDate(); return (s * 2654435761 >>> 0) % n; }
 
   route('home', function (v) {
-    var li = levelInfo(S.xp);
     var next = nextLesson();
-    var tip = TIPS[dailyIndex(TIPS.length)];
+    var daily = S.puzzles['daily-' + today()];
     v.innerHTML =
-      '<div class="hero">' +
-        '<div class="hi">' + greet() + '</div>' +
-        '<div class="lvl"><div class="ring" style="--p:' + li.pct + '"><span>' + li.lv + '</span></div>' +
-          '<div style="flex:1"><div class="name">' + li.title + '</div><div class="progress"><i style="width:' + li.pct + '%"></i></div><small class="mut">' + li.cur + ' / ' + li.need + ' XP للمستوى التالي</small></div></div>' +
-        '<div class="stats"><div class="stat"><b>🔥 ' + S.streak + '</b><small>أيام متتالية</small></div><div class="stat"><b>🧩 ' + S.pSolved + '</b><small>لغز محلول</small></div><div class="stat"><b>📈 ' + Math.round(S.pRating) + '</b><small>تصنيفك</small></div></div>' +
-      '</div>' +
-      (next ? '<div class="card glow" id="cont"><div class="row nw"><div style="font-size:34px">' + next.l.icon + '</div><div class="sp"><small class="mut">تابع التعلم · ' + next.c.title + '</small><h2>' + next.l.title + '</h2></div><button class="btn pri sm">ابدأ ◀</button></div></div>' : '') +
-      '<div class="card" id="daily"><div class="row nw"><div style="font-size:34px">🌅</div><div class="sp"><h2>لغز اليوم</h2><p>' + (S.puzzles['daily-' + today()] ? '✅ حللته اليوم! عد غدًا' : 'لغز جديد كل يوم — حافظ على سلسلتك!') + '</p></div><button class="btn sm">حل ◀</button></div></div>' +
-      '<div class="sec-t">🚀 ابدأ الآن</div>' +
-      '<div class="grid2">' +
-        tile('academy', '🎓', 'الأكاديمية', cnt(S.lessons) + ' / ' + totalLessons() + ' درس', '#38f5ff', Math.round(cnt(S.lessons) / totalLessons() * 100)) +
-        tile('puzzles', '🧩', 'الألغاز', PUZZLES.length + ' لغز مع الشرح', '#ff4fd8') +
-        tile('play', '🤖', 'العب مع المدرب', 'مدرب يشرح كل نقلة', '#a66bff') +
-        tile('analysis', '🔬', 'المحلل الذكي', 'Stockfish بالعربية', '#3dffa8') +
-        tile('openings', '📖', 'الافتتاحات', OPENINGS.length + ' افتتاحية مشروحة', '#ffc14d') +
-        tile('trainers', '🎯', 'التدريبات', 'إحداثيات وعاصفة ألغاز', '#ff9f43') +
-      '</div>' +
-      '<div class="sec-t">💡 نصيحة اليوم</div><div class="card"><p style="color:var(--txt);font-size:15px">' + tip + '</p></div>';
+      '<div class="mini"><div><b>🔥 ' + S.streak + '</b><small>أيام متتالية</small></div><div><b>' + Math.round(S.pRating) + '</b><small>تصنيف الألغاز</small></div><div><b>' + cnt(S.lessons) + '/' + totalLessons() + '</b><small>دروس</small></div></div>' +
+      '<button class="bigbtn main" data-go="play"><span class="ic">♟️</span><span><b>العب الآن</b><small>أونلاين، ضد الكمبيوتر، أو مع صديق</small></span></button>' +
+      (next ? '<button class="bigbtn" id="cont"><span class="ic">' + next.l.icon + '</span><span><b>تابع التعلم</b><small>' + next.c.title + ' · ' + next.l.title + '</small></span></button>' : '') +
+      '<button class="bigbtn" id="daily"><span class="ic">🧩</span><span><b>لغز اليوم</b><small>' + (daily ? '✅ حللته اليوم' : 'لغز جديد كل يوم') + '</small></span></button>' +
+      '<div class="links">' +
+        '<button data-go="openings">📖 الافتتاحات</button><button data-go="trainers">🎯 تدريبات</button><button data-go="glossary">📘 القاموس</button>' +
+        '<button data-go="achievements">🏆 إنجازاتي</button><button data-go="quiz">🧠 اختبار</button><button data-go="about">ℹ️ عن التطبيق</button>' +
+      '</div>';
     if (next) $('#cont', v).onclick = function () { go('lesson', { c: next.c.id, l: next.l.id }); };
     $('#daily', v).onclick = function () { go('puzzle', { mode: 'daily' }); };
     bindTiles(v);
@@ -361,7 +351,7 @@
   });
 
   route('about', function (v) {
-    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.1 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
+    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.2 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
       '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• أصوات القطع: مجموعتا sfx و futuristic من lichess.org (Enigmahack) — رخصة AGPLv3+.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
       '<div class="card"><h2>📜 الشطرنج والعرب</h2><p>انتقل الشطرنج من الهند إلى فارس، ثم طوّره العرب في العصر العباسي وألّفوا فيه الكتب، وكان <b>الصولي</b> و<b>العدلي</b> من أعظم لاعبيه. ومن الأندلس انتقل إلى أوروبا. كلمة "شاه مات" و"رخ" من أصول فارسية-عربية.</p></div>';
     return { title: 'عن التطبيق' };
@@ -380,6 +370,7 @@
     $('header.top .back').onclick = function () { back(); };
     updateChip();
     go('home');
+    if (self.Lichess) Lichess.handleRedirect();
     setTimeout(function () { var s = $('.splash'); if (s) { s.style.opacity = 0; setTimeout(function () { s.remove(); }, 500); } }, 900);
     // تسخين المحرك
     setTimeout(function () { Engine.available(); }, 1200);
