@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_light"
+    android:fillViewport="true"
+    android:layoutDirection="rtl">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <Button
+            android:id="@+id/btnUseLocation"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/prayer_use_location"
+            android:textColor="@color/accent_text"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/teal_primary" />
+
+        <EditText
+            android:id="@+id/editCity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:autofillHints="postalAddress"
+            android:hint="@string/prayer_city_hint"
+            android:inputType="text"
+            android:textColor="@color/text_primary_light"
+            android:textColorHint="@color/text_secondary_light" />
+
+        <EditText
+            android:id="@+id/editCountry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:autofillHints="postalAddress"
+            android:hint="@string/prayer_country_hint"
+            android:inputType="text"
+            android:textColor="@color/text_primary_light"
+            android:textColorHint="@color/text_secondary_light" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/prayer_method_label"
+                android:textColor="@color/text_primary_light"
+                android:textSize="15sp" />
+
+            <Spinner
+                android:id="@+id/spinnerMethod"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnRefresh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/teal_primary"
+            android:text="@string/prayer_refresh"
+            android:textColor="@android:color/white"
+            app:cornerRadius="16dp" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textColor="@color/error_text"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textLastUpdate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/prayer_no_data"
+            android:textColor="@color/text_secondary_light"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/textNext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="@color/accent_text"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/card_light"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <include android:id="@+id/rowFajr" layout="@layout/row_prayer_time" />
+                <include android:id="@+id/rowSunrise" layout="@layout/row_prayer_time" />
+                <include android:id="@+id/rowDhuhr" layout="@layout/row_prayer_time" />
+                <include android:id="@+id/rowAsr" layout="@layout/row_prayer_time" />
+                <include android:id="@+id/rowMaghrib" layout="@layout/row_prayer_time" />
+                <include android:id="@+id/rowIsha" layout="@layout/row_prayer_time" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchAlerts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/prayer_alerts_label"
+            android:textColor="@color/text_primary_light"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:id="@+id/layoutExactAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/prayer_exact_alarm_hint"
+                android:textColor="@color/text_secondary_light"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnExactAlarm"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/prayer_exact_alarm_btn"
+                android:textColor="@color/gold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:text="@string/prayer_source_note"
+            android:textColor="@color/text_secondary_light"
+            android:textSize="11sp" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

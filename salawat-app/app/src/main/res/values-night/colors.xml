@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="teal_dark">#06201e</color>
+    <color name="teal_primary">#1f7a72</color>
+    <color name="teal_light">#26998a</color>
+    <color name="background_light">#0a2321</color>
+    <color name="card_light">#12352f</color>
+    <color name="text_primary_light">#ececec</color>
+    <color name="text_secondary_light">#b4beba</color>
+    <color name="accent_text">#7fd3c8</color>
+    <color name="highlight">#3a3a1e</color>
+    <color name="error_text">#ff8a80</color>
+</resources>

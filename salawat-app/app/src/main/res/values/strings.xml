@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">صلِّ على محمد</string>
+    <string name="title_main">صلِّ على محمد ﷺ</string>
+    <string name="subtitle_main">تذكير لطيف بالصلاة على النبي ﷺ</string>
+    <string name="switch_label">تفعيل التذكير</string>
+    <string name="status_off">التذكير متوقف</string>
+    <string name="status_on">التذكير مُفعّل — كل %1$s ✓</string>
+    <string name="battery_note">يعمل بكفاءة في الخلفية دون استنزاف البطارية</string>
+    <string name="btn_prayer_times">مواقيت الصلاة</string>
+    <string name="btn_quran">القرآن الكريم</string>
+    <string name="btn_azkar">الأذكار والأدعية</string>
+    <string name="btn_qibla">اتجاه القبلة</string>
+
+    <string name="reminder_interval_label">التذكير كل:</string>
+    <string-array name="reminder_interval_labels">
+        <item>15 دقيقة</item>
+        <item>30 دقيقة</item>
+        <item>ساعة</item>
+        <item>ساعتين</item>
+        <item>3 ساعات</item>
+    </string-array>
+    <string name="quiet_hours_label">عدم الإزعاج ليلاً</string>
+    <string name="quiet_hours_range">من %1$s إلى %2$s</string>
+    <string name="quiet_hours_pick_start">بداية فترة عدم الإزعاج</string>
+    <string name="quiet_hours_pick_end">نهاية فترة عدم الإزعاج</string>
+
+    <string name="notif_channel_name">تذكير الصلاة على النبي</string>
+    <string name="notif_channel_desc">إشعار دوري يذكّرك بالصلاة على النبي محمد ﷺ</string>
+    <string name="prayer_channel_name">تنبيهات أوقات الصلاة</string>
+    <string name="prayer_channel_desc">إشعار عند دخول وقت كل صلاة</string>
+    <string name="prayer_notif_title">حان الآن موعد صلاة %1$s</string>
+    <string name="prayer_notif_text">حيّ على الصلاة، حيّ على الفلاح</string>
+
+    <string name="tasbih_title">المسبحة الإلكترونية</string>
+    <string name="tasbih_tap">سبّح</string>
+    <string name="tasbih_next">الذكر التالي</string>
+    <string name="tasbih_reset">تصفير</string>
+    <string name="tasbih_target">الهدف: %1$s</string>
+    <string name="tasbih_target_none">بدون</string>
+    <string name="tasbih_target_reached">ما شاء الله! أتممت %1$d</string>
+
+    <string name="next_prayer">الصلاة القادمة: %1$s %2$s</string>
+    <string name="next_prayer_remaining">بعد %1$s</string>
+    <string name="next_prayer_unknown">افتح «مواقيت الصلاة» لتحديد مدينتك</string>
+    <string name="hours_minutes">%1$d س %2$d د</string>
+    <string name="minutes_only">%1$d دقيقة</string>
+
+    <string name="prayer_times_title">مواقيت الصلاة</string>
+    <string name="prayer_fajr">الفجر</string>
+    <string name="prayer_sunrise">الشروق</string>
+    <string name="prayer_dhuhr">الظهر</string>
+    <string name="prayer_asr">العصر</string>
+    <string name="prayer_maghrib">المغرب</string>
+    <string name="prayer_isha">العشاء</string>
+    <string name="prayer_city_hint">المدينة (مثال: Cairo)</string>
+    <string name="prayer_country_hint">الدولة (مثال: Egypt)</string>
+    <string name="prayer_refresh">تحديث المواقيت</string>
+    <string name="prayer_use_location">استخدام موقعي الحالي</string>
+    <string name="prayer_my_location">موقعي الحالي</string>
+    <string name="prayer_locating">جاري تحديد الموقع…</string>
+    <string name="prayer_location_failed">تعذّر تحديد الموقع. فعّل خدمة الموقع أو اكتب المدينة يدوياً</string>
+    <string name="prayer_location_denied">لم يتم منح إذن الموقع — اكتب المدينة يدوياً</string>
+    <string name="prayer_method_label">طريقة الحساب:</string>
+    <string name="prayer_enter_city">من فضلك اكتب اسم المدينة</string>
+    <string name="prayer_fetch_error">تعذّر الاتصال بالإنترنت لتحديث المواقيت. تأكد من الاتصال وحاول مرة أخرى</string>
+    <string name="prayer_fetch_error_cached">تعذّر التحديث الآن — المعروض هو آخر مواقيت محفوظة</string>
+    <string name="prayer_last_update">%1$s — %2$s</string>
+    <string name="prayer_no_data">اكتب مدينتك أو استخدم موقعك ثم اضغط تحديث</string>
+    <string name="prayer_alerts_label">تنبيه عند دخول وقت كل صلاة</string>
+    <string name="prayer_exact_alarm_hint">لتنبيه دقيق في الوقت تماماً اسمح للتطبيق بضبط المنبّهات</string>
+    <string name="prayer_exact_alarm_btn">السماح بالمنبّهات الدقيقة</string>
+    <string name="prayer_source_note">المصدر: حساب فلكي (Aladhan API) — تُحفظ مواقيت الشهر كاملاً على جهازك وتعمل التنبيهات بدون إنترنت</string>
+    <string-array name="prayer_method_labels">
+        <item>الهيئة المصرية العامة للمساحة</item>
+        <item>رابطة العالم الإسلامي</item>
+        <item>أم القرى (مكة المكرمة)</item>
+        <item>جامعة العلوم الإسلامية بكراتشي</item>
+        <item>الجمعية الإسلامية لأمريكا الشمالية</item>
+        <item>الكويت</item>
+        <item>قطر</item>
+        <item>الإمارات</item>
+        <item>الهيئة العامة للشؤون الدينية - تركيا</item>
+    </string-array>
+
+    <string name="azkar_title">الأذكار والأدعية</string>
+    <string name="azkar_fetch_error">تعذّر تحميل هذا القسم. تأكد من الاتصال بالإنترنت وحاول مرة أخرى</string>
+    <string name="azkar_play_audio">استماع</string>
+    <string name="azkar_repeat_count">يُقال: %1$d مرة</string>
+    <string name="azkar_source_note">المصدر: كتاب حصن المسلم من الكتاب والسنة للشيخ سعيد بن علي بن وهف القحطاني — يُحفظ كل قسم على جهازك بعد أول فتح له ليعمل بدون إنترنت لاحقاً</string>
+    <string name="azkar_remaining">المتبقي: %1$d — اضغط على الذكر للعدّ</string>
+    <string name="azkar_done">✓ تم</string>
+    <string name="azkar_search_hint">ابحث في الأقسام…</string>
+
+    <string name="retry">إعادة المحاولة</string>
+
+    <string name="quran_title">القرآن الكريم</string>
+    <string name="quran_source_note">النص: رواية حفص عن عاصم بالرسم العثماني (مشروع Tanzil المعتمد) — الصوت: الشيخ مشاري بن راشد العفاسي — التفسير: الميسر (مجمع الملك فهد). يُحفظ كل ما تفتحه على جهازك للقراءة بدون إنترنت لاحقاً</string>
+    <string name="quran_fetch_error">تعذّر تحميل السورة. تأكد من الاتصال بالإنترنت وحاول مرة أخرى</string>
+    <string name="quran_loading">جاري التحميل…</string>
+    <string name="quran_ayah_number">آية %1$d</string>
+    <string name="quran_tafsir">تفسير</string>
+    <string name="quran_tafsir_error">تعذّر تحميل التفسير الآن</string>
+    <string name="quran_tafsir_unavailable">التفسير غير متوفر لهذه الآية</string>
+    <string name="quran_search_hint">ابحث باسم السورة أو رقمها…</string>
+    <string name="quran_continue">متابعة القراءة: %1$s — آية %2$d</string>
+    <string name="quran_play_all">تشغيل السورة</string>
+    <string name="quran_stop">إيقاف</string>
+    <string name="quran_bookmark">حفظ علامة</string>
+    <string name="quran_bookmark_saved">تم حفظ العلامة عند آية %1$d</string>
+    <string name="quran_font_smaller">تصغير الخط</string>
+    <string name="quran_font_bigger">تكبير الخط</string>
+    <string name="quran_surah_meta">%1$s • %2$d آية</string>
+    <string name="meccan">مكية</string>
+    <string name="medinan">مدنية</string>
+
+    <string name="qibla_title">اتجاه القبلة</string>
+    <string name="qibla_angle">القبلة على بُعد %1$d° من الشمال</string>
+    <string name="qibla_instructions">ضع الهاتف مسطحاً وأدِره حتى يشير السهم الذهبي إلى الأعلى. أبعده عن المعادن والمغناطيس</string>
+    <string name="qibla_aligned">✓ أنت تتجه نحو القبلة</string>
+    <string name="qibla_no_sensor">جهازك لا يحتوي على بوصلة — اتجاه القبلة %1$d° من الشمال الجغرافي</string>
+    <string name="qibla_need_location">حدّد موقعك أولاً من شاشة «مواقيت الصلاة» (زر استخدام موقعي)</string>
+
+    <string name="widget_description">الصلاة القادمة ووقتها</string>
+    <string name="widget_no_data">افتح التطبيق لتحديد المدينة</string>
+</resources>
