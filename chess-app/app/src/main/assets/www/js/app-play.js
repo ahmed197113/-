@@ -91,7 +91,7 @@
     var evalW = { cp: 20 };
 
     v.innerHTML =
-      '<div class="plr" id="pe"><div class="av">🤖</div><div><b>' + L.name + '</b> <small class="mut">~' + L.elo + '</small><div class="cap" id="ce"></div></div><span class="sp"></span><span id="st" class="think"></span></div>' +
+      '<div class="plr" id="pe"><div class="av">' + (p.bot ? '♟' : '🤖') + '</div><div><b>' + L.name + '</b> <small class="mut">~' + L.elo + '</small><div class="cap" id="ce"></div></div><span class="sp"></span><span id="st" class="think"></span></div>' +
       '<div class="bwrap" id="bd"></div>' +
       '<div class="plr" id="pu"><div class="av">🧑</div><div><b>أنت</b><div class="cap" id="cu"></div></div><span class="sp"></span><span class="tag v" id="md"></span></div>' +
       '<div class="evalbar" id="evb"><i style="width:50%"></i><span id="evt">0.0</span></div>' +
@@ -312,7 +312,7 @@
     if (!hist.length) A.sfx('start');
     if (ch.turn() === eng) engineTurn(gen); else getPre(ch.fen());
 
-    return { title: p.bot ? '🤖 ضد الكمبيوتر (' + L.name + ')' : 'ضد ' + L.name, cleanup: function () { gen++; Engine.stopPlayer(); Engine.stop(); } };
+    return { title: p.bot ? 'مباراة' : 'ضد ' + L.name, cleanup: function () { gen++; Engine.stopPlayer(); Engine.stop(); } };
   });
 
   /* ===== المحلل الذكي ===== */

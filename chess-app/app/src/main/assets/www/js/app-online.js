@@ -172,7 +172,6 @@
       var r = (Net.profile && Net.profile.rating) || 1200;
       var lv = r < 700 ? 1 : r < 1000 ? 2 : r < 1300 ? 3 : r < 1600 ? 4 : r < 1900 ? 5 : 6;
       stopSeek(true);
-      A.toast('🤖 لا يوجد لاعب متاح الآن — بدأت مباراة ضد الكمبيوتر');
       A.go('game', { level: lv, color: Math.random() < .5 ? 'w' : 'b', bot: true });
     }
     $('#seek', v).onclick = function () {
