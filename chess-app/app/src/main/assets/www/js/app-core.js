@@ -362,7 +362,7 @@
   });
 
   route('about', function (v) {
-    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.3 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
+    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.4 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
       '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• أصوات: الخشبي من تصميم التطبيق، والباقي من lichess.org (Enigmahack) — AGPLv3+.<br>• أطقم القطع الإضافية من lichess.org (merida وchessnut وfantasy وغيرها) برخص حرة.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
       '<div class="card"><h2>📜 الشطرنج والعرب</h2><p>انتقل الشطرنج من الهند إلى فارس، ثم طوّره العرب في العصر العباسي وألّفوا فيه الكتب، وكان <b>الصولي</b> و<b>العدلي</b> من أعظم لاعبيه. ومن الأندلس انتقل إلى أوروبا. كلمة "شاه مات" و"رخ" من أصول فارسية-عربية.</p></div>';
     return { title: 'عن التطبيق' };

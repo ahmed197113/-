@@ -37,7 +37,10 @@
     'auth/too-many-requests': 'محاولات كثيرة، انتظر قليلًا ثم حاول.',
     'auth/network-request-failed': 'لا يوجد اتصال بالإنترنت.'
   };
-  function errMsg(e) { return ERR[e && e.code] || (e && e.message) || 'حدث خطأ، حاول مرة أخرى.'; }
+  function errMsg(e) {
+    if (e && /permission_denied|PERMISSION_DENIED/i.test(String(e.code || e.message))) return 'السيرفر رفض العملية (قواعد قاعدة البيانات غير مضبوطة).';
+    return ERR[e && e.code] || (e && e.message) || 'حدث خطأ، حاول مرة أخرى.';
+  }
 
   var TCS = [[5, 0, '5 دقائق'], [10, 0, '10 دقائق'], [10, 5, '10+5'], [15, 10, '15+10']];
   function tcKey(i) { return TCS[i][0] + '_' + TCS[i][1]; }
