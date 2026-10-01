@@ -21,44 +21,20 @@ def head(url):
     except Exception as e:
         return str(e)[:60], None, None
 
-# 1. Full Uthmani text with page/juz info
-try:
-    q = json.loads(get("https://api.alquran.cloud/v1/quran/quran-uthmani", 180))
-    rows = []
-    for s in q["data"]["surahs"]:
-        for a in s["ayahs"]:
-            rows.append([a["number"], s["number"], a["numberInSurah"], a["page"], a["juz"], a["text"]])
-    json.dump(rows, open(os.path.join(OUT, "quran_uthmani.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
-    p("quran ayahs", len(rows), "pages", max(r[3] for r in rows))
-    p("sample", rows[0], rows[7])
-except Exception as e:
-    p("quran FAILED", e)
-
-# 2. Audio editions + bitrates on the islamic.network CDN
-try:
-    eds = json.loads(get("https://api.alquran.cloud/v1/edition?format=audio&language=ar"))["data"]
-    for e in eds:
-        ok = [br for br in (192, 128, 64, 48, 40, 32) if head(f"https://cdn.islamic.network/quran/audio/{br}/{e['identifier']}/1.mp3")[0] == 200]
-        p("AUDIO", e["identifier"], e["name"], e.get("englishName"), ok)
-except Exception as e:
-    p("audio FAILED", e)
-
-# 3. Tafsir editions
-try:
-    for e in json.loads(get("https://api.alquran.cloud/v1/edition?type=tafsir"))["data"]:
-        p("TAFSIR", e["identifier"], e["language"], e["name"], e.get("englishName"))
-except Exception as e:
-    p("tafsir FAILED", e)
-
 # 4. Adhan candidates on archive.org
-queries = ["adhan makkah", "adhan madinah", "azan makkah", "azan madina", "adhan minshawi", "أذان المنشاوي",
+import re
+ADHAN_RE = re.compile(r"adhan|adhaan|azan|athan|adan|اذان|أذان|آذان", re.I)
+queries = ["minshawi", "minshawy", "menshawy", "المنشاوي اذان", "اذان المنشاوى", "adhan abdul basit", "abdulbasit azan",
+           "اذان عبد الباسط", "اذان محمد رفعت", "mohamed refaat adhan", "refaat azan", "النقشبندي اذان", "naqshbandi",
+           "اذان الحصري", "اذان مصري", "egyptian adhan", "اذان نصر الدين طوبار", "اذان الشعشاعي", "روائع الاذان", "adhan collection"]
+_unused = ["adhan makkah", "adhan madinah", "azan makkah", "azan madina", "adhan minshawi", "أذان المنشاوي",
            "adhan abdul basit", "adhan mishary", "adhan ali mulla", "adhan nasser qatami", "adhan egypt", "athan",
            "أذان مكة", "أذان المدينة", "اذان"]
 seen = set()
 for qtext in queries:
     try:
         url = "https://archive.org/advancedsearch.php?" + urllib.parse.urlencode(
-            {"q": f"({qtext}) AND mediatype:audio", "fl[]": "identifier", "rows": 15, "output": "json"})
+            {"q": f"({qtext}) AND mediatype:audio", "fl[]": "identifier", "rows": 30, "output": "json"})
         docs = json.loads(get(url))["response"]["docs"]
         for d in docs:
             ident = d["identifier"]
@@ -69,18 +45,21 @@ for qtext in queries:
                 meta = json.loads(get(f"https://archive.org/metadata/{ident}"))
                 title = meta.get("metadata", {}).get("title")
                 files = [(f["name"], f.get("size"), f.get("length")) for f in meta.get("files", []) if f["name"].lower().endswith(".mp3")]
-                p("ARCHIVE", qtext, "|", ident, "|", title, "|", files[:40])
+                hits = [f for f in files if ADHAN_RE.search(f[0]) or ADHAN_RE.search(str(title))]
+                if hits:
+                    p("ARCHIVE", qtext, "|", ident, "|", title, "|", hits[:60])
             except Exception as e:
                 p("ARCHIVE meta fail", ident, e)
     except Exception as e:
         p("archive search FAILED", qtext, e)
 
-# 5. islamcan numbered adhans
-for i in range(1, 26):
-    p("ISLAMCAN", i, head(f"https://www.islamcan.com/audio/adhan/azan{i}.mp3"))
-
-# 6. everyayah reciters list
-try:
-    p("EVERYAYAH", get("https://everyayah.com/data/recitations.js")[:6000].decode("utf-8", "replace"))
-except Exception as e:
-    p("everyayah FAILED", e)
+# 5. Verify chosen downloads
+for u in [
+    "https://archive.org/download/adan-madeenah-nu3man/adan-mullah-al7aram-1414.mp3",
+    "https://archive.org/download/adan-madeenah-nu3man/adan-madeenah-nu3man.mp3",
+    "https://archive.org/download/adan-madeenah-nu3man/adan-al7usary.mp3",
+    "https://archive.org/download/adan-madeenah-nu3man/makkah-farooq.mp3",
+    "https://archive.org/download/MedinaAthan_478/AbdulMalikAlNomanAthan-Medina.mp3",
+    "https://archive.org/download/AdhanMisharyRashid/Adhan%20Mishary%20Rashid.mp3",
+]:
+    p("VERIFY", u, head(u))
