@@ -152,7 +152,7 @@ sleep 2
 for i in 1 2 3; do adb emu geo fix 31.2357 30.0444 || true; sleep 1; done
 tap_text "استخدام موقعي الحالي"
 shot 43-location-locating 2
-for i in 1 2 3 4 5; do adb emu geo fix 31.2357 30.0444 || true; sleep 2; done
+for i in $(seq 1 12); do adb emu geo fix 31.2357 30.0444 || true; sleep 2; done
 shot 44-location-saved 6
 adb shell "run-as $pkg cat shared_prefs/prayer_times_prefs.xml" > "$out/prayer_prefs_after_gps.txt" || true
 

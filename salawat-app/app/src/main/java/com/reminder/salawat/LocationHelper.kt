@@ -24,7 +24,10 @@ import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
@@ -133,25 +136,37 @@ object LocationHelper {
         }
     }
 
-    /** A fix from the fused provider, else from the platform providers; the caller holds the permission. */
+    /**
+     * The first fix from either Google's fused provider or the platform providers (queried in parallel, so a phone
+     * with only GPS or only network location still answers quickly); falls back to the last known location.
+     */
     @SuppressLint("MissingPermission")
-    suspend fun currentLocation(context: Context): Location? {
+    suspend fun currentLocation(context: Context): Location? = coroutineScope {
         val fused = runCatching { LocationServices.getFusedLocationProviderClient(context) }.getOrNull()
-        if (fused != null) {
-            val fresh = runCatching {
-                withTimeoutOrNull(15_000) {
-                    val token = CancellationTokenSource()
-                    try {
-                        fused.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, token.token).await()
-                    } finally {
-                        token.cancel()
-                    }
-                }
-            }.getOrNull()
-            if (fresh != null) return fresh
-            runCatching { fused.lastLocation.await() }.getOrNull()?.let { return it }
+        val fromFused = async {
+            if (fused == null) return@async null
+            val token = CancellationTokenSource()
+            try {
+                runCatching { fused.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token.token).await() }.getOrNull()
+            } finally {
+                token.cancel()
+            }
         }
-        return platformLocation(context)
+        val fromPlatform = async { platformLocation(context) }
+        val first = withTimeoutOrNull(25_000) {
+            select<Location?> {
+                fromFused.onAwait { it }
+                fromPlatform.onAwait { it }
+            } ?: run {
+                // One source answered "nothing": wait for the other.
+                val a = if (fromFused.isCompleted) fromFused.await() else null
+                val b = if (fromPlatform.isCompleted) fromPlatform.await() else null
+                a ?: b ?: (if (!fromFused.isCompleted) fromFused.await() else fromPlatform.await())
+            }
+        }
+        fromFused.cancel()
+        fromPlatform.cancel()
+        first ?: fused?.let { runCatching { it.lastLocation.await() }.getOrNull() }
     }
 
     private suspend fun <T> Task<T>.await(): T? = suspendCancellableCoroutine { cont ->
@@ -168,8 +183,14 @@ object LocationHelper {
         val lastKnown = providers.mapNotNull { runCatching { manager.getLastKnownLocation(it) }.getOrNull() }
             .maxByOrNull { it.time }
         if (lastKnown != null && System.currentTimeMillis() - lastKnown.time < 6 * 60 * 60_000L) return lastKnown
-        val provider = providers.firstOrNull { it != LocationManager.PASSIVE_PROVIDER } ?: return lastKnown
-        val fresh = withTimeoutOrNull(20_000) { requestSingle(manager, provider) }
+        val active = providers.filter { it != LocationManager.PASSIVE_PROVIDER }
+        if (active.isEmpty()) return lastKnown
+        val fresh = withTimeoutOrNull(20_000) {
+            coroutineScope {
+                val requests = active.map { p -> async { requestSingle(manager, p) } }
+                select<Location?> { requests.forEach { r -> r.onAwait { it } } }.also { requests.forEach { it.cancel() } }
+            }
+        }
         return fresh ?: lastKnown
     }
 
