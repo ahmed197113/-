@@ -135,9 +135,17 @@ class AdhanService : Service() {
             return START_NOT_STICKY
         }
         val prayer = intent?.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
-        val uri = intent?.getStringExtra(EXTRA_URI)?.let(Uri::parse) ?: AdhanCatalog.sourceFor(this, prayer)
+        val kind = intent?.getStringExtra(EXTRA_KIND) ?: KIND_ADHAN
         val takbirMinutes = intent?.getIntExtra(EXTRA_TAKBIR_MINUTES, -1) ?: -1
-        val notification = if (takbirMinutes >= 0) buildTakbirNotification(this, prayer, takbirMinutes) else buildNotification(this, prayer)
+        val uri = when (kind) {
+            KIND_IQAMA -> rawUri(this, "iqama")
+            else -> intent?.getStringExtra(EXTRA_URI)?.let(Uri::parse) ?: AdhanCatalog.sourceFor(this, prayer)
+        }
+        val notification = when {
+            kind == KIND_IQAMA -> buildIqamaNotification(this, prayer)
+            takbirMinutes >= 0 -> buildTakbirNotification(this, prayer, takbirMinutes)
+            else -> buildNotification(this, prayer)
+        }
         try {
             ServiceCompat.startForeground(
                 this, NOTIFICATION_ID, notification,
@@ -145,7 +153,7 @@ class AdhanService : Service() {
             )
         } catch (e: Exception) {
             // Background start refused (e.g. inexact alarm on Android 12+): fall back to a sounding notification.
-            postPrayerNotification(this, prayer)
+            if (kind == KIND_ADHAN) postPrayerNotification(this, prayer)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -155,7 +163,10 @@ class AdhanService : Service() {
         }
         player?.stop()
         handler.removeCallbacksAndMessages(null)
-        val p = AudioPlayer(this, AudioAttributes.USAGE_ALARM) { finish(keepNotification = true) }
+        val playDuaAfter = kind == KIND_ADHAN && takbirMinutes < 0 && duaAfterAdhanOn(this)
+        val p = AudioPlayer(this, AudioAttributes.USAGE_ALARM) { completed ->
+            if (completed && playDuaAfter) playDua(prayer) else finish(keepNotification = true)
+        }
         player = p
         p.play(uri)
         if (takbirMinutes >= 0) {
@@ -168,6 +179,17 @@ class AdhanService : Service() {
             handler.postDelayed({ finish(keepNotification = true) }, end + 100)
         }
         return START_NOT_STICKY
+    }
+
+    /** Sheikh al-Sha'rawi's du'a after the adhan, with the wording from Sahih al-Bukhari shown alongside. */
+    private fun playDua(prayer: Prayer) {
+        androidx.core.app.NotificationManagerCompat.from(this).let {
+            if (Notifications.canPost(this)) runCatching { it.notify(NOTIFICATION_ID, buildDuaNotification(this, prayer)) }
+        }
+        val p = AudioPlayer(this, AudioAttributes.USAGE_ALARM) { finish(keepNotification = true) }
+        player = p
+        val dua = rawUri(this, "dua_after_adhan") ?: return finish(keepNotification = true)
+        p.play(dua)
     }
 
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -194,6 +216,70 @@ class AdhanService : Service() {
         const val EXTRA_PRAYER = "prayer"
         const val EXTRA_URI = "uri"
         const val EXTRA_TAKBIR_MINUTES = "takbir_minutes"
+        const val EXTRA_KIND = "kind"
+        const val KIND_ADHAN = "adhan"
+        const val KIND_IQAMA = "iqama"
+        private const val KEY_DUA_AFTER_ADHAN = "dua_after_adhan"
+        private const val KEY_IQAMA_SOUND = "iqama_sound"
+
+        fun duaAfterAdhanOn(context: Context) = Prefs.get(context).getBoolean(KEY_DUA_AFTER_ADHAN, true)
+        fun setDuaAfterAdhan(context: Context, on: Boolean) = Prefs.get(context).edit().putBoolean(KEY_DUA_AFTER_ADHAN, on).apply()
+        fun iqamaSoundOn(context: Context) = Prefs.get(context).getBoolean(KEY_IQAMA_SOUND, true)
+        fun setIqamaSound(context: Context, on: Boolean) = Prefs.get(context).edit().putBoolean(KEY_IQAMA_SOUND, on).apply()
+
+        /** A bundled recording by name (res/raw), or null if this build does not include it. */
+        private fun rawUri(context: Context, name: String): Uri? {
+            val res = context.resources.getIdentifier(name, "raw", context.packageName)
+            return if (res == 0) null else Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${context.packageName}/$res")
+        }
+
+        /** Plays the iqama ("qad qamat as-salah"); false when off or refused (caller posts a plain notification). */
+        fun startIqama(context: Context, prayer: Prayer): Boolean {
+            if (!iqamaSoundOn(context) || rawUri(context, "iqama") == null) return false
+            return try {
+                ContextCompat.startForegroundService(
+                    context,
+                    Intent(context, AdhanService::class.java).setAction(ACTION_PLAY)
+                        .putExtra(EXTRA_PRAYER, prayer.name).putExtra(EXTRA_KIND, KIND_IQAMA)
+                )
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        private fun simpleNotification(context: Context, title: String, text: String, category: String): android.app.Notification {
+            val stopIntent = PendingIntent.getService(
+                context, 14, Intent(context, AdhanService::class.java).setAction(ACTION_STOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val openApp = PendingIntent.getActivity(
+                context, 15, MainActivity.intent(context, MainActivity.TAB_PRAYER),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            return NotificationCompat.Builder(context, Notifications.CHANNEL_ADHAN)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(category)
+                .setContentIntent(openApp)
+                .setDeleteIntent(stopIntent)
+                .addAction(0, context.getString(R.string.adhan_stop), stopIntent)
+                .setAutoCancel(true)
+                .build()
+        }
+
+        private fun buildIqamaNotification(context: Context, prayer: Prayer) = simpleNotification(
+            context, context.getString(R.string.rem_iqama_title, context.getString(prayer.nameRes)),
+            context.getString(R.string.rem_iqama_text), NotificationCompat.CATEGORY_ALARM
+        )
+
+        private fun buildDuaNotification(context: Context, prayer: Prayer) = simpleNotification(
+            context, context.getString(R.string.dua_after_adhan_title),
+            context.getString(R.string.dua_after_adhan_text), NotificationCompat.CATEGORY_REMINDER
+        )
         private const val NOTIFICATION_ID = 3100
 
         /** Starts the adhan; returns false if the system refused (caller should fall back to a plain notification). */

@@ -129,7 +129,7 @@ object Reminders {
         if (!isOn(context, type)) return
         if (type == ReminderType.IQAMA) {
             val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
-            postIqama(context, prayer)
+            if (!AdhanService.startIqama(context, prayer)) postIqama(context, prayer)
             return
         }
         val (title, text, open) = when (type) {

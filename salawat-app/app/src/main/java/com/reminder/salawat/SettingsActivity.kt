@@ -88,6 +88,16 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         Ui.row(prayer, R.drawable.ic_volume, getString(R.string.tile_adhan), Ui.adhanLabel(this)) {
             startActivity(Intent(this, AdhanSettingsActivity::class.java))
         }
+        val duaOn = AdhanService.duaAfterAdhanOn(this)
+        Ui.row(prayer, R.drawable.ic_heart, getString(R.string.settings_dua_after_adhan),
+            getString(if (duaOn) R.string.settings_on else R.string.settings_off)) {
+            AdhanService.setDuaAfterAdhan(this, !duaOn); render()
+        }
+        val iqamaOn = AdhanService.iqamaSoundOn(this)
+        Ui.row(prayer, R.drawable.ic_volume, getString(R.string.settings_iqama_sound),
+            getString(if (iqamaOn) R.string.settings_on else R.string.settings_off)) {
+            AdhanService.setIqamaSound(this, !iqamaOn); render()
+        }
         val batteryOk = AlertPermissions.ignoresBatteryOptimizations(this)
         Ui.row(prayer, R.drawable.ic_settings, getString(R.string.settings_battery),
             getString(if (batteryOk) R.string.settings_battery_on else R.string.settings_battery_off)) {

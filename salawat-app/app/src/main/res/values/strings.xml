@@ -258,6 +258,7 @@
     <string name="settings_prayer_alerts">الأذان عند دخول الوقت</string>
     <string name="settings_prayer_alerts_on">مُفعّل لـ %1$d صلوات</string>
     <string name="settings_off">متوقف</string>
+    <string name="settings_on">مُفعّل</string>
     <string name="settings_reminder">تفعيل التذكير</string>
     <string name="settings_interval">مدة التكرار</string>
     <string name="settings_quiet">عدم الإزعاج ليلاً</string>
@@ -482,6 +483,10 @@
     <string name="rem_iqama_desc">تنبيه بإقامة الصلاة بعد الأذان</string>
     <string name="rem_iqama_title">حان وقت إقامة صلاة %1$s</string>
     <string name="rem_iqama_text">قد قامت الصلاة — استوُوا واعتدلوا</string>
+    <string name="dua_after_adhan_title">الدعاء بعد الأذان — الشيخ محمد متولي الشعراوي</string>
+    <string name="dua_after_adhan_text">قال رسول الله ﷺ: «مَنْ قَالَ حِينَ يَسْمَعُ النِّدَاءَ اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلاَةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ، حَلَّتْ لَهُ شَفَاعَتِي يَوْمَ الْقِيَامَةِ» — صحيح البخاري (614).\nتنبيه: في تسجيل الشيخ زيادات ليست في لفظ البخاري.</string>
+    <string name="settings_dua_after_adhan">الدعاء بعد الأذان (بصوت الشيخ الشعراوي)</string>
+    <string name="settings_iqama_sound">صوت الإقامة</string>
     <string name="rem_minutes_after">بعد الأذان بـ %1$d دقيقة</string>
     <string name="rem_pre_adhan_title">بقي %1$d دقيقة على أذان %2$s</string>
     <string name="rem_pre_adhan_text">استعد للصلاة وتوضأ</string>
