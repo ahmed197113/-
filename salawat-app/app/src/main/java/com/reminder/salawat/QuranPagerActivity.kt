@@ -344,7 +344,7 @@ class QuranPagerActivity : AppCompatActivity() {
                 }
                 val start = sb.length
                 // U+06DD (end of ayah) followed by the number: the Quran font draws the Mushaf's numbered ayah medallion.
-                sb.append(ayah.text).append(" \u06DD").append(QuranData.toArabicDigits(ayah.ayah)).append(" ")
+                sb.append(ayah.text).append("\u00A0\u06DD").append(QuranData.toArabicDigits(ayah.ayah)).append(" ")
                 val end = sb.length
                 sb.setSpan(object : ClickableSpan() {
                     override fun onClick(widget: View) = onAyahClick(ayah)
