@@ -332,9 +332,9 @@ class QuranPagerActivity : AppCompatActivity() {
                     sb.setSpan(ForegroundColorSpan(gold), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     sb.setSpan(StyleSpan(Typeface.BOLD), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     sb.setSpan(RelativeSizeSpan(1.05f), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    if (ayah.surah != 1 && ayah.surah != 9) {
+                    QuranData.surahBasmala(context, ayah.surah)?.let { basmala ->
                         val basmalaStart = sb.length
-                        sb.append(BASMALA).append('\n')
+                        sb.append(basmala).append('\n')
                         sb.setSpan(AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), basmalaStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                         sb.setSpan(ForegroundColorSpan(accent), basmalaStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
@@ -361,6 +361,5 @@ class QuranPagerActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_PAGE = "page"
         const val EXTRA_HIGHLIGHT_GLOBAL = "highlight_global"
-        private const val BASMALA = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ"
     }
 }

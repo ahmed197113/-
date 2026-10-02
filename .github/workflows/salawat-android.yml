@@ -26,6 +26,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Check the bundled Quran text is the untouched Tanzil file
+        run: echo "7f30c647331a61100ebf24a80507dc0fcdd9f2df97f1312b5b2dfcb982a7f326  salawat-app/app/src/main/assets/quran/tanzil-uthmani.txt" | sha256sum -c -
+
       - name: Decode signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}

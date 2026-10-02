@@ -64,16 +64,49 @@ try:
 except Exception as e:
     p("ALQURAN.CLOUD FAILED", e)
 
-# 4) The app's bundled file (passed in the repo)
+# 4) The app's bundled files: assets/quran/tanzil-uthmani.txt (verbatim Tanzil) + meta.tsv (page/juz)
+APP_DIR = sys.argv[2]
+FAIL = []
 try:
+    app_raw = open(os.path.join(APP_DIR, "tanzil-uthmani.txt"), "rb").read()
     rows = {}
-    for line in open(sys.argv[2], encoding="utf-8"):
-        g, s, a, page, juz, text = line.rstrip("\n").split("\t", 5)
-        rows[(int(s), int(a))] = text
+    for line in app_raw.decode("utf-8").splitlines():
+        parts = line.split("|")
+        if len(parts) == 3 and parts[0].isdigit():
+            rows[(int(parts[0]), int(parts[1]))] = parts[2]
     sources["app"] = rows
-    p("APP ayahs:", len(rows))
+    app_sha = hashlib.sha256(app_raw).hexdigest()
+    p("APP ayahs:", len(rows), "sha256:", app_sha)
+    if "tanzil" in sources:
+        same = rows == sources["tanzil"]
+        p("APP TEXT IDENTICAL TO FRESH TANZIL DOWNLOAD:", same)
+        if not same: FAIL.append("app text != tanzil")
+    meta = {}
+    for line in open(os.path.join(APP_DIR, "meta.tsv"), encoding="utf-8"):
+        g, s_, a, page, juz = line.rstrip("\n").split("\t")
+        meta[(int(s_), int(a))] = (int(page), int(juz))
 except Exception as e:
-    p("APP FAILED", e)
+    p("APP FAILED", e); FAIL.append("app load")
+    meta = {}
+
+# 5) Page and juz boundaries of the Madinah Mushaf, from quran.com
+try:
+    qc_page, qc_juz = {}, {}
+    for pg in range(1, 605):
+        d = json.loads(get(f"https://api.quran.com/api/v4/quran/verses/uthmani?page_number={pg}"))
+        for v in d["verses"]:
+            s_, a = v["verse_key"].split(":"); qc_page[(int(s_), int(a))] = pg
+    for j in range(1, 31):
+        d = json.loads(get(f"https://api.quran.com/api/v4/quran/verses/uthmani?juz_number={j}"))
+        for v in d["verses"]:
+            s_, a = v["verse_key"].split(":"); qc_juz[(int(s_), int(a))] = j
+    bad_p = [k for k in meta if qc_page.get(k) != meta[k][0]]
+    bad_j = [k for k in meta if qc_juz.get(k) != meta[k][1]]
+    p("META pages checked:", len(qc_page), "page mismatches:", len(bad_p), bad_p[:20])
+    p("META juz checked:", len(qc_juz), "juz mismatches:", len(bad_j), bad_j[:20])
+    if bad_p or bad_j or len(qc_page) != 6236: FAIL.append("meta")
+except Exception as e:
+    p("META CHECK FAILED", e); FAIL.append("meta fetch")
 
 BASMALA_SKELETON = "بسم الله الرحمن الرحيم"
 
@@ -136,3 +169,17 @@ for a in names:
         p(f"\n== {a} vs {b}: exact={exact} letters-equal={skel} equal-except-vowel-letters={rasm} DIFFERENT={len(diffs)}")
         for d in diffs[:15]:
             p("   ", d)
+
+# Final verdict: app text must equal quran.com's Uthmani text exactly, apart from the basmala that
+# quran.com keeps out of ayah 1.
+if "app" in sources and "qurancom_uthmani" in sources:
+    mism = []
+    for k, t in sources["app"].items():
+        q = sources["qurancom_uthmani"][k]
+        if t != q and not (k[1] == 1 and t.endswith(" " + q)):
+            mism.append(k)
+    p("APP vs QURAN.COM UTHMANI exact mismatches (excluding basmala prefix):", len(mism), mism[:20])
+    if mism: FAIL.append("app != quran.com")
+p("\nVERDICT:", "PASS" if not FAIL else "FAIL " + ", ".join(FAIL))
+log.close()
+sys.exit(1 if FAIL else 0)

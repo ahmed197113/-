@@ -2,11 +2,24 @@ package com.reminder.salawat
 
 import android.content.Context
 
-data class QAyah(val global: Int, val surah: Int, val ayah: Int, val page: Int, val juz: Int, val text: String)
+/**
+ * [full] is the Tanzil text exactly as published. [text] is the same characters with the leading basmala of
+ * ayah 1 split off (it is shown as the surah header instead, as in the printed Mushaf).
+ */
+data class QAyah(val global: Int, val surah: Int, val ayah: Int, val page: Int, val juz: Int, val full: String, val text: String)
 
-/** The full Uthmani text (bundled, works offline) indexed by Mushaf page (1..604). */
+/**
+ * The Quran text is the official Tanzil Project Uthmani text (tanzil.net, v1.1), bundled verbatim with its
+ * copyright notice in assets/quran/tanzil-uthmani.txt — never edited by hand. CI checks its SHA-256 and that it
+ * is identical to the Quran Foundation (quran.com) Uthmani text. Page/juz numbers follow the Madinah Mushaf.
+ */
 object QuranData {
     const val PAGE_COUNT = 604
+    const val TANZIL_SHA256 = "7f30c647331a61100ebf24a80507dc0fcdd9f2df97f1312b5b2dfcb982a7f326"
+
+    /** The basmala exactly as Tanzil writes it (ayah 1:1). */
+    @Volatile var basmala: String = ""
+        private set
 
     @Volatile private var ayahs: List<QAyah>? = null
     private lateinit var pageStart: IntArray // index of the first ayah of each page; size PAGE_COUNT + 2
@@ -18,13 +31,26 @@ object QuranData {
         synchronized(this) {
             ayahs?.let { return it }
             val list = ArrayList<QAyah>(6236)
-            context.assets.open("quran_uthmani.tsv").bufferedReader(Charsets.UTF_8).useLines { lines ->
+            val texts = ArrayList<String>(6236)
+            context.assets.open("quran/tanzil-uthmani.txt").bufferedReader(Charsets.UTF_8).useLines { lines ->
                 lines.forEach { line ->
-                    if (line.isBlank()) return@forEach
-                    val parts = line.split('\t', limit = 6)
-                    list.add(QAyah(parts[0].toInt(), parts[1].toInt(), parts[2].toInt(), parts[3].toInt(), parts[4].toInt(), parts[5]))
+                    if (line.isEmpty() || !line[0].isDigit()) return@forEach // copyright block
+                    texts.add(line.split('|', limit = 3)[2])
                 }
             }
+            basmala = texts[0]
+            context.assets.open("quran/meta.tsv").bufferedReader(Charsets.UTF_8).useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isBlank()) return@forEach
+                    val p = line.split('\t')
+                    val global = p[0].toInt()
+                    val surah = p[1].toInt()
+                    val ayah = p[2].toInt()
+                    val full = texts[global - 1]
+                    list.add(QAyah(global, surah, ayah, p[3].toInt(), p[4].toInt(), full, bodyOf(surah, ayah, full)))
+                }
+            }
+            check(list.size == 6236) { "Quran text incomplete" }
             val starts = IntArray(PAGE_COUNT + 2) { list.size }
             for (i in list.indices.reversed()) {
                 val a = list[i]
@@ -37,6 +63,21 @@ object QuranData {
             ayahs = list
             return list
         }
+    }
+
+    /** Ayah 1 of every surah except 1 and 9 begins with the basmala's four words in Tanzil's text. */
+    private fun bodyOf(surah: Int, ayah: Int, full: String): String {
+        if (ayah != 1 || surah == 1 || surah == 9) return full
+        var idx = -1
+        repeat(4) { idx = full.indexOf(' ', idx + 1); if (idx < 0) return full }
+        return full.substring(idx + 1)
+    }
+
+    /** The basmala that opens [surah] in the Mushaf (95 and 97 carry a shadda on the first letter), or null. */
+    fun surahBasmala(context: Context, surah: Int): String? {
+        if (surah == 1 || surah == 9) return null
+        val a = ensureLoaded(context).first { it.surah == surah }
+        return a.full.removeSuffix(a.text).trimEnd()
     }
 
     fun page(context: Context, page: Int): List<QAyah> {
