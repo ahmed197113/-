@@ -1,0 +1,25 @@
+name: Salawat hadith assets
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/prepare_hadith.py"
+      - ".github/workflows/salawat-hadith-assets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  hadith:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/prepare_hadith.py "$RUNNER_TEMP/hadith"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: salawat-hadith-v1
+          name: Hadith books (Arabic, v1)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/hadith/*
