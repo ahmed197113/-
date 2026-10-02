@@ -16,7 +16,9 @@ def get(url, timeout=120):
 QUERIES = {
     "iqama": ['iqama', 'iqamah', 'إقامة الصلاة', 'اقامة الصلاة', 'الاقامة', 'قد قامت الصلاة'],
     "dua_shaarawy": ['الشعراوي دعاء الأذان', 'الشعراوي دعاء بعد الاذان', 'shaarawy dua adhan', 'shaarawi doaa azan',
-                     'دعاء بعد الأذان الشعراوي', 'الشيخ الشعراوي الدعاء بعد الآذان', 'shaarawy'],
+                     'دعاء بعد الأذان الشعراوي', 'الشيخ الشعراوي الدعاء بعد الآذان', 'shaarawy', 'الشعراوى', 'sharawy',
+                     'sha3rawy', 'elsharawy', 'الشعراوي', 'دعاء الاذان', 'دعاء الأذان', 'الوسيلة والفضيلة', 'doaa azan',
+                     'دعاء بعد الأذان'],
 }
 candidates = []
 for kind, qs in QUERIES.items():
@@ -46,8 +48,8 @@ for kind, qs in QUERIES.items():
                 text = (d.get("title", "") + " " + name).lower()
                 relevant = {
                     "iqama": any(k in text for k in ["iqam", "إقام", "اقام", "قامت", "eqama", "ikama"]),
-                    "dua_shaarawy": any(k in text for k in ["شعراو", "sharaw", "shaarawy", "shaarawi", "sha3rawy", "shaarawi"])
-                        and any(k in text for k in ["دعاء", "adhan", "azan", "athan", "اذان", "أذان", "آذان", "doaa", "dua", "doa"]),
+                    "dua_shaarawy": any(k in text for k in ["شعراو", "sharaw", "shaarawy", "shaarawi", "sha3rawy", "shaarawi", "sharawi"])
+                        or (any(k in text for k in ["دعاء", "doaa", "dua", "doa"]) and any(k in text for k in ["adhan", "azan", "athan", "اذان", "أذان", "آذان", "الاذان"])),
                 }[kind]
                 if not relevant: continue
                 if size and size > 8_000_000: continue
@@ -58,10 +60,25 @@ for c in candidates: p("  ", c)
 
 # Transcribe up to 12 per kind
 from faster_whisper import WhisperModel
+import numpy as np
 model = WhisperModel("small", device="cpu", compute_type="int8")
+
+def pcm(path):
+    raw = subprocess.run(["ffmpeg", "-nostdin", "-v", "quiet", "-i", path, "-ac", "1", "-ar", "16000", "-f", "f32le", "-"],
+                         capture_output=True).stdout
+    return np.frombuffer(raw, dtype=np.float32)
+
+def priority(c):
+    kind, ident, name, size, length, title = c
+    t = (title + " " + name).lower()
+    score = 0
+    if kind == "iqama" and any(k in t for k in ["iqam", "إقام", "اقام"]) and not any(k in t for k in ["athan", "adhan", "azan", "اذان", "أذان"]): score -= 2
+    if kind == "dua_shaarawy" and any(k in t for k in ["اذان", "أذان", "آذان", "adhan", "azan", "athan"]): score -= 3
+    return score
+candidates.sort(key=priority)
 done = {"iqama": 0, "dua_shaarawy": 0}
 for kind, ident, name, size, length, title in candidates:
-    if done[kind] >= 14: continue
+    if done[kind] >= (16 if kind == "iqama" else 40): continue
     done[kind] += 1
     url = f"https://archive.org/download/{ident}/" + urllib.parse.quote(name)
     fn = f"{kind}__{re.sub(r'[^A-Za-z0-9._-]+', '_', ident)}__{re.sub(r'[^A-Za-z0-9._-]+', '_', name)}"[:150]
@@ -70,7 +87,7 @@ for kind, ident, name, size, length, title in candidates:
         open(path, "wb").write(get(url, 300))
         dur = subprocess.run(["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", path],
                              capture_output=True, text=True).stdout.strip()
-        segs, _ = model.transcribe(path, language="ar", beam_size=5)
+        segs, _ = model.transcribe(pcm(path), language="ar", beam_size=5)
         text = " ".join(s.text.strip() for s in segs)
         p(f"\n[{kind}] {os.path.basename(path)}\n  url: {url}\n  title: {title}\n  duration: {dur}s size: {os.path.getsize(path)}\n  TRANSCRIPT: {text}")
     except Exception as e:
