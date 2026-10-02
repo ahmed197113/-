@@ -87,7 +87,7 @@ class TasbihActivity : AppCompatActivity() {
         binding.chipsDhikr.getChildAt(next)?.let { chip ->
             (binding.chipsDhikr.parent as? android.widget.HorizontalScrollView)?.smoothScrollTo(chip.left, 0)
         }
-        android.widget.Toast.makeText(this, getString(R.string.tasbih_next, PHRASES[next]), android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(this, getString(R.string.tasbih_round_done, PHRASES[next]), android.widget.Toast.LENGTH_SHORT).show()
     }
 
     private fun target() = prefs.getInt(Prefs.KEY_TASBIH_TARGET, 33)

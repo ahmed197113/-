@@ -368,12 +368,13 @@ class QuranPagerActivity : AppCompatActivity() {
         private fun bindMushaf(holder: ViewHolder, page: Int, position: Int) {
             val b = holder.binding
             val context = this@QuranPagerActivity
-            val font = if (MushafMode.isOn(context)) MushafFonts.cached(context, page) else null
+            val lines = if (MushafMode.isOn(context)) runCatching { MushafLayout.page(context, page) }.getOrDefault(emptyList()) else emptyList()
+            val font = if (lines.isNotEmpty()) MushafFonts.cached(context, page) else null
             if (font == null) {
                 b.mushafPage.visibility = View.GONE
                 b.textPageText.visibility = View.VISIBLE
                 b.textPageText.text = buildPage(page)
-                if (MushafMode.isOn(context)) {
+                if (lines.isNotEmpty()) {
                     b.progressMushaf.visibility = View.VISIBLE
                     lifecycleScope.launch {
                         val ok = runCatching { MushafFonts.get(context, page) }.isSuccess
@@ -391,7 +392,7 @@ class QuranPagerActivity : AppCompatActivity() {
             b.mushafPage.accentColor = c.pageNumber
             b.mushafPage.goldColor = Themes.color(context, R.color.gold)
             b.mushafPage.highlightColor = Themes.color(context, R.color.ayah_highlight)
-            b.mushafPage.bind(page, MushafLayout.page(context, page), font)
+            b.mushafPage.bind(page, lines, font)
             b.mushafPage.highlighted = listOf(selectedGlobal, playingGlobal).filter { it > 0 }
                 .mapNotNull { QuranData.byGlobal(context, it) }.map { it.surah to it.ayah }.toSet()
             b.mushafPage.onWordClick = { surah, ayah ->

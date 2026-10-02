@@ -258,7 +258,7 @@
     <string name="settings_prayer_alerts">الأذان عند دخول الوقت</string>
     <string name="settings_prayer_alerts_on">مُفعّل لـ %1$d صلوات</string>
     <string name="settings_off">متوقف</string>
-    <string name="tasbih_next">اكتمل العدد ✓ — الذكر التالي: %1$s</string>
+    <string name="tasbih_round_done">اكتمل العدد ✓ — الذكر التالي: %1$s</string>
     <string name="settings_on">مُفعّل</string>
     <string name="settings_reminder">تفعيل التذكير</string>
     <string name="settings_interval">مدة التكرار</string>

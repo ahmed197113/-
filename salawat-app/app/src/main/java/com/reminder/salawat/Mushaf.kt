@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream
 /**
  * The printed Madinah Mushaf, page for page: the King Fahd Complex's QCF (v2) glyphs as quran.com uses them.
  * Each of the 604 pages has 15 lines; every word is one glyph of that page's own font, so lines break and
- * words look exactly as in the print. Layout (assets/mushaf_layout_v2.json.gz) is bundled; the page fonts
+ * words look exactly as in the print. Layout (assets/mushaf_layout_v2.dat, gzip; the build tools would unpack a .gz name) is bundled; the page fonts
  * are downloaded once, on first view of each page.
  */
 object MushafLayout {
@@ -38,7 +38,7 @@ object MushafLayout {
 
     private fun load(context: Context): JSONObject = pages ?: synchronized(this) {
         pages ?: JSONObject(
-            GZIPInputStream(context.assets.open("mushaf_layout_v2.json.gz")).bufferedReader().use { it.readText() }
+            GZIPInputStream(context.assets.open("mushaf_layout_v2.dat")).bufferedReader().use { it.readText() }
         ).also { pages = it }
     }
 
