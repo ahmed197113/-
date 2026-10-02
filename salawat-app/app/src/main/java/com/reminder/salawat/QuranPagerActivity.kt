@@ -303,10 +303,8 @@ class QuranPagerActivity : AppCompatActivity() {
                 androidx.core.content.res.ResourcesCompat.getFont(binding.root.context, R.font.kfgqpc_hafs)?.let {
                     binding.textPageText.typeface = it
                 }
-                // tanzil.net justifies the text (text-align: justify).
-                if (Build.VERSION.SDK_INT >= 26) {
-                    binding.textPageText.justificationMode = Layout.JUSTIFICATION_MODE_INTER_WORD
-                }
+                // tanzil.net justifies its text, but Android's inter-word justification cuts the last word of some
+                // RTL lines off (verified on the emulator), so lines are right-aligned instead: no letter may be lost.
             }
         }
 
