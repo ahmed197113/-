@@ -215,7 +215,10 @@
     <string name="perm_alarm_title">السماح بالمنبهات الدقيقة</string>
     <string name="perm_alarm_text">ليرفع الأذان في وقت الصلاة بالضبط دون تأخير، اسمح للتطبيق بضبط المنبهات الدقيقة.</string>
     <string name="perm_battery_title">حتى لا يتأخر الأذان</string>
-    <string name="perm_battery_text">بعض الهواتف توقف التطبيقات لتوفير البطارية فيتأخر الأذان أو لا يعمل. في الشاشة التالية اختر «رفيق المسلم» ثم «عدم التحسين» (أو «غير مقيّد»).</string>
+    <string name="perm_battery_text">بعض الهواتف توقف التطبيقات لتوفير البطارية فيتأخر الأذان أو التذكير أو لا يعمل. اضغط «السماح» ثم وافق على استثناء التطبيق من توفير البطارية.</string>
+    <string name="settings_battery">استثناء من توفير البطارية</string>
+    <string name="settings_battery_on">مُفعّل — الأذان والتذكيرات لن تتأخر</string>
+    <string name="settings_battery_off">غير مُفعّل — قد يتأخر الأذان، اضغط للتفعيل</string>
     <string name="perm_open_battery">فتح إعدادات البطارية</string>
     <string name="perm_allow">السماح</string>
     <string name="perm_later">لاحقاً</string>
@@ -459,7 +462,12 @@
     <string name="rem_fasting_desc">مساء اليوم السابق للإثنين والخميس والأيام البيض وعرفة وعاشوراء</string>
     <string name="rem_fasting_title">تذكير: صيام الغد</string>
     <string name="rem_pre_adhan">تنبيه قبل الأذان</string>
-    <string name="rem_pre_adhan_desc">إشعار قبل دخول وقت الصلاة للاستعداد والوضوء</string>
+    <string name="rem_pre_adhan_desc">«الله أكبر الله أكبر» بصوت مؤذنك قبل دخول الوقت، للاستعداد والوضوء</string>
+    <string name="rem_iqama">تنبيه الإقامة</string>
+    <string name="rem_iqama_desc">تنبيه بإقامة الصلاة بعد الأذان</string>
+    <string name="rem_iqama_title">حان وقت إقامة صلاة %1$s</string>
+    <string name="rem_iqama_text">قد قامت الصلاة — استوُوا واعتدلوا</string>
+    <string name="rem_minutes_after">بعد الأذان بـ %1$d دقيقة</string>
     <string name="rem_pre_adhan_title">بقي %1$d دقيقة على أذان %2$s</string>
     <string name="rem_pre_adhan_text">استعد للصلاة وتوضأ</string>
     <string name="rem_minutes_before">قبل الأذان بـ %1$d دقيقة</string>

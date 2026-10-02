@@ -20,6 +20,10 @@ class AudioPlayer(
 
     val isPlaying: Boolean get() = player != null
 
+    fun setVolume(volume: Float) {
+        runCatching { player?.setVolume(volume, volume) }
+    }
+
     fun play(url: String) {
         if (url.isBlank()) {
             stop()

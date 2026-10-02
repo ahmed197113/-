@@ -46,9 +46,18 @@ object AlertPermissions {
         val prefs = Prefs.get(activity)
         if (ignoresBatteryOptimizations(activity) || prefs.getBoolean(KEY_BATTERY_ASKED, false)) return next()
         prefs.edit().putBoolean(KEY_BATTERY_ASKED, true).apply()
-        dialog(activity, R.string.perm_battery_title, R.string.perm_battery_text, R.string.perm_open_battery, {
-            open(activity, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        dialog(activity, R.string.perm_battery_title, R.string.perm_battery_text, R.string.perm_allow, {
+            requestBatteryExemption(activity)
         }, next)
+    }
+
+    /** The system's one-tap "let this app run in the background" prompt; falls back to the settings list. */
+    @SuppressLint("BatteryLife")
+    fun requestBatteryExemption(activity: AppCompatActivity) {
+        val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + activity.packageName))
+        runCatching { activity.startActivity(direct) }.onFailure {
+            open(activity, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        }
     }
 
     private fun dialog(activity: AppCompatActivity, title: Int, text: Int, positive: Int, onPositive: () -> Unit, next: () -> Unit) {

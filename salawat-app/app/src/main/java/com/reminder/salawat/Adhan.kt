@@ -71,12 +71,29 @@ object AdhanCatalog {
     }
 
     /** The adhan to play for [prayer], or null when only a notification sound should be used. */
-    fun sourceFor(context: Context, prayer: Prayer): Uri? {
+    fun sourceFor(context: Context, prayer: Prayer): Uri? = uriFor(context, resolvedId(context, prayer))
+
+    /** The adhan actually used for [prayer] (after "same as others" and availability fallbacks). */
+    fun resolvedId(context: Context, prayer: Prayer): String {
         var id = selectedId(context, fajrSlot = prayer == Prayer.FAJR)
         if (id == SAME_AS_OTHERS) id = selectedId(context, fajrSlot = false)
         if (!isAvailable(context, id)) id = BUNDLED
-        return uriFor(context, id)
+        return id
     }
+
+    /**
+     * Where the opening "Allahu akbar, Allahu akbar" ends in each recording (ms) — the first pause after at least
+     * five seconds of voice, measured from the audio's loudness envelope. Recordings without a clear pause, and
+     * the user's own file, stop at [TAKBIR_DEFAULT_MS] with a fade.
+     */
+    private val TAKBIR_END_MS = mapOf(
+        "abdulbasit" to 10900, "alafasy" to 18850, "aqsa" to 11050, "fajr_abdulbasit" to 5950, "fajr_madinah" to 16500,
+        "fajr_makkah" to 11300, "farooq_makkah" to 7300, "husary" to 12450, "madinah2" to 10250, "minshawi" to 12200,
+        "nooman_madinah" to 7150, "qatami" to 10750, "shuaisha" to 20500
+    )
+    private const val TAKBIR_DEFAULT_MS = 10000
+
+    fun takbirEndMs(id: String): Int = TAKBIR_END_MS[id] ?: TAKBIR_DEFAULT_MS
 
     fun uriFor(context: Context, id: String): Uri? = when (id) {
         NOTIFICATION_ONLY, SAME_AS_OTHERS -> null
@@ -119,7 +136,8 @@ class AdhanService : Service() {
         }
         val prayer = intent?.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
         val uri = intent?.getStringExtra(EXTRA_URI)?.let(Uri::parse) ?: AdhanCatalog.sourceFor(this, prayer)
-        val notification = buildNotification(this, prayer)
+        val takbirMinutes = intent?.getIntExtra(EXTRA_TAKBIR_MINUTES, -1) ?: -1
+        val notification = if (takbirMinutes >= 0) buildTakbirNotification(this, prayer, takbirMinutes) else buildNotification(this, prayer)
         try {
             ServiceCompat.startForeground(
                 this, NOTIFICATION_ID, notification,
@@ -136,11 +154,26 @@ class AdhanService : Service() {
             return START_NOT_STICKY
         }
         player?.stop()
-        player = AudioPlayer(this, AudioAttributes.USAGE_ALARM) { finish(keepNotification = true) }.also { it.play(uri) }
+        handler.removeCallbacksAndMessages(null)
+        val p = AudioPlayer(this, AudioAttributes.USAGE_ALARM) { finish(keepNotification = true) }
+        player = p
+        p.play(uri)
+        if (takbirMinutes >= 0) {
+            // Only the opening takbir: fade out over the last 1.2 s, then stop and leave the notice.
+            val end = AdhanCatalog.takbirEndMs(AdhanCatalog.resolvedId(this, prayer)).toLong()
+            val fadeSteps = 12
+            for (i in 1..fadeSteps) {
+                handler.postDelayed({ p.setVolume(1f - i / fadeSteps.toFloat()) }, end - 1200 + i * 100L)
+            }
+            handler.postDelayed({ finish(keepNotification = true) }, end + 100)
+        }
         return START_NOT_STICKY
     }
 
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+
     private fun finish(keepNotification: Boolean) {
+        handler.removeCallbacksAndMessages(null)
         player?.stop()
         player = null
         if (Build.VERSION.SDK_INT >= 24) {
@@ -160,6 +193,7 @@ class AdhanService : Service() {
         const val ACTION_STOP = "com.reminder.salawat.STOP_ADHAN"
         const val EXTRA_PRAYER = "prayer"
         const val EXTRA_URI = "uri"
+        const val EXTRA_TAKBIR_MINUTES = "takbir_minutes"
         private const val NOTIFICATION_ID = 3100
 
         /** Starts the adhan; returns false if the system refused (caller should fall back to a plain notification). */
@@ -172,6 +206,47 @@ class AdhanService : Service() {
             true
         } catch (e: Exception) {
             false
+        }
+
+        /**
+         * Plays just the opening "Allahu akbar, Allahu akbar" of the user's adhan, [minutes] before [prayer].
+         * Returns false when there is nothing to play (notification-only) or the system refused.
+         */
+        fun startTakbir(context: Context, prayer: Prayer, minutes: Int): Boolean {
+            if (AdhanCatalog.sourceFor(context, prayer) == null) return false
+            return try {
+                ContextCompat.startForegroundService(
+                    context,
+                    Intent(context, AdhanService::class.java).setAction(ACTION_PLAY)
+                        .putExtra(EXTRA_PRAYER, prayer.name)
+                        .putExtra(EXTRA_TAKBIR_MINUTES, minutes)
+                )
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        private fun buildTakbirNotification(context: Context, prayer: Prayer, minutes: Int): android.app.Notification {
+            val stopIntent = PendingIntent.getService(
+                context, 12, Intent(context, AdhanService::class.java).setAction(ACTION_STOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val openApp = PendingIntent.getActivity(
+                context, 13, MainActivity.intent(context, MainActivity.TAB_PRAYER),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            return NotificationCompat.Builder(context, Notifications.CHANNEL_ADHAN)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(context.getString(R.string.rem_pre_adhan_title, minutes, context.getString(prayer.nameRes)))
+                .setContentText(context.getString(R.string.rem_pre_adhan_text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setContentIntent(openApp)
+                .setDeleteIntent(stopIntent)
+                .addAction(0, context.getString(R.string.adhan_stop), stopIntent)
+                .setAutoCancel(true)
+                .build()
         }
 
         fun stop(context: Context) {

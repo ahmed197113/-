@@ -68,7 +68,7 @@ class RuqyahActivity : AppCompatActivity() {
             val title = if (p.second == p.third) getString(R.string.ruqyah_passage_one, surah, QuranData.toArabicDigits(p.second))
             else getString(R.string.ruqyah_passage, surah, QuranData.toArabicDigits(p.second), QuranData.toArabicDigits(p.third))
             Row.Card(
-                title = title,
+                title = Ui.quranNames(this, title, surah),
                 body = ayahs.joinToString(" ") { "${it.text} ﴿${QuranData.toArabicDigits(it.ayah)}﴾" },
                 quranFont = true,
                 bodySp = 21f,
@@ -106,8 +106,8 @@ class QuranSearchActivity : AppCompatActivity() {
                 if (results.isNotEmpty()) rows.add(Row.Section(getString(R.string.search_results, QuranData.toArabicDigits(results.size))))
                 results.forEach { a ->
                     rows.add(Row.Card(
-                        title = getString(R.string.search_ref, QuranData.surahName(this@QuranSearchActivity, a.surah),
-                            QuranData.toArabicDigits(a.ayah), QuranData.toArabicDigits(a.page)),
+                        title = QuranData.styledName(this@QuranSearchActivity, getString(R.string.search_ref, QuranData.surahName(this@QuranSearchActivity, a.surah),
+                            QuranData.toArabicDigits(a.ayah), QuranData.toArabicDigits(a.page)), a.surah),
                         body = a.text, quranFont = true, bodySp = 21f,
                         onClick = { openMushaf(a) }
                     ))

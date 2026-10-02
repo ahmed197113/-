@@ -159,7 +159,10 @@ class QuranPagerActivity : AppCompatActivity() {
         val ayahs = QuranData.page(this, page)
         if (ayahs.isEmpty()) return
         val surahs = ayahs.map { it.surah }.distinct().joinToString(" · ") { QuranData.surahName(this, it) }
-        binding.textPageTitle.text = getString(R.string.quran_page_title, surahs, QuranData.toArabicDigits(ayahs.first().juz))
+        binding.textPageTitle.text = QuranData.styledName(
+            this, getString(R.string.quran_page_title, surahs, QuranData.toArabicDigits(ayahs.first().juz)),
+            *ayahs.map { it.surah }.distinct().toIntArray()
+        )
     }
 
     private fun updateReciterButton() {
@@ -199,10 +202,10 @@ class QuranPagerActivity : AppCompatActivity() {
         refreshGlobal(global)
         if (binding.pager.currentItem != ayah.page - 1) binding.pager.setCurrentItem(ayah.page - 1, true)
         binding.playerBar.visibility = View.VISIBLE
-        binding.textNowPlaying.text = getString(
+        binding.textNowPlaying.text = QuranData.styledName(this, getString(
             R.string.quran_now_playing, QuranData.surahName(this, ayah.surah),
             QuranData.toArabicDigits(ayah.ayah), Reciters.selected(this).name
-        )
+        ), ayah.surah)
     }
 
     private fun chooseReciter(onChosen: () -> Unit) {
@@ -228,7 +231,7 @@ class QuranPagerActivity : AppCompatActivity() {
         val b = SheetAyahBinding.inflate(layoutInflater)
         sheet.setContentView(b.root)
         val surahName = QuranData.surahName(this, ayah.surah)
-        b.textSheetTitle.text = getString(R.string.quran_sheet_title, surahName, QuranData.toArabicDigits(ayah.ayah))
+        b.textSheetTitle.text = QuranData.styledName(this, getString(R.string.quran_sheet_title, surahName, QuranData.toArabicDigits(ayah.ayah)), ayah.surah)
         b.textSheetAyah.text = ayah.text
         b.btnSheetReciter.text = getString(R.string.quran_reciter, Reciters.selected(this).name)
         b.btnSheetReciter.setOnClickListener {
@@ -334,7 +337,6 @@ class QuranPagerActivity : AppCompatActivity() {
                     sb.append("۞ ").append(QuranData.surahName(context, ayah.surah)).append(" ۞\n")
                     sb.setSpan(AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     sb.setSpan(ForegroundColorSpan(gold), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    sb.setSpan(StyleSpan(Typeface.BOLD), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     sb.setSpan(RelativeSizeSpan(1.05f), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     QuranData.surahBasmala(context, ayah.surah)?.let { basmala ->
                         val basmalaStart = sb.length

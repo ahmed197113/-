@@ -73,7 +73,37 @@ interface PermissionHost {
     val permissions: PermissionRequester
 }
 
+/** Draws a run of text in the Mushaf font (KFGQPC HAFS), e.g. a surah name inside an interface sentence. */
+class QuranFontSpan(private val typeface: android.graphics.Typeface) : android.text.style.MetricAffectingSpan() {
+    override fun updateDrawState(tp: android.text.TextPaint) { tp.typeface = typeface }
+    override fun updateMeasureState(tp: android.text.TextPaint) { tp.typeface = typeface }
+}
+
 object Ui {
+    @Volatile private var quranTypeface: android.graphics.Typeface? = null
+
+    fun quranTypeface(context: Context): android.graphics.Typeface? =
+        quranTypeface ?: runCatching { androidx.core.content.res.ResourcesCompat.getFont(context, R.font.kfgqpc_hafs) }.getOrNull()
+            .also { quranTypeface = it }
+
+    /**
+     * Uthmani surah names (e.g. سُورَةُ ٱلْفَاتِحَةِ) only render correctly in the Mushaf font: returns [text] with every
+     * occurrence of [names] drawn in it.
+     */
+    fun quranNames(context: Context, text: String, vararg names: String): CharSequence {
+        val tf = quranTypeface(context) ?: return text
+        val sb = android.text.SpannableStringBuilder(text)
+        for (name in names) {
+            if (name.isEmpty()) continue
+            var i = text.indexOf(name)
+            while (i >= 0) {
+                sb.setSpan(QuranFontSpan(tf), i, i + name.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                i = text.indexOf(name, i + name.length)
+            }
+        }
+        return sb
+    }
+
     /** "15:05" → "3:05 م" when the phone uses 12-hour time. */
     fun time(context: Context, hhmm: String?): String {
         if (hhmm.isNullOrBlank()) return "--:--"

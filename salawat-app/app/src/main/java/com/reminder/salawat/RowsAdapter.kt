@@ -15,7 +15,7 @@ import com.reminder.salawat.databinding.ItemSectionHeaderBinding
 sealed class Row {
     data class Section(val title: String) : Row()
     data class Card(
-        val title: String?,
+        val title: CharSequence?,
         val body: CharSequence,
         val meta: String? = null,
         val quranFont: Boolean = false,

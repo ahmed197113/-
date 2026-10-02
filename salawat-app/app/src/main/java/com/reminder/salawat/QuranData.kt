@@ -97,6 +97,10 @@ object QuranData {
         return juzStartPage[juz].coerceIn(1, PAGE_COUNT)
     }
 
+    /** "[surah name]" ready for a TextView: the name in the Mushaf font, the rest unchanged. */
+    fun styledName(context: Context, text: String, vararg surahs: Int): CharSequence =
+        Ui.quranNames(context, text, *surahs.map { surahName(context, it) }.toTypedArray())
+
     fun surahName(context: Context, surah: Int): String =
         QuranApi.loadSurahList(context).getOrNull(surah - 1)?.name ?: "$surah"
 

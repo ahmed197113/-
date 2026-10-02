@@ -147,9 +147,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val lastPage = Prefs.get(context).getInt(Prefs.KEY_LAST_PAGE, 0)
         if (lastPage > 0) {
             val surah = QuranData.page(context, lastPage).firstOrNull()?.surah ?: 1
-            b.textContinue.text = getString(
+            b.textContinue.text = QuranData.styledName(context, getString(
                 R.string.continue_reading_value, QuranData.surahName(context, surah), QuranData.toArabicDigits(lastPage)
-            )
+            ), surah)
             b.cardContinue.visibility = View.VISIBLE
         } else {
             b.cardContinue.visibility = View.GONE
@@ -224,7 +224,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val candidates = ayahs.filter { it.text.length in 60..220 }
         val ayah = candidates[(day * 7919) % candidates.size]
         b.textAyahOfDay.text = "${ayah.text} ﴿${QuranData.toArabicDigits(ayah.ayah)}﴾"
-        b.textAyahOfDayRef.text = "${QuranData.surahName(context, ayah.surah)} • ${getString(R.string.quran_page_number, QuranData.toArabicDigits(ayah.page))}"
+        b.textAyahOfDayRef.text = QuranData.styledName(
+            context, "${QuranData.surahName(context, ayah.surah)} • ${getString(R.string.quran_page_number, QuranData.toArabicDigits(ayah.page))}", ayah.surah
+        )
         b.cardAyah.setOnClickListener {
             startActivity(Intent(context, QuranPagerActivity::class.java)
                 .putExtra(QuranPagerActivity.EXTRA_PAGE, ayah.page)

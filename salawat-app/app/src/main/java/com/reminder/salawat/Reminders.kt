@@ -11,14 +11,15 @@ import java.util.Calendar
 enum class ReminderType(val titleRes: Int, val descRes: Int, val defaultMinutes: Int, val defaultOn: Boolean) {
     MORNING(R.string.rem_morning, R.string.rem_morning_desc, 7 * 60, true),
     EVENING(R.string.rem_evening, R.string.rem_evening_desc, 17 * 60, true),
-    SLEEP(R.string.rem_sleep, R.string.rem_sleep_desc, 22 * 60 + 30, false),
+    SLEEP(R.string.rem_sleep, R.string.rem_sleep_desc, 22 * 60 + 30, true),
     KAHF(R.string.rem_kahf, R.string.rem_kahf_desc, 10 * 60, true),
-    WIRD(R.string.rem_wird, R.string.rem_wird_desc, 21 * 60, false),
+    WIRD(R.string.rem_wird, R.string.rem_wird_desc, 21 * 60, true),
     FASTING(R.string.rem_fasting, R.string.rem_fasting_desc, 20 * 60 + 30, true),
-    PRE_ADHAN(R.string.rem_pre_adhan, R.string.rem_pre_adhan_desc, 10, false);
+    PRE_ADHAN(R.string.rem_pre_adhan, R.string.rem_pre_adhan_desc, 10, true),
+    IQAMA(R.string.rem_iqama, R.string.rem_iqama_desc, 15, true);
 
-    /** For PRE_ADHAN the "minutes" value is how long before the adhan, otherwise a time of day. */
-    val isTimeOfDay get() = this != PRE_ADHAN
+    /** For PRE_ADHAN the "minutes" value is how long before the adhan, for IQAMA how long after; else a time of day. */
+    val isTimeOfDay get() = this != PRE_ADHAN && this != IQAMA
 }
 
 /**
@@ -81,10 +82,19 @@ object Reminders {
         val base = Calendar.getInstance()
         for (type in ReminderType.values()) {
             if (!isOn(context, type)) continue
-            if (type == ReminderType.PRE_ADHAN) {
-                val before = minutes(context, type) * 60_000L
-                PrayerRepository.nextPrayer(context, now + before)?.let { p ->
-                    candidates.add(Next(type, p.millis - before, prayer = p.prayer))
+            if (type == ReminderType.PRE_ADHAN || type == ReminderType.IQAMA) {
+                // Only for prayers whose adhan alert is on.
+                if (!PrayerRepository.alertsOn(context)) continue
+                val include = { pr: Prayer -> PrayerRepository.isAlertEnabled(context, pr) }
+                val gap = minutes(context, type) * 60_000L
+                if (type == ReminderType.PRE_ADHAN) {
+                    PrayerRepository.nextPrayer(context, now + gap, include)?.let { p ->
+                        candidates.add(Next(type, p.millis - gap, prayer = p.prayer))
+                    }
+                } else {
+                    PrayerRepository.nextPrayer(context, now - gap, include)?.let { p ->
+                        candidates.add(Next(type, p.millis + gap, prayer = p.prayer))
+                    }
                 }
                 continue
             }
@@ -117,6 +127,11 @@ object Reminders {
     fun deliver(context: Context, intent: Intent) {
         val type = intent.getStringExtra(EXTRA_TYPE)?.let { runCatching { ReminderType.valueOf(it) }.getOrNull() } ?: return
         if (!isOn(context, type)) return
+        if (type == ReminderType.IQAMA) {
+            val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
+            postIqama(context, prayer)
+            return
+        }
         val (title, text, open) = when (type) {
             ReminderType.MORNING -> Triple(context.getString(R.string.rem_morning), context.getString(R.string.rem_morning_text), azkar(context, 27))
             ReminderType.EVENING -> Triple(context.getString(R.string.rem_evening), context.getString(R.string.rem_evening_text), azkar(context, 27))
@@ -133,8 +148,11 @@ object Reminders {
                 context.getString(R.string.rem_fasting_title), intent.getStringExtra(EXTRA_TEXT) ?: context.getString(R.string.rem_fasting_desc),
                 Intent(context, CalendarActivity::class.java)
             )
+            ReminderType.IQAMA -> return
             ReminderType.PRE_ADHAN -> {
                 val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
+                // Sound the opening "Allahu akbar, Allahu akbar" of the user's adhan, with the notice on screen.
+                if (AdhanService.startTakbir(context, prayer, minutes(context, type))) return
                 Triple(
                     context.getString(R.string.rem_pre_adhan_title, minutes(context, type), context.getString(prayer.nameRes)),
                     context.getString(R.string.rem_pre_adhan_text),
@@ -152,6 +170,26 @@ object Reminders {
             .setAutoCancel(true)
             .build()
         Notifications.notify(context, 4000 + type.ordinal, notification)
+    }
+
+    /** Iqama alert: a sounding, high-priority notification on the prayer channel. */
+    private fun postIqama(context: Context, prayer: Prayer) {
+        val title = context.getString(R.string.rem_iqama_title, context.getString(prayer.nameRes))
+        val text = context.getString(R.string.rem_iqama_text)
+        val pi = PendingIntent.getActivity(
+            context, 790, MainActivity.intent(context, MainActivity.TAB_PRAYER),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_PRAYER)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .build()
+        Notifications.notify(context, 4900, notification)
     }
 
     private fun azkar(context: Context, id: Int) = Intent(context, AzkarDetailActivity::class.java)

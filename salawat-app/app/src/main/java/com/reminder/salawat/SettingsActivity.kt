@@ -88,6 +88,11 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         Ui.row(prayer, R.drawable.ic_volume, getString(R.string.tile_adhan), Ui.adhanLabel(this)) {
             startActivity(Intent(this, AdhanSettingsActivity::class.java))
         }
+        val batteryOk = AlertPermissions.ignoresBatteryOptimizations(this)
+        Ui.row(prayer, R.drawable.ic_settings, getString(R.string.settings_battery),
+            getString(if (batteryOk) R.string.settings_battery_on else R.string.settings_battery_off)) {
+            if (!batteryOk) AlertPermissions.requestBatteryExemption(this)
+        }
         if (alertsOn && !PrayerScheduler.canScheduleExact(this) && Build.VERSION.SDK_INT >= 31) {
             Ui.row(prayer, R.drawable.ic_clock, getString(R.string.settings_exact), getString(R.string.settings_exact_needed)) {
                 runCatching {
@@ -229,7 +234,7 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         val current = Prefs.INTERVAL_OPTIONS.indexOf(Prefs.reminderInterval(this)).coerceAtLeast(0)
         choose(getString(R.string.settings_interval), labels, current) {
             Prefs.get(this).edit().putLong(Prefs.KEY_REMINDER_INTERVAL, Prefs.INTERVAL_OPTIONS[it]).apply()
-            ReminderWorker.apply(this)
+            ReminderWorker.apply(this, advance = true)
         }
     }
 

@@ -9,44 +9,23 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 class ReminderWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
 
     override fun doWork(): Result {
-        val context = applicationContext
-        if (!Notifications.canPost(context)) return Result.success()
-        val now = Calendar.getInstance()
-        if (Prefs.isQuietTime(context, now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE))) {
-            return Result.success()
-        }
-        val text = PHRASES.random()
-        val openApp = PendingIntent.getActivity(
-            context, 0, Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_REMINDER)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(context.getString(R.string.reminder_notif_title))
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(openApp)
-            .setAutoCancel(true)
-            .build()
-        Notifications.notify(context, NOTIFICATION_ID, notification)
+        post(applicationContext)
         return Result.success()
     }
 
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val WORK_NAME = "salawat_periodic_reminder"
+        private const val ALARM_REQUEST = 2201
+        private const val KEY_NEXT_AT = "salawat_next_at"
         private val PHRASES = listOf(
             "اللهم صلِّ وسلم على نبينا محمد ﷺ",
             "صلِّ على محمد وعلى آل محمد",
@@ -55,16 +34,67 @@ class ReminderWorker(context: Context, params: WorkerParameters) : Worker(contex
             "صلى الله عليه وسلم تسليماً كثيراً"
         )
 
-        /** Applies the saved reminder settings; UPDATE keeps the schedule but picks up a new interval. */
-        fun apply(context: Context) {
-            val workManager = WorkManager.getInstance(context)
-            if (!Prefs.get(context).getBoolean(Prefs.KEY_REMINDER_ENABLED, false)) {
-                workManager.cancelUniqueWork(WORK_NAME)
+        fun post(context: Context) {
+            if (!Notifications.canPost(context)) return
+            val now = Calendar.getInstance()
+            if (Prefs.isQuietTime(context, now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE))) {
                 return
             }
-            val request = PeriodicWorkRequestBuilder<ReminderWorker>(Prefs.reminderInterval(context), TimeUnit.MINUTES).build()
-            workManager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+            val text = PHRASES.random()
+            val openApp = PendingIntent.getActivity(
+                context, 0, Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_REMINDER)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(context.getString(R.string.reminder_notif_title))
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(openApp)
+                .setAutoCancel(true)
+                .build()
+            Notifications.notify(context, NOTIFICATION_ID, notification)
         }
+
+        /**
+         * Arms the next salawat reminder with an exact alarm, so it arrives on time even when the app is closed
+         * and the phone is in Doze (WorkManager's periodic work was deferred until the app was opened).
+         */
+        fun apply(context: Context, advance: Boolean = false) {
+            WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME) // the old periodic job, if any
+            val am = context.getSystemService(android.app.AlarmManager::class.java)
+            val pi = PendingIntent.getBroadcast(
+                context, ALARM_REQUEST, Intent(context, SalawatReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            if (!Prefs.get(context).getBoolean(Prefs.KEY_REMINDER_ENABLED, false)) {
+                am.cancel(pi)
+                return
+            }
+            // Keep the pending time when the app merely re-applies settings (app start, boot), so opening the app
+            // often never postpones the reminder; move on only after one fired or the interval changed.
+            val prefs = Prefs.get(context)
+            val now = System.currentTimeMillis()
+            val interval = Prefs.reminderInterval(context).coerceAtLeast(15) * 60_000L
+            val saved = prefs.getLong(KEY_NEXT_AT, 0L)
+            val at = if (!advance && saved > now && saved - now <= interval) saved else now + interval
+            prefs.edit().putLong(KEY_NEXT_AT, at).apply()
+            try {
+                if (PrayerScheduler.canScheduleExact(context)) am.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, at, pi)
+                else am.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, at, pi)
+            } catch (_: SecurityException) {
+                am.setAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, at, pi)
+            }
+        }
+    }
+}
+
+/** Fires each salawat reminder and arms the next one. */
+class SalawatReceiver : android.content.BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        ReminderWorker.post(context)
+        ReminderWorker.apply(context, advance = true)
     }
 }
 

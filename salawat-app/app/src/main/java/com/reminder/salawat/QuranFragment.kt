@@ -118,7 +118,7 @@ class QuranFragment : Fragment(R.layout.fragment_quran) {
                     val first = QuranData.page(context, page).firstOrNull()
                     b.textSurahNumber.text = QuranData.toArabicDigits(row.number)
                     b.textSurahName.text = getString(R.string.quran_juz, JUZ_NAMES[row.number - 1])
-                    b.textSurahMeta.text = first?.let { QuranData.surahName(context, it.surah) } ?: ""
+                    b.textSurahMeta.text = first?.let { Ui.quranNames(context, QuranData.surahName(context, it.surah), QuranData.surahName(context, it.surah)) } ?: ""
                     b.textSurahPage.text = getString(R.string.quran_page_short, QuranData.toArabicDigits(page))
                     b.root.setOnClickListener { openPage(page) }
                 }
@@ -130,14 +130,14 @@ class QuranFragment : Fragment(R.layout.fragment_quran) {
             val lastPage = prefs.getInt(Prefs.KEY_LAST_PAGE, 0)
             b.textContinue.text = if (lastPage > 0) {
                 val surah = QuranData.page(context, lastPage).firstOrNull()?.surah ?: 1
-                getString(R.string.continue_reading_value, QuranData.surahName(context, surah), QuranData.toArabicDigits(lastPage))
+                QuranData.styledName(context, getString(R.string.continue_reading_value, QuranData.surahName(context, surah), QuranData.toArabicDigits(lastPage)), surah)
             } else getString(R.string.quran_start_reading)
             b.cardContinue.setOnClickListener { openPage(if (lastPage > 0) lastPage else 1) }
 
             val bookmark = prefs.getInt(Prefs.KEY_BOOKMARK_GLOBAL, 0)
             val ayah = if (bookmark > 0) QuranData.byGlobal(context, bookmark) else null
             b.textBookmark.text = if (ayah != null) {
-                getString(R.string.quran_go_bookmark, QuranData.surahName(context, ayah.surah), QuranData.toArabicDigits(ayah.ayah))
+                QuranData.styledName(context, getString(R.string.quran_go_bookmark, QuranData.surahName(context, ayah.surah), QuranData.toArabicDigits(ayah.ayah)), ayah.surah)
             } else getString(R.string.quran_no_bookmark)
             b.cardBookmark.isEnabled = ayah != null
             b.cardBookmark.setOnClickListener { ayah?.let { openPage(it.page, it.global) } }

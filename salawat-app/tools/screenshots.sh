@@ -170,6 +170,25 @@ for i in $(seq 1 12); do adb emu geo fix 31.2357 30.0444 || true; sleep 2; done
 shot 44-location-saved 6
 adb shell "run-as $pkg cat shared_prefs/prayer_times_prefs.xml" > "$out/prayer_prefs_after_gps.txt" || true
 
+# Alerts fire with the app closed: pre-adhan takbir, iqama, salawat (receivers invoked directly as root)
+adb shell am force-stop $pkg
+adb shell am broadcast -n $pkg/.ReminderReceiver --es type PRE_ADHAN --es prayer DHUHR || true
+sleep 3
+adb shell dumpsys media_session > /dev/null 2>&1 || true
+adb shell "dumpsys audio | grep -i -A3 'players:'" > "$out/audio-during-takbir.txt" 2>&1 || true
+adb shell am broadcast -n $pkg/.ReminderReceiver --es type IQAMA --es prayer ASR || true
+adb shell am broadcast -n $pkg/.SalawatReceiver || true
+sleep 2
+adb shell cmd statusbar expand-notifications || true
+shot 45-alerts-notifications 2
+adb shell cmd statusbar collapse || true
+adb shell "dumpsys alarm | grep -A2 $pkg" > "$out/alarms.txt" 2>&1 || true
+
+start .QuranPagerActivity --ei page 50
+shot 46-mushaf-title 4
+start .MainActivity --es tab quran
+shot 47-quran-index 4
+
 # Dark mode
 adb shell cmd uimode night yes
 adb shell am force-stop $pkg
