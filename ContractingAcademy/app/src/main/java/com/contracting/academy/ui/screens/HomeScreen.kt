@@ -171,6 +171,43 @@ fun HomeScreen(nav: Nav) {
             }
         }
 
+        item { SectionTitle("طرق مختلفة للفهم", Modifier.padding(horizontal = 16.dp)) }
+        item {
+            LazyRow(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                val ways = listOf(
+                    Triple("🗺", "خريطة المنهج", "كل الدروس في خريطة واحدة"),
+                    Triple("🧠", "الخرائط الذهنية", "خريطة لكل درس"),
+                    Triple("🃏", "بطاقات المصطلحات", "مراجعة بالقلب والتذكّر"),
+                    Triple("🧮", "الحاسبات", "طبّق بالأرقام"),
+                )
+                items(ways.size) { i ->
+                    val (icon, title, sub) = ways[i]
+                    Card(
+                        onClick = {
+                            when (i) {
+                                0 -> nav.mindMap("curriculum")
+                                1 -> nav.maps()
+                                2 -> nav.termCards()
+                                else -> nav.tab("tools")
+                            }
+                        },
+                        modifier = Modifier.width(150.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    ) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(icon, style = MaterialTheme.typography.headlineSmall)
+                            Spacer(Modifier.height(6.dp))
+                            Text(title, style = MaterialTheme.typography.titleSmall)
+                            Text(sub, style = MaterialTheme.typography.labelSmall, maxLines = 2, minLines = 2)
+                        }
+                    }
+                }
+            }
+        }
+
         item {
             SectionTitle("مسارات التعلم", Modifier.padding(horizontal = 16.dp)) {
                 TextButton(onClick = { nav.tab("library") }) { Text("الكل") }

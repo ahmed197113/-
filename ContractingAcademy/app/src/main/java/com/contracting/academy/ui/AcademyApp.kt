@@ -28,6 +28,9 @@ import com.contracting.academy.ui.screens.GlossaryScreen
 import com.contracting.academy.ui.screens.HomeScreen
 import com.contracting.academy.ui.screens.LessonScreen
 import com.contracting.academy.ui.screens.LibraryScreen
+import com.contracting.academy.ui.screens.MapsGalleryScreen
+import com.contracting.academy.ui.screens.MindMapScreen
+import com.contracting.academy.ui.screens.TermCardsScreen
 import com.contracting.academy.ui.screens.QuizScreen
 import com.contracting.academy.ui.screens.SearchScreen
 import com.contracting.academy.ui.screens.SourcesScreen
@@ -55,6 +58,9 @@ class Nav(private val nav: NavHostController) {
     fun search() = nav.navigate("search")
     fun bookmarks() = nav.navigate("bookmarks")
     fun about() = nav.navigate("about")
+    fun mindMap(id: String) = nav.navigate("map/$id")
+    fun maps() = nav.navigate("maps")
+    fun termCards() = nav.navigate("termcards")
     fun tab(route: String) = nav.navigate(route) {
         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
@@ -107,6 +113,9 @@ fun AcademyApp() {
             composable("track/{id}") { TrackScreen(it.arguments?.getString("id").orEmpty(), nav) }
             composable("lesson/{id}") { LessonScreen(it.arguments?.getString("id").orEmpty(), nav) }
             composable("quiz/{id}") { QuizScreen(it.arguments?.getString("id").orEmpty(), nav) }
+            composable("map/{id}") { MindMapScreen(it.arguments?.getString("id").orEmpty(), nav) }
+            composable("maps") { MapsGalleryScreen(nav) }
+            composable("termcards") { TermCardsScreen(nav) }
             composable("tool/{id}") { ToolScreen(it.arguments?.getString("id").orEmpty(), nav) }
         }
     }

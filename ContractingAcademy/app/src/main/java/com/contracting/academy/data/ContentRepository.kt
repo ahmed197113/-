@@ -82,6 +82,15 @@ class ContentRepository(context: Context) {
                 explanation = it.optString("explain"),
             )
         },
+        practice = o.optJSONArray("practice").objects().map {
+            Practice(
+                scenario = it.getString("scenario"),
+                accounts = it.getJSONArray("accounts").strings(),
+                debit = it.getJSONArray("debit").ints().toSet(),
+                credit = it.getJSONArray("credit").ints().toSet(),
+                explanation = it.optString("explain"),
+            )
+        },
     )
 
     private fun parseBlock(o: JSONObject) = Block(
@@ -95,7 +104,44 @@ class ContentRepository(context: Context) {
             EntryLine(it.getString(0), it.optDouble(1, 0.0), it.optDouble(2, 0.0))
         },
         note = o.optString("note"),
+        map = o.optJSONObject("map")?.let(::parseMap),
     )
+
+    private fun parseMap(o: JSONObject): MapNode =
+        MapNode(o.getString("t"), o.optJSONArray("c").objects().map(::parseMap))
+
+    /** بطاقات مراجعة مولدة من فروع الخريطة الذهنية وخلاصة الدرس. */
+    fun flashcards(lesson: Lesson): List<Flashcard> {
+        val cards = mutableListOf<Flashcard>()
+        lesson.mindMap?.let { root ->
+            root.children.forEach { b ->
+                if (b.children.isNotEmpty()) {
+                    cards += Flashcard(b.text, b.children.joinToString("\n") { "• " + it.text }, root.text)
+                }
+            }
+        }
+        lesson.blocks.filter { it.type == "mistakes" }.forEach { b ->
+            b.rows.forEach { r -> if (r.size >= 2) cards += Flashcard("صحّح الخطأ: " + r[0], "✔ " + r[1], "خطأ شائع") }
+        }
+        return cards
+    }
+
+    /** خريطة ذهنية للمنهج كاملاً: المسارات ← الوحدات ← الدروس. */
+    val curriculumMap: MapNode by lazy {
+        MapNode(
+            "المنهج",
+            tracks.map { t ->
+                MapNode(t.title, t.units.map { u ->
+                    MapNode(u.title, u.lessonIds.mapNotNull { lessons[it] }.map { MapNode(it.title, emptyList(), it.id) })
+                })
+            },
+        )
+    }
+
+    /** جميع المصطلحات كبطاقات. */
+    fun termCards(category: String?): List<Flashcard> =
+        glossary.filter { category == null || it.category == category }
+            .map { Flashcard(it.ar + if (it.en.isNotBlank()) "\n" + it.en else "", it.definition, it.category) }
 }
 
 private fun JSONArray?.objects(): List<JSONObject> =
@@ -103,6 +149,9 @@ private fun JSONArray?.objects(): List<JSONObject> =
 
 private fun JSONArray?.arrays(): List<JSONArray> =
     if (this == null) emptyList() else List(length()) { getJSONArray(it) }
+
+private fun JSONArray?.ints(): List<Int> =
+    if (this == null) emptyList() else List(length()) { getInt(it) }
 
 private fun JSONArray?.strings(): List<String> =
     if (this == null) emptyList() else List(length()) { getString(it) }

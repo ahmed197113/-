@@ -22,7 +22,10 @@ data class Lesson(
     val blocks: List<Block>,
     val sources: List<String>,
     val quiz: List<Question>,
-)
+    val practice: List<Practice>,
+) {
+    val mindMap: MapNode? get() = blocks.firstOrNull { it.type == "mindmap" }?.map
+}
 
 enum class Level(val label: String) {
     BEGINNER("مبتدئ"),
@@ -36,7 +39,8 @@ enum class Level(val label: String) {
 
 /**
  * عنصر محتوى داخل الدرس. يحدد [type] طريقة العرض:
- * simple, text, points, steps, example, entry, table, tip, warning, expert, archive
+ * simple, text, points, steps, example, entry, table, tip, warning, expert, tree,
+ * mindmap, analogy, flow, compare, mistakes, summary, formula, taccount
  */
 data class Block(
     val type: String,
@@ -47,7 +51,22 @@ data class Block(
     val rows: List<List<String>>,
     val lines: List<EntryLine>,
     val note: String,
+    val map: MapNode? = null,
 )
+
+/** عقدة في الخريطة الذهنية. [ref] يربط العقدة بدرس (في خريطة المنهج). */
+data class MapNode(val text: String, val children: List<MapNode>, val ref: String? = null)
+
+/** تمرين تفاعلي: يحدد المتعلم الطرف المدين والدائن لعملية. */
+data class Practice(
+    val scenario: String,
+    val accounts: List<String>,
+    val debit: Set<Int>,
+    val credit: Set<Int>,
+    val explanation: String,
+)
+
+data class Flashcard(val front: String, val back: String, val hint: String)
 
 data class EntryLine(val account: String, val debit: Double, val credit: Double)
 
