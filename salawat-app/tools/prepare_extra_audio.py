@@ -14,9 +14,15 @@ SOURCES = {
     "dua_src.mp3": "https://archive.org/download/alshaarawi/alshaarawi-doaa-24.mp3",
     "dua_src2.mp3": "https://archive.org/download/U-2024-01-28/Doaa-1.mp3",
 }
+import time
 for fn, url in SOURCES.items():
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 rafiq"})
-    open(os.path.join(OUT, fn), "wb").write(urllib.request.urlopen(req, timeout=300).read())
+    for attempt in range(5):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 rafiq"})
+            open(os.path.join(OUT, fn), "wb").write(urllib.request.urlopen(req, timeout=300).read())
+            break
+        except Exception as e:
+            p("download retry", fn, e); time.sleep(10 * (attempt + 1))
 
 from faster_whisper import WhisperModel
 model = WhisperModel("medium", device="cpu", compute_type="int8")
@@ -38,6 +44,8 @@ def norm(t):
     return t.replace("أ", "ا").replace("إ", "ا").replace("آ", "ا").replace("ة", "ه").replace("ى", "ي")
 
 for src, dst in [("dua_src.mp3", "dua_after_adhan.mp3"), ("dua_src2.mp3", "dua_after_adhan_alt.mp3")]:
+    if not os.path.exists(os.path.join(OUT, src)) or os.path.getsize(os.path.join(OUT, src)) == 0:
+        p("skip (not downloaded):", src); continue
     ws = words(os.path.join(OUT, src))
     p(f"\n== {src} words:")
     p(" ".join(f"[{a:.1f}]{w}" for a, b, w in ws))
@@ -65,4 +73,5 @@ subprocess.run(["ffmpeg", "-nostdin", "-y", "-v", "quiet", "-i", os.path.join(OU
                 os.path.join(OUT, "iqama.mp3")], check=True)
 p("\niqama.mp3", os.path.getsize(os.path.join(OUT, "iqama.mp3")))
 p("iqama transcript:", " ".join(w for a, b, w in words(os.path.join(OUT, "iqama.mp3"))))
-for fn in SOURCES: os.remove(os.path.join(OUT, fn))
+for fn in SOURCES:
+    if os.path.exists(os.path.join(OUT, fn)): os.remove(os.path.join(OUT, fn))
