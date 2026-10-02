@@ -74,7 +74,11 @@ object MushafLayout {
 }
 
 object MushafFonts {
-    private const val BASE = "https://github.com/ahmed197113/-/releases/download/rafiq-mushaf-fonts-v2/"
+    /** quran.com's own CDN (the source of these fonts), then our mirror. */
+    private val BASES = listOf(
+        "https://static.qurancdn.com/fonts/quran/hafs/v2/ttf/",
+        "https://github.com/ahmed197113/-/releases/download/rafiq-mushaf-fonts-v2/"
+    )
     private val cache = HashMap<Int, Typeface>()
     private val mutex = Mutex()
 
@@ -91,7 +95,21 @@ object MushafFonts {
         cached(context, page)?.let { return it }
         mutex.withLock {
             cached(context, page)?.let { return it }
-            withContext(Dispatchers.IO) { Net.download(BASE + "p$page.ttf", file(context, page)) { } }
+            withContext(Dispatchers.IO) {
+                var last: Exception? = null
+                for (base in BASES) {
+                    try {
+                        Net.download(base + "p$page.ttf", file(context, page)) { }
+                        last = null
+                        break
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        last = e
+                    }
+                }
+                last?.let { throw it }
+            }
         }
         return cached(context, page) ?: error("font")
     }
