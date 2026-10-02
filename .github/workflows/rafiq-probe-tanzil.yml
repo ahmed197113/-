@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "salawat-app/tools/probe_tanzil.py"
+      - "salawat-app/tools/check_audio.py"
       - ".github/workflows/rafiq-probe-tanzil.yml"
   workflow_dispatch:
 
@@ -16,6 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 salawat-app/tools/probe_tanzil.py "$RUNNER_TEMP/t"
+      - if: always()
+        run: python3 salawat-app/tools/check_audio.py "$RUNNER_TEMP/t/audio-check.txt"
       - if: always()
         uses: softprops/action-gh-release@v2
         with:
