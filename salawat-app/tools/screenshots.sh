@@ -43,12 +43,25 @@ adb shell "run-as $pkg sh -c 'cat > shared_prefs/prayer_times_prefs.xml'" <<'XML
     <boolean name="prayer_alerts" value="true" />
 </map>
 XML
+today=$(adb shell date +%Y-%m-%d | tr -d '\r')
+adb shell "run-as $pkg sh -c 'cat > shared_prefs/prayer_tracker.xml'" <<XML
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <boolean name="${today}_FAJR" value="true" />
+    <boolean name="${today}_DHUHR" value="true" />
+    <int name="qada_FAJR" value="3" />
+</map>
+XML
 adb shell pm grant $pkg android.permission.POST_NOTIFICATIONS || true
 
 start .MainActivity --es tab prayer
 shot 03-prayer 12
 start .MainActivity --es tab home
 shot 02-home 5
+adb shell input swipe 540 1800 540 500 300
+shot 02b-home-scrolled 2
+adb shell input swipe 540 1800 540 300 300
+shot 02c-home-scrolled-more 2
 start .MainActivity --es tab quran
 shot 04-quran 4
 start .MainActivity --es tab azkar
@@ -69,6 +82,29 @@ start .AdhanSettingsActivity
 shot 12-adhan 4
 start .QiblaActivity
 shot 13-qibla 4
+
+start .TrackerActivity
+shot 20-tracker 4
+start .CalendarActivity
+shot 21-calendar 5
+start .HadithBooksActivity
+shot 22-hadith-books 4
+start .HadithReaderActivity --es book nawawi40
+shot 23-hadith-reader 5
+start .NamesActivity
+shot 24-names 4
+start .RuqyahActivity
+shot 25-ruqyah 5
+start .ZakatActivity
+shot 26-zakat 4
+start .QuranSearchActivity --es query "\u0627\u0644\u0635\u0628\u0631"
+true
+shot 27-search 5
+start .RemindersActivity
+shot 28-reminders 4
+start .MainActivity --es tab more
+adb shell input swipe 540 1600 540 600 300
+shot 29-more-scrolled 2
 
 # Dark mode
 adb shell cmd uimode night yes

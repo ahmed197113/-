@@ -14,6 +14,7 @@ class SalawatApp : Application() {
         applyTheme(this)
         Notifications.createChannels(this)
         PrayerRefreshWorker.ensurePeriodic(this)
+        Reminders.schedule(this)
     }
 
     companion object {

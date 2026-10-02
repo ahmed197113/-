@@ -45,6 +45,29 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
             LocationSheet.show(this, permissions) { render() }
         }
         Ui.row(prayer, R.drawable.ic_clock, getString(R.string.method_title), Ui.methodLabel(this)) { chooseMethod() }
+        val asrLabels = resources.getStringArray(R.array.asr_labels)
+        val school = prayerPrefs.getInt(PrayerRepository.KEY_SCHOOL, 0)
+        Ui.row(prayer, R.drawable.ic_sun, getString(R.string.settings_asr), asrLabels[school]) {
+            choose(getString(R.string.settings_asr), asrLabels.toList(), school) {
+                prayerPrefs.edit().putInt(PrayerRepository.KEY_SCHOOL, it).apply()
+                PrayerRepository.settingsChanged(this)
+            }
+        }
+        val offsets = Prayer.values().filter { PrayerRepository.offset(this, it) != 0 }
+        Ui.row(prayer, R.drawable.ic_refresh, getString(R.string.settings_offsets),
+            if (offsets.isEmpty()) getString(R.string.settings_offsets_desc)
+            else offsets.joinToString("، ") { "${getString(it.nameRes)} ${getString(R.string.settings_offset_value, PrayerRepository.offset(this, it))}" }) {
+            editOffsets()
+        }
+        val hijri = HijriDate.offset(this)
+        Ui.row(prayer, R.drawable.ic_moon, getString(R.string.settings_hijri),
+            "${HijriDate.today(this)}" + if (hijri != 0) " (${getString(R.string.settings_hijri_value, hijri)})" else "") {
+            val options = listOf(-2, -1, 0, 1, 2)
+            choose(getString(R.string.settings_hijri), options.map { getString(R.string.settings_hijri_value, it) }, options.indexOf(hijri)) {
+                HijriDate.setOffset(this, options[it])
+                Reminders.schedule(this)
+            }
+        }
         val alertsOn = PrayerRepository.alertsOn(this)
         Ui.row(prayer, R.drawable.ic_bell, getString(R.string.settings_prayer_alerts),
             if (alertsOn) getString(R.string.settings_prayer_alerts_on, Prayer.values().count { PrayerRepository.isAlertEnabled(this, it) })
@@ -106,6 +129,10 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
             }
         }
 
+        Ui.row(reminder, R.drawable.ic_bell, getString(R.string.tool_reminders), getString(R.string.settings_reminders_desc)) {
+            startActivity(Intent(this, RemindersActivity::class.java))
+        }
+
         // Quran
         Ui.sectionTitle(c, getString(R.string.settings_section_quran))
         val quran = Ui.card(c)
@@ -152,8 +179,49 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         )
         choose(getString(R.string.method_title), labels, current) {
             PrayerRepository.prefs(this).edit().putInt(PrayerRepository.KEY_METHOD, PrayerRepository.METHOD_IDS[it]).apply()
-            PrayerRefreshWorker.runOnce(this)
+            PrayerRepository.settingsChanged(this)
         }
+    }
+
+    /** Per-prayer ± minutes, applied through the API's "tune" so alarms and widgets agree. */
+    private fun editOffsets() {
+        val prayers = Prayer.values().toList()
+        val values = prayers.map { PrayerRepository.offset(this, it) }.toMutableList()
+        val list = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(48, 24, 48, 8)
+        }
+        prayers.forEachIndexed { i, p ->
+            val line = android.widget.LinearLayout(this).apply { gravity = android.view.Gravity.CENTER_VERTICAL }
+            val name = android.widget.TextView(this, null, 0, R.style.Text_TitleSmall).apply { text = getString(p.nameRes) }
+            line.addView(name, android.widget.LinearLayout.LayoutParams(0, -2, 1f))
+            val value = android.widget.TextView(this, null, 0, R.style.Text_TitleMedium).apply {
+                gravity = android.view.Gravity.CENTER
+                text = getString(R.string.settings_offset_value, values[i])
+            }
+            fun step(delta: Int) = com.google.android.material.button.MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+                text = if (delta > 0) "+" else "−"
+                minWidth = 0; minimumWidth = 0
+                setOnClickListener {
+                    values[i] = (values[i] + delta).coerceIn(-30, 30)
+                    value.text = getString(R.string.settings_offset_value, values[i])
+                }
+            }
+            line.addView(step(-1), android.widget.LinearLayout.LayoutParams(130, 130))
+            line.addView(value, android.widget.LinearLayout.LayoutParams(220, -2))
+            line.addView(step(1), android.widget.LinearLayout.LayoutParams(130, 130))
+            list.addView(line)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_offsets)
+            .setView(android.widget.ScrollView(this).apply { addView(list) })
+            .setPositiveButton(R.string.done) { _, _ ->
+                prayers.forEachIndexed { i, p -> PrayerRepository.setOffset(this, p, values[i]) }
+                PrayerRepository.settingsChanged(this)
+                render()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun chooseInterval() {

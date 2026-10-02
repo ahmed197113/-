@@ -1,0 +1,129 @@
+package com.reminder.salawat
+
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import java.util.Calendar
+import java.util.zip.GZIPInputStream
+
+data class AllahName(val number: Int, val name: String, val meaning: String)
+
+object AllahNames {
+    @Volatile private var cache: List<AllahName>? = null
+
+    fun all(context: Context): List<AllahName> = cache ?: run {
+        val arr = JSONArray(context.assets.open("names99.json").bufferedReader().use { it.readText() })
+        (0 until arr.length()).map { i -> arr.getJSONObject(i).let { AllahName(i + 1, it.getString("n"), it.getString("m")) } }
+            .also { cache = it }
+    }
+}
+
+/** Quran passages commonly recited for ruqyah, as (surah, fromAyah, toAyah). */
+object Ruqyah {
+    val PASSAGES = listOf(
+        Triple(1, 1, 7), Triple(2, 1, 5), Triple(2, 102, 102), Triple(2, 163, 164), Triple(2, 255, 257),
+        Triple(2, 284, 286), Triple(3, 18, 19), Triple(7, 54, 56), Triple(7, 117, 122), Triple(10, 79, 82),
+        Triple(20, 65, 70), Triple(23, 115, 118), Triple(37, 1, 10), Triple(46, 29, 32), Triple(55, 33, 36),
+        Triple(59, 21, 24), Triple(72, 1, 9), Triple(112, 1, 4), Triple(113, 1, 5), Triple(114, 1, 6)
+    )
+
+    fun ayahs(context: Context, passage: Triple<Int, Int, Int>): List<QAyah> =
+        QuranData.ensureLoaded(context).filter { it.surah == passage.first && it.ayah in passage.second..passage.third }
+}
+
+object QuranSearch {
+    private val DIACRITICS = Regex("[ؐ-ًؚ-ٰٟۖ-ۭـ]")
+    private val ALEFS = Regex("[اأإآٱء]")
+
+    /** Diacritic- and alef-insensitive form, so typed words match the Uthmani script. */
+    fun normalize(text: String): String = text.replace(DIACRITICS, "").replace(ALEFS, "")
+        .replace('ة', 'ه').replace('ى', 'ي').replace('ؤ', 'و').replace('ئ', 'ي').replace(Regex("\\s+"), " ").trim()
+
+    @Volatile private var index: List<String>? = null
+
+    suspend fun search(context: Context, query: String, limit: Int = 300): List<QAyah> = withContext(Dispatchers.Default) {
+        val q = normalize(query)
+        if (q.length < 2) return@withContext emptyList()
+        val ayahs = QuranData.ensureLoaded(context)
+        val idx = index ?: ayahs.map { normalize(it.text) }.also { index = it }
+        val out = ArrayList<QAyah>()
+        for (i in ayahs.indices) {
+            if (idx[i].contains(q)) {
+                out.add(ayahs[i])
+                if (out.size >= limit) break
+            }
+        }
+        out
+    }
+}
+
+data class Hadith(val number: Int, val chapter: Int, val text: String)
+data class HadithBook(val id: String, val title: String, val author: String, val chapters: List<Pair<Int, String>>, val hadiths: List<Hadith>)
+data class HadithBookInfo(val id: String, val title: String, val author: String, val count: Int, val sizeMb: String, val bundled: Boolean = false)
+
+object Hadiths {
+    private const val BASE = "https://github.com/ahmed197113/-/releases/download/salawat-hadith-v1/"
+
+    val BOOKS = listOf(
+        HadithBookInfo("nawawi40", "الأربعون النووية", "الإمام النووي", 42, "", bundled = true),
+        HadithBookInfo("qudsi40", "الأربعون القدسية", "", 40, "", bundled = true),
+        HadithBookInfo("riyad_assalihin", "رياض الصالحين", "الإمام النووي", 1896, "٠٫٢"),
+        HadithBookInfo("bukhari", "صحيح البخاري", "الإمام البخاري", 7277, "١٫٤"),
+        HadithBookInfo("muslim", "صحيح مسلم", "الإمام مسلم", 7459, "١٫١"),
+        HadithBookInfo("abudawud", "سنن أبي داود", "الإمام أبو داود", 5276, "٠٫٩"),
+        HadithBookInfo("tirmidhi", "جامع الترمذي", "الإمام الترمذي", 4053, "٠٫٩"),
+        HadithBookInfo("nasai", "سنن النسائي", "الإمام النسائي", 5768, "٠٫٧"),
+        HadithBookInfo("ibnmajah", "سنن ابن ماجه", "الإمام ابن ماجه", 4345, "٠٫٦"),
+        HadithBookInfo("malik", "موطأ مالك", "الإمام مالك", 1860, "٠٫٣"),
+        HadithBookInfo("ahmed", "مسند أحمد", "الإمام أحمد", 1374, "٠٫٢"),
+        HadithBookInfo("darimi", "سنن الدارمي", "الإمام الدارمي", 3406, "٠٫٤"),
+        HadithBookInfo("bulugh_almaram", "بلوغ المرام", "ابن حجر العسقلاني", 1767, "٠٫٣"),
+        HadithBookInfo("aladab_almufrad", "الأدب المفرد", "الإمام البخاري", 1326, "٠٫٢"),
+        HadithBookInfo("shamail_muhammadiyah", "الشمائل المحمدية", "الإمام الترمذي", 402, "٠٫١"),
+        HadithBookInfo("mishkat_almasabih", "مشكاة المصابيح", "التبريزي", 4428, "٠٫٥")
+    )
+
+    private fun file(context: Context, id: String) = File(File(context.filesDir, "hadith"), "$id.json.gz")
+
+    fun isAvailable(context: Context, info: HadithBookInfo) = info.bundled || file(context, info.id).exists()
+
+    suspend fun download(context: Context, info: HadithBookInfo, onProgress: (Int) -> Unit) =
+        Net.download(BASE + "${info.id}.json.gz", file(context, info.id), onProgress)
+
+    fun delete(context: Context, info: HadithBookInfo) {
+        file(context, info.id).delete()
+    }
+
+    @Volatile private var memo: HadithBook? = null
+
+    suspend fun load(context: Context, info: HadithBookInfo): HadithBook = withContext(Dispatchers.IO) {
+        memo?.takeIf { it.id == info.id }?.let { return@withContext it }
+        val text = if (info.bundled) {
+            context.assets.open("hadith_${info.id}.json").bufferedReader().use { it.readText() }
+        } else {
+            GZIPInputStream(file(context, info.id).inputStream()).bufferedReader().use { it.readText() }
+        }
+        parse(info.id, text).also { memo = it }
+    }
+
+    private fun parse(id: String, text: String): HadithBook {
+        val o = JSONObject(text)
+        val c = o.getJSONArray("c")
+        val chapters = (0 until c.length()).map { i -> c.getJSONArray(i).let { it.getInt(0) to it.getString(1) } }
+        val h = o.getJSONArray("h")
+        val hadiths = (0 until h.length()).map { i -> h.getJSONArray(i).let { Hadith(it.optInt(0), it.optInt(1), it.getString(2)) } }
+        return HadithBook(id, o.optString("t"), o.optString("a"), chapters, hadiths)
+    }
+
+    /** A hadith for today from the bundled Nawawi/Qudsi collections (changes daily). */
+    suspend fun ofTheDay(context: Context): Pair<String, Hadith> {
+        val books = BOOKS.filter { it.bundled }
+        val day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        val info = books[day % books.size]
+        val book = load(context, info)
+        return info.title to book.hadiths[day % book.hadiths.size]
+    }
+}

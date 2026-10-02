@@ -66,6 +66,7 @@ object PrayerScheduler {
     /** Refreshes everything that depends on prayer times. */
     fun refreshDependents(context: Context) {
         schedule(context)
+        Reminders.schedule(context)
         NextPrayerWidget.updateAll(context)
     }
 }
@@ -98,6 +99,7 @@ fun postPrayerNotification(context: Context, prayer: Prayer) {
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setCategory(NotificationCompat.CATEGORY_REMINDER)
         .setContentIntent(openApp)
+        .addAction(0, context.getString(R.string.tracker_prayed_action), prayedPendingIntent(context, prayer, 3000 + prayer.ordinal))
         .setAutoCancel(true)
         .build()
     Notifications.notify(context, 3000 + prayer.ordinal, notification)

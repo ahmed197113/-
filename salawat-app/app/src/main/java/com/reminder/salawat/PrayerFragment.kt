@@ -82,8 +82,14 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
             row.iconPrayer.setImageResource(if (prayer in DAY_PRAYERS) R.drawable.ic_sun else R.drawable.ic_moon)
             if (prayer.isSalah) {
                 row.btnPrayerBell.setOnClickListener { toggleBell(prayer) }
+                row.btnPrayerDone.setOnClickListener {
+                    val day = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, dayOffset) }
+                    PrayerTracker.toggle(requireContext(), day, prayer)
+                    render()
+                }
             } else {
                 row.btnPrayerBell.visibility = View.INVISIBLE
+                row.btnPrayerDone.visibility = View.INVISIBLE
             }
             rows[prayer] = row
         }
@@ -216,7 +222,7 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
         b.textPrayerPlace.text = PrayerRepository.placeLabel(context) ?: getString(R.string.home_place_unknown)
 
         val timings = if (configured) PrayerRepository.dayTimings(context, day) else null
-        b.textDayHijri.text = timings?.hijriDate?.takeIf { it.isNotBlank() } ?: if (dayOffset == 0) HijriDate.today() else ""
+        b.textDayHijri.text = HijriDate.format(HijriDate.of(context, day))
         if (configured && timings == null && viewModel.loading.value != true && viewModel.error.value == null) {
             b.textPrayerError.text = getString(R.string.prayer_no_day_data)
             b.textPrayerError.visibility = View.VISIBLE
@@ -241,12 +247,17 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
             row.textPrayerName.setTextColor(textColor)
             row.textPrayerTime.setTextColor(textColor)
             if (prayer.isSalah) {
+                val done = PrayerTracker.isDone(context, day, prayer)
+                row.btnPrayerDone.visibility = if (dayOffset <= 0) View.VISIBLE else View.INVISIBLE
+                row.btnPrayerDone.alpha = if (done) 1f else 0.3f
+                row.btnPrayerDone.setBackgroundResource(if (done) R.drawable.bg_icon_circle else 0)
                 val on = alertsOn && PrayerRepository.isAlertEnabled(context, prayer)
                 row.btnPrayerBell.setImageResource(if (on) R.drawable.ic_bell else R.drawable.ic_bell_off)
                 row.btnPrayerBell.alpha = if (on) 1f else 0.45f
             }
         }
 
+        renderExtraTimes(timings)
         rowPlace?.let { Ui.setValue(it, PrayerRepository.placeLabel(context) ?: getString(R.string.home_place_unknown)) }
         rowMethod?.let { Ui.setValue(it, Ui.methodLabel(context)) }
         rowAdhan?.let { Ui.setValue(it, Ui.adhanLabel(context)) }
@@ -254,6 +265,33 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
             it.switchSetting.isChecked = alertsOn
             val count = Prayer.values().count { p -> PrayerRepository.isAlertEnabled(context, p) }
             Ui.setValue(it, if (alertsOn) getString(R.string.settings_prayer_alerts_on, count) else getString(R.string.settings_off))
+        }
+    }
+
+    private fun renderExtraTimes(timings: DayTimings?) {
+        val b = _binding ?: return
+        val context = b.root.context
+        b.titleExtraTimes.visibility = if (timings == null) View.GONE else View.VISIBLE
+        b.cardExtraTimes.visibility = if (timings == null) View.GONE else View.VISIBLE
+        val list = b.listExtraTimes
+        list.removeAllViews()
+        if (timings == null) return
+        fun shift(hhmm: String?, minutes: Int): String? {
+            val parts = hhmm?.split(":") ?: return null
+            val total = ((parts[0].toIntOrNull() ?: return null) * 60 + (parts.getOrNull(1)?.toIntOrNull() ?: 0) + minutes + 1440) % 1440
+            return Prefs.formatMinutes(total)
+        }
+        timings.extras["Imsak"]?.let { Ui.row(list, R.drawable.ic_moon, getString(R.string.time_imsak), Ui.time(context, it)) {} }
+        val duhaFrom = shift(timings.times[Prayer.SUNRISE], 15)
+        val duhaTo = shift(timings.times[Prayer.DHUHR], -10)
+        if (duhaFrom != null && duhaTo != null) {
+            Ui.row(list, R.drawable.ic_sun, getString(R.string.time_duha),
+                getString(R.string.time_duha_value, Ui.time(context, duhaFrom), Ui.time(context, duhaTo))) {}
+        }
+        timings.extras["Midnight"]?.let { Ui.row(list, R.drawable.ic_moon, getString(R.string.time_midnight), Ui.time(context, it)) {} }
+        timings.extras["Lastthird"]?.let { Ui.row(list, R.drawable.ic_star, getString(R.string.time_last_third), Ui.time(context, it)) {} }
+        for (i in 0 until list.childCount) {
+            list.getChildAt(i).findViewById<View>(R.id.chevronSetting)?.visibility = View.GONE
         }
     }
 

@@ -142,6 +142,9 @@ class QuranFragment : Fragment(R.layout.fragment_quran) {
             b.cardBookmark.isEnabled = ayah != null
             b.cardBookmark.setOnClickListener { ayah?.let { openPage(it.page, it.global) } }
 
+            bindKhatma(b, context)
+            b.btnQuranSearch.setOnClickListener { startActivity(Intent(context, QuranSearchActivity::class.java)) }
+
             b.toggleList.clearOnButtonCheckedListeners()
             b.toggleList.check(if (showJuz) R.id.btnListJuz else R.id.btnListSurahs)
             b.toggleList.addOnButtonCheckedListener { _, id, checked ->
@@ -153,6 +156,42 @@ class QuranFragment : Fragment(R.layout.fragment_quran) {
                 }
             }
         }
+    }
+
+    private fun bindKhatma(b: HeaderQuranBinding, context: Context) {
+        val status = Khatma.status(context)
+        if (status == null) {
+            b.textKhatmaTitle.setText(R.string.khatma_start)
+            b.textKhatma.setText(R.string.khatma_start_desc)
+            b.progressKhatma.visibility = View.GONE
+            b.cardKhatma.setOnClickListener { chooseKhatmaDays() }
+            return
+        }
+        b.textKhatmaTitle.text = "${getString(R.string.khatma_title)} — ${getString(R.string.khatma_progress, QuranData.toArabicDigits(status.percent))}"
+        b.textKhatma.text = Khatma.todayText(context)
+        b.progressKhatma.visibility = View.VISIBLE
+        b.progressKhatma.setProgressCompat(status.percent, false)
+        b.cardKhatma.setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(context)
+                .setTitle(R.string.khatma_title)
+                .setMessage(Khatma.todayText(context))
+                .setPositiveButton(R.string.khatma_read_today) { _, _ -> openPage(status.todayFrom.coerceAtLeast(status.currentPage.coerceAtMost(status.todayTo))) }
+                .setNegativeButton(R.string.khatma_stop) { _, _ -> Khatma.stop(context); adapter.notifyItemChanged(0) }
+                .show()
+        }
+    }
+
+    private fun chooseKhatmaDays() {
+        val context = requireContext()
+        val options = intArrayOf(7, 10, 15, 20, 30, 40, 60)
+        androidx.appcompat.app.AlertDialog.Builder(context)
+            .setTitle(R.string.khatma_choose_days)
+            .setItems(options.map { getString(R.string.khatma_days, QuranData.toArabicDigits(it)) }.toTypedArray()) { _, which ->
+                Khatma.start(context, options[which])
+                Reminders.setOn(context, ReminderType.WIRD, true)
+                adapter.notifyItemChanged(0)
+            }
+            .show()
     }
 
     private class HeaderHolder(val b: HeaderQuranBinding) : RecyclerView.ViewHolder(b.root)

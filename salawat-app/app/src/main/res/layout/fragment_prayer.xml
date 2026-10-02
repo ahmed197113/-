@@ -135,6 +135,23 @@
                     android:gravity="center"
                     android:text="@string/prayer_bell_hint" />
 
+                <TextView
+                    android:id="@+id/titleExtraTimes"
+                    style="@style/SectionTitle"
+                    android:text="@string/prayer_extra_times" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardExtraTimes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:id="@+id/listExtraTimes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </com.google.android.material.card.MaterialCardView>
+
                 <LinearLayout
                     android:id="@+id/layoutPrayerEmpty"
                     android:layout_width="match_parent"

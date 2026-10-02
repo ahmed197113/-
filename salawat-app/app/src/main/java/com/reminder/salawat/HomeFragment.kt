@@ -26,6 +26,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private val binding get() = _binding!!
     private val chips = LinkedHashMap<Prayer, ItemPrayerChipBinding>()
     private var reminderListener: CompoundButton.OnCheckedChangeListener? = null
+    private val myPrayerChips = LinkedHashMap<Prayer, com.google.android.material.button.MaterialButton>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentHomeBinding.bind(view)
@@ -48,11 +49,37 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.cardContinue.setOnClickListener { startActivity(Intent(host, QuranPagerActivity::class.java)) }
 
         binding.tileQuran.setOnClickListener { startActivity(Intent(host, QuranPagerActivity::class.java)) }
+        binding.tileHadith.setOnClickListener { startActivity(Intent(host, HadithBooksActivity::class.java)) }
         binding.tileAzkar.setOnClickListener { host.select(MainActivity.TAB_AZKAR) }
         binding.tileTasbih.setOnClickListener { startActivity(Intent(host, TasbihActivity::class.java)) }
         binding.tileQibla.setOnClickListener { startActivity(Intent(host, QiblaActivity::class.java)) }
-        binding.tileAdhan.setOnClickListener { startActivity(Intent(host, AdhanSettingsActivity::class.java)) }
-        binding.tileSettings.setOnClickListener { startActivity(Intent(host, SettingsActivity::class.java)) }
+        binding.tileCalendar.setOnClickListener { startActivity(Intent(host, CalendarActivity::class.java)) }
+        binding.tileTracker.setOnClickListener { startActivity(Intent(host, TrackerActivity::class.java)) }
+        binding.tileNames.setOnClickListener { startActivity(Intent(host, NamesActivity::class.java)) }
+        binding.tileAll.setOnClickListener { host.select(MainActivity.TAB_MORE) }
+        binding.cardMyPrayers.setOnClickListener { startActivity(Intent(host, TrackerActivity::class.java)) }
+        binding.cardOccasion.setOnClickListener { startActivity(Intent(host, CalendarActivity::class.java)) }
+        for (prayer in PrayerTracker.SALAH) {
+            val chip = com.google.android.material.button.MaterialButton(
+                view.context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle
+            ).apply {
+                text = getString(prayer.nameRes)
+                textSize = 12f
+                minWidth = 0
+                minimumWidth = 0
+                setPadding(0, 0, 0, 0)
+                insetTop = 0
+                insetBottom = 0
+                setOnClickListener {
+                    PrayerTracker.toggle(context, Calendar.getInstance(), prayer)
+                    renderMyPrayers()
+                }
+            }
+            val lp = android.widget.LinearLayout.LayoutParams(0, (44 * resources.displayMetrics.density).toInt(), 1f)
+            lp.marginStart = 3; lp.marginEnd = 3
+            binding.rowMyPrayers.addView(chip, lp)
+            myPrayerChips[prayer] = chip
+        }
 
         binding.cardReminder.setOnClickListener { binding.switchReminder.toggle() }
         reminderListener = CompoundButton.OnCheckedChangeListener { _, checked -> setReminder(host, checked) }
@@ -60,6 +87,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
 
         val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
         binding.textDhikrOfDay.text = DAILY_DHIKR[dayOfYear % DAILY_DHIKR.size]
+        renderDaily()
 
         // Live countdown to the next prayer while the screen is visible.
         viewLifecycleOwner.lifecycleScope.launch {
@@ -81,6 +109,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     override fun onDestroyView() {
         super.onDestroyView()
         chips.clear()
+        myPrayerChips.clear()
         _binding = null
     }
 
@@ -101,7 +130,9 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun renderStatic() {
         val b = _binding ?: return
         val context = b.root.context
-        b.textHijri.text = HijriDate.today()
+        b.textHijri.text = HijriDate.today(context)
+        renderMyPrayers()
+        renderOccasion()
         b.textGregorian.text = SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar")).format(Date())
         b.textPlace.text = PrayerRepository.placeLabel(context) ?: getString(R.string.home_place_unknown)
 
@@ -125,6 +156,90 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
     }
 
+    private fun renderMyPrayers() {
+        val b = _binding ?: return
+        val context = b.root.context
+        val today = Calendar.getInstance()
+        myPrayerChips.forEach { (prayer, chip) ->
+            val done = PrayerTracker.isDone(context, today, prayer)
+            chip.setBackgroundColor(ContextCompat.getColor(context, if (done) R.color.teal_primary else android.R.color.transparent))
+            chip.setTextColor(ContextCompat.getColor(context, if (done) R.color.on_brand else R.color.accent_text))
+            chip.icon = if (done) ContextCompat.getDrawable(context, R.drawable.ic_check) else null
+            chip.iconTint = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(context, R.color.on_brand))
+            chip.iconPadding = 0
+        }
+        b.textMyPrayers.text = getString(
+            R.string.home_my_prayers_value,
+            QuranData.toArabicDigits(PrayerTracker.countForDay(context, today)),
+            QuranData.toArabicDigits(PrayerTracker.streak(context))
+        )
+    }
+
+    private fun renderOccasion() {
+        val b = _binding ?: return
+        val context = b.root.context
+        val today = Calendar.getInstance()
+        val todayEvents = HijriDate.events(HijriDate.of(context, today), today)
+        val tomorrow = Reminders.fastingTomorrow(context, today)
+        val (label, text) = when {
+            todayEvents.isNotEmpty() -> getString(R.string.today_occasion) to todayEvents.joinToString("\n") { "${it.title} — ${it.note}" }
+            tomorrow != null -> getString(R.string.tomorrow_occasion) to tomorrow
+            else -> null to null
+        }
+        b.cardOccasion.visibility = if (text == null) View.GONE else View.VISIBLE
+        b.textOccasionLabel.text = label
+        b.textOccasion.text = text
+    }
+
+    private fun renderRamadan(now: Long) {
+        val b = _binding ?: return
+        val context = b.root.context
+        val today = Calendar.getInstance()
+        val hijri = HijriDate.of(context, today)
+        val day = if (hijri.month == 9) PrayerRepository.today(context) else null
+        if (day == null) {
+            b.cardRamadan.visibility = View.GONE
+            return
+        }
+        b.cardRamadan.visibility = View.VISIBLE
+        b.textRamadanTitle.text = getString(R.string.ramadan_title, QuranData.toArabicDigits(hijri.day))
+        val imsak = day.extras["Imsak"]
+        val iftar = day.times[Prayer.MAGHRIB]
+        b.textRamadanTimes.text = "${getString(R.string.ramadan_imsak)}: ${Ui.time(context, imsak)}   •   ${getString(R.string.ramadan_iftar)}: ${Ui.time(context, iftar)}"
+        val imsakAt = day.millisOfTime(imsak)
+        val iftarAt = day.millisOfTime(iftar)
+        b.textRamadanCountdown.text = when {
+            imsakAt != null && now < imsakAt -> getString(R.string.ramadan_to_imsak, Ui.countdown(imsakAt - now))
+            iftarAt != null && now < iftarAt -> getString(R.string.ramadan_to_iftar, Ui.countdown(iftarAt - now))
+            else -> ""
+        }
+    }
+
+    private fun renderDaily() {
+        val b = _binding ?: return
+        val context = b.root.context
+        val ayahs = QuranData.ensureLoaded(context)
+        val day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR) + Calendar.getInstance().get(Calendar.YEAR) * 366
+        // Prefer short, self-contained ayahs for the card.
+        val candidates = ayahs.filter { it.text.length in 60..220 }
+        val ayah = candidates[(day * 7919) % candidates.size]
+        b.textAyahOfDay.text = "${ayah.text} ﴿${QuranData.toArabicDigits(ayah.ayah)}﴾"
+        b.textAyahOfDayRef.text = "${QuranData.surahName(context, ayah.surah)} • ${getString(R.string.quran_page_number, QuranData.toArabicDigits(ayah.page))}"
+        b.cardAyah.setOnClickListener {
+            startActivity(Intent(context, QuranPagerActivity::class.java)
+                .putExtra(QuranPagerActivity.EXTRA_PAGE, ayah.page)
+                .putExtra(QuranPagerActivity.EXTRA_HIGHLIGHT_GLOBAL, ayah.global))
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            runCatching { Hadiths.ofTheDay(context) }.getOrNull()?.let { (book, h) ->
+                val bb = _binding ?: return@let
+                bb.textHadithOfDay.text = h.text
+                bb.textHadithOfDayRef.text = "$book • ${getString(R.string.hadith_number, QuranData.toArabicDigits(h.number))}"
+            }
+        }
+        b.cardHadith.setOnClickListener { startActivity(Intent(context, HadithBooksActivity::class.java)) }
+    }
+
     private fun renderNext() {
         val b = _binding ?: return
         val context = b.root.context
@@ -134,6 +249,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         b.rowPrayerChips.visibility = if (configured) View.VISIBLE else View.GONE
         if (!configured) return
 
+        renderRamadan(System.currentTimeMillis())
         val next = PrayerRepository.nextPrayer(context)
         if (next == null) {
             b.textNextLabel.text = getString(R.string.prayer_fetch_error_cached)

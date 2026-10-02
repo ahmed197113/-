@@ -7,6 +7,7 @@ import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlinx.coroutines.ensureActive
 
 object Net {
     private const val ATTEMPTS = 3
@@ -38,7 +39,61 @@ object Net {
             connection.disconnect()
         }
     }
+
+    /** Downloads [url] to [target] (via a temp file), following redirects across hosts; reports 0..100. */
+    suspend fun download(url: String, target: File, onProgress: (Int) -> Unit) = withContext(Dispatchers.IO) {
+        target.parentFile?.mkdirs()
+        val tmp = File(target.parentFile, target.name + ".part")
+        var connection = URL(url).openConnection() as HttpURLConnection
+        var redirects = 0
+        // HttpURLConnection does not follow redirects that change host on some versions; do it by hand.
+        while (true) {
+            connection.connectTimeout = 20_000
+            connection.readTimeout = 30_000
+            connection.instanceFollowRedirects = false
+            val code = connection.responseCode
+            if (code in 300..399 && redirects < 6) {
+                val location = connection.getHeaderField("Location") ?: throw IOException("redirect without location")
+                connection.disconnect()
+                connection = URL(URL(url), location).openConnection() as HttpURLConnection
+                redirects++
+                continue
+            }
+            if (code != 200) throw IOException("HTTP $code")
+            break
+        }
+        try {
+            val total = connection.contentLengthLong
+            connection.inputStream.use { input ->
+                tmp.outputStream().use { output ->
+                    val buffer = ByteArray(16 * 1024)
+                    var done = 0L
+                    var lastPercent = -1
+                    while (true) {
+                        ensureActive()
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        done += read
+                        if (total > 0) {
+                            val percent = (done * 100 / total).toInt()
+                            if (percent != lastPercent) {
+                                lastPercent = percent
+                                withContext(Dispatchers.Main) { onProgress(percent) }
+                            }
+                        }
+                    }
+                }
+            }
+            if (tmp.length() < 10_000) throw IOException("file too small")
+            if (!tmp.renameTo(target)) throw IOException("rename failed")
+        } finally {
+            connection.disconnect()
+            tmp.delete()
+        }
+    }
 }
+
 
 fun String.stripBom(): String = trimStart('﻿')
 

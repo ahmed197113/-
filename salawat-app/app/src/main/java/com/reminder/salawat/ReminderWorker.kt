@@ -33,7 +33,7 @@ class ReminderWorker(context: Context, params: WorkerParameters) : Worker(contex
         )
         val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_REMINDER)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(context.getString(R.string.title_main))
+            .setContentTitle(context.getString(R.string.reminder_notif_title))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -72,6 +72,7 @@ object Notifications {
     const val CHANNEL_REMINDER = "salawat_reminder_channel"
     const val CHANNEL_PRAYER = "prayer_times_channel"
     const val CHANNEL_ADHAN = "adhan_playback_channel"
+    const val CHANNEL_REMINDERS = "daily_reminders_channel"
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -93,7 +94,10 @@ object Notifications {
             setSound(null, null)
             enableVibration(true)
         }
-        manager.createNotificationChannels(listOf(reminder, prayer, adhan))
+        val daily = android.app.NotificationChannel(
+            CHANNEL_REMINDERS, context.getString(R.string.rem_channel_name), android.app.NotificationManager.IMPORTANCE_DEFAULT
+        ).apply { description = context.getString(R.string.rem_channel_desc) }
+        manager.createNotificationChannels(listOf(reminder, prayer, adhan, daily))
     }
 
     fun canPost(context: Context): Boolean =

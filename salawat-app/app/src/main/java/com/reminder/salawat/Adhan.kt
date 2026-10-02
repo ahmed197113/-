@@ -94,7 +94,7 @@ object AdhanCatalog {
         var last: Exception? = null
         for (url in urls) {
             try {
-                downloadTo(url, target, onProgress)
+                Net.download(url, target, onProgress)
                 return@withContext
             } catch (e: Exception) {
                 ensureActive()
@@ -102,58 +102,6 @@ object AdhanCatalog {
             }
         }
         throw last ?: IOException("download failed")
-    }
-
-    private suspend fun downloadTo(url: String, target: File, onProgress: (Int) -> Unit) = withContext(Dispatchers.IO) {
-        target.parentFile?.mkdirs()
-        val tmp = File(target.parentFile, target.name + ".part")
-        var connection = URL(url).openConnection() as HttpURLConnection
-        var redirects = 0
-        // HttpURLConnection does not follow redirects that change host on some versions; do it by hand.
-        while (true) {
-            connection.connectTimeout = 20_000
-            connection.readTimeout = 30_000
-            connection.instanceFollowRedirects = false
-            val code = connection.responseCode
-            if (code in 300..399 && redirects < 6) {
-                val location = connection.getHeaderField("Location") ?: throw IOException("redirect without location")
-                connection.disconnect()
-                connection = URL(URL(url), location).openConnection() as HttpURLConnection
-                redirects++
-                continue
-            }
-            if (code != 200) throw IOException("HTTP $code")
-            break
-        }
-        try {
-            val total = connection.contentLengthLong
-            connection.inputStream.use { input ->
-                tmp.outputStream().use { output ->
-                    val buffer = ByteArray(16 * 1024)
-                    var done = 0L
-                    var lastPercent = -1
-                    while (true) {
-                        ensureActive()
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        done += read
-                        if (total > 0) {
-                            val percent = (done * 100 / total).toInt()
-                            if (percent != lastPercent) {
-                                lastPercent = percent
-                                withContext(Dispatchers.Main) { onProgress(percent) }
-                            }
-                        }
-                    }
-                }
-            }
-            if (tmp.length() < 10_000) throw IOException("file too small")
-            if (!tmp.renameTo(target)) throw IOException("rename failed")
-        } finally {
-            connection.disconnect()
-            tmp.delete()
-        }
     }
 }
 
@@ -248,6 +196,7 @@ class AdhanService : Service() {
                 .setContentIntent(openApp)
                 .setDeleteIntent(stopIntent)
                 .addAction(0, context.getString(R.string.adhan_stop), stopIntent)
+                .addAction(0, context.getString(R.string.tracker_prayed_action), prayedPendingIntent(context, prayer, NOTIFICATION_ID))
                 .setAutoCancel(true)
                 .build()
         }

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">صلِّ على محمد</string>
-    <string name="title_main">صلِّ على محمد ﷺ</string>
+    <string name="app_name">رفيق المسلم</string>
+    <string name="title_main">رفيق المسلم</string>
+    <string name="reminder_notif_title">صلِّ على محمد ﷺ</string>
     <string name="subtitle_main">تذكير لطيف بالصلاة على النبي ﷺ</string>
     <string name="switch_label">تفعيل التذكير</string>
     <string name="status_off">التذكير متوقف</string>
@@ -195,7 +196,7 @@
     <string name="next_day">اليوم التالي</string>
     <string name="today">اليوم</string>
     <string name="prayer_bell_desc">تشغيل أو إيقاف أذان هذه الصلاة</string>
-    <string name="prayer_bell_hint">اضغط على الجرس لتشغيل أو إيقاف الأذان لكل صلاة • اسحب للأسفل للتحديث</string>
+    <string name="prayer_bell_hint">✓ لتسجيل أداء الصلاة • 🔔 لتشغيل أو إيقاف أذانها • اسحب للأسفل للتحديث</string>
     <string name="prayer_next_badge">القادمة • بعد %1$s</string>
     <string name="prayer_empty_title">لم يتم تحديد موقعك بعد</string>
     <string name="prayer_empty_text">نحتاج موقعك أو اسم مدينتك لحساب المواقيت بدقة</string>
@@ -245,10 +246,10 @@
     <string name="more_settings_desc">الموقع والتنبيهات والمظهر</string>
     <string name="more_share">مشاركة التطبيق</string>
     <string name="more_share_desc">انشر الخير وكن سبباً في الصلاة على النبي ﷺ</string>
-    <string name="more_share_text">تطبيق «صلِّ على محمد» — تذكير بالصلاة على النبي ﷺ، مواقيت الصلاة والأذان، المصحف والأذكار</string>
+    <string name="more_share_text">تطبيق «رفيق المسلم» — مواقيت الصلاة والأذان، المصحف بالتفسير والتلاوة، الأحاديث، الأذكار، القبلة، التقويم الهجري والمزيد</string>
     <string name="more_about">عن التطبيق</string>
     <string name="more_about_desc">الإصدار %1$s</string>
-    <string name="about_text">صلِّ على محمد ﷺ\n\nالمصادر:\n• نص القرآن: مشروع Tanzil (الرسم العثماني) عبر alquran.cloud\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• المواقيت: Aladhan API\n• الخطوط: Amiri Quran و Tajawal (رخصة OFL)</string>
+    <string name="about_text">رفيق المسلم\n\nالمصادر:\n• نص القرآن: مشروع Tanzil (الرسم العثماني) عبر alquran.cloud\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• الأحاديث: sunnah.com عبر مشروع hadith-json\n• المواقيت: Aladhan API\n• الخطوط: Amiri Quran و Tajawal (رخصة OFL)</string>
 
     <!-- Tasbih -->
     <string name="tasbih_total">المجموع الكلي لهذا الذكر: %1$d</string>
@@ -273,7 +274,7 @@
     <string name="quran_page_short">ص %1$s</string>
 
     <!-- Onboarding -->
-    <string name="onboarding_welcome">رفيقك اليومي للصلاة على النبي ﷺ والعبادة</string>
+    <string name="onboarding_welcome">كل ما يحتاجه المسلم في يومه — في تطبيق واحد</string>
     <string name="onboarding_features">🕌  مواقيت الصلاة مع أذان كامل بصوت مؤذنك المفضل\n📖  المصحف بالصفحات مع التفسير والتلاوة\n🤲  أذكار حصن المسلم والمسبحة\n💚  تذكير لطيف بالصلاة على النبي ﷺ</string>
     <string name="onboarding_location_title">أين تصلي؟</string>
     <string name="onboarding_location_text">حدّد موقعك لنحسب لك مواقيت الصلاة بدقة حسب مدينتك</string>
@@ -284,4 +285,184 @@
     <string name="onboarding_skip">تخطي</string>
     <string name="onboarding_next">التالي</string>
     <string name="onboarding_done">ابدأ</string>
+
+    <!-- v5: tools -->
+    <string name="tool_tracker">سجل الصلوات</string>
+    <string name="tool_tracker_desc">تابع صلواتك اليومية والقضاء</string>
+    <string name="tool_calendar">التقويم الهجري</string>
+    <string name="tool_calendar_desc">الشهور الهجرية والمناسبات وأيام الصيام</string>
+    <string name="tool_hadith">الأحاديث النبوية</string>
+    <string name="tool_hadith_desc">البخاري ومسلم والسنن ورياض الصالحين وغيرها</string>
+    <string name="tool_names">أسماء الله الحسنى</string>
+    <string name="tool_names_desc">الأسماء التسعة والتسعون مع معانيها</string>
+    <string name="tool_ruqyah">الرقية الشرعية</string>
+    <string name="tool_ruqyah_desc">آيات الرقية من القرآن الكريم</string>
+    <string name="tool_zakat">حاسبة الزكاة</string>
+    <string name="tool_zakat_desc">احسب زكاة المال والذهب والفضة</string>
+    <string name="tool_search">البحث في القرآن</string>
+    <string name="tool_search_desc">ابحث عن أي كلمة في القرآن الكريم</string>
+    <string name="tool_mosques">المساجد القريبة</string>
+    <string name="tool_mosques_desc">اعرض المساجد حولك على الخريطة</string>
+    <string name="tool_reminders">التذكيرات</string>
+    <string name="tool_reminders_desc">الأذكار وسورة الكهف والورد والصيام</string>
+    <string name="tool_all">كل الأدوات</string>
+    <string name="section_worship">العبادات</string>
+    <string name="section_quran_sunnah">القرآن والسنة</string>
+    <string name="section_tools">أدوات</string>
+    <string name="no_maps_app">لا يوجد تطبيق خرائط على الهاتف</string>
+
+    <!-- Home extras -->
+    <string name="home_my_prayers">صلواتي اليوم</string>
+    <string name="home_my_prayers_value">%1$s من ٥ • سلسلة الالتزام: %2$s يوم</string>
+    <string name="ayah_of_day">آية اليوم</string>
+    <string name="hadith_of_day">حديث اليوم</string>
+    <string name="today_occasion">مناسبة اليوم</string>
+    <string name="tomorrow_occasion">غداً</string>
+    <string name="ramadan_title">رمضان كريم — اليوم %1$s</string>
+    <string name="ramadan_imsak">الإمساك</string>
+    <string name="ramadan_iftar">الإفطار</string>
+    <string name="ramadan_to_iftar">متبقٍ على الإفطار %1$s</string>
+    <string name="ramadan_to_imsak">متبقٍ على الإمساك %1$s</string>
+    <string name="tile_hadith">الأحاديث</string>
+    <string name="tile_calendar">التقويم</string>
+    <string name="tile_tracker">صلواتي</string>
+    <string name="tile_names">الأسماء الحسنى</string>
+
+    <!-- Prayer extras -->
+    <string name="prayer_extra_times">أوقات أخرى</string>
+    <string name="time_imsak">الإمساك</string>
+    <string name="time_duha">الضحى</string>
+    <string name="time_midnight">منتصف الليل</string>
+    <string name="time_last_third">الثلث الأخير من الليل</string>
+    <string name="time_duha_value">%1$s إلى %2$s</string>
+    <string name="prayer_done_desc">تسجيل أداء الصلاة</string>
+    <string name="tracker_prayed_action">صلّيت ✓</string>
+
+    <!-- Tracker -->
+    <string name="tracker_today">صلوات اليوم</string>
+    <string name="tracker_week">آخر ٧ أيام</string>
+    <string name="tracker_stats">الإحصائيات</string>
+    <string name="tracker_streak">سلسلة الالتزام</string>
+    <string name="tracker_streak_value">%1$s يوم</string>
+    <string name="tracker_7days">آخر ٧ أيام</string>
+    <string name="tracker_30days">آخر ٣٠ يوماً</string>
+    <string name="tracker_qada">صلوات القضاء</string>
+    <string name="tracker_qada_hint">سجّل الصلوات الفائتة وانقص منها كلما قضيت صلاة</string>
+    <string name="tracker_hint">اضغط على الصلاة لتسجيلها — ويمكنك التسجيل من إشعار الأذان مباشرة</string>
+
+    <!-- Calendar -->
+    <string name="calendar_events">مناسبات الشهر</string>
+    <string name="calendar_no_events">لا مناسبات في هذا الشهر</string>
+    <string name="calendar_day_events">%1$s</string>
+    <string name="calendar_today">اليوم</string>
+    <string name="calendar_hint">التاريخ الهجري حسب تقويم أم القرى — يمكن تعديله ±يومين من الإعدادات حسب الرؤية في بلدك</string>
+
+    <!-- Hadith -->
+    <string name="hadith_books">كتب الحديث</string>
+    <string name="hadith_count">%1$s حديث</string>
+    <string name="hadith_download">تحميل (%1$s ميجا)</string>
+    <string name="hadith_bundled">متوفر بدون إنترنت</string>
+    <string name="hadith_downloaded">محمّل ✓</string>
+    <string name="hadith_downloading">جاري التحميل… %1$d٪</string>
+    <string name="hadith_download_failed">تعذّر التحميل — تأكد من الاتصال بالإنترنت</string>
+    <string name="hadith_search_hint">ابحث في الأحاديث…</string>
+    <string name="hadith_number">حديث رقم %1$s</string>
+    <string name="hadith_copy">نسخ</string>
+    <string name="hadith_copied">تم النسخ</string>
+    <string name="hadith_delete">حذف الكتاب من الجهاز</string>
+    <string name="hadith_loading">جاري فتح الكتاب…</string>
+
+    <!-- Names -->
+    <string name="names_intro">«إن لله تسعة وتسعين اسماً، مائة إلا واحداً، من أحصاها دخل الجنة» — متفق عليه</string>
+
+    <!-- Ruqyah -->
+    <string name="ruqyah_intro">آيات يُرقى بها من القرآن الكريم، مع المعوذات. اقرأها بيقين وتدبّر، وانفث على نفسك أو على المريض</string>
+    <string name="ruqyah_passage">%1$s: الآيات %2$s–%3$s</string>
+    <string name="ruqyah_passage_one">%1$s: الآية %2$s</string>
+    <string name="ruqyah_open">فتح في المصحف</string>
+
+    <!-- Zakat -->
+    <string name="zakat_intro">أدخل ما تملكه مما حال عليه الحول (سنة هجرية). تُحسب الزكاة بنسبة ٢٫٥٪ إذا بلغ المال النصاب</string>
+    <string name="zakat_gold_price">سعر جرام الذهب عيار ٢٤ (بعملتك)</string>
+    <string name="zakat_silver_price">سعر جرام الفضة (اختياري)</string>
+    <string name="zakat_cash">النقود والمدخرات والحسابات</string>
+    <string name="zakat_gold_24">ذهب عيار ٢٤ (جرام)</string>
+    <string name="zakat_gold_21">ذهب عيار ٢١ (جرام)</string>
+    <string name="zakat_gold_18">ذهب عيار ١٨ (جرام)</string>
+    <string name="zakat_silver">فضة (جرام)</string>
+    <string name="zakat_trade">قيمة عروض التجارة</string>
+    <string name="zakat_receivables">ديون لك مرجوّة السداد</string>
+    <string name="zakat_debts">ديون عليك حالّة</string>
+    <string name="zakat_calculate">احسب الزكاة</string>
+    <string name="zakat_total">إجمالي المال الزكوي: %1$s</string>
+    <string name="zakat_nisab">النصاب (٨٥ جرام ذهب): %1$s</string>
+    <string name="zakat_due">الزكاة الواجبة: %1$s</string>
+    <string name="zakat_not_due">لم يبلغ مالك النصاب — لا زكاة عليك</string>
+    <string name="zakat_need_price">أدخل سعر جرام الذهب لحساب النصاب</string>
+    <string name="zakat_fitr_title">زكاة الفطر</string>
+    <string name="zakat_fitr_text">صاع من غالب قوت البلد (حوالي ٢٫٥–٣ كجم) عن كل فرد، تُخرج قبل صلاة العيد</string>
+    <string name="zakat_note">هذه الحاسبة للتيسير، وللحالات الخاصة يُرجع إلى أهل العلم</string>
+
+    <!-- Quran search -->
+    <string name="search_hint">اكتب كلمة أو جزءاً من آية…</string>
+    <string name="search_results">%1$s نتيجة</string>
+    <string name="search_empty">لا نتائج — جرّب كلمة أخرى</string>
+    <string name="search_ref">%1$s • الآية %2$s • صفحة %3$s</string>
+
+    <!-- Khatma -->
+    <string name="khatma_title">ختمة القرآن</string>
+    <string name="khatma_start">ابدأ ختمة جديدة</string>
+    <string name="khatma_start_desc">نقسّم المصحف على الأيام ونذكّرك بوردك اليومي</string>
+    <string name="khatma_choose_days">أتمّ الختمة خلال</string>
+    <string name="khatma_days">%1$s يوماً</string>
+    <string name="khatma_today">اليوم %1$s من %2$s — اقرأ من صفحة %3$s إلى %4$s</string>
+    <string name="khatma_progress">أنجزت %1$s٪</string>
+    <string name="khatma_read_today">اقرأ ورد اليوم</string>
+    <string name="khatma_stop">إنهاء الختمة</string>
+
+    <!-- Reminders -->
+    <string name="rem_channel_name">التذكيرات اليومية</string>
+    <string name="rem_channel_desc">أذكار الصباح والمساء وسورة الكهف والورد والصيام</string>
+    <string name="rem_morning">أذكار الصباح</string>
+    <string name="rem_morning_desc">تذكير يومي بأذكار الصباح</string>
+    <string name="rem_morning_text">حان وقت أذكار الصباح — حصّن يومك بذكر الله</string>
+    <string name="rem_evening">أذكار المساء</string>
+    <string name="rem_evening_desc">تذكير يومي بأذكار المساء</string>
+    <string name="rem_evening_text">حان وقت أذكار المساء</string>
+    <string name="rem_sleep">أذكار النوم</string>
+    <string name="rem_sleep_desc">تذكير بأذكار النوم قبل نومك</string>
+    <string name="rem_sleep_text">لا تنسَ أذكار النوم وآية الكرسي</string>
+    <string name="rem_kahf">سورة الكهف يوم الجمعة</string>
+    <string name="rem_kahf_desc">كل جمعة: سورة الكهف والإكثار من الصلاة على النبي ﷺ</string>
+    <string name="rem_kahf_text">«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين» — وأكثِر من الصلاة على النبي ﷺ</string>
+    <string name="rem_wird">الورد اليومي من القرآن</string>
+    <string name="rem_wird_desc">تذكير بوردك اليومي وختمتك</string>
+    <string name="rem_wird_text">خصّص وقتاً لوردك من كتاب الله اليوم</string>
+    <string name="rem_fasting">تذكير بصيام السنة</string>
+    <string name="rem_fasting_desc">مساء اليوم السابق للإثنين والخميس والأيام البيض وعرفة وعاشوراء</string>
+    <string name="rem_fasting_title">تذكير: صيام الغد</string>
+    <string name="rem_pre_adhan">تنبيه قبل الأذان</string>
+    <string name="rem_pre_adhan_desc">إشعار قبل دخول وقت الصلاة للاستعداد والوضوء</string>
+    <string name="rem_pre_adhan_title">بقي %1$d دقيقة على أذان %2$s</string>
+    <string name="rem_pre_adhan_text">استعد للصلاة وتوضأ</string>
+    <string name="rem_minutes_before">قبل الأذان بـ %1$d دقيقة</string>
+    <string name="rem_at">الساعة %1$s</string>
+
+    <!-- Settings extras -->
+    <string name="settings_asr">حساب وقت العصر</string>
+    <string-array name="asr_labels">
+        <item>الجمهور (الشافعي والمالكي والحنبلي)</item>
+        <item>الحنفي</item>
+    </string-array>
+    <string name="settings_offsets">تعديل المواقيت يدوياً</string>
+    <string name="settings_offsets_desc">زيادة أو إنقاص دقائق لكل صلاة لتطابق مسجدك</string>
+    <string name="settings_offsets_none">بدون تعديل</string>
+    <string name="settings_offset_value">%1$+d دقيقة</string>
+    <string name="settings_hijri">تعديل التاريخ الهجري</string>
+    <string name="settings_hijri_value">%1$+d يوم</string>
+    <string name="settings_reminders_desc">الأذكار والكهف والورد والصيام وقبل الأذان</string>
+    <string name="done">تم</string>
+    <string name="rem_change_time">تغيير الوقت</string>
+    <string name="rem_change_minutes">تغيير المدة</string>
+    <string name="rem_turn_off">إيقاف التذكير</string>
 </resources>

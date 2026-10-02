@@ -10,5 +10,14 @@
         <activity android:name=".QuranPagerActivity" android:exported="true" tools:replace="android:exported" />
         <activity android:name=".AdhanSettingsActivity" android:exported="true" tools:replace="android:exported" />
         <activity android:name=".QiblaActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".CalendarActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ZakatActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".TrackerActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".RemindersActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".HadithBooksActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".HadithReaderActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".NamesActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".RuqyahActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".QuranSearchActivity" android:exported="true" tools:replace="android:exported" />
     </application>
 </manifest>
