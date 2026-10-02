@@ -103,6 +103,13 @@ class QuranPagerActivity : AppCompatActivity() {
         adapter = PageAdapter(prefs.getFloat(Prefs.KEY_QURAN_FONT, 24f)) { ayah -> showAyahSheet(ayah) }
         binding.pager.adapter = adapter
         binding.pager.offscreenPageLimit = 1
+        binding.pager.post {
+            // page frame margins/padding and the page-number line
+            val chrome = (10 * 2 + 12 + 8 + 40) * resources.displayMetrics.density
+            MushafPageView.maxPageHeight = (binding.pager.height - chrome).toInt()
+            @Suppress("NotifyDataSetChanged")
+            adapter.notifyDataSetChanged()
+        }
 
         val startPage = intent.getIntExtra(EXTRA_PAGE, 0).takeIf { it in 1..QuranData.PAGE_COUNT }
             ?: prefs.getInt(Prefs.KEY_LAST_PAGE, 1)
@@ -128,6 +135,9 @@ class QuranPagerActivity : AppCompatActivity() {
         binding.btnFontSmaller.setOnClickListener { changeFont(-2f) }
         binding.btnFontBigger.setOnClickListener { changeFont(2f) }
         binding.btnReadingMode.setOnClickListener { chooseReadingMode() }
+        val textMode = !MushafMode.isOn(this)
+        binding.btnFontSmaller.visibility = if (textMode) View.VISIBLE else View.GONE
+        binding.btnFontBigger.visibility = if (textMode) View.VISIBLE else View.GONE
         applyReadingMode()
         binding.btnPlayPage.setOnClickListener {
             val page = QuranData.page(this, binding.pager.currentItem + 1)
@@ -347,8 +357,46 @@ class QuranPagerActivity : AppCompatActivity() {
                 holder.binding.textPageText.setTextColor(c.text)
                 holder.binding.textPageNumber.setTextColor(c.pageNumber)
             }
-            holder.binding.textPageText.text = buildPage(page)
             holder.binding.textPageNumber.text = getString(R.string.quran_page_number, QuranData.toArabicDigits(page))
+            bindMushaf(holder, page, position)
+        }
+
+        /**
+         * Madinah Mushaf view when its page font is available; while it downloads (or if it cannot be fetched
+         * offline) the same page is shown as Tanzil text, so reading never waits on the network.
+         */
+        private fun bindMushaf(holder: ViewHolder, page: Int, position: Int) {
+            val b = holder.binding
+            val context = this@QuranPagerActivity
+            val font = if (MushafMode.isOn(context)) MushafFonts.cached(context, page) else null
+            if (font == null) {
+                b.mushafPage.visibility = View.GONE
+                b.textPageText.visibility = View.VISIBLE
+                b.textPageText.text = buildPage(page)
+                if (MushafMode.isOn(context)) {
+                    b.progressMushaf.visibility = View.VISIBLE
+                    lifecycleScope.launch {
+                        val ok = runCatching { MushafFonts.get(context, page) }.isSuccess
+                        b.progressMushaf.visibility = View.GONE
+                        if (ok) notifyItemChanged(position)
+                    }
+                } else b.progressMushaf.visibility = View.GONE
+                return
+            }
+            b.progressMushaf.visibility = View.GONE
+            b.textPageText.visibility = View.GONE
+            b.mushafPage.visibility = View.VISIBLE
+            val c = colors ?: ReadingMode.get(context).colors(context)
+            b.mushafPage.textColor = c.text
+            b.mushafPage.accentColor = c.pageNumber
+            b.mushafPage.goldColor = Themes.color(context, R.color.gold)
+            b.mushafPage.highlightColor = Themes.color(context, R.color.ayah_highlight)
+            b.mushafPage.bind(page, MushafLayout.page(context, page), font)
+            b.mushafPage.highlighted = listOf(selectedGlobal, playingGlobal).filter { it > 0 }
+                .mapNotNull { QuranData.byGlobal(context, it) }.map { it.surah to it.ayah }.toSet()
+            b.mushafPage.onWordClick = { surah, ayah ->
+                QuranData.ensureLoaded(context).firstOrNull { it.surah == surah && it.ayah == ayah }?.let(onAyahClick)
+            }
         }
 
         private fun buildPage(page: Int): CharSequence {

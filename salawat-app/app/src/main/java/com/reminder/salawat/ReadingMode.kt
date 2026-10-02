@@ -29,3 +29,10 @@ enum class ReadingMode(val labelRes: Int) {
         fun set(context: Context, mode: ReadingMode) = Prefs.get(context).edit().putString(KEY, mode.name).apply()
     }
 }
+
+/** Page style: the printed Madinah Mushaf (default) or resizable Tanzil text. */
+object MushafMode {
+    private const val KEY = "mushaf_pages"
+    fun isOn(context: Context) = Prefs.get(context).getBoolean(KEY, true)
+    fun set(context: Context, on: Boolean) = Prefs.get(context).edit().putBoolean(KEY, on).apply()
+}

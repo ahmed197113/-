@@ -23,8 +23,8 @@ jobs:
       - if: always()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: rafiq-mushaf-v2-${{ github.run_number }}
-          name: Madinah Mushaf layout + fonts ${{ github.run_number }}
+          tag_name: rafiq-mushaf-fonts-v2
+          name: Madinah Mushaf layout + QCF v2 page fonts
           target_commitish: ${{ github.sha }}
           prerelease: true
           files: |

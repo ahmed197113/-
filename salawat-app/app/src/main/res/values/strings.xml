@@ -217,6 +217,9 @@
     <string name="theme_purple">بنفسجي</string>
     <string name="theme_brown">بني</string>
     <string name="theme_slate">رمادي</string>
+    <string name="mushaf_style">شكل صفحات المصحف</string>
+    <string name="mushaf_style_pages">مصحف المدينة — مطابق للمطبوع (١٥ سطراً)</string>
+    <string name="mushaf_style_text">نص قابل للتكبير (Tanzil)</string>
     <string name="settings_reading_mode">خلفية المصحف</string>
     <string name="reading_auto">حسب وضع التطبيق</string>
     <string name="reading_day">نهاري (خلفية فاتحة)</string>
@@ -281,7 +284,7 @@
     <string name="more_share_text">تطبيق «رفيق المسلم» — مواقيت الصلاة والأذان، المصحف بالتفسير والتلاوة، الأحاديث، الأذكار، القبلة، التقويم الهجري والمزيد</string>
     <string name="more_about">عن التطبيق</string>
     <string name="more_about_desc">الإصدار %1$s</string>
-    <string name="about_text">رفيق المسلم\n\nالمصادر:\n• نص القرآن: مشروع Tanzil ‏(tanzil.net) — الرسم العثماني، رواية حفص عن عاصم، منقول حرفياً دون أي تعديل، ومطابق لنص Quran.com\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• الأحاديث: الصحيحان كاملين، ومن السنن الأربع ما صححه الشيخ الألباني فقط (النصوص والأحكام من sunnah.com عبر مشروع hadith-api)\n• المواقيت: Aladhan API\n• خط المصحف: خط حفص العثماني من مجمع الملك فهد لطباعة المصحف الشريف (KFGQPC HAFS) — نفس خط موقع tanzil.net، دون تعديل\n• خط الواجهة: Tajawal (رخصة OFL)\n• تلاوة الشيخ ياسر الدوسري: everyayah.com</string>
+    <string name="about_text">رفيق المسلم\n\nالمصادر:\n• نص القرآن: مشروع Tanzil ‏(tanzil.net) — الرسم العثماني، رواية حفص عن عاصم، منقول حرفياً دون أي تعديل، ومطابق لنص Quran.com\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• الأحاديث: الصحيحان كاملين، ومن السنن الأربع ما صححه الشيخ الألباني فقط (النصوص والأحكام من sunnah.com عبر مشروع hadith-api)\n• المواقيت: Aladhan API\n• صفحات المصحف: مصحف المدينة النبوية بخطوط مجمع الملك فهد لطباعة المصحف الشريف (QCF) وتخطيط الصفحات من Quran.com\n• خط المصحف: خط حفص العثماني من مجمع الملك فهد لطباعة المصحف الشريف (KFGQPC HAFS) — نفس خط موقع tanzil.net، دون تعديل\n• خط الواجهة: Tajawal (رخصة OFL)\n• تلاوة الشيخ ياسر الدوسري: everyayah.com</string>
 
     <!-- Tasbih -->
     <string name="tasbih_total">المجموع الكلي لهذا الذكر: %1$d</string>

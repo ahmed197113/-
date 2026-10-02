@@ -17,6 +17,20 @@
         android:paddingEnd="14dp"
         android:paddingBottom="8dp">
 
+        <com.reminder.salawat.MushafPageView
+            android:id="@+id/mushafPage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/progressMushaf"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/textPageText"
             android:layout_width="match_parent"

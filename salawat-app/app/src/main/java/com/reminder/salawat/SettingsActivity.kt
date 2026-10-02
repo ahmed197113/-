@@ -170,6 +170,11 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
                 recreate()
             }
         }
+        val pageStyles = listOf(getString(R.string.mushaf_style_pages), getString(R.string.mushaf_style_text))
+        val mushafOn = MushafMode.isOn(this)
+        Ui.row(display, R.drawable.ic_quran, getString(R.string.mushaf_style), pageStyles[if (mushafOn) 0 else 1]) {
+            choose(getString(R.string.mushaf_style), pageStyles, if (mushafOn) 0 else 1) { MushafMode.set(this, it == 0) }
+        }
         val reading = ReadingMode.get(this)
         Ui.row(display, R.drawable.ic_quran, getString(R.string.settings_reading_mode), getString(reading.labelRes)) {
             choose(getString(R.string.settings_reading_mode), ReadingMode.values().map { getString(it.labelRes) }, reading.ordinal) {
