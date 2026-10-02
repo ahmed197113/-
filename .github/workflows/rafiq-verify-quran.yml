@@ -1,0 +1,25 @@
+name: Rafiq verify Quran text
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/verify_quran.py"
+      - ".github/workflows/rafiq-verify-quran.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/verify_quran.py "$RUNNER_TEMP/q" salawat-app/app/src/main/assets/quran_uthmani.tsv
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-quran-verify-${{ github.run_number }}
+          name: Quran verification ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/q/*
