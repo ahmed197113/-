@@ -97,6 +97,12 @@ start .TasbihActivity
 shot 08-tasbih 4
 start .QuranPagerActivity --ei page 1
 shot 09-mushaf-p1 5
+start .QuranPagerActivity --ei page 2
+shot 09b-mushaf-p2 5
+start .QuranPagerActivity --ei page 3
+shot 09c-mushaf-p3 5
+start .QuranPagerActivity --ei page 604
+shot 09d-mushaf-p604 5
 start .QuranPagerActivity --ei page 50
 shot 10-mushaf-p50 5
 start .AzkarDetailActivity --ei category_id 27 --es category_title "أذكار الصباح والمساء"

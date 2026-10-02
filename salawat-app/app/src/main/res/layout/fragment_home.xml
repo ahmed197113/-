@@ -756,6 +756,7 @@
                     android:layout_marginTop="8dp"
                     android:lineSpacingMultiplier="1.35"
                     android:fontFamily="@font/amiri_quran"
+                    app:fontFamily="@font/amiri_quran"
                     android:textSize="21sp"
                     android:textColor="@color/text_primary_light" />
 

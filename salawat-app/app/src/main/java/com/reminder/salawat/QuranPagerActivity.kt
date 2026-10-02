@@ -299,9 +299,12 @@ class QuranPagerActivity : AppCompatActivity() {
         inner class ViewHolder(val binding: ItemQuranPageBinding) : RecyclerView.ViewHolder(binding.root) {
             init {
                 binding.textPageText.movementMethod = LinkMovementMethod.getInstance()
-                if (Build.VERSION.SDK_INT >= 26) {
-                    binding.textPageText.justificationMode = Layout.JUSTIFICATION_MODE_INTER_WORD
+                // The Uthmani marks only render correctly in the Quran font; set it explicitly so no theme font wins.
+                androidx.core.content.res.ResourcesCompat.getFont(binding.root.context, R.font.amiri_quran)?.let {
+                    binding.textPageText.typeface = it
                 }
+                // No inter-word justification: with RTL text, combining marks and spans it can push words past the
+                // edge of the line, cutting letters off.
             }
         }
 
@@ -340,7 +343,8 @@ class QuranPagerActivity : AppCompatActivity() {
                     }
                 }
                 val start = sb.length
-                sb.append(ayah.text).append(" \uFD3F").append(QuranData.toArabicDigits(ayah.ayah)).append("\uFD3E ")
+                // U+06DD (end of ayah) followed by the number: the Quran font draws the Mushaf's numbered ayah medallion.
+                sb.append(ayah.text).append(" \u06DD").append(QuranData.toArabicDigits(ayah.ayah)).append(" ")
                 val end = sb.length
                 sb.setSpan(object : ClickableSpan() {
                     override fun onClick(widget: View) = onAyahClick(ayah)
@@ -348,7 +352,7 @@ class QuranPagerActivity : AppCompatActivity() {
                         ds.isUnderlineText = false
                     }
                 }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                val markerStart = end - QuranData.toArabicDigits(ayah.ayah).length - 3
+                val markerStart = end - QuranData.toArabicDigits(ayah.ayah).length - 2
                 sb.setSpan(ForegroundColorSpan(gold), markerStart, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 if (ayah.global == playingGlobal || ayah.global == selectedGlobal) {
                     sb.setSpan(BackgroundColorSpan(highlight), start, end - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
