@@ -205,7 +205,7 @@ for combo in "blue SEPIA" "purple NIGHT"; do
   set -- $combo
   adb shell am force-stop $pkg
   adb shell "run-as $pkg cat shared_prefs/salawat_prefs.xml" > /tmp/sp.xml
-  sed -i '/color_theme\|reading_mode/d; s#</map>#<string name="color_theme">'"$1"'</string><string name="reading_mode">'"$2"'</string></map>#' /tmp/sp.xml
+  sed -i '/color_theme\|reading_mode/d; s#</map>#<string name="color_theme">'"$1"'</string>\n<string name="reading_mode">'"$2"'</string>\n</map>#' /tmp/sp.xml
   adb shell "run-as $pkg sh -c 'cat > shared_prefs/salawat_prefs.xml'" < /tmp/sp.xml
   start .MainActivity --es tab home
   shot 50-theme-$1-home 6
