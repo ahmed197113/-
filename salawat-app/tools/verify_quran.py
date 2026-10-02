@@ -176,7 +176,11 @@ if "app" in sources and "qurancom_uthmani" in sources:
     mism = []
     for k, t in sources["app"].items():
         q = sources["qurancom_uthmani"][k]
-        if t != q and not (k[1] == 1 and t.endswith(" " + q)):
+        # quran.com stores ayah 1 with the basmala removed and a leading space left behind.
+        basm = sources["app"][(1, 1)]
+        ok_ayah1 = k[1] == 1 and k[0] not in (1, 9) and t.endswith(" " + q.strip()) and \
+            t[: -len(q.strip())].strip().replace("\u0628\u0651", "\u0628") == basm
+        if t != q and not ok_ayah1:
             mism.append(k)
     p("APP vs QURAN.COM UTHMANI exact mismatches (excluding basmala prefix):", len(mism), mism[:20])
     for k in mism[:4]:
