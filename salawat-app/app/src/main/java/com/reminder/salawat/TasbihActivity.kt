@@ -31,7 +31,9 @@ class TasbihActivity : AppCompatActivity() {
                 isCheckable = true
                 isChecked = index == selected
                 setOnClickListener {
-                    prefs.edit().putInt(Prefs.KEY_TASBIH_INDEX, index).apply()
+                    // Choosing a dhikr by hand starts a fresh round of it.
+                    prefs.edit().putInt(Prefs.KEY_TASBIH_INDEX, index)
+                        .putInt(KEY_BASE + index, prefs.getInt(Prefs.KEY_TASBIH_COUNT_PREFIX + index, 0)).apply()
                     refresh()
                 }
             }
@@ -43,14 +45,17 @@ class TasbihActivity : AppCompatActivity() {
             val count = prefs.getInt(key, 0) + 1
             prefs.edit().putInt(key, count).apply()
             val target = target()
-            if (target > 0 && count % target == 0) vibrate(350) else {
+            if (target > 0 && (count - base(index())) % target == 0) {
+                vibrate(350)
+                advance()
+            } else {
                 view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                 vibrate(20)
             }
             refresh()
         }
         binding.btnReset.setOnClickListener {
-            prefs.edit().putInt(Prefs.KEY_TASBIH_COUNT_PREFIX + index(), 0).apply()
+            prefs.edit().putInt(Prefs.KEY_TASBIH_COUNT_PREFIX + index(), 0).putInt(KEY_BASE + index(), 0).apply()
             refresh()
         }
         binding.btnTarget.setOnClickListener {
@@ -70,6 +75,21 @@ class TasbihActivity : AppCompatActivity() {
 
     private fun index() = prefs.getInt(Prefs.KEY_TASBIH_INDEX, 0).coerceIn(0, PHRASES.size - 1)
 
+    /** The total at which the current round of this dhikr started. */
+    private fun base(i: Int) = prefs.getInt(KEY_BASE + i, 0)
+
+    /** A round is complete: move on to the next dhikr automatically, starting a fresh round there. */
+    private fun advance() {
+        val next = (index() + 1) % PHRASES.size
+        val nextTotal = prefs.getInt(Prefs.KEY_TASBIH_COUNT_PREFIX + next, 0)
+        prefs.edit().putInt(Prefs.KEY_TASBIH_INDEX, next).putInt(KEY_BASE + next, nextTotal).apply()
+        (binding.chipsDhikr.getChildAt(next) as? Chip)?.isChecked = true
+        binding.chipsDhikr.getChildAt(next)?.let { chip ->
+            (binding.chipsDhikr.parent as? android.widget.HorizontalScrollView)?.smoothScrollTo(chip.left, 0)
+        }
+        android.widget.Toast.makeText(this, getString(R.string.tasbih_next, PHRASES[next]), android.widget.Toast.LENGTH_SHORT).show()
+    }
+
     private fun target() = prefs.getInt(Prefs.KEY_TASBIH_TARGET, 33)
 
     private fun refresh() {
@@ -77,7 +97,7 @@ class TasbihActivity : AppCompatActivity() {
         val target = target()
         binding.textDhikr.text = PHRASES[index()]
         if (target > 0) {
-            val round = count % target
+            val round = (count - base(index())).coerceAtLeast(0) % target
             binding.textCount.text = round.toString()
             binding.textTarget.text = getString(R.string.tasbih_of_target, target)
             binding.progressTarget.max = target
@@ -103,6 +123,7 @@ class TasbihActivity : AppCompatActivity() {
     }
 
     companion object {
+        private const val KEY_BASE = "tasbih_round_base_"
         private val PHRASES = listOf(
             "سبحان الله", "الحمد لله", "الله أكبر", "لا إله إلا الله", "أستغفر الله",
             "اللهم صلِّ على محمد", "لا حول ولا قوة إلا بالله", "سبحان الله وبحمده"
