@@ -174,7 +174,7 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
         var widest = 1f
         for (line in lines) {
             val words = (line as? MushafLayout.Line.Words)?.words ?: continue
-            val natural = words.sumOf { wordPaint.measureText(it.glyphs).toDouble() }.toFloat() + minGap * (words.size - 1)
+            val natural = words.sumOf { inkWidth(it.glyphs).toDouble() }.toFloat() + minGap * (words.size - 1)
             if (natural > widest) widest = natural
         }
         val size = (100f * w / widest).coerceAtMost(lineH * 0.82f)
@@ -193,8 +193,18 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
         }
     }
 
+    private val bounds = android.graphics.Rect()
+
+    /** Width of the inked glyph, not its advance: some page fonts (e.g. page 1) draw well past their advance. */
+    private fun inkWidth(glyphs: String): Float {
+        wordPaint.getTextBounds(glyphs, 0, glyphs.length, bounds)
+        return bounds.width().toFloat().coerceAtLeast(1f)
+    }
+
     private fun drawWords(canvas: Canvas, words: List<MushafLayout.Word>, top: Float, baseline: Float, lineH: Float, w: Float, gapMin: Float) {
-        val widths = words.map { wordPaint.measureText(it.glyphs) }
+        // Lay words out by their ink, right to left, so nothing overlaps whatever the font's advances say.
+        val ink = words.map { wd -> wordPaint.getTextBounds(wd.glyphs, 0, wd.glyphs.length, bounds); android.graphics.Rect(bounds) }
+        val widths = ink.map { it.width().toFloat().coerceAtLeast(1f) }
         val total = widths.sum()
         val centered = page in 1..2 || total + gapMin * (words.size - 1) < w * 0.8f
         val gap = if (centered || words.size < 2) gapMin else (w - total) / (words.size - 1)
@@ -207,7 +217,8 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
                 highlightPaint.color = highlightColor
                 canvas.drawRect(box, highlightPaint)
             }
-            canvas.drawText(word.glyphs, left, baseline, wordPaint)
+            // the glyph's ink starts ink.left past its origin
+            canvas.drawText(word.glyphs, left - ink[i].left, baseline, wordPaint)
             wordBoxes.add(box to word)
             x = left - gap
         }
