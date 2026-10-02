@@ -8,6 +8,7 @@ apk=app/build/outputs/apk/debug/app-debug.apk
 
 shot() {
   sleep "${2:-4}"
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
   adb exec-out screencap -p > "$out/$1.png"
 }
 start() { adb shell am start -W -n "$pkg/$1" "${@:2}" >/dev/null; }
@@ -15,6 +16,9 @@ start() { adb shell am start -W -n "$pkg/$1" "${@:2}" >/dev/null; }
 adb root || true
 adb shell cmd alarm set-timezone Africa/Cairo || adb shell setprop persist.sys.timezone Africa/Cairo || true
 adb install -r "$apk"
+# The emulator's launcher tends to ANR on CI and its dialog covers the screenshots; we start screens directly anyway.
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher || true
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
 
 # 1. First run: onboarding
 start .MainActivity

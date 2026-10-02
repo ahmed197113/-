@@ -118,7 +118,7 @@ class QuranSearchActivity : AppCompatActivity() {
     }
 
     /** Accepts "\\uXXXX" escapes so tests can pass Arabic through adb. */
-    private fun unescape(s: String) = Regex("\\\\u([0-9a-fA-F]{4})").replace(s) { it.groupValues[1].toInt(16).toChar().toString() }
+    private fun unescape(s: String) = Regex("\\\\?u([0-9a-fA-F]{4})").replace(s) { it.groupValues[1].toInt(16).toChar().toString() }
 
     companion object {
         const val EXTRA_QUERY = "query"

@@ -133,13 +133,18 @@ class CalendarActivity : ColumnActivity() {
         // Month events
         Ui.sectionTitle(column, getString(R.string.calendar_events))
         val list = padded(Ui.card(column))
-        var any = false
+        // Group repeated occasions (e.g. the three White Days) into one line.
+        val grouped = LinkedHashMap<String, Pair<IslamicEvent, MutableList<Int>>>()
         for (i in 0 until length) {
-            val g = (first.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, i) }
             HijriDate.events(HijriDay(year, month, i + 1), null).forEach { e ->
-                any = true
-                eventLine(list, e, "${QuranData.toArabicDigits(i + 1)} ${HijriDate.MONTHS[month - 1]} — ${fmt.format(g.time)}")
+                grouped.getOrPut(e.title) { e to mutableListOf() }.second.add(i)
             }
+        }
+        val any = grouped.isNotEmpty()
+        grouped.values.forEach { (e, days) ->
+            val hijriDays = days.joinToString("، ") { QuranData.toArabicDigits(it + 1) }
+            val g = (first.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, days.first()) }
+            eventLine(list, e, "$hijriDays ${HijriDate.MONTHS[month - 1]} — ${fmt.format(g.time)}")
         }
         if (!any) text(list, getString(R.string.calendar_no_events), R.style.Text_BodyMedium, R.color.text_secondary_light)
         text(column, getString(R.string.calendar_hint), R.style.Hint, R.color.text_secondary_light, Gravity.CENTER).setPadding(dp(8), dp(16), dp(8), 0)
