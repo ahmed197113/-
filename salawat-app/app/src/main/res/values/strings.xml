@@ -302,7 +302,7 @@
     <string name="tool_hadith">الأحاديث النبوية</string>
     <string name="tool_hadith_desc">الأحاديث الصحيحة فقط: الصحيحان وصحيح السنن الأربع</string>
     <string name="tool_names">أسماء الله الحسنى</string>
-    <string name="tool_names_desc">الأسماء التسعة والتسعون مع معانيها</string>
+    <string name="tool_names_desc">الأسماء التسعة والتسعون</string>
     <string name="tool_ruqyah">الرقية الشرعية</string>
     <string name="tool_ruqyah_desc">آيات الرقية من القرآن الكريم</string>
     <string name="tool_zakat">حاسبة الزكاة</string>
@@ -381,7 +381,7 @@
     <string name="hadith_loading">جاري فتح الكتاب…</string>
 
     <!-- Names -->
-    <string name="names_intro">«إن لله تسعة وتسعين اسماً، مائة إلا واحداً، من أحصاها دخل الجنة» — متفق عليه</string>
+    <string name="names_intro">قال رسول الله ﷺ: «إِنَّ لِلَّهِ تِسْعَةً وَتِسْعِينَ اسْمًا، مِائَةً إِلاَّ وَاحِدًا، مَنْ أَحْصَاهَا دَخَلَ الْجَنَّةَ» — صحيح البخاري (٧٣٩٢)، وصحيح مسلم (٢٦٧٧).\nتنبيه: الحديث الصحيح لم يسرد الأسماء؛ وهذا السرد المشهور ورد في رواية الترمذي (٣٥٠٧) وفي ثبوت سرده كلام عند أهل العلم.</string>
 
     <!-- Ruqyah -->
     <string name="ruqyah_intro">آيات يُرقى بها من القرآن الكريم، مع المعوذات. اقرأها بيقين وتدبّر، وانفث على نفسك أو على المريض</string>
@@ -442,7 +442,7 @@
     <string name="rem_sleep_text">لا تنسَ أذكار النوم وآية الكرسي</string>
     <string name="rem_kahf">سورة الكهف يوم الجمعة</string>
     <string name="rem_kahf_desc">كل جمعة: سورة الكهف والإكثار من الصلاة على النبي ﷺ</string>
-    <string name="rem_kahf_text">«من قرأ سورة الكهف يوم الجمعة أضاء له من النور ما بين الجمعتين» — وأكثِر من الصلاة على النبي ﷺ</string>
+    <string name="rem_kahf_text">يوم الجمعة: اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ</string>
     <string name="rem_wird">الورد اليومي من القرآن</string>
     <string name="rem_wird_desc">تذكير بوردك اليومي وختمتك</string>
     <string name="rem_wird_text">خصّص وقتاً لوردك من كتاب الله اليوم</string>

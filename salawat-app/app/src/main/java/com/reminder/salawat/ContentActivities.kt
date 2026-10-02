@@ -47,7 +47,7 @@ class NamesActivity : AppCompatActivity() {
         b.list.layoutManager = LinearLayoutManager(this)
         b.list.adapter = adapter
         adapter.submit(AllahNames.all(this).map {
-            Row.Card(title = null, body = it.name, meta = "${QuranData.toArabicDigits(it.number)} • ${it.meaning}", quranFont = true, bodySp = 30f)
+            Row.Card(title = null, body = it.name, meta = QuranData.toArabicDigits(it.number), quranFont = true, bodySp = 30f)
         })
     }
 }

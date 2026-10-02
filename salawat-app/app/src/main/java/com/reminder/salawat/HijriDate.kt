@@ -76,24 +76,24 @@ object HijriDate {
         val list = ArrayList<IslamicEvent>()
         when (h.month to h.day) {
             1 to 1 -> list.add(IslamicEvent("رأس السنة الهجرية", "بداية عام هجري جديد"))
-            1 to 9 -> list.add(IslamicEvent("تاسوعاء", "يُستحب صيامه مع عاشوراء", fasting = true))
-            1 to 10 -> list.add(IslamicEvent("يوم عاشوراء", "صيامه يكفّر السنة الماضية", fasting = true))
+            1 to 9 -> list.add(IslamicEvent("تاسوعاء", q("tasua", "صيام اليوم التاسع من المحرم"), fasting = true))
+            1 to 10 -> list.add(IslamicEvent("يوم عاشوراء", q("arafa_ashura", "صيام يوم عاشوراء"), fasting = true))
             9 to 1 -> list.add(IslamicEvent("أول أيام رمضان", "شهر الصيام والقرآن"))
-            10 to 1 -> list.add(IslamicEvent("عيد الفطر", "يحرم صيامه — تقبل الله منا ومنكم"))
+            10 to 1 -> list.add(IslamicEvent("عيد الفطر", q("eid_fast", "لا يُصام يوم العيد")))
             12 to 8 -> list.add(IslamicEvent("يوم التروية", "بداية مناسك الحج"))
-            12 to 9 -> list.add(IslamicEvent("يوم عرفة", "صيامه يكفّر السنة الماضية والباقية", fasting = true))
-            12 to 10 -> list.add(IslamicEvent("عيد الأضحى", "يوم النحر — يحرم صيامه"))
+            12 to 9 -> list.add(IslamicEvent("يوم عرفة", q("arafa_ashura", "صيام يوم عرفة"), fasting = true))
+            12 to 10 -> list.add(IslamicEvent("عيد الأضحى", q("eid_fast", "لا يُصام يوم العيد")))
         }
-        if (h.month == 12 && h.day in 11..13) list.add(IslamicEvent("أيام التشريق", "أيام أكل وشرب وذكر لله"))
-        if (h.month == 12 && h.day in 1..7) list.add(IslamicEvent("العشر من ذي الحجة", "أفضل أيام الدنيا — أكثر من العمل الصالح"))
-        if (h.month == 9 && h.day >= 21) list.add(IslamicEvent("العشر الأواخر", "تحرَّ ليلة القدر في الليالي الوترية"))
-        if (h.month == 10 && h.day in 2..30) list.add(IslamicEvent("صيام ست من شوال", "من صام رمضان وأتبعه ستاً من شوال كان كصيام الدهر", fasting = true))
+        if (h.month == 12 && h.day in 11..13) list.add(IslamicEvent("أيام التشريق", q("tashreeq", "أيام التشريق")))
+        if (h.month == 12 && h.day in 1..7) list.add(IslamicEvent("العشر من ذي الحجة", q("dhulhijja", "العمل الصالح في العشر")))
+        if (h.month == 9 && h.day >= 21) list.add(IslamicEvent("العشر الأواخر", q("qadr", "تحرّي ليلة القدر")))
+        if (h.month == 10 && h.day in 2..30) list.add(IslamicEvent("صيام ست من شوال", q("shawwal", "صيام ست من شوال"), fasting = true))
         val noFast = (h.month == 10 && h.day == 1) || (h.month == 12 && h.day in 10..13) || h.month == 9
-        if (!noFast && h.day in 13..15) list.add(IslamicEvent("الأيام البيض", "صيام ثلاثة أيام من كل شهر", fasting = true))
+        if (!noFast && h.day in 13..15) list.add(IslamicEvent("الأيام البيض", q("white_days", "صيام الأيام البيض"), fasting = true))
         if (!noFast && gregorian != null) {
             when (gregorian.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.MONDAY -> list.add(IslamicEvent("صيام الإثنين", "تُعرض الأعمال يوم الإثنين والخميس", fasting = true))
-                Calendar.THURSDAY -> list.add(IslamicEvent("صيام الخميس", "تُعرض الأعمال يوم الإثنين والخميس", fasting = true))
+                Calendar.MONDAY -> list.add(IslamicEvent("صيام الإثنين", q("monthu", "صيام الإثنين"), fasting = true))
+                Calendar.THURSDAY -> list.add(IslamicEvent("صيام الخميس", q("monthu", "صيام الخميس"), fasting = true))
             }
         }
         if (gregorian?.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY) {
@@ -101,6 +101,9 @@ object HijriDate {
         }
         return list
     }
+
+    /** The authenticated hadith for an occasion (verbatim, with its reference), or a plain label if unavailable. */
+    private fun q(key: String, fallback: String) = HadithQuotes.cite(key) ?: fallback
 
     fun isRamadan(context: Context): Boolean = of(context, Calendar.getInstance()).month == 9
 

@@ -9,19 +9,38 @@ import java.io.File
 import java.util.Calendar
 import java.util.zip.GZIPInputStream
 
-data class AllahName(val number: Int, val name: String, val meaning: String)
+data class AllahName(val number: Int, val name: String)
 
 object AllahNames {
     @Volatile private var cache: List<AllahName>? = null
 
     fun all(context: Context): List<AllahName> = cache ?: run {
         val arr = JSONArray(context.assets.open("names99.json").bufferedReader().use { it.readText() })
-        (0 until arr.length()).map { i -> arr.getJSONObject(i).let { AllahName(i + 1, it.getString("n"), it.getString("m")) } }
+        (0 until arr.length()).map { i -> arr.getJSONObject(i).let { AllahName(i + 1, it.getString("n")) } }
             .also { cache = it }
     }
 }
 
 /** Quran passages commonly recited for ruqyah, as (surah, fromAyah, toAyah). */
+/**
+ * Hadith quotations shown around the app (dhikr of the day, fasting days). assets/hadith_quotes.json is generated
+ * by tools/prepare_hadith.py, which cuts each quotation verbatim out of the authenticated hadith library.
+ */
+object HadithQuotes {
+    @Volatile private var map: Map<String, Pair<String, String>> = emptyMap()
+
+    fun init(context: Context) {
+        if (map.isNotEmpty()) return
+        runCatching {
+            val o = JSONObject(context.assets.open("hadith_quotes.json").bufferedReader(Charsets.UTF_8).use { it.readText() })
+            map = o.keys().asSequence().associateWith { k -> o.getJSONObject(k).let { it.getString("t") to it.getString("s") } }
+        }
+    }
+
+    /** «text» — source, or null if the key is unknown. */
+    fun cite(key: String): String? = map[key]?.let { "«${it.first}» — ${it.second}" }
+}
+
 object Ruqyah {
     val PASSAGES = listOf(
         Triple(1, 1, 7), Triple(2, 1, 5), Triple(2, 102, 102), Triple(2, 163, 164), Triple(2, 255, 257),

@@ -12,6 +12,7 @@ class SalawatApp : Application() {
         // even on phones set to another language.
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar"))
         applyTheme(this)
+        HadithQuotes.init(this)
         Notifications.createChannels(this)
         PrayerRefreshWorker.ensurePeriodic(this)
         // v1 hadith books included non-sahih collections; they are replaced by the sahih-only v2 library.

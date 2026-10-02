@@ -86,7 +86,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         binding.switchReminder.setOnCheckedChangeListener(reminderListener)
 
         val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        binding.textDhikrOfDay.text = DAILY_DHIKR[dayOfYear % DAILY_DHIKR.size]
+        binding.textDhikrOfDay.text = HadithQuotes.cite(DAILY_DHIKR[dayOfYear % DAILY_DHIKR.size]).orEmpty()
         renderDaily()
 
         // Live countdown to the next prayer while the screen is visible.
@@ -273,16 +273,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     }
 
     companion object {
-        private val DAILY_DHIKR = listOf(
-            "«إنَّ اللَّهَ وَمَلَائِكَتَهُ يُصَلُّونَ عَلَى النَّبِيِّ ۚ يَا أَيُّهَا الَّذِينَ آمَنُوا صَلُّوا عَلَيْهِ وَسَلِّمُوا تَسْلِيمًا»",
-            "قال ﷺ: «مَن صلّى عليّ صلاةً واحدة صلّى الله عليه بها عشراً»",
-            "سبحان الله وبحمده، سبحان الله العظيم",
-            "لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير",
-            "اللهم صلِّ على محمد وعلى آل محمد كما صليت على إبراهيم وعلى آل إبراهيم إنك حميد مجيد",
-            "أستغفر الله العظيم الذي لا إله إلا هو الحي القيوم وأتوب إليه",
-            "لا حول ولا قوة إلا بالله",
-            "حسبي الله لا إله إلا هو عليه توكلت وهو رب العرش العظيم",
-            "رضيت بالله رباً، وبالإسلام ديناً، وبمحمد ﷺ نبياً"
-        )
+        /** Keys into HadithQuotes: each is quoted verbatim from Bukhari, Muslim or a hadith al-Albani graded sahih. */
+        private val DAILY_DHIKR = listOf("salah_ten", "tasbih", "tahlil", "ibrahimiyya", "istighfar", "hawqala", "radeet")
     }
 }

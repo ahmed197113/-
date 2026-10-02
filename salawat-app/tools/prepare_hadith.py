@@ -104,3 +104,28 @@ json.dump({"t": "من الصحيحين", "a": "", "g": ALL_SAHIH, "c": [[1, "ص�
           open(os.path.join(out, "daily.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 json.dump(index, open(os.path.join(out, "index.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print("daily:", len(daily))
+
+# Exact quotations used elsewhere in the app (dhikr of the day, fasting days). Each is cut verbatim out of the
+# hadith text above — the words between the quotation marks of the Prophet's ﷺ saying — never typed by hand.
+QUOTES = {  # key: (book, number, which quoted segment, or an anchor the matn starts at)
+    "salah_ten": ("muslim", 408, 0), "tasbih": ("muslim", 2694, 0), "tahlil": ("bukhari", 3293, 0),
+    "ibrahimiyya": ("bukhari", 3370, 0), "istighfar": ("abudawud", 1517, 0), "hawqala": ("bukhari", 6384, 1),
+    "radeet": ("muslim", 386, 0), "arafa_ashura": ("muslim", 1162, -1), "shawwal": ("muslim", 1164, 0),
+    "tasua": ("muslim", 1134, 0), "monthu": ("tirmidhi", 747, 0), "three_days": ("bukhari", 1981, "أَوْصَانِي"),
+    "tashreeq": ("muslim", 1141, 0), "qadr": ("bukhari", 2017, 0), "white_days": ("abudawud", 2449, "كَانَ رَسُولُ"),
+    "eid_fast": ("muslim", 1138, "نَهَى"), "dhulhijja": ("tirmidhi", 757, 0),
+}
+TITLES = {b[0]: b[3] for b in BOOKS}
+quotes = {}
+for key, (bid, num, seg) in QUOTES.items():
+    with gzip.open(os.path.join(out, f"{bid}.json.gz")) as f:
+        text = next(h[2] for h in json.load(f)["h"] if h[0] == num)
+    if isinstance(seg, str):
+        matn = text[text.index(seg):]
+    else:
+        parts = [p.strip(" ‏.،") for p in text.split('"')[1::2]]
+        matn = [p for p in parts if p][seg]
+    matn = " ".join(matn.replace("\u200f", "").split()).strip(" .")
+    quotes[key] = {"t": matn, "s": f"{TITLES[bid]} ({num})"}
+    print(key, quotes[key])
+json.dump(quotes, open(os.path.join(out, "quotes.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=0)
