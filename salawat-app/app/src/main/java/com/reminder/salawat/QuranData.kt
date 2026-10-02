@@ -103,8 +103,18 @@ object QuranData {
     fun toArabicDigits(n: Int): String = n.toString().map { if (it in '0'..'9') '٠' + (it - '0') else it }.joinToString("")
 }
 
-data class Reciter(val id: String, val name: String, val bitrate: Int) {
-    fun ayahUrl(global: Int) = "https://cdn.islamic.network/quran/audio/$bitrate/$id/$global.mp3"
+/**
+ * A reciter with one recording per ayah: either an islamic.network edition ([bitrate]/[id]) or, when
+ * [everyAyahFolder] is set, a folder on everyayah.com (files named SSSAAA.mp3).
+ */
+data class Reciter(val id: String, val name: String, val bitrate: Int, val everyAyahFolder: String? = null) {
+    fun ayahUrl(context: Context, global: Int): String {
+        everyAyahFolder?.let { folder ->
+            val a = QuranData.byGlobal(context, global) ?: return ""
+            return "https://everyayah.com/data/$folder/%03d%03d.mp3".format(java.util.Locale.US, a.surah, a.ayah)
+        }
+        return "https://cdn.islamic.network/quran/audio/$bitrate/$id/$global.mp3"
+    }
 }
 
 object Reciters {
@@ -118,6 +128,7 @@ object Reciters {
         Reciter("ar.abdulbasitmurattal", "عبد الباسط عبد الصمد (مرتّل)", 64),
         Reciter("ar.abdulsamad", "عبد الباسط عبد الصمد (مجوّد)", 64),
         Reciter("ar.mahermuaiqly", "ماهر المعيقلي", 128),
+        Reciter("everyayah.yasserdussary", "ياسر الدوسري", 128, everyAyahFolder = "Yasser_Ad-Dussary_128kbps"),
         Reciter("ar.abdurrahmaansudais", "عبد الرحمن السديس", 64),
         Reciter("ar.saoodshuraym", "سعود الشريم", 64),
         Reciter("ar.shaatree", "أبو بكر الشاطري", 128),

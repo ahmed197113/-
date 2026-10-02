@@ -87,7 +87,7 @@ class RowsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var quranTypeface: Typeface? = null
     private fun quran(view: View): Typeface? =
-        quranTypeface ?: ResourcesCompat.getFont(view.context, R.font.amiri_quran).also { quranTypeface = it }
+        quranTypeface ?: ResourcesCompat.getFont(view.context, R.font.kfgqpc_hafs).also { quranTypeface = it }
 
     private class SectionHolder(val b: ItemSectionHeaderBinding) : RecyclerView.ViewHolder(b.root)
     private class CardHolder(val b: ItemCardTextBinding) : RecyclerView.ViewHolder(b.root)

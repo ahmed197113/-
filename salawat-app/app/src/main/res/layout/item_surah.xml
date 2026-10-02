@@ -33,8 +33,8 @@
             android:id="@+id/textSurahName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="@font/amiri_quran"
-            app:fontFamily="@font/amiri_quran"
+            android:fontFamily="@font/kfgqpc_hafs"
+            app:fontFamily="@font/kfgqpc_hafs"
             android:textColor="@color/text_primary_light"
             android:textSize="20sp" />
 

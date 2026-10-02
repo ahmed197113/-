@@ -58,7 +58,7 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
         stopAtGlobal = untilGlobal
         playingGlobal.value = global
         buffering.value = true
-        player.play(Reciters.selected(getApplication()).ayahUrl(global))
+        player.play(Reciters.selected(getApplication()).ayahUrl(getApplication(), global))
     }
 
     private fun onTrackFinished(completed: Boolean) {
@@ -300,11 +300,13 @@ class QuranPagerActivity : AppCompatActivity() {
             init {
                 binding.textPageText.movementMethod = LinkMovementMethod.getInstance()
                 // The Uthmani marks only render correctly in the Quran font; set it explicitly so no theme font wins.
-                androidx.core.content.res.ResourcesCompat.getFont(binding.root.context, R.font.amiri_quran)?.let {
+                androidx.core.content.res.ResourcesCompat.getFont(binding.root.context, R.font.kfgqpc_hafs)?.let {
                     binding.textPageText.typeface = it
                 }
-                // No inter-word justification: with RTL text, combining marks and spans it can push words past the
-                // edge of the line, cutting letters off.
+                // tanzil.net justifies the text (text-align: justify).
+                if (Build.VERSION.SDK_INT >= 26) {
+                    binding.textPageText.justificationMode = Layout.JUSTIFICATION_MODE_INTER_WORD
+                }
             }
         }
 
@@ -325,6 +327,7 @@ class QuranPagerActivity : AppCompatActivity() {
             val gold = ContextCompat.getColor(context, R.color.gold)
             val accent = ContextCompat.getColor(context, R.color.accent_text)
             val highlight = ContextCompat.getColor(context, R.color.ayah_highlight)
+            val ayahNumber = ContextCompat.getColor(context, R.color.ayah_number)
             val sb = SpannableStringBuilder()
             for (ayah in QuranData.page(context, page)) {
                 if (ayah.ayah == 1) {
@@ -343,8 +346,13 @@ class QuranPagerActivity : AppCompatActivity() {
                     }
                 }
                 val start = sb.length
-                // U+06DD (end of ayah) followed by the number: the Quran font draws the Mushaf's numbered ayah medallion.
-                sb.append(ayah.text).append("\u00A0\u06DD").append(QuranData.toArabicDigits(ayah.ayah)).append(" ")
+                // Exactly as tanzil.net writes it: the ayah, then "‎﴿number﴾‏" in green at 90% size (non-breaking, so
+                // the number never starts a line on its own).
+                sb.append(ayah.text).append('\u00A0')
+                val markerStart = sb.length
+                sb.append("\u200E\uFD3F").append(QuranData.toArabicDigits(ayah.ayah)).append("\uFD3E\u200F")
+                val markerEnd = sb.length
+                sb.append(' ')
                 val end = sb.length
                 sb.setSpan(object : ClickableSpan() {
                     override fun onClick(widget: View) = onAyahClick(ayah)
@@ -352,8 +360,8 @@ class QuranPagerActivity : AppCompatActivity() {
                         ds.isUnderlineText = false
                     }
                 }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                val markerStart = end - QuranData.toArabicDigits(ayah.ayah).length - 2
-                sb.setSpan(ForegroundColorSpan(gold), markerStart, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                sb.setSpan(ForegroundColorSpan(ayahNumber), markerStart, markerEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                sb.setSpan(RelativeSizeSpan(0.9f), markerStart, markerEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 if (ayah.global == playingGlobal || ayah.global == selectedGlobal) {
                     sb.setSpan(BackgroundColorSpan(highlight), start, end - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }

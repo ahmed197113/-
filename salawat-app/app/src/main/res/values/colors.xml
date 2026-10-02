@@ -25,4 +25,6 @@
     <color name="page_background">#efe7d2</color>
     <color name="page_paper">#fffbf0</color>
     <color name="ayah_highlight">#55d4af37</color>
+    <!-- tanzil.net colours ayah numbers #050 -->
+    <color name="ayah_number">#005500</color>
 </resources>
