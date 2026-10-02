@@ -162,4 +162,126 @@
 
     <string name="widget_description">الصلاة القادمة ووقتها</string>
     <string name="widget_no_data">افتح التطبيق لتحديد المدينة</string>
+
+    <!-- Navigation -->
+    <string name="tab_home">الرئيسية</string>
+    <string name="tab_prayer">الصلاة</string>
+    <string name="tab_quran">القرآن</string>
+    <string name="tab_azkar">الأذكار</string>
+    <string name="tab_more">المزيد</string>
+    <string name="back">رجوع</string>
+
+    <!-- Home -->
+    <string name="home_setup_hint">حدّد موقعك لعرض مواقيت الصلاة وتفعيل الأذان</string>
+    <string name="home_next_prayer">متبقٍ على صلاة %1$s</string>
+    <string name="home_next_time">الأذان الساعة %1$s</string>
+    <string name="home_place_unknown">لم يتم تحديد الموقع</string>
+    <string name="reminder_card_title">تذكير الصلاة على النبي ﷺ</string>
+    <string name="reminder_every">مُفعّل — كل %1$s</string>
+    <string name="reminder_off">متوقف — فعّله ليصلك تذكير لطيف</string>
+    <string name="continue_reading">متابعة القراءة</string>
+    <string name="continue_reading_value">%1$s — صفحة %2$s</string>
+    <string name="quick_access">الوصول السريع</string>
+    <string name="tile_quran">المصحف</string>
+    <string name="tile_azkar">الأذكار</string>
+    <string name="tile_tasbih">المسبحة</string>
+    <string name="tile_qibla">القبلة</string>
+    <string name="tile_adhan">صوت الأذان</string>
+    <string name="tile_settings">الإعدادات</string>
+    <string name="dhikr_of_day">ذكر اليوم</string>
+
+    <!-- Prayer tab -->
+    <string name="prev_day">اليوم السابق</string>
+    <string name="next_day">اليوم التالي</string>
+    <string name="today">اليوم</string>
+    <string name="prayer_bell_desc">تشغيل أو إيقاف أذان هذه الصلاة</string>
+    <string name="prayer_bell_hint">اضغط على الجرس لتشغيل أو إيقاف الأذان لكل صلاة • اسحب للأسفل للتحديث</string>
+    <string name="prayer_next_badge">القادمة • بعد %1$s</string>
+    <string name="prayer_empty_title">لم يتم تحديد موقعك بعد</string>
+    <string name="prayer_empty_text">نحتاج موقعك أو اسم مدينتك لحساب المواقيت بدقة</string>
+    <string name="prayer_settings_section">إعدادات المواقيت والأذان</string>
+    <string name="prayer_no_day_data">لا توجد مواقيت محفوظة لهذا اليوم — اسحب للأسفل للتحديث</string>
+    <string name="sunrise_no_adhan">لا أذان للشروق</string>
+
+    <!-- Location sheet -->
+    <string name="location_title">تحديد الموقع</string>
+    <string name="location_subtitle">لحساب مواقيت الصلاة واتجاه القبلة بدقة</string>
+    <string name="location_set">تحديد الموقع</string>
+    <string name="location_or_manual">أو اكتب مدينتك</string>
+    <string name="location_save">حفظ وعرض المواقيت</string>
+    <string name="location_found">تم تحديد موقعك: %1$s</string>
+    <string name="location_change">الموقع</string>
+    <string name="method_title">طريقة الحساب</string>
+
+    <!-- Settings -->
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_section_prayer">المواقيت والأذان</string>
+    <string name="settings_section_reminder">تذكير الصلاة على النبي ﷺ</string>
+    <string name="settings_section_quran">القرآن الكريم</string>
+    <string name="settings_section_display">المظهر</string>
+    <string name="settings_prayer_alerts">الأذان عند دخول الوقت</string>
+    <string name="settings_prayer_alerts_on">مُفعّل لـ %1$d صلوات</string>
+    <string name="settings_off">متوقف</string>
+    <string name="settings_reminder">تفعيل التذكير</string>
+    <string name="settings_interval">مدة التكرار</string>
+    <string name="settings_quiet">عدم الإزعاج ليلاً</string>
+    <string name="settings_quiet_range">من %1$s إلى %2$s</string>
+    <string name="settings_exact">التنبيه في الوقت بالضبط</string>
+    <string name="settings_exact_needed">مطلوب إذن — اضغط للسماح</string>
+    <string name="settings_reciter">القارئ</string>
+    <string name="settings_tafsir">التفسير</string>
+    <string name="settings_theme">الوضع</string>
+    <string-array name="theme_labels">
+        <item>تلقائي حسب الهاتف</item>
+        <item>فاتح</item>
+        <item>داكن</item>
+    </string-array>
+
+    <!-- More -->
+    <string name="more_tasbih">المسبحة الإلكترونية</string>
+    <string name="more_tasbih_desc">عدّاد التسبيح مع هدف واهتزاز</string>
+    <string name="more_qibla_desc">بوصلة تحدد اتجاه الكعبة</string>
+    <string name="more_adhan_desc">اختر المؤذن لكل صلاة</string>
+    <string name="more_settings_desc">الموقع والتنبيهات والمظهر</string>
+    <string name="more_share">مشاركة التطبيق</string>
+    <string name="more_share_desc">انشر الخير وكن سبباً في الصلاة على النبي ﷺ</string>
+    <string name="more_share_text">تطبيق «صلِّ على محمد» — تذكير بالصلاة على النبي ﷺ، مواقيت الصلاة والأذان، المصحف والأذكار</string>
+    <string name="more_about">عن التطبيق</string>
+    <string name="more_about_desc">الإصدار %1$s</string>
+    <string name="about_text">صلِّ على محمد ﷺ\n\nالمصادر:\n• نص القرآن: مشروع Tanzil (الرسم العثماني) عبر alquran.cloud\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• المواقيت: Aladhan API\n• الخطوط: Amiri Quran و Tajawal (رخصة OFL)</string>
+
+    <!-- Tasbih -->
+    <string name="tasbih_total">المجموع الكلي لهذا الذكر: %1$d</string>
+    <string name="tasbih_target_btn">الهدف: %1$s</string>
+    <string name="tasbih_of_target">من %1$d</string>
+
+    <!-- Azkar -->
+    <string name="azkar_featured">الأكثر استخداماً</string>
+    <string name="azkar_all">جميع الأقسام</string>
+    <string name="azkar_tap_to_count">اضغط على الذكر للعدّ</string>
+    <string name="azkar_morning_evening">أذكار الصباح والمساء</string>
+    <string name="azkar_after_prayer">الأذكار بعد الصلاة</string>
+    <string name="azkar_sleep">أذكار النوم</string>
+    <string name="azkar_wakeup">أذكار الاستيقاظ</string>
+
+    <!-- Quran tab -->
+    <string name="quran_surahs">السور</string>
+    <string name="quran_bookmark_title">العلامة</string>
+    <string name="quran_no_bookmark">اضغط على أي آية لحفظ علامة</string>
+    <string name="quran_start_reading">ابدأ من سورة الفاتحة</string>
+    <string name="quran_juz_page">يبدأ من صفحة %1$s</string>
+    <string name="quran_page_short">ص %1$s</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome">رفيقك اليومي للصلاة على النبي ﷺ والعبادة</string>
+    <string name="onboarding_features">🕌  مواقيت الصلاة مع أذان كامل بصوت مؤذنك المفضل\n📖  المصحف بالصفحات مع التفسير والتلاوة\n🤲  أذكار حصن المسلم والمسبحة\n💚  تذكير لطيف بالصلاة على النبي ﷺ</string>
+    <string name="onboarding_location_title">أين تصلي؟</string>
+    <string name="onboarding_location_text">حدّد موقعك لنحسب لك مواقيت الصلاة بدقة حسب مدينتك</string>
+    <string name="onboarding_alerts_title">التنبيهات</string>
+    <string name="onboarding_adhan">تشغيل الأذان عند دخول وقت الصلاة</string>
+    <string name="onboarding_reminder">تذكير بالصلاة على النبي ﷺ كل نصف ساعة</string>
+    <string name="onboarding_alerts_hint">يمكنك تغيير كل ذلك لاحقاً من الإعدادات</string>
+    <string name="onboarding_skip">تخطي</string>
+    <string name="onboarding_next">التالي</string>
+    <string name="onboarding_done">ابدأ</string>
 </resources>

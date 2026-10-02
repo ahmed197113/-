@@ -55,6 +55,8 @@ object PrayerRepository {
     const val KEY_LNG = "lng"
     const val KEY_METHOD = "method"
     const val KEY_ALERTS = "prayer_alerts"
+    const val KEY_PLACE_NAME = "place_name"
+    private const val KEY_ALERT_PREFIX = "alert_"
     private const val KEY_CONFIG_SIG = "config_sig"
     private const val KEY_LAST_FETCH = "last_fetch"
 
@@ -68,6 +70,46 @@ object PrayerRepository {
         val p = prefs(context)
         return if (p.getBoolean(KEY_USE_LOCATION, false)) p.contains(KEY_LAT)
         else !p.getString(KEY_CITY, "").isNullOrBlank()
+    }
+
+    /** Per-prayer adhan switch (all on by default); sunrise never has an adhan. */
+    fun isAlertEnabled(context: Context, prayer: Prayer): Boolean =
+        prayer.isSalah && prefs(context).getBoolean(KEY_ALERT_PREFIX + prayer.name, true)
+
+    fun setAlertEnabled(context: Context, prayer: Prayer, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_ALERT_PREFIX + prayer.name, enabled).apply()
+    }
+
+    fun alertsOn(context: Context): Boolean = prefs(context).getBoolean(KEY_ALERTS, false)
+
+    fun placeLabel(context: Context): String? {
+        val p = prefs(context)
+        return if (p.getBoolean(KEY_USE_LOCATION, false)) {
+            if (!p.contains(KEY_LAT)) null
+            else p.getString(KEY_PLACE_NAME, null) ?: context.getString(R.string.prayer_my_location)
+        } else {
+            val city = p.getString(KEY_CITY, "").orEmpty()
+            val country = p.getString(KEY_COUNTRY, "").orEmpty()
+            if (city.isBlank()) null else listOf(city, country).filter { it.isNotBlank() }.joinToString("، ")
+        }
+    }
+
+    /** Calculation method commonly used in a country (ISO code or a typed name, Arabic or English). */
+    fun suggestMethod(countryCode: String?, countryName: String?): Int {
+        val code = countryCode?.uppercase().orEmpty()
+        val name = countryName?.lowercase().orEmpty()
+        fun any(vararg keys: String) = keys.any { name.contains(it) }
+        return when {
+            code == "EG" || any("egypt", "مصر") -> 5
+            code == "SA" || any("saudi", "السعودية", "ksa") -> 4
+            code == "AE" || any("emirates", "uae", "الإمارات", "الامارات") -> 16
+            code == "KW" || any("kuwait", "الكويت") -> 9
+            code == "QA" || any("qatar", "قطر") -> 10
+            code == "TR" || any("turkey", "türkiye", "تركيا") -> 13
+            code in setOf("PK", "IN", "BD", "AF") || any("pakistan", "india", "bangladesh", "باكستان", "الهند") -> 1
+            code in setOf("US", "CA") || any("america", "usa", "canada", "أمريكا", "كندا") -> 2
+            else -> 3
+        }
     }
 
     fun location(context: Context): Pair<Double, Double>? {
@@ -181,13 +223,17 @@ object PrayerRepository {
     fun hasToday(context: Context): Boolean = today(context) != null
 
     /** Next salah (sunrise excluded) after [now], looking up to two days ahead in the cache. */
-    fun nextPrayer(context: Context, now: Long = System.currentTimeMillis()): UpcomingPrayer? {
+    fun nextPrayer(
+        context: Context,
+        now: Long = System.currentTimeMillis(),
+        include: (Prayer) -> Boolean = { true }
+    ): UpcomingPrayer? {
         val cal = Calendar.getInstance().apply { timeInMillis = now }
         repeat(3) {
             val day = dayTimings(context, cal)
             if (day != null) {
                 for (prayer in Prayer.values()) {
-                    if (!prayer.isSalah) continue
+                    if (!prayer.isSalah || !include(prayer)) continue
                     val millis = day.millisOf(prayer) ?: continue
                     if (millis > now) return UpcomingPrayer(prayer, day.times.getValue(prayer), millis)
                 }

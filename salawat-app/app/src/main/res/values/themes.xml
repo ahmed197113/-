@@ -1,12 +1,166 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Salawat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.Salawat" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/teal_primary</item>
+        <item name="colorOnPrimary">@color/on_brand</item>
+        <item name="colorPrimaryContainer">@color/nav_indicator</item>
+        <item name="colorOnPrimaryContainer">@color/accent_text</item>
+        <item name="colorSecondary">@color/gold</item>
+        <item name="colorOnSecondary">@color/teal_dark</item>
+        <item name="colorSecondaryContainer">@color/nav_indicator</item>
+        <item name="colorOnSecondaryContainer">@color/accent_text</item>
+        <item name="colorSurface">@color/card_light</item>
+        <item name="colorOnSurface">@color/text_primary_light</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary_light</item>
+        <item name="colorSurfaceContainer">@color/card_light</item>
+        <item name="colorSurfaceContainerLow">@color/card_light</item>
+        <item name="colorSurfaceContainerHigh">@color/card_light</item>
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline</item>
+        <item name="colorError">@color/error_text</item>
+        <item name="android:colorBackground">@color/background_light</item>
         <item name="android:windowBackground">@color/background_light</item>
         <item name="android:statusBarColor">@color/teal_dark</item>
+        <item name="android:navigationBarColor">@color/card_light</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="colorPrimary">@color/teal_primary</item>
-        <item name="colorPrimaryVariant">@color/teal_dark</item>
-        <item name="colorSecondary">@color/gold</item>
-        <item name="colorAccent">@color/gold</item>
+
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="textAppearanceDisplayLarge">@style/Text.Display</item>
+        <item name="textAppearanceDisplayMedium">@style/Text.Display</item>
+        <item name="textAppearanceDisplaySmall">@style/Text.Display</item>
+        <item name="textAppearanceHeadlineLarge">@style/Text.Headline</item>
+        <item name="textAppearanceHeadlineMedium">@style/Text.Headline</item>
+        <item name="textAppearanceHeadlineSmall">@style/Text.Headline</item>
+        <item name="textAppearanceTitleLarge">@style/Text.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/Text.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/Text.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/Text.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/Text.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/Text.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/Text.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/Text.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/Text.LabelSmall</item>
+        <item name="materialCardViewStyle">@style/Card</item>
+        <item name="toolbarStyle">@style/Toolbar</item>
+    </style>
+
+    <!-- Typography: Tajawal everywhere (Material's defaults would fall back to Roboto). -->
+    <style name="Text.Display" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+    </style>
+    <style name="Text.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+    </style>
+    <style name="Text.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+    </style>
+    <style name="Text.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Text.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/tajawal</item>
+        <item name="android:fontFamily">@font/tajawal</item>
+    </style>
+
+    <style name="Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/card_light</item>
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardElevation">1dp</item>
+    </style>
+
+    <style name="Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">@color/teal_dark</item>
+        <item name="titleTextColor">@color/on_brand</item>
+        <item name="titleTextAppearance">@style/Text.TitleLarge</item>
+        <item name="navigationIconTint">@color/on_brand</item>
+        <item name="titleCentered">true</item>
+    </style>
+
+    <style name="NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/nav_indicator</item>
+    </style>
+
+    <!-- Reusable widgets -->
+    <style name="SectionTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAppearance">@style/Text.TitleMedium</item>
+        <item name="android:textColor">@color/accent_text</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingTop">20dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="Hint">
+        <item name="android:textAppearance">@style/Text.BodySmall</item>
+        <item name="android:textColor">@color/text_secondary_light</item>
+    </style>
+
+    <style name="Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:minHeight">56dp</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="backgroundTint">@color/teal_primary</item>
+        <item name="android:textColor">@color/on_brand</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">52dp</item>
+        <item name="cornerRadius">16dp</item>
+        <item name="strokeColor">@color/teal_primary</item>
+        <item name="android:textColor">@color/accent_text</item>
+    </style>
+
+    <style name="Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/accent_text</item>
+    </style>
+
+    <style name="SettingRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">60dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
     </style>
 </resources>

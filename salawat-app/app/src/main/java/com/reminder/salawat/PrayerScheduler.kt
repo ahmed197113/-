@@ -33,7 +33,7 @@ object PrayerScheduler {
     fun schedule(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, false)
-        val next = if (enabled) PrayerRepository.nextPrayer(context) else null
+        val next = if (enabled) PrayerRepository.nextPrayer(context) { PrayerRepository.isAlertEnabled(context, it) } else null
         if (next == null) {
             alarmManager.cancel(pendingIntent(context, null))
             if (enabled && PrayerRepository.isConfigured(context)) PrayerRefreshWorker.runOnce(context)
@@ -88,7 +88,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 fun postPrayerNotification(context: Context, prayer: Prayer) {
     val name = context.getString(prayer.nameRes)
     val openApp = PendingIntent.getActivity(
-        context, 1, Intent(context, PrayerTimesActivity::class.java),
+        context, 1, MainActivity.intent(context, MainActivity.TAB_PRAYER),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_PRAYER)

@@ -7,16 +7,9 @@
     android:layoutDirection="rtl"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/textHeaderTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/teal_dark"
-        android:gravity="center"
-        android:padding="18dp"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/view_toolbar" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -48,10 +41,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:backgroundTint="@color/teal_primary"
-            android:text="@string/retry"
-            android:textColor="@android:color/white"
-            app:cornerRadius="16dp" />
+            style="@style/Button.Primary"
+            android:text="@string/retry" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

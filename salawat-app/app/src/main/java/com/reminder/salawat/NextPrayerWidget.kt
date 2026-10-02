@@ -32,7 +32,7 @@ class NextPrayerWidget : AppWidgetProvider() {
             }
             views.setTextViewText(R.id.widgetHijri, HijriDate.today())
             val open = PendingIntent.getActivity(
-                context, 2, Intent(context, PrayerTimesActivity::class.java),
+                context, 2, MainActivity.intent(context, MainActivity.TAB_PRAYER),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             views.setOnClickPendingIntent(R.id.widgetRoot, open)

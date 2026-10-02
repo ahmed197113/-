@@ -7,16 +7,9 @@
     android:layoutDirection="rtl"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/teal_dark"
-        android:gravity="center"
-        android:padding="18dp"
-        android:text="@string/qibla_title"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/view_toolbar" />
 
     <TextView
         android:id="@+id/textQiblaAngle"

@@ -236,7 +236,7 @@ class AdhanService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val openApp = PendingIntent.getActivity(
-                context, 11, Intent(context, PrayerTimesActivity::class.java),
+                context, 11, MainActivity.intent(context, MainActivity.TAB_PRAYER),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             return NotificationCompat.Builder(context, Notifications.CHANNEL_ADHAN)

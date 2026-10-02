@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/tab_home" android:icon="@drawable/ic_home" android:title="@string/tab_home" />
+    <item android:id="@+id/tab_prayer" android:icon="@drawable/ic_clock" android:title="@string/tab_prayer" />
+    <item android:id="@+id/tab_quran" android:icon="@drawable/ic_quran" android:title="@string/tab_quran" />
+    <item android:id="@+id/tab_azkar" android:icon="@drawable/ic_star" android:title="@string/tab_azkar" />
+    <item android:id="@+id/tab_more" android:icon="@drawable/ic_apps" android:title="@string/tab_more" />
+</menu>

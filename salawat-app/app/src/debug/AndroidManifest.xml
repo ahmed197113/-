@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only: lets the CI screenshot script open each screen directly with `am start`. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity android:name=".OnboardingActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".SettingsActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".TasbihActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".AzkarDetailActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".QuranPagerActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".AdhanSettingsActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".QiblaActivity" android:exported="true" tools:replace="android:exported" />
+    </application>
+</manifest>

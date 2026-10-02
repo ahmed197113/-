@@ -87,7 +87,7 @@ class AdhanSettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAdhanSettingsBinding
     private val viewModel: AdhanSettingsViewModel by viewModels()
     private val adapter = AdhanAdapter()
-    private val fajrSlot get() = binding.radioFajr.isChecked
+    private val fajrSlot get() = binding.groupSlot.checkedButtonId == R.id.btnSlotFajr
 
     private val pickFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri == null) return@registerForActivityResult
@@ -103,7 +103,9 @@ class AdhanSettingsActivity : AppCompatActivity() {
 
         binding.recyclerAdhans.layoutManager = LinearLayoutManager(this)
         binding.recyclerAdhans.adapter = adapter
-        binding.groupSlot.setOnCheckedChangeListener { _, _ -> adapter.reload() }
+        binding.toolbar.toolbar.setTitle(R.string.adhan_title)
+        binding.toolbar.toolbar.setNavigationOnClickListener { finish() }
+        binding.groupSlot.addOnButtonCheckedListener { _, _, checked -> if (checked) adapter.reload() }
         binding.btnPickFile.setOnClickListener { pickFile.launch(arrayOf("audio/*")) }
         binding.btnTest.setOnClickListener {
             viewModel.previewing.value?.let { viewModel.togglePreview(it) }

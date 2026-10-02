@@ -6,6 +6,8 @@ import android.content.SharedPreferences
 object Prefs {
     private const val NAME = "salawat_prefs"
 
+    const val KEY_ONBOARDED = "onboarded"
+    const val KEY_THEME = "theme_mode"
     const val KEY_REMINDER_ENABLED = "reminder_enabled"
     const val KEY_REMINDER_INTERVAL = "reminder_interval_minutes"
     const val KEY_QUIET_ENABLED = "quiet_enabled"

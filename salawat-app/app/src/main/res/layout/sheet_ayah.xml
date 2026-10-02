@@ -44,25 +44,22 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                android:backgroundTint="@color/teal_primary"
-                android:text="@string/quran_listen_ayah"
-                android:textColor="@android:color/white"
-                app:cornerRadius="14dp" />
+                style="@style/Button.Primary"
+                android:text="@string/quran_listen_ayah" />
 
             <Button
                 android:id="@+id/btnSheetPlayFrom"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:backgroundTint="@color/teal_light"
+                style="@style/Button.Primary"
                 android:text="@string/quran_play_from_here"
-                android:textColor="@android:color/white"
-                app:cornerRadius="14dp" />
+                app:backgroundTint="@color/teal_light" />
         </LinearLayout>
 
         <Button
             android:id="@+id/btnSheetReciter"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Button.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/accent_text" />
@@ -74,22 +71,26 @@
 
             <Button
                 android:id="@+id/btnSheetBookmark"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Button.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:text="@string/quran_bookmark"
+                app:icon="@drawable/ic_bookmark"
+                app:iconTint="@color/gold"
                 android:textColor="@color/accent_text"
                 app:strokeColor="@color/gold" />
 
             <Button
                 android:id="@+id/btnSheetShare"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Button.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/quran_share"
+                app:icon="@drawable/ic_share"
+                app:iconTint="@color/gold"
                 android:textColor="@color/accent_text"
                 app:strokeColor="@color/gold" />
         </LinearLayout>
@@ -102,7 +103,7 @@
 
         <Button
             android:id="@+id/btnSheetTafsirName"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Button.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/gold"

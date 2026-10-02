@@ -23,20 +23,22 @@
         android:roundIcon="@drawable/ic_app_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.Salawat">
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".PrayerTimesActivity" android:label="@string/prayer_times_title" android:exported="false" />
-        <activity android:name=".AzkarCategoriesActivity" android:label="@string/azkar_title" android:exported="false" />
+        <activity android:name=".OnboardingActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:label="@string/settings_title" android:exported="false" />
+        <activity android:name=".TasbihActivity" android:label="@string/more_tasbih" android:exported="false" />
         <activity android:name=".AzkarDetailActivity" android:label="@string/azkar_title" android:exported="false" />
-        <activity android:name=".SurahListActivity" android:label="@string/quran_title" android:exported="false" />
         <activity android:name=".QuranPagerActivity" android:label="@string/quran_title" android:exported="false" android:launchMode="singleTop" />
         <activity android:name=".AdhanSettingsActivity" android:label="@string/adhan_title" android:exported="false" />
         <activity android:name=".QiblaActivity" android:label="@string/qibla_title" android:exported="false" android:screenOrientation="portrait" />
@@ -57,6 +59,16 @@
                 <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
+
+        <!-- Lets AppCompat remember the forced Arabic locale on Android 12 and below. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
 
         <receiver android:name=".NextPrayerWidget" android:exported="false">
             <intent-filter>

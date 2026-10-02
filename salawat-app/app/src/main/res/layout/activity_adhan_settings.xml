@@ -7,41 +7,38 @@
     android:layoutDirection="rtl"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/teal_dark"
-        android:gravity="center"
-        android:padding="18dp"
-        android:text="@string/adhan_title"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold" />
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/view_toolbar" />
 
-    <RadioGroup
+    <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/groupSlot"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp"
+        app:checkedButton="@+id/btnSlotOthers"
+        app:selectionRequired="true"
+        app:singleSelection="true">
 
-        <RadioButton
-            android:id="@+id/radioOthers"
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/btnSlotOthers"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="@string/adhan_slot_others"
-            android:textColor="@color/text_primary_light" />
+            android:layout_weight="1"
+            android:text="@string/adhan_slot_others" />
 
-        <RadioButton
-            android:id="@+id/radioFajr"
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/btnSlotFajr"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:text="@string/adhan_slot_fajr"
-            android:textColor="@color/text_primary_light" />
-    </RadioGroup>
+            android:layout_weight="1"
+            android:text="@string/adhan_slot_fajr" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerAdhans"
@@ -56,11 +53,11 @@
         android:layout_height="wrap_content"
         android:background="@color/card_light"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <Button
             android:id="@+id/btnPickFile"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Button.Outlined"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/adhan_pick_file"
@@ -71,10 +68,9 @@
             android:id="@+id/btnTest"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:backgroundTint="@color/teal_primary"
-            android:text="@string/adhan_test"
-            android:textColor="@android:color/white"
-            app:cornerRadius="14dp" />
+            style="@style/Button.Primary"
+            android:layout_marginTop="8dp"
+            android:text="@string/adhan_test" />
 
         <TextView
             android:layout_width="match_parent"

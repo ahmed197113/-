@@ -31,6 +31,8 @@ class QiblaActivity : AppCompatActivity(), SensorEventListener {
         super.onCreate(savedInstanceState)
         binding = ActivityQiblaBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.toolbar.toolbar.setTitle(R.string.qibla_title)
+        binding.toolbar.toolbar.setNavigationOnClickListener { finish() }
         sensorManager = getSystemService(SensorManager::class.java)
 
         val location = PrayerRepository.location(this)

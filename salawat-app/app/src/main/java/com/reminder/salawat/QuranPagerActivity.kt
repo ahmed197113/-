@@ -119,8 +119,10 @@ class QuranPagerActivity : AppCompatActivity() {
         updateTitle(binding.pager.currentItem + 1)
         updateReciterButton()
 
+        binding.btnBack.setOnClickListener { finish() }
         binding.btnIndex.setOnClickListener {
-            startActivity(Intent(this, SurahListActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
+            startActivity(MainActivity.intent(this, MainActivity.TAB_QURAN))
+            finish()
         }
         binding.btnReciter.setOnClickListener { chooseReciter { updateReciterButton() } }
         binding.btnFontSmaller.setOnClickListener { changeFont(-2f) }

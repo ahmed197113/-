@@ -9,21 +9,21 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="?attr/actionBarSize"
         android:background="@color/teal_dark"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="4dp"
         android:paddingEnd="4dp">
 
-        <Button
-            android:id="@+id/btnIndex"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/quran_index"
-            android:textColor="@color/gold_light" />
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@color/on_brand" />
 
         <TextView
             android:id="@+id/textPageTitle"
@@ -33,29 +33,17 @@
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="2"
-            android:textColor="@android:color/white"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textAppearance="@style/Text.TitleSmall"
+            android:textColor="@color/on_brand" />
 
-        <Button
-            android:id="@+id/btnFontSmaller"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/quran_font_smaller"
-            android:minWidth="0dp"
-            android:text="أ-"
-            android:textColor="@color/gold_light" />
-
-        <Button
-            android:id="@+id/btnFontBigger"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/quran_font_bigger"
-            android:minWidth="0dp"
-            android:text="أ+"
-            android:textColor="@color/gold_light" />
+        <ImageButton
+            android:id="@+id/btnIndex"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/quran_index"
+            android:src="@drawable/ic_apps"
+            app:tint="@color/on_brand" />
     </LinearLayout>
 
     <LinearLayout
@@ -64,28 +52,52 @@
         android:background="@color/teal_primary"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp">
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
         <Button
             android:id="@+id/btnReciter"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:ellipsize="end"
+            android:gravity="start|center_vertical"
             android:maxLines="1"
-            android:textColor="@android:color/white"
-            android:textSize="13sp" />
+            android:textColor="@color/on_brand"
+            app:icon="@drawable/ic_volume"
+            app:iconTint="@color/gold_light" />
+
+        <Button
+            android:id="@+id/btnFontSmaller"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/quran_font_smaller"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            android:text="أ-"
+            android:textColor="@color/gold_light" />
+
+        <Button
+            android:id="@+id/btnFontBigger"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/quran_font_bigger"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            android:text="أ+"
+            android:textColor="@color/gold_light" />
 
         <Button
             android:id="@+id/btnPlayPage"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/quran_play_page"
-            android:textColor="@color/gold_light"
-            android:textSize="13sp" />
+            android:textColor="@color/teal_dark"
+            app:backgroundTint="@color/gold_light" />
     </LinearLayout>
 
     <androidx.viewpager2.widget.ViewPager2
@@ -125,7 +137,7 @@
 
         <Button
             android:id="@+id/btnStop"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/quran_stop"
