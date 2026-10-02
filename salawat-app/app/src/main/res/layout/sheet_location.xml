@@ -37,6 +37,14 @@
             app:icon="@drawable/ic_location"
             app:iconGravity="textStart" />
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progressGps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/textGpsResult"
             android:layout_width="match_parent"

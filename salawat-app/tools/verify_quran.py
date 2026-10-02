@@ -179,6 +179,9 @@ if "app" in sources and "qurancom_uthmani" in sources:
         if t != q and not (k[1] == 1 and t.endswith(" " + q)):
             mism.append(k)
     p("APP vs QURAN.COM UTHMANI exact mismatches (excluding basmala prefix):", len(mism), mism[:20])
+    for k in mism[:4]:
+        p("   app     ", k, ascii(sources["app"][k][:90]))
+        p("   quran.com", k, ascii(sources["qurancom_uthmani"][k][:60]))
     if mism: FAIL.append("app != quran.com")
 p("\nVERDICT:", "PASS" if not FAIL else "FAIL " + ", ".join(FAIL))
 log.close()

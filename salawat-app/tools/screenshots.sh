@@ -12,6 +12,25 @@ shot() {
   adb exec-out screencap -p > "$out/$1.png"
 }
 start() { adb shell am start -W -n "$pkg/$1" "${@:2}" >/dev/null; }
+# Taps the first on-screen element whose text contains $1 (via a uiautomator dump).
+tap_text() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  local xy
+  xy=$(adb exec-out cat /sdcard/ui.xml | python3 -c '
+import re,sys
+x=sys.stdin.read(); t=sys.argv[1]
+nodes=[]
+for m in re.finditer(r"<node [^>]*>", x):
+    n=m.group(0); tx=re.search(r"text=\"([^\"]*)\"", n)
+    nodes.append((tx.group(1) if tx else "", n))
+hit=[n for tx,n in nodes if tx==t] or [n for tx,n in nodes if t in tx]
+if hit:
+    a=list(map(int,re.search(r"bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"", hit[0]).groups()))
+    print((a[0]+a[2])//2, (a[1]+a[3])//2)
+' "$1")
+  echo "tap_text '$1' -> $xy"
+  [ -n "$xy" ] && adb shell input tap $xy
+}
 
 adb root || true
 adb shell cmd alarm set-timezone Africa/Cairo || adb shell setprop persist.sys.timezone Africa/Cairo || true
@@ -93,8 +112,8 @@ start .CalendarActivity
 shot 21-calendar 5
 start .HadithBooksActivity
 shot 22-hadith-books 4
-start .HadithReaderActivity --es book nawawi40
-shot 23-hadith-reader 5
+tap_text "صحيح البخاري"
+shot 23-hadith-reader 25
 start .NamesActivity
 shot 24-names 4
 start .RuqyahActivity
@@ -109,6 +128,33 @@ shot 28-reminders 4
 start .MainActivity --es tab more
 adb shell input swipe 540 1600 540 600 300
 shot 29-more-scrolled 2
+
+# Location button: services off -> explanation; then on + permission -> fix saved automatically
+adb shell settings put secure location_mode 0 || adb shell cmd location set-location-enabled false || true
+start .SettingsActivity
+sleep 4
+tap_text "الموقع" || true
+sleep 2
+shot 40-location-sheet 2
+tap_text "استخدام موقعي الحالي"
+shot 41-location-permission 4
+tap_text "أثناء استخدام" || tap_text "While using" || tap_text "Only this time" || true
+shot 42-location-services-off 5
+adb shell input keyevent KEYCODE_BACK; sleep 1
+adb shell input keyevent KEYCODE_BACK; sleep 1
+adb shell cmd location set-location-enabled true || adb shell settings put secure location_mode 3 || true
+adb emu geo fix 31.2357 30.0444 || true
+adb shell pm grant $pkg android.permission.ACCESS_COARSE_LOCATION || true
+start .SettingsActivity
+sleep 4
+tap_text "الموقع" || true
+sleep 2
+for i in 1 2 3; do adb emu geo fix 31.2357 30.0444 || true; sleep 1; done
+tap_text "استخدام موقعي الحالي"
+shot 43-location-locating 2
+for i in 1 2 3 4 5; do adb emu geo fix 31.2357 30.0444 || true; sleep 2; done
+shot 44-location-saved 6
+adb shell "run-as $pkg cat shared_prefs/prayer_times_prefs.xml" > "$out/prayer_prefs_after_gps.txt" || true
 
 # Dark mode
 adb shell cmd uimode night yes

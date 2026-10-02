@@ -18,8 +18,8 @@ jobs:
       - run: python3 salawat-app/tools/prepare_hadith.py "$RUNNER_TEMP/hadith"
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: salawat-hadith-v1
-          name: Hadith books (Arabic, v1)
+          tag_name: salawat-hadith-v2
+          name: Hadith books — sahih only (v2)
           target_commitish: ${{ github.sha }}
           prerelease: true
           files: ${{ runner.temp }}/hadith/*

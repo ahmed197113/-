@@ -14,6 +14,8 @@ class SalawatApp : Application() {
         applyTheme(this)
         Notifications.createChannels(this)
         PrayerRefreshWorker.ensurePeriodic(this)
+        // v1 hadith books included non-sahih collections; they are replaced by the sahih-only v2 library.
+        java.io.File(filesDir, "hadith").takeIf { it.exists() }?.deleteRecursively()
         Reminders.schedule(this)
     }
 

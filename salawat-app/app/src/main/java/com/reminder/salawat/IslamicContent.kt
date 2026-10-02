@@ -86,31 +86,26 @@ object QuranSearch {
 
 data class Hadith(val number: Int, val chapter: Int, val text: String)
 data class HadithBook(val id: String, val title: String, val author: String, val chapters: List<Pair<Int, String>>, val hadiths: List<Hadith>)
-data class HadithBookInfo(val id: String, val title: String, val author: String, val count: Int, val sizeMb: String, val bundled: Boolean = false)
+data class HadithBookInfo(val id: String, val title: String, val author: String, val count: Int, val sizeMb: String, val grading: String, val bundled: Boolean = false)
 
 object Hadiths {
-    private const val BASE = "https://github.com/ahmed197113/-/releases/download/salawat-hadith-v1/"
+    private const val BASE = "https://github.com/ahmed197113/-/releases/download/salawat-hadith-v2/"
+    private const val SUNAN_NOTE = "الأحاديث التي صححها الشيخ الألباني فقط"
+    private const val SAHIH_NOTE = "جميع أحاديث الكتاب صحيحة"
 
+    /** Authentic hadith only — see tools/prepare_hadith.py for the exact selection rules. */
     val BOOKS = listOf(
-        HadithBookInfo("nawawi40", "الأربعون النووية", "الإمام النووي", 42, "", bundled = true),
-        HadithBookInfo("qudsi40", "الأربعون القدسية", "", 40, "", bundled = true),
-        HadithBookInfo("riyad_assalihin", "رياض الصالحين", "الإمام النووي", 1896, "٠٫٢"),
-        HadithBookInfo("bukhari", "صحيح البخاري", "الإمام البخاري", 7277, "١٫٤"),
-        HadithBookInfo("muslim", "صحيح مسلم", "الإمام مسلم", 7459, "١٫١"),
-        HadithBookInfo("abudawud", "سنن أبي داود", "الإمام أبو داود", 5276, "٠٫٩"),
-        HadithBookInfo("tirmidhi", "جامع الترمذي", "الإمام الترمذي", 4053, "٠٫٩"),
-        HadithBookInfo("nasai", "سنن النسائي", "الإمام النسائي", 5768, "٠٫٧"),
-        HadithBookInfo("ibnmajah", "سنن ابن ماجه", "الإمام ابن ماجه", 4345, "٠٫٦"),
-        HadithBookInfo("malik", "موطأ مالك", "الإمام مالك", 1860, "٠٫٣"),
-        HadithBookInfo("ahmed", "مسند أحمد", "الإمام أحمد", 1374, "٠٫٢"),
-        HadithBookInfo("darimi", "سنن الدارمي", "الإمام الدارمي", 3406, "٠٫٤"),
-        HadithBookInfo("bulugh_almaram", "بلوغ المرام", "ابن حجر العسقلاني", 1767, "٠٫٣"),
-        HadithBookInfo("aladab_almufrad", "الأدب المفرد", "الإمام البخاري", 1326, "٠٫٢"),
-        HadithBookInfo("shamail_muhammadiyah", "الشمائل المحمدية", "الإمام الترمذي", 402, "٠٫١"),
-        HadithBookInfo("mishkat_almasabih", "مشكاة المصابيح", "التبريزي", 4428, "٠٫٥")
+        HadithBookInfo("bukhari", "صحيح البخاري", "الإمام البخاري", 7580, "١٫٤", SAHIH_NOTE),
+        HadithBookInfo("muslim", "صحيح مسلم", "الإمام مسلم", 7357, "١٫١", SAHIH_NOTE),
+        HadithBookInfo("abudawud", "سنن أبي داود", "الإمام أبو داود", 3330, "٠٫٥", SUNAN_NOTE),
+        HadithBookInfo("tirmidhi", "جامع الترمذي", "الإمام الترمذي", 2472, "٠٫٥", SUNAN_NOTE),
+        HadithBookInfo("nasai", "سنن النسائي", "الإمام النسائي", 4396, "٠٫٦", SUNAN_NOTE),
+        HadithBookInfo("ibnmajah", "سنن ابن ماجه", "الإمام ابن ماجه", 2822, "٠٫٤", SUNAN_NOTE)
     )
 
-    private fun file(context: Context, id: String) = File(File(context.filesDir, "hadith"), "$id.json.gz")
+    private val DAILY = HadithBookInfo("daily", "من الصحيحين", "", 0, "", SAHIH_NOTE, bundled = true)
+
+    private fun file(context: Context, id: String) = File(File(context.filesDir, "hadith2"), "$id.json.gz")
 
     fun isAvailable(context: Context, info: HadithBookInfo) = info.bundled || file(context, info.id).exists()
 
@@ -142,12 +137,12 @@ object Hadiths {
         return HadithBook(id, o.optString("t"), o.optString("a"), chapters, hadiths)
     }
 
-    /** A hadith for today from the bundled Nawawi/Qudsi collections (changes daily). */
+    /** A hadith for today from a bundled selection of Sahih al-Bukhari and Sahih Muslim (changes daily). */
     suspend fun ofTheDay(context: Context): Pair<String, Hadith> {
-        val books = BOOKS.filter { it.bundled }
-        val day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        val info = books[day % books.size]
-        val book = load(context, info)
-        return info.title to book.hadiths[day % book.hadiths.size]
+        val book = load(context, DAILY)
+        val day = Calendar.getInstance().let { it.get(Calendar.YEAR) * 366 + it.get(Calendar.DAY_OF_YEAR) }
+        val h = book.hadiths[day % book.hadiths.size]
+        val source = book.chapters.firstOrNull { it.first == h.chapter }?.second ?: book.title
+        return source to h
     }
 }

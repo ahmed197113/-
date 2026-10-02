@@ -18,13 +18,39 @@ import com.reminder.salawat.databinding.ItemSettingRowBinding
 import java.util.Locale
 
 /** Wraps a permission launcher so callers can ask for a permission with a callback, from anywhere. */
-class PermissionRequester(activity: ComponentActivity) {
+class PermissionRequester(private val activity: ComponentActivity) {
     private val context: Context = activity
     private var callback: ((Boolean) -> Unit)? = null
+    private var asked: String? = null
+    private var hadRationale = false
     private val launcher = activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         callback?.invoke(granted)
         callback = null
     }
+    private var resolveCallback: ((Boolean) -> Unit)? = null
+    private val resolver = activity.registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        resolveCallback?.invoke(result.resultCode == android.app.Activity.RESULT_OK)
+        resolveCallback = null
+    }
+
+    /** Shows a system dialog (e.g. Google's "turn on location") and reports whether the user accepted. */
+    fun resolve(sender: android.content.IntentSender, onResult: (Boolean) -> Unit) {
+        resolveCallback = onResult
+        try {
+            resolver.launch(androidx.activity.result.IntentSenderRequest.Builder(sender).build())
+        } catch (e: Exception) {
+            resolveCallback = null
+            onResult(false)
+        }
+    }
+
+    /**
+     * True when the system will no longer show the permission prompt ("don't ask again" or denied twice),
+     * so the only way forward is the app's settings page. Valid right after a denied [request].
+     */
+    fun isBlocked(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED &&
+            asked == permission && !hadRationale && !activity.shouldShowRequestPermissionRationale(permission)
 
     fun request(permission: String, onResult: (Boolean) -> Unit) {
         if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
@@ -32,6 +58,8 @@ class PermissionRequester(activity: ComponentActivity) {
             return
         }
         callback = onResult
+        asked = permission
+        hadRationale = activity.shouldShowRequestPermissionRationale(permission)
         launcher.launch(permission)
     }
 

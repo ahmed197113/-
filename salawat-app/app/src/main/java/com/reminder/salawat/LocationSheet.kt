@@ -1,6 +1,5 @@
 package com.reminder.salawat
 
-import android.Manifest
 import android.location.Geocoder
 import android.location.Location
 import android.view.View
@@ -45,8 +44,6 @@ object LocationSheet {
             b.dropdownMethod.setText(labels[methodIndex], false)
         }
 
-        var gpsLocation: Location? = null
-        var gpsPlace: Place? = null
         if (!prefs.getBoolean(PrayerRepository.KEY_USE_LOCATION, false)) {
             b.editCity.setText(prefs.getString(PrayerRepository.KEY_CITY, ""))
             b.editCountry.setText(prefs.getString(PrayerRepository.KEY_COUNTRY, ""))
@@ -67,33 +64,57 @@ object LocationSheet {
             b.textLocationError.visibility = if (text == null) View.GONE else View.VISIBLE
         }
 
-        b.btnGps.setOnClickListener {
-            error(null)
-            permissions.request(Manifest.permission.ACCESS_COARSE_LOCATION) { granted ->
-                if (!granted) {
-                    error(activity.getString(R.string.prayer_location_denied))
-                    return@request
-                }
-                busy(true)
-                activity.lifecycleScope.launch {
-                    val location = LocationHelper.currentLocation(activity)
+        fun save(onDone: () -> Unit = {}) {
+            editorMethod(prefs, methodIndex)
+            busy(true)
+            activity.lifecycleScope.launch {
+                try {
+                    PrayerRepository.refresh(activity)
+                    PrayerScheduler.refreshDependents(activity)
+                    dialog.dismiss()
+                    onDone()
+                    onSaved()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
                     busy(false)
-                    if (location == null) {
-                        error(activity.getString(R.string.prayer_location_failed))
-                        return@launch
-                    }
-                    val place = reverseGeocode(activity, location)
-                    gpsLocation = location
-                    gpsPlace = place
-                    b.editCity.setText("")
-                    b.editCountry.setText("")
-                    b.textGpsResult.text = activity.getString(
-                        R.string.location_found, place.name ?: activity.getString(R.string.prayer_my_location)
-                    )
-                    b.textGpsResult.visibility = View.VISIBLE
-                    suggest(place.countryCode, place.countryName)
+                    b.progressGps.visibility = View.GONE
+                    b.btnGps.setText(R.string.prayer_use_location)
+                    error(activity.getString(R.string.prayer_fetch_error))
+                    android.widget.Toast.makeText(activity, R.string.prayer_fetch_error, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
+        }
+
+        b.btnGps.setOnClickListener {
+            error(null)
+            LocationHelper.obtain(activity, permissions, onBusy = { on ->
+                busy(on)
+                b.progressGps.visibility = if (on) View.VISIBLE else View.GONE
+                b.btnGps.setText(if (on) R.string.location_locating else R.string.prayer_use_location)
+            }, onResult = { location ->
+                if (location == null) return@obtain
+                b.progressGps.visibility = View.VISIBLE
+                b.btnGps.setText(R.string.location_locating)
+                busy(true)
+                val place = reverseGeocode(activity, location)
+                b.editCity.setText("")
+                b.editCountry.setText("")
+                val label = place.name ?: activity.getString(R.string.prayer_my_location)
+                b.textGpsResult.text = activity.getString(R.string.location_found, label)
+                b.textGpsResult.visibility = View.VISIBLE
+                suggest(place.countryCode, place.countryName)
+                // A fix is all the user asked for: save it and refresh the times straight away.
+                prefs.edit()
+                    .putBoolean(PrayerRepository.KEY_USE_LOCATION, true)
+                    .putFloat(PrayerRepository.KEY_LAT, location.latitude.toFloat())
+                    .putFloat(PrayerRepository.KEY_LNG, location.longitude.toFloat())
+                    .putString(PrayerRepository.KEY_PLACE_NAME, place.name)
+                    .apply()
+                save {
+                    android.widget.Toast.makeText(activity, activity.getString(R.string.location_saved, label), android.widget.Toast.LENGTH_LONG).show()
+                }
+            })
         }
 
         b.btnSaveLocation.setOnClickListener {
@@ -101,7 +122,6 @@ object LocationSheet {
             val city = b.editCity.text?.toString()?.trim().orEmpty()
             val country = b.editCountry.text?.toString()?.trim().orEmpty()
             val editor = prefs.edit()
-            val location = gpsLocation
             when {
                 city.isNotEmpty() -> {
                     suggest(null, country)
@@ -109,35 +129,20 @@ object LocationSheet {
                         .putString(PrayerRepository.KEY_CITY, city)
                         .putString(PrayerRepository.KEY_COUNTRY, country)
                 }
-                location != null -> {
-                    editor.putBoolean(PrayerRepository.KEY_USE_LOCATION, true)
-                        .putFloat(PrayerRepository.KEY_LAT, location.latitude.toFloat())
-                        .putFloat(PrayerRepository.KEY_LNG, location.longitude.toFloat())
-                        .putString(PrayerRepository.KEY_PLACE_NAME, gpsPlace?.name)
-                }
                 PrayerRepository.isConfigured(activity) -> Unit // only the method changed
                 else -> {
                     error(activity.getString(R.string.prayer_enter_city))
                     return@setOnClickListener
                 }
             }
-            editor.putInt(PrayerRepository.KEY_METHOD, PrayerRepository.METHOD_IDS[methodIndex]).apply()
-            busy(true)
-            activity.lifecycleScope.launch {
-                try {
-                    PrayerRepository.refresh(activity)
-                    PrayerScheduler.refreshDependents(activity)
-                    dialog.dismiss()
-                    onSaved()
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    busy(false)
-                    error(activity.getString(R.string.prayer_fetch_error))
-                }
-            }
+            editor.apply()
+            save()
         }
         dialog.show()
+    }
+
+    private fun editorMethod(prefs: android.content.SharedPreferences, methodIndex: Int) {
+        prefs.edit().putInt(PrayerRepository.KEY_METHOD, PrayerRepository.METHOD_IDS[methodIndex]).apply()
     }
 
     @Suppress("DEPRECATION")

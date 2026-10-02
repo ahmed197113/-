@@ -210,6 +210,14 @@
     <string name="location_set">تحديد الموقع</string>
     <string name="location_or_manual">أو اكتب مدينتك</string>
     <string name="location_save">حفظ وعرض المواقيت</string>
+    <string name="location_off_title">خدمة الموقع متوقفة</string>
+    <string name="location_off_text">لتحديد مكانك تلقائياً، فعّل خدمة الموقع (GPS) من إعدادات الهاتف ثم اضغط الزر مرة أخرى. ويمكنك بدلاً من ذلك كتابة اسم مدينتك.</string>
+    <string name="location_open_settings">فتح إعدادات الموقع</string>
+    <string name="location_blocked_title">إذن الموقع مرفوض</string>
+    <string name="location_blocked_text">سبق رفض إذن الموقع، لذلك لن يظهر طلب الإذن مرة أخرى. افتح إعدادات التطبيق ← الأذونات ← الموقع واختر «السماح أثناء استخدام التطبيق»، أو اكتب اسم مدينتك.</string>
+    <string name="location_open_app_settings">فتح إعدادات التطبيق</string>
+    <string name="location_locating">جاري تحديد موقعك…</string>
+    <string name="location_saved">تم حفظ موقعك وتحديث مواقيت الصلاة: %1$s</string>
     <string name="location_found">تم تحديد موقعك: %1$s</string>
     <string name="location_change">الموقع</string>
     <string name="method_title">طريقة الحساب</string>
@@ -249,7 +257,7 @@
     <string name="more_share_text">تطبيق «رفيق المسلم» — مواقيت الصلاة والأذان، المصحف بالتفسير والتلاوة، الأحاديث، الأذكار، القبلة، التقويم الهجري والمزيد</string>
     <string name="more_about">عن التطبيق</string>
     <string name="more_about_desc">الإصدار %1$s</string>
-    <string name="about_text">رفيق المسلم\n\nالمصادر:\n• نص القرآن: مشروع Tanzil (الرسم العثماني) عبر alquran.cloud\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• الأحاديث: sunnah.com عبر مشروع hadith-json\n• المواقيت: Aladhan API\n• الخطوط: Amiri Quran و Tajawal (رخصة OFL)</string>
+    <string name="about_text">رفيق المسلم\n\nالمصادر:\n• نص القرآن: مشروع Tanzil ‏(tanzil.net) — الرسم العثماني، رواية حفص عن عاصم، منقول حرفياً دون أي تعديل، ومطابق لنص Quran.com\n• التلاوات والتفاسير: alquran.cloud / islamic.network\n• الأذكار: حصن المسلم (hisnmuslim.com)\n• الأحاديث: الصحيحان كاملين، ومن السنن الأربع ما صححه الشيخ الألباني فقط (النصوص والأحكام من sunnah.com عبر مشروع hadith-api)\n• المواقيت: Aladhan API\n• الخطوط: Amiri Quran و Tajawal (رخصة OFL)</string>
 
     <!-- Tasbih -->
     <string name="tasbih_total">المجموع الكلي لهذا الذكر: %1$d</string>
@@ -292,7 +300,7 @@
     <string name="tool_calendar">التقويم الهجري</string>
     <string name="tool_calendar_desc">الشهور الهجرية والمناسبات وأيام الصيام</string>
     <string name="tool_hadith">الأحاديث النبوية</string>
-    <string name="tool_hadith_desc">البخاري ومسلم والسنن ورياض الصالحين وغيرها</string>
+    <string name="tool_hadith_desc">الأحاديث الصحيحة فقط: الصحيحان وصحيح السنن الأربع</string>
     <string name="tool_names">أسماء الله الحسنى</string>
     <string name="tool_names_desc">الأسماء التسعة والتسعون مع معانيها</string>
     <string name="tool_ruqyah">الرقية الشرعية</string>

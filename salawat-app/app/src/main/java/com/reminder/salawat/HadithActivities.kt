@@ -52,7 +52,7 @@ class HadithBooksActivity : AppCompatActivity() {
             Row.Card(
                 title = info.title,
                 body = getString(R.string.hadith_count, QuranData.toArabicDigits(info.count)) +
-                    (if (info.author.isNotBlank()) " • ${info.author}" else ""),
+                    (if (info.author.isNotBlank()) " • ${info.author}" else "") + "\n✓ " + info.grading,
                 meta = status,
                 bodySp = 14f,
                 action2 = if (available && !info.bundled) getString(R.string.hadith_delete) to {
