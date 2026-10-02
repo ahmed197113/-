@@ -210,6 +210,15 @@
     <string name="location_set">تحديد الموقع</string>
     <string name="location_or_manual">أو اكتب مدينتك</string>
     <string name="location_save">حفظ وعرض المواقيت</string>
+    <string name="perm_notif_title">إذن الإشعارات مطلوب للأذان</string>
+    <string name="perm_notif_text">بدون إذن الإشعارات لن يعمل الأذان ولا تذكير الصلاة على النبي ﷺ. افتح إعدادات التطبيق وفعّل الإشعارات.</string>
+    <string name="perm_alarm_title">السماح بالمنبهات الدقيقة</string>
+    <string name="perm_alarm_text">ليرفع الأذان في وقت الصلاة بالضبط دون تأخير، اسمح للتطبيق بضبط المنبهات الدقيقة.</string>
+    <string name="perm_battery_title">حتى لا يتأخر الأذان</string>
+    <string name="perm_battery_text">بعض الهواتف توقف التطبيقات لتوفير البطارية فيتأخر الأذان أو لا يعمل. في الشاشة التالية اختر «رفيق المسلم» ثم «عدم التحسين» (أو «غير مقيّد»).</string>
+    <string name="perm_open_battery">فتح إعدادات البطارية</string>
+    <string name="perm_allow">السماح</string>
+    <string name="perm_later">لاحقاً</string>
     <string name="location_off_title">خدمة الموقع متوقفة</string>
     <string name="location_off_text">لتحديد مكانك تلقائياً، فعّل خدمة الموقع (GPS) من إعدادات الهاتف ثم اضغط الزر مرة أخرى. ويمكنك بدلاً من ذلك كتابة اسم مدينتك.</string>
     <string name="location_open_settings">فتح إعدادات الموقع</string>

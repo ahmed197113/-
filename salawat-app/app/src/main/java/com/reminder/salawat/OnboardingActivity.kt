@@ -35,11 +35,22 @@ class OnboardingActivity : AppCompatActivity(), PermissionHost {
         }
         binding.btnOnboardingSkip.setOnClickListener { finishSetup(applyChoices = false) }
         binding.btnOnboardingNext.setOnClickListener {
-            if (binding.flipper.displayedChild < STEPS - 1) {
-                binding.flipper.showNext()
-                updateStep()
-            } else {
-                finishSetup(applyChoices = true)
+            when (binding.flipper.displayedChild) {
+                0 -> {
+                    // Right away: everything the adhan needs (notifications, exact alarms, battery), then location.
+                    AlertPermissions.requestAll(this, permissions) {
+                        binding.flipper.showNext()
+                        updateStep()
+                        if (!PrayerRepository.isConfigured(this)) {
+                            LocationSheet.show(this, permissions) { updateStep() }
+                        }
+                    }
+                }
+                STEPS - 1 -> finishSetup(applyChoices = true)
+                else -> {
+                    binding.flipper.showNext()
+                    updateStep()
+                }
             }
         }
         updateStep()
@@ -74,21 +85,16 @@ class OnboardingActivity : AppCompatActivity(), PermissionHost {
         }
         val wantAdhan = binding.switchOnboardingAdhan.isChecked
         val wantReminder = binding.switchOnboardingReminder.isChecked
-        if (!wantAdhan && !wantReminder) {
-            done()
-            return
-        }
-        permissions.requestNotifications { granted ->
-            PrayerRepository.prefs(this).edit().putBoolean(PrayerRepository.KEY_ALERTS, granted && wantAdhan).apply()
-            prefs.edit().putBoolean(Prefs.KEY_REMINDER_ENABLED, granted && wantReminder).apply()
-            ReminderWorker.apply(this)
-            PrayerScheduler.refreshDependents(this)
-            done()
-        }
+        // The adhan is on by default; the switches only let the user opt out. Permissions were asked on step one.
+        PrayerRepository.prefs(this).edit().putBoolean(PrayerRepository.KEY_ALERTS, wantAdhan).apply()
+        prefs.edit().putBoolean(Prefs.KEY_REMINDER_ENABLED, wantReminder).apply()
+        ReminderWorker.apply(this)
+        PrayerScheduler.refreshDependents(this)
+        done()
     }
 
     private fun done() {
-        Prefs.get(this).edit().putBoolean(Prefs.KEY_ONBOARDED, true).apply()
+        Prefs.get(this).edit().putBoolean(Prefs.KEY_ONBOARDED, true).putBoolean("alert_perms_asked_v6", true).apply()
         startActivity(MainActivity.intent(this, MainActivity.TAB_HOME))
         finish()
     }

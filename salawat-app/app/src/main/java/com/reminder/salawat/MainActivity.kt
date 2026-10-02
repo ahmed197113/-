@@ -34,6 +34,15 @@ class MainActivity : AppCompatActivity(), PermissionHost {
         val start = savedInstanceState?.getString(STATE_TAB) ?: intent.getStringExtra(EXTRA_TAB) ?: TAB_HOME
         select(start)
 
+        // Users who set the app up before the adhan became on-by-default are asked once for what it needs.
+        val prefs = Prefs.get(this)
+        if (savedInstanceState == null && !prefs.getBoolean(KEY_ALERT_PERMS_ASKED, false)) {
+            prefs.edit().putBoolean(KEY_ALERT_PERMS_ASKED, true).apply()
+            if (PrayerRepository.alertsOn(this)) {
+                AlertPermissions.requestAll(this, permissions) { PrayerScheduler.refreshDependents(this) }
+            }
+        }
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (currentTab != TAB_HOME) {
@@ -91,6 +100,7 @@ class MainActivity : AppCompatActivity(), PermissionHost {
     }
 
     companion object {
+        private const val KEY_ALERT_PERMS_ASKED = "alert_perms_asked_v6"
         const val EXTRA_TAB = "tab"
         private const val STATE_TAB = "current_tab"
         const val TAB_HOME = "home"

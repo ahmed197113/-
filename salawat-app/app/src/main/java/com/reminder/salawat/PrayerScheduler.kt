@@ -32,7 +32,7 @@ object PrayerScheduler {
     /** Arms a single alarm for the next salah; each alarm re-arms the following one. */
     fun schedule(context: Context) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
-        val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, false)
+        val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, true)
         val next = if (enabled) PrayerRepository.nextPrayer(context) { PrayerRepository.isAlertEnabled(context, it) } else null
         if (next == null) {
             alarmManager.cancel(pendingIntent(context, null))
@@ -75,7 +75,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val prayer = intent.getStringExtra(PrayerScheduler.EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() }
         val millis = intent.getLongExtra(PrayerScheduler.EXTRA_MILLIS, 0L)
-        val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, false)
+        val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, true)
         // Skip stale alarms (e.g. delivered long after the device was off).
         if (prayer != null && enabled && System.currentTimeMillis() - millis < 30 * 60_000L) {
             val adhan = AdhanCatalog.sourceFor(context, prayer)

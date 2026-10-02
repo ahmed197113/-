@@ -109,7 +109,7 @@ object PrayerRepository {
             .joinToString(",")
     }
 
-    fun alertsOn(context: Context): Boolean = prefs(context).getBoolean(KEY_ALERTS, false)
+    fun alertsOn(context: Context): Boolean = prefs(context).getBoolean(KEY_ALERTS, true)
 
     fun placeLabel(context: Context): String? {
         val p = prefs(context)

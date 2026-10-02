@@ -42,6 +42,13 @@ adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
 # 1. First run: onboarding
 start .MainActivity
 shot 01-onboarding-welcome 6
+# First run asks for the adhan's permissions straight away
+tap_text "$(printf 'التالي')" || true
+shot 01b-onboarding-notif-permission 3
+tap_text "Allow" || tap_text "السماح" || true
+shot 01c-onboarding-next-permission 3
+tap_text "لاحقاً" || true
+shot 01d-onboarding-after-permissions 4
 
 # 2. Seed a configured user (Cairo, Egyptian method, alerts on) and open the app
 adb shell am force-stop $pkg
@@ -50,6 +57,7 @@ adb shell "run-as $pkg sh -c 'cat > shared_prefs/salawat_prefs.xml'" <<'XML'
 <?xml version='1.0' encoding='utf-8' standalone='yes' ?>
 <map>
     <boolean name="onboarded" value="true" />
+    <boolean name="alert_perms_asked_v6" value="true" />
     <boolean name="reminder_enabled" value="true" />
     <long name="reminder_interval_minutes" value="30" />
     <int name="last_page" value="2" />
