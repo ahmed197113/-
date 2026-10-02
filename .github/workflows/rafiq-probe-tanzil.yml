@@ -1,0 +1,26 @@
+name: Rafiq probe tanzil.net display
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/probe_tanzil.py"
+      - ".github/workflows/rafiq-probe-tanzil.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/probe_tanzil.py "$RUNNER_TEMP/t"
+      - if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-tanzil-probe-${{ github.run_number }}
+          name: tanzil.net probe ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/t/*
