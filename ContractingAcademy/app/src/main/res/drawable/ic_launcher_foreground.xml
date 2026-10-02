@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- قاعدة -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,74h48v4h-48z" />
+    <!-- مبنى -->
+    <path android:fillColor="#FFFFFF" android:pathData="M36,44h20v30h-20z" />
+    <path android:fillColor="#1F3A5F" android:pathData="M40,48h4v4h-4zM48,48h4v4h-4zM40,56h4v4h-4zM48,56h4v4h-4zM42,66h8v8h-8z" />
+    <!-- رافعة -->
+    <path android:fillColor="#F2B705" android:pathData="M60,30h3v44h-3z" />
+    <path android:fillColor="#F2B705" android:pathData="M48,30h28v3h-28z" />
+    <path android:fillColor="#F2B705" android:pathData="M73,33h1.5v10h-1.5z" />
+    <!-- أعمدة بيانية -->
+    <path android:fillColor="#4FD1C5" android:pathData="M66,62h4v12h-4zM72,54h4v20h-4z" />
+</vector>
