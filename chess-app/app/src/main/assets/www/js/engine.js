@@ -170,6 +170,37 @@
         });
       });
     },
+    /* اللعب بأسلوب: هجومي، موضعي، دفاعي، أو متوازن */
+    playStyle: function (fen, level, style) {
+      if (!style || style === 'balanced' || level < 3) return Engine.play(fen, level);
+      var L = LEVELS[Math.max(0, Math.min(LEVELS.length - 1, level))];
+      var e = getPlayer();
+      return e.whenReady().then(function (ok) {
+        if (!ok) return Engine.play(fen, level);
+        var setup = ['setoption name MultiPV value 4', 'setoption name Skill Level value 20'];
+        return e.run(fen, 'go depth ' + L.depth + ' movetime 1800', setup).then(function (r) {
+          if (!r.lines.length) return r.best;
+          var c = new ChessJS.Chess(fen), me = c.turn();
+          var opK = c.findPiece({ type: 'k', color: me === 'w' ? 'b' : 'w' })[0], myK = c.findPiece({ type: 'k', color: me })[0];
+          function sc(l) { return l.score.mate != null ? (l.score.mate > 0 ? 100000 - l.score.mate : -100000 - l.score.mate) : l.score.cp; }
+          var best = sc(r.lines[0]), margin = Math.max(18, 140 - level * 14);
+          function dist(a, b) { return Math.max(Math.abs(a.charCodeAt(0) - b.charCodeAt(0)), Math.abs(+a[1] - +b[1])); }
+          var cands = r.lines.filter(function (l) { return best - sc(l) <= margin; });
+          var pick = cands[0], top = -1e9;
+          cands.forEach(function (l) {
+            var u = l.pv[0], cc = new ChessJS.Chess(fen), mv;
+            try { mv = cc.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] }); } catch (x) { return; }
+            var v = 0;
+            if (style === 'attack') { if (mv.captured) v += 3; if (cc.isCheck()) v += 4; v += (dist(mv.from, opK) - dist(mv.to, opK)) * 2; if (mv.piece === 'p' && Math.abs(mv.to.charCodeAt(0) - opK.charCodeAt(0)) <= 1) v += 1.5; }
+            else if (style === 'positional') { if (!mv.captured && !cc.isCheck()) v += 2; var f = mv.to.charCodeAt(0) - 97, rk = +mv.to[1] - 1; v += 3 - (Math.abs(3.5 - f) + Math.abs(3.5 - rk)) / 2; if ((mv.piece === 'n' || mv.piece === 'b') && (mv.from[1] === '1' || mv.from[1] === '8')) v += 2; }
+            else if (style === 'defense') { v += (dist(mv.from, myK) - dist(mv.to, myK)) * 1.5; if (mv.captured) v += 1; if (mv.flags.indexOf('k') >= 0 || mv.flags.indexOf('q') >= 0) v += 3; }
+            v += (sc(l) - best) / 60;
+            if (v > top) { top = v; pick = l; }
+          });
+          return pick.pv[0];
+        });
+      });
+    },
     stop: function () { if (analyst) analyst.stop(); },
     stopPlayer: function () { if (player) player.stop(); }
   };

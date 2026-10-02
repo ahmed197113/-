@@ -42,10 +42,12 @@
 
   /* ===== إعداد المباراة ===== */
   A.route('play', function (v) {
-    v.innerHTML = '<button class="bigbtn main" id="on"><span class="ic">🌍</span><span><b>العب أونلاين</b><small>سجّل حسابك والعب ضد لاعبين حقيقيين</small></span></button>' +
+    v.innerHTML = '<button class="bigbtn main" id="co"><span class="ic">🎓</span><span><b>وضع المدرب</b><small>العب، وبعد كل نقلة اعرف هل هي صح أم خطأ وما الأفضل</small></span></button>' +
+      '<button class="bigbtn" id="on"><span class="ic">🌍</span><span><b>العب أونلاين</b><small>سجّل حسابك والعب ضد لاعبين حقيقيين</small></span></button>' +
       '<button class="bigbtn" id="ai"><span class="ic">🤖</span><span><b>العب ضد الكمبيوتر</b><small>9 مستويات · المدرب يشرح نقلاتك</small></span></button>' +
       '<button class="bigbtn" id="fr"><span class="ic">👥</span><span><b>صديق على نفس الهاتف</b><small>لاعبان على جهاز واحد</small></span></button>' +
       '<button class="bigbtn" id="an"><span class="ic">🔬</span><span><b>المحلل</b><small>حلّل أي موقف أو مباراة</small></span></button>';
+    $('#co', v).onclick = function () { A.go('coachsetup'); };
     $('#on', v).onclick = function () { A.go('online'); };
     $('#ai', v).onclick = function () { A.go('vsai'); };
     $('#fr', v).onclick = function () { A.go('friend'); };

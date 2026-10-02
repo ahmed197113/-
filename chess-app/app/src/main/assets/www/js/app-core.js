@@ -207,8 +207,8 @@
   /* ===== التنقل ===== */
   var routes = {}, stack = [], cleanup = null;
   var NAV = [['home'], ['academy'], ['puzzles'], ['play']];
-  var TAB = { home: 'home', academy: 'academy', course: 'academy', lesson: 'academy', openings: 'academy', opening: 'academy', puzzles: 'puzzles', puzzle: 'puzzles', play: 'play', game: 'play', vsai: 'play', online: 'play', ogame: 'play', friend: 'play', analysis: 'play' };
-  var FOCUS = { lesson: 1, puzzle: 1, game: 1, ogame: 1, friend: 1, analysis: 1, opening: 1, coords: 1, vision: 1 };
+  var TAB = { home: 'home', academy: 'academy', course: 'academy', lesson: 'academy', openings: 'academy', opening: 'academy', puzzles: 'puzzles', puzzle: 'puzzles', play: 'play', game: 'play', coachsetup: 'play', coachgame: 'play', vsai: 'play', online: 'play', ogame: 'play', friend: 'play', analysis: 'play' };
+  var FOCUS = { lesson: 1, puzzle: 1, game: 1, coachgame: 1, ogame: 1, friend: 1, analysis: 1, opening: 1, coords: 1, vision: 1 };
   function route(name, fn) { routes[name] = fn; }
   /* شريط أزرار سفلي ثابت: [[id, icon, label, pri]] */
   function actionbar(items) {
@@ -362,7 +362,7 @@
   });
 
   route('about', function (v) {
-    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.5 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
+    v.innerHTML = '<div class="card center"><div class="splash-in" style="font-size:60px">♞</div><h2>أكاديمية الشطرنج الذكية</h2><p>الإصدار 1.6 · تطبيق تعليمي عربي بالكامل يعمل دون إنترنت</p></div>' +
       '<div class="card"><h2>🧠 التقنيات</h2><p>• محرك <b>Stockfish 18</b> (أقوى محرك شطرنج في العالم) يعمل داخل الهاتف — رخصة GPLv3.<br>• مكتبة <b>chess.js</b> لقواعد اللعبة — رخصة BSD.<br>• قطع <b>cburnett</b> — رخصة GPLv2+/CC BY-SA.<br>• خط <b>Cairo</b> — رخصة SIL OFL.<br>• أصوات: الخشبي من تصميم التطبيق، والباقي من lichess.org (Enigmahack) — AGPLv3+.<br>• أطقم القطع الإضافية من lichess.org (merida وchessnut وfantasy وغيرها) برخص حرة.<br>• نظام المدرب العربي والشروحات والألغاز: مطوّر خصيصًا لهذا التطبيق.</p></div>' +
       '<div class="card"><h2>📜 الشطرنج والعرب</h2><p>انتقل الشطرنج من الهند إلى فارس، ثم طوّره العرب في العصر العباسي وألّفوا فيه الكتب، وكان <b>الصولي</b> و<b>العدلي</b> من أعظم لاعبيه. ومن الأندلس انتقل إلى أوروبا. كلمة "شاه مات" و"رخ" من أصول فارسية-عربية.</p></div>';
     return { title: 'عن التطبيق' };
