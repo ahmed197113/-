@@ -83,7 +83,7 @@
             android:drawablePadding="4dp"
             android:gravity="center"
             android:textAppearance="@style/Text.BodySmall"
-            android:textColor="@color/on_brand_secondary" />
+            android:textColor="?attr/brandOnSecondary" />
     </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -168,7 +168,7 @@
                         android:importantForAccessibility="no"
                         android:padding="22dp"
                         android:src="@drawable/ic_location"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"

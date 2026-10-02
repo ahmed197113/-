@@ -127,6 +127,8 @@ class QuranPagerActivity : AppCompatActivity() {
         binding.btnReciter.setOnClickListener { chooseReciter { updateReciterButton() } }
         binding.btnFontSmaller.setOnClickListener { changeFont(-2f) }
         binding.btnFontBigger.setOnClickListener { changeFont(2f) }
+        binding.btnReadingMode.setOnClickListener { chooseReadingMode() }
+        applyReadingMode()
         binding.btnPlayPage.setOnClickListener {
             val page = QuranData.page(this, binding.pager.currentItem + 1)
             if (page.isNotEmpty()) viewModel.play(page.first().global, continuous = true)
@@ -167,6 +169,26 @@ class QuranPagerActivity : AppCompatActivity() {
 
     private fun updateReciterButton() {
         binding.btnReciter.text = Reciters.selected(this).name
+    }
+
+    private fun chooseReadingMode() {
+        val modes = ReadingMode.values()
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(R.string.settings_reading_mode)
+            .setSingleChoiceItems(modes.map { getString(it.labelRes) }.toTypedArray(), ReadingMode.get(this).ordinal) { d, which ->
+                ReadingMode.set(this, modes[which])
+                applyReadingMode()
+                d.dismiss()
+            }
+            .show()
+    }
+
+    private fun applyReadingMode() {
+        val c = ReadingMode.get(this).colors(this)
+        binding.pagerRoot.setBackgroundColor(c.background)
+        binding.btnReadingMode.setIconResource(if (c.isDark) R.drawable.ic_sun else R.drawable.ic_moon)
+        adapter.colors = c
+        adapter.notifyDataSetChanged()
     }
 
     private fun changeFont(delta: Float) {
@@ -298,6 +320,7 @@ class QuranPagerActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<PageAdapter.ViewHolder>() {
         var playingGlobal = -1
         var selectedGlobal = -1
+        var colors: ReadingMode.Colors? = null
 
         inner class ViewHolder(val binding: ItemQuranPageBinding) : RecyclerView.ViewHolder(binding.root) {
             init {
@@ -319,16 +342,21 @@ class QuranPagerActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val page = position + 1
             holder.binding.textPageText.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSp)
+            colors?.let { c ->
+                (holder.binding.pageFrame.background.mutate() as? android.graphics.drawable.GradientDrawable)?.setColor(c.paper)
+                holder.binding.textPageText.setTextColor(c.text)
+                holder.binding.textPageNumber.setTextColor(c.pageNumber)
+            }
             holder.binding.textPageText.text = buildPage(page)
             holder.binding.textPageNumber.text = getString(R.string.quran_page_number, QuranData.toArabicDigits(page))
         }
 
         private fun buildPage(page: Int): CharSequence {
             val context = this@QuranPagerActivity
-            val gold = ContextCompat.getColor(context, R.color.gold)
-            val accent = ContextCompat.getColor(context, R.color.accent_text)
-            val highlight = ContextCompat.getColor(context, R.color.ayah_highlight)
-            val ayahNumber = ContextCompat.getColor(context, R.color.ayah_number)
+            val gold = Themes.color(context, R.color.gold)
+            val accent = colors?.pageNumber ?: Themes.color(context, R.color.accent_text)
+            val highlight = Themes.color(context, R.color.ayah_highlight)
+            val ayahNumber = colors?.ayahNumber ?: Themes.color(context, R.color.ayah_number)
             val sb = SpannableStringBuilder()
             for (ayah in QuranData.page(context, page)) {
                 if (ayah.ayah == 1) {

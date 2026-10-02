@@ -99,7 +99,7 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
         binding.btnNextDay.setOnClickListener { dayOffset++; render() }
         binding.layoutDate.setOnClickListener { dayOffset = 0; render() }
         binding.btnPrayerSetup.setOnClickListener { openLocation() }
-        binding.swipeRefresh.setColorSchemeResources(R.color.teal_primary)
+        binding.swipeRefresh.setColorSchemeColors(Themes.color(requireContext(), R.color.teal_primary))
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
 
         viewModel.loading.observe(viewLifecycleOwner) { binding.swipeRefresh.isRefreshing = it }
@@ -243,7 +243,7 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
                 !prayer.isSalah -> getString(R.string.sunrise_no_adhan)
                 else -> ""
             }
-            val textColor = ContextCompat.getColor(context, if (isNext) R.color.accent_text else R.color.text_primary_light)
+            val textColor = Themes.color(context, if (isNext) R.color.accent_text else R.color.text_primary_light)
             row.textPrayerName.setTextColor(textColor)
             row.textPrayerTime.setTextColor(textColor)
             if (prayer.isSalah) {

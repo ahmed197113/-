@@ -36,7 +36,7 @@
         android:fontFamily="@font/kfgqpc_hafs"
         app:fontFamily="@font/kfgqpc_hafs"
         android:gravity="center"
-        android:textColor="@color/accent_text"
+        android:textColor="?attr/brandAccentText"
         android:textSize="30sp" />
 
     <FrameLayout
@@ -116,6 +116,6 @@
             android:layout_weight="1"
             android:text="@string/tasbih_reset"
             app:icon="@drawable/ic_refresh"
-            app:iconTint="@color/accent_text" />
+            app:iconTint="?attr/brandAccentText" />
     </LinearLayout>
 </LinearLayout>

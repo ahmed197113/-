@@ -17,7 +17,7 @@
         android:background="@drawable/bg_icon_circle"
         android:importantForAccessibility="no"
         android:padding="9dp"
-        app:tint="@color/accent_text" />
+        app:tint="?attr/brandAccentText" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -38,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="@style/Text.BodySmall"
-            android:textColor="@color/accent_text"
+            android:textColor="?attr/brandAccentText"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -57,7 +57,7 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/prayer_done_desc"
         android:src="@drawable/ic_check"
-        app:tint="@color/accent_text" />
+        app:tint="?attr/brandAccentText" />
 
     <ImageButton
         android:id="@+id/btnPrayerBell"
@@ -66,5 +66,5 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/prayer_bell_desc"
         android:src="@drawable/ic_bell"
-        app:tint="@color/accent_text" />
+        app:tint="?attr/brandAccentText" />
 </LinearLayout>

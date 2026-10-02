@@ -163,6 +163,19 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
                 SalawatApp.applyTheme(this)
             }
         }
+        val palette = Themes.selected(this)
+        Ui.row(display, R.drawable.ic_star, getString(R.string.settings_color_theme), getString(palette.nameRes)) {
+            choose(getString(R.string.settings_color_theme), Themes.ALL.map { getString(it.nameRes) }, Themes.ALL.indexOf(palette)) {
+                Themes.select(this, Themes.ALL[it])
+                recreate()
+            }
+        }
+        val reading = ReadingMode.get(this)
+        Ui.row(display, R.drawable.ic_quran, getString(R.string.settings_reading_mode), getString(reading.labelRes)) {
+            choose(getString(R.string.settings_reading_mode), ReadingMode.values().map { getString(it.labelRes) }, reading.ordinal) {
+                ReadingMode.set(this, ReadingMode.values()[it])
+            }
+        }
         c.addView(View(this).apply { minimumHeight = 1 })
     }
 

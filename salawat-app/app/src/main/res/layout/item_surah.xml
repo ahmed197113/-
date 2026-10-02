@@ -20,7 +20,7 @@
         android:background="@drawable/bg_number_badge"
         android:gravity="center"
         android:textAppearance="@style/Text.LabelLarge"
-        android:textColor="@color/accent_text" />
+        android:textColor="?attr/brandAccentText" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -51,5 +51,5 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="@style/Text.LabelMedium"
-        android:textColor="@color/accent_text" />
+        android:textColor="?attr/brandAccentText" />
 </LinearLayout>

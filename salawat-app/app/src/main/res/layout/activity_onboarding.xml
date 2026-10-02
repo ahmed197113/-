@@ -42,7 +42,7 @@
                 android:layout_marginTop="20dp"
                 android:text="@string/title_main"
                 android:textAppearance="@style/Text.Headline"
-                android:textColor="@color/accent_text" />
+                android:textColor="?attr/brandAccentText" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -78,7 +78,7 @@
                 android:importantForAccessibility="no"
                 android:padding="24dp"
                 android:src="@drawable/ic_location"
-                app:tint="@color/accent_text" />
+                app:tint="?attr/brandAccentText" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -115,7 +115,7 @@
                 android:drawablePadding="6dp"
                 android:gravity="center"
                 android:textAppearance="@style/Text.TitleSmall"
-                android:textColor="@color/accent_text"
+                android:textColor="?attr/brandAccentText"
                 android:visibility="gone" />
         </LinearLayout>
 
@@ -134,7 +134,7 @@
                 android:importantForAccessibility="no"
                 android:padding="24dp"
                 android:src="@drawable/ic_bell"
-                app:tint="@color/accent_text" />
+                app:tint="?attr/brandAccentText" />
 
             <TextView
                 android:layout_width="wrap_content"

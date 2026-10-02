@@ -49,7 +49,7 @@
                     android:paddingTop="6dp"
                     android:paddingBottom="6dp"
                     android:textAppearance="@style/Text.BodyMedium"
-                    android:textColor="@color/on_brand_secondary" />
+                    android:textColor="?attr/brandOnSecondary" />
 
                 <ImageButton
                     android:id="@+id/btnHomeSettings"
@@ -74,7 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/Text.BodyMedium"
-                android:textColor="@color/on_brand_secondary" />
+                android:textColor="?attr/brandOnSecondary" />
 
             <LinearLayout
                 android:id="@+id/layoutNext"
@@ -89,7 +89,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/Text.BodyMedium"
-                    android:textColor="@color/on_brand_secondary" />
+                    android:textColor="?attr/brandOnSecondary" />
 
                 <TextView
                     android:id="@+id/textCountdown"
@@ -140,10 +140,10 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:text="@string/location_set"
-                    android:textColor="@color/teal_dark"
+                    android:textColor="?attr/brandDark"
                     app:backgroundTint="@color/gold"
                     app:icon="@drawable/ic_location"
-                    app:iconTint="@color/teal_dark" />
+                    app:iconTint="?attr/brandDark" />
             </LinearLayout>
         </LinearLayout>
 
@@ -223,7 +223,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/Text.LabelMedium"
-                    android:textColor="@color/teal_dark" />
+                    android:textColor="?attr/brandDark" />
 
                 <TextView
                     android:id="@+id/textOccasion"
@@ -231,7 +231,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:textAppearance="@style/Text.TitleSmall"
-                    android:textColor="@color/teal_dark" />
+                    android:textColor="?attr/brandDark" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -243,7 +243,7 @@
             android:layout_marginTop="10dp"
             android:layout_marginEnd="16dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/teal_primary">
+            app:cardBackgroundColor="?attr/brandPrimary">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -347,7 +347,7 @@
                     android:importantForAccessibility="no"
                     android:padding="11dp"
                     android:src="@drawable/ic_quran"
-                    app:tint="@color/accent_text" />
+                    app:tint="?attr/brandAccentText" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -417,7 +417,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_quran"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -454,7 +454,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_quran"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -491,7 +491,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_star"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -528,7 +528,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_touch"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -565,7 +565,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_compass"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -602,7 +602,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_clock"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -639,7 +639,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_check"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -676,7 +676,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_heart"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -713,7 +713,7 @@
                         android:importantForAccessibility="no"
                         android:padding="11dp"
                         android:src="@drawable/ic_apps"
-                        app:tint="@color/accent_text" />
+                        app:tint="?attr/brandAccentText" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -766,7 +766,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:textAppearance="@style/Text.BodySmall"
-                    android:textColor="@color/accent_text" />
+                    android:textColor="?attr/brandAccentText" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -806,7 +806,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:textAppearance="@style/Text.BodySmall"
-                    android:textColor="@color/accent_text" />
+                    android:textColor="?attr/brandAccentText" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -817,7 +817,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="12dp"
             android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/card_tint">
+            app:cardBackgroundColor="?attr/brandTint">
 
             <LinearLayout
                 android:layout_width="match_parent"

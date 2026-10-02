@@ -48,7 +48,7 @@ abstract class ColumnActivity : AppCompatActivity() {
     protected fun text(parent: ViewGroup, value: CharSequence, style: Int, color: Int, gravity: Int = Gravity.START): TextView {
         val tv = TextView(this, null, 0, style)
         tv.text = value
-        tv.setTextColor(ContextCompat.getColor(this, color))
+        tv.setTextColor(Themes.color(this, color))
         tv.gravity = gravity
         parent.addView(tv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         return tv
@@ -167,7 +167,7 @@ class CalendarActivity : ColumnActivity() {
     private fun navButton(icon: Int, onClick: () -> Unit) = ImageButton(this).apply {
         setImageResource(icon)
         setBackgroundResource(R.drawable.bg_icon_circle)
-        setColorFilter(ContextCompat.getColor(context, R.color.accent_text))
+        setColorFilter(Themes.color(context, R.color.accent_text))
         layoutParams = LinearLayout.LayoutParams(dp(44), dp(44))
         setOnClickListener { onClick() }
     }
@@ -185,13 +185,13 @@ class CalendarActivity : ColumnActivity() {
         val t = TextView(this, null, 0, if (header) R.style.Text_LabelSmall else R.style.Text_TitleSmall)
         t.text = main
         t.gravity = Gravity.CENTER
-        t.setTextColor(ContextCompat.getColor(this, if (header) R.color.text_secondary_light else R.color.text_primary_light))
+        t.setTextColor(Themes.color(this, if (header) R.color.text_secondary_light else R.color.text_primary_light))
         box.addView(t)
         if (sub != null) {
             val s = TextView(this, null, 0, R.style.Text_LabelSmall)
             s.text = sub
             s.gravity = Gravity.CENTER
-            s.setTextColor(ContextCompat.getColor(this, R.color.text_secondary_light))
+            s.setTextColor(Themes.color(this, R.color.text_secondary_light))
             box.addView(s)
         }
         return box
@@ -298,14 +298,14 @@ class TrackerActivity : ColumnActivity() {
             weekCard.addView(line)
             val label = TextView(this, null, 0, R.style.Text_BodyMedium)
             label.text = if (back == 0) getString(R.string.calendar_today) else HijriDate.weekday(day)
-            label.setTextColor(ContextCompat.getColor(this, R.color.text_primary_light))
+            label.setTextColor(Themes.color(this, R.color.text_primary_light))
             line.addView(label, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             PrayerTracker.SALAH.forEach { p ->
                 val dot = TextView(this, null, 0, R.style.Text_LabelLarge)
                 val done = PrayerTracker.isDone(this, day, p)
                 dot.text = if (done) "●" else "○"
                 dot.gravity = Gravity.CENTER
-                dot.setTextColor(ContextCompat.getColor(this, if (done) R.color.teal_primary else R.color.outline))
+                dot.setTextColor(Themes.color(this, if (done) R.color.teal_primary else R.color.outline))
                 dot.setOnClickListener { PrayerTracker.toggle(this, day, p); refresh() }
                 line.addView(dot, LinearLayout.LayoutParams(dp(36), dp(36)))
             }
@@ -330,13 +330,13 @@ class TrackerActivity : ColumnActivity() {
             qada.addView(line)
             val name = TextView(this, null, 0, R.style.Text_TitleSmall)
             name.text = getString(p.nameRes)
-            name.setTextColor(ContextCompat.getColor(this, R.color.text_primary_light))
+            name.setTextColor(Themes.color(this, R.color.text_primary_light))
             line.addView(name, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             line.addView(stepper(p, -1, "−"))
             val count = TextView(this, null, 0, R.style.Text_TitleMedium)
             count.text = QuranData.toArabicDigits(PrayerTracker.qada(this, p))
             count.gravity = Gravity.CENTER
-            count.setTextColor(ContextCompat.getColor(this, R.color.accent_text))
+            count.setTextColor(Themes.color(this, R.color.accent_text))
             line.addView(count, LinearLayout.LayoutParams(dp(56), ViewGroup.LayoutParams.WRAP_CONTENT))
             line.addView(stepper(p, 1, "+"))
         }

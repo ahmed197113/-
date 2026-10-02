@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:maxLines="1"
         android:textAppearance="@style/Text.LabelMedium"
-        android:textColor="@color/on_brand_secondary" />
+        android:textColor="?attr/brandOnSecondary" />
 
     <TextView
         android:id="@+id/textChipTime"

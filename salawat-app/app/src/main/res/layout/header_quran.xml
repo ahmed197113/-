@@ -21,7 +21,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="@color/teal_primary">
+            app:cardBackgroundColor="?attr/brandPrimary">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -49,7 +49,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/Text.BodySmall"
-                    android:textColor="@color/on_brand_secondary" />
+                    android:textColor="?attr/brandOnSecondary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -167,7 +167,7 @@
         android:text="@string/tool_search"
         app:icon="@drawable/ic_search"
         app:iconGravity="textStart"
-        app:iconTint="@color/accent_text" />
+        app:iconTint="?attr/brandAccentText" />
 
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/toggleList"

@@ -12,6 +12,7 @@ class SalawatApp : Application() {
         // even on phones set to another language.
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar"))
         applyTheme(this)
+        Themes.install(this)
         HadithQuotes.init(this)
         Notifications.createChannels(this)
         PrayerRefreshWorker.ensurePeriodic(this)

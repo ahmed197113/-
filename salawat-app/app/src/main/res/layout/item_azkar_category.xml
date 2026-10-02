@@ -18,7 +18,7 @@
         android:background="@drawable/bg_number_badge"
         android:gravity="center"
         android:textAppearance="@style/Text.LabelMedium"
-        android:textColor="@color/accent_text" />
+        android:textColor="?attr/brandAccentText" />
 
     <TextView
         android:id="@+id/textCategoryTitle"

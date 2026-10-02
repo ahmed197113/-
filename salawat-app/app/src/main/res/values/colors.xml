@@ -27,4 +27,41 @@
     <color name="ayah_highlight">#55d4af37</color>
     <!-- tanzil.net colours ayah numbers #050 -->
     <color name="ayah_number">#005500</color>
+
+    <!-- Colour themes -->
+    <color name="th_blue_dark">#0d2a4a</color>
+    <color name="th_blue_primary">#1b4f8a</color>
+    <color name="th_blue_light">#2c6db5</color>
+    <color name="th_blue_accent">#1b4f8a</color>
+    <color name="th_blue_onsec">#cfe0f3</color>
+    <color name="th_blue_indicator">#d6e6f7</color>
+    <color name="th_blue_tint">#eef3fa</color>
+    <color name="th_green_dark">#0f3d1f</color>
+    <color name="th_green_primary">#1e6b3a</color>
+    <color name="th_green_light">#2e8b50</color>
+    <color name="th_green_accent">#1e6b3a</color>
+    <color name="th_green_onsec">#d3eadb</color>
+    <color name="th_green_indicator">#d7efe0</color>
+    <color name="th_green_tint">#eef7f1</color>
+    <color name="th_brown_dark">#3e2a1c</color>
+    <color name="th_brown_primary">#6b4a2f</color>
+    <color name="th_brown_light">#8c6a4a</color>
+    <color name="th_brown_accent">#6b4a2f</color>
+    <color name="th_brown_onsec">#ecdfd2</color>
+    <color name="th_brown_indicator">#f0e3d4</color>
+    <color name="th_brown_tint">#f7f1ea</color>
+    <color name="th_purple_dark">#2e1f4a</color>
+    <color name="th_purple_primary">#4f3a8a</color>
+    <color name="th_purple_light">#6d58b0</color>
+    <color name="th_purple_accent">#4f3a8a</color>
+    <color name="th_purple_onsec">#ddd5f0</color>
+    <color name="th_purple_indicator">#e5ddf7</color>
+    <color name="th_purple_tint">#f3f0fa</color>
+    <color name="th_slate_dark">#1f2a33</color>
+    <color name="th_slate_primary">#37474f</color>
+    <color name="th_slate_light">#546e7a</color>
+    <color name="th_slate_accent">#37474f</color>
+    <color name="th_slate_onsec">#d5dde1</color>
+    <color name="th_slate_indicator">#dde5e9</color>
+    <color name="th_slate_tint">#f0f3f5</color>
 </resources>

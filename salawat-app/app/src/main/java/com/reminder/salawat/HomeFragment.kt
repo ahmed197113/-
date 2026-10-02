@@ -162,10 +162,10 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val today = Calendar.getInstance()
         myPrayerChips.forEach { (prayer, chip) ->
             val done = PrayerTracker.isDone(context, today, prayer)
-            chip.setBackgroundColor(ContextCompat.getColor(context, if (done) R.color.teal_primary else android.R.color.transparent))
-            chip.setTextColor(ContextCompat.getColor(context, if (done) R.color.on_brand else R.color.accent_text))
+            chip.setBackgroundColor(Themes.color(context, if (done) R.color.teal_primary else android.R.color.transparent))
+            chip.setTextColor(Themes.color(context, if (done) R.color.on_brand else R.color.accent_text))
             chip.icon = if (done) ContextCompat.getDrawable(context, R.drawable.ic_check) else null
-            chip.iconTint = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(context, R.color.on_brand))
+            chip.iconTint = android.content.res.ColorStateList.valueOf(Themes.color(context, R.color.on_brand))
             chip.iconPadding = 0
         }
         b.textMyPrayers.text = getString(
@@ -269,8 +269,8 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             chip.root.setBackgroundResource(if (active) R.drawable.bg_chip_prayer_active else R.drawable.bg_chip_prayer)
             val nameColor = if (active) R.color.teal_dark else R.color.on_brand_secondary
             val timeColor = if (active) R.color.teal_dark else R.color.on_brand
-            chip.textChipName.setTextColor(ContextCompat.getColor(context, nameColor))
-            chip.textChipTime.setTextColor(ContextCompat.getColor(context, timeColor))
+            chip.textChipName.setTextColor(Themes.color(context, nameColor))
+            chip.textChipTime.setTextColor(Themes.color(context, timeColor))
         }
     }
 

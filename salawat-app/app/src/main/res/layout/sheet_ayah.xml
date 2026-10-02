@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textColor="@color/accent_text"
+            android:textColor="?attr/brandAccentText"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -55,7 +55,7 @@
                 android:layout_weight="1"
                 style="@style/Button.Primary"
                 android:text="@string/quran_play_from_here"
-                app:backgroundTint="@color/teal_light" />
+                app:backgroundTint="?attr/brandLight" />
         </LinearLayout>
 
         <Button
@@ -63,7 +63,7 @@
             style="@style/Button.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/accent_text" />
+            android:textColor="?attr/brandAccentText" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -80,7 +80,7 @@
                 android:text="@string/quran_bookmark"
                 app:icon="@drawable/ic_bookmark"
                 app:iconTint="@color/gold"
-                android:textColor="@color/accent_text"
+                android:textColor="?attr/brandAccentText"
                 app:strokeColor="@color/gold" />
 
             <Button
@@ -92,7 +92,7 @@
                 android:text="@string/quran_share"
                 app:icon="@drawable/ic_share"
                 app:iconTint="@color/gold"
-                android:textColor="@color/accent_text"
+                android:textColor="?attr/brandAccentText"
                 app:strokeColor="@color/gold" />
         </LinearLayout>
 
