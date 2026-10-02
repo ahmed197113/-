@@ -47,7 +47,7 @@ class NamesActivity : AppCompatActivity() {
         b.list.layoutManager = LinearLayoutManager(this)
         b.list.adapter = adapter
         adapter.submit(AllahNames.all(this).map {
-            Row.Card(title = QuranData.toArabicDigits(it.number), body = it.name, meta = it.meaning, quranFont = true, bodySp = 30f)
+            Row.Card(title = null, body = it.name, meta = "${QuranData.toArabicDigits(it.number)} • ${it.meaning}", quranFont = true, bodySp = 30f)
         })
     }
 }
@@ -91,6 +91,7 @@ class QuranSearchActivity : AppCompatActivity() {
         val search = ViewSearchFieldBinding.inflate(LayoutInflater.from(this), b.header, true)
         search.editSearchField.setHint(R.string.search_hint)
         search.editSearchField.requestFocus()
+        lifecycleScope.launch { QuranSearch.warmUp(this@QuranSearchActivity) }
         search.editSearchField.doAfterTextChanged { text ->
             job?.cancel()
             job = lifecycleScope.launch {

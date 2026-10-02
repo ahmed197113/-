@@ -35,12 +35,36 @@ object Ruqyah {
 }
 
 object QuranSearch {
-    private val DIACRITICS = Regex("[ؐ-ًؚ-ٰٟۖ-ۭـ]")
-    private val ALEFS = Regex("[اأإآٱء]")
+    /** Diacritic- and alef-insensitive form, so typed words match the Uthmani script (single fast pass). */
+    fun normalize(text: String): String {
+        val sb = StringBuilder(text.length)
+        var lastSpace = true
+        for (c in text) {
+            when {
+                c in '\u0610'..'\u061A' || c in '\u064B'..'\u065F' || c == '\u0670' || c in '\u06D6'..'\u06ED' || c == '\u0640' -> Unit
+                c == 'ا' || c == 'أ' || c == 'إ' || c == 'آ' || c == 'ٱ' || c == 'ء' -> Unit
+                c.isWhitespace() -> if (!lastSpace) { sb.append(' '); lastSpace = true }
+                else -> {
+                    sb.append(
+                        when (c) {
+                            'ة' -> 'ه'
+                            'ى' -> 'ي'
+                            'ؤ' -> 'و'
+                            'ئ' -> 'ي'
+                            else -> c
+                        }
+                    )
+                    lastSpace = false
+                }
+            }
+        }
+        return sb.toString().trim()
+    }
 
-    /** Diacritic- and alef-insensitive form, so typed words match the Uthmani script. */
-    fun normalize(text: String): String = text.replace(DIACRITICS, "").replace(ALEFS, "")
-        .replace('ة', 'ه').replace('ى', 'ي').replace('ؤ', 'و').replace('ئ', 'ي').replace(Regex("\\s+"), " ").trim()
+    /** Builds the search index ahead of time (call when the search screen opens). */
+    suspend fun warmUp(context: Context) = withContext(Dispatchers.Default) {
+        if (index == null) index = QuranData.ensureLoaded(context).map { normalize(it.text) }
+    }
 
     @Volatile private var index: List<String>? = null
 
