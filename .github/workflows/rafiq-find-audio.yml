@@ -1,0 +1,28 @@
+name: Rafiq find iqama and du'a audio
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/find_extra_audio.py"
+      - ".github/workflows/rafiq-find-audio.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y -qq ffmpeg > /dev/null && pip install -q faster-whisper
+      - run: python3 salawat-app/tools/find_extra_audio.py "$RUNNER_TEMP/a"
+      - if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-audio-candidates-${{ github.run_number }}
+          name: Iqama / du'a audio candidates ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/a/*
