@@ -158,7 +158,7 @@
     <string name="qibla_instructions">ضع الهاتف مسطحاً وأدِره حتى يشير السهم الذهبي إلى الأعلى. أبعده عن المعادن والمغناطيس</string>
     <string name="qibla_aligned">✓ أنت تتجه نحو القبلة</string>
     <string name="qibla_no_sensor">جهازك لا يحتوي على بوصلة — اتجاه القبلة %1$d° من الشمال الجغرافي</string>
-    <string name="qibla_need_location">حدّد موقعك أولاً من شاشة «مواقيت الصلاة» (زر استخدام موقعي)</string>
+    <string name="qibla_need_location">حدّد موقعك أولاً لنعرف اتجاه القبلة من مكانك</string>
 
     <string name="widget_description">الصلاة القادمة ووقتها</string>
     <string name="widget_no_data">افتح التطبيق لتحديد المدينة</string>

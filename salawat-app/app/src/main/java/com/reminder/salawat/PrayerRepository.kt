@@ -169,6 +169,14 @@ object PrayerRepository {
         val json = JSONObject(body)
         if (json.optInt("code") != 200) throw IllegalStateException("API error: ${json.optString("status")}")
         parseMonth(body) // validate before caching
+        // Remember the coordinates Aladhan resolved for a typed city, so the qibla compass works too.
+        if (!p.getBoolean(KEY_USE_LOCATION, false)) {
+            val meta = json.getJSONArray("data").optJSONObject(0)?.optJSONObject("meta")
+            if (meta != null && meta.has("latitude") && meta.has("longitude")) {
+                p.edit().putFloat(KEY_LAT, meta.getDouble("latitude").toFloat())
+                    .putFloat(KEY_LNG, meta.getDouble("longitude").toFloat()).apply()
+            }
+        }
         withContext(Dispatchers.IO) { monthFile(context, year, month).writeTextAtomic(body) }
     }
 

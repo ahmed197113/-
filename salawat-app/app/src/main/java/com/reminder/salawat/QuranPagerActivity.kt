@@ -163,7 +163,7 @@ class QuranPagerActivity : AppCompatActivity() {
     }
 
     private fun updateReciterButton() {
-        binding.btnReciter.text = getString(R.string.quran_reciter, Reciters.selected(this).name)
+        binding.btnReciter.text = Reciters.selected(this).name
     }
 
     private fun changeFont(delta: Float) {
@@ -340,7 +340,7 @@ class QuranPagerActivity : AppCompatActivity() {
                     }
                 }
                 val start = sb.length
-                sb.append(ayah.text).append(" ۝").append(QuranData.toArabicDigits(ayah.ayah)).append(' ')
+                sb.append(ayah.text).append(" \uFD3F").append(QuranData.toArabicDigits(ayah.ayah)).append("\uFD3E ")
                 val end = sb.length
                 sb.setSpan(object : ClickableSpan() {
                     override fun onClick(widget: View) = onAyahClick(ayah)
@@ -348,7 +348,7 @@ class QuranPagerActivity : AppCompatActivity() {
                         ds.isUnderlineText = false
                     }
                 }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                val markerStart = end - QuranData.toArabicDigits(ayah.ayah).length - 2
+                val markerStart = end - QuranData.toArabicDigits(ayah.ayah).length - 3
                 sb.setSpan(ForegroundColorSpan(gold), markerStart, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 if (ayah.global == playingGlobal || ayah.global == selectedGlobal) {
                     sb.setSpan(BackgroundColorSpan(highlight), start, end - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

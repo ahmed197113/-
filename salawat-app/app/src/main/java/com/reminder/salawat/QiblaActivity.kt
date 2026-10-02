@@ -15,7 +15,9 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class QiblaActivity : AppCompatActivity(), SensorEventListener {
+class QiblaActivity : AppCompatActivity(), SensorEventListener, PermissionHost {
+
+    override val permissions = PermissionRequester(this)
 
     private lateinit var binding: ActivityQiblaBinding
     private lateinit var sensorManager: SensorManager
@@ -40,6 +42,10 @@ class QiblaActivity : AppCompatActivity(), SensorEventListener {
             binding.textQiblaAngle.text = getString(R.string.qibla_need_location)
             binding.imageArrow.visibility = View.GONE
             binding.textQiblaHint.visibility = View.GONE
+            binding.btnQiblaLocation.visibility = View.VISIBLE
+            binding.btnQiblaLocation.setOnClickListener {
+                LocationSheet.show(this, permissions) { recreate() }
+            }
             return
         }
         val (lat, lng) = location

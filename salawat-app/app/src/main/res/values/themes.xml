@@ -26,6 +26,8 @@
 
         <item name="android:fontFamily">@font/tajawal</item>
         <item name="fontFamily">@font/tajawal</item>
+        <!-- Arabic paragraphs everywhere, even when a value (e.g. "Cairo") is in Latin letters. -->
+        <item name="android:textViewStyle">@style/TextViewRtl</item>
         <item name="textAppearanceDisplayLarge">@style/Text.Display</item>
         <item name="textAppearanceDisplayMedium">@style/Text.Display</item>
         <item name="textAppearanceDisplaySmall">@style/Text.Display</item>
@@ -43,6 +45,10 @@
         <item name="textAppearanceLabelSmall">@style/Text.LabelSmall</item>
         <item name="materialCardViewStyle">@style/Card</item>
         <item name="toolbarStyle">@style/Toolbar</item>
+    </style>
+
+    <style name="TextViewRtl" parent="android:Widget.TextView">
+        <item name="android:textDirection">rtl</item>
     </style>
 
     <!-- Typography: Tajawal everywhere (Material's defaults would fall back to Roboto). -->
