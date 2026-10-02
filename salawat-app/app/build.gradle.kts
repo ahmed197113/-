@@ -15,8 +15,8 @@ android {
         applicationId = "com.reminder.salawat"
         minSdk = 24
         targetSdk = 34
-        versionCode = 8
-        versionName = "6.2"
+        versionCode = 9
+        versionName = "6.3"
     }
 
     signingConfigs {
