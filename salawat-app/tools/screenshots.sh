@@ -213,5 +213,6 @@ for combo in "blue SEPIA" "purple NIGHT"; do
   shot 51-theme-$1-mushaf-$2 5
 done
 
-adb logcat -d -s AndroidRuntime:E > "$out/crash-log.txt" || true
+adb logcat -d -s AndroidRuntime:E > "$out/crash.log" || true
+[ -s "$out/crash.log" ] || echo "no crashes" > "$out/crash.log"
 ls -la "$out"

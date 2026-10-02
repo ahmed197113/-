@@ -51,4 +51,5 @@ jobs:
           prerelease: true
           files: |
             ${{ runner.temp }}/shots/*.png
+            ${{ runner.temp }}/shots/*.log
 
