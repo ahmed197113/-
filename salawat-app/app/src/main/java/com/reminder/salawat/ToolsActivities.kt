@@ -373,8 +373,8 @@ class RemindersActivity : ColumnActivity(), PermissionHost {
             val value = getString(type.descRes) + "\n" + when {
                 !on -> getString(R.string.settings_off)
                 type.isTimeOfDay -> getString(R.string.rem_at, Ui.time(this, Prefs.formatMinutes(m)))
-                type == ReminderType.IQAMA -> getString(R.string.rem_minutes_after, m)
-                else -> getString(R.string.rem_minutes_before, m)
+                type == ReminderType.IQAMA -> getString(R.string.rem_minutes_after, arabicMinutes(m))
+                else -> getString(R.string.rem_minutes_before, arabicMinutes(m))
             }
             val icon = when (type) {
                 ReminderType.MORNING -> R.drawable.ic_sun
@@ -382,6 +382,8 @@ class RemindersActivity : ColumnActivity(), PermissionHost {
                 ReminderType.KAHF, ReminderType.WIRD -> R.drawable.ic_quran
                 ReminderType.FASTING -> R.drawable.ic_star
                 ReminderType.PRE_ADHAN, ReminderType.IQAMA -> R.drawable.ic_bell
+                ReminderType.SUHOOR -> R.drawable.ic_moon
+                ReminderType.FRIDAY_HOUR -> R.drawable.ic_heart
             }
             Ui.row(card, icon, getString(type.titleRes), value, switchChecked = on) {
                 if (on) {
@@ -406,11 +408,16 @@ class RemindersActivity : ColumnActivity(), PermissionHost {
     private fun pickTime(type: ReminderType) {
         val m = Reminders.minutes(this, type)
         if (!type.isTimeOfDay) {
-            val options = if (type == ReminderType.IQAMA) intArrayOf(5, 10, 15, 20, 25, 30) else intArrayOf(5, 10, 15, 20, 30)
+            val options = when (type) {
+                ReminderType.IQAMA -> intArrayOf(5, 10, 15, 20, 25, 30)
+                ReminderType.SUHOOR -> intArrayOf(20, 30, 45, 60, 90)
+                ReminderType.FRIDAY_HOUR -> intArrayOf(30, 45, 60, 90, 120)
+                else -> intArrayOf(5, 10, 15, 20, 30)
+            }
             val label = if (type == ReminderType.IQAMA) R.string.rem_minutes_after else R.string.rem_minutes_before
             AlertDialog.Builder(this)
                 .setTitle(type.titleRes)
-                .setSingleChoiceItems(options.map { getString(label, it) }.toTypedArray(), options.indexOf(m)) { d, w ->
+                .setSingleChoiceItems(options.map { getString(label, arabicMinutes(it)) }.toTypedArray(), options.indexOf(m)) { d, w ->
                     Reminders.setMinutes(this, type, options[w]); d.dismiss(); refresh()
                 }.show()
             return

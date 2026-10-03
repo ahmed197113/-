@@ -114,6 +114,8 @@ QUOTES = {  # key: (book, number, which quoted segment, or an anchor the matn st
     "tasua": ("muslim", 1134, 0), "monthu": ("tirmidhi", 747, 0), "three_days": ("bukhari", 1981, "أَوْصَانِي"),
     "tashreeq": ("muslim", 1141, 0), "qadr": ("bukhari", 2017, 0), "white_days": ("abudawud", 2449, "كَانَ رَسُولُ"),
     "eid_fast": ("muslim", 1138, "نَهَى"), "dhulhijja": ("tirmidhi", 757, 0),
+    "suhoor": ("bukhari", 1923, 0), "iftar_hasten": ("bukhari", 1957, 0), "friday_hour": ("bukhari", 935, 0),
+    "friday_salawat": ("abudawud", 1047, 0), "friday_last_hour": ("abudawud", 1048, 1),
 }
 TITLES = {b[0]: b[3] for b in BOOKS}
 quotes = {}

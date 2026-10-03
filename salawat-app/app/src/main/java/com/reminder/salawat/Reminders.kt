@@ -16,10 +16,15 @@ enum class ReminderType(val titleRes: Int, val descRes: Int, val defaultMinutes:
     WIRD(R.string.rem_wird, R.string.rem_wird_desc, 21 * 60, true),
     FASTING(R.string.rem_fasting, R.string.rem_fasting_desc, 20 * 60 + 30, true),
     PRE_ADHAN(R.string.rem_pre_adhan, R.string.rem_pre_adhan_desc, 10, true),
-    IQAMA(R.string.rem_iqama, R.string.rem_iqama_desc, 15, true);
+    IQAMA(R.string.rem_iqama, R.string.rem_iqama_desc, 15, true),
+    SUHOOR(R.string.rem_suhoor, R.string.rem_suhoor_desc, 45, true),
+    FRIDAY_HOUR(R.string.rem_friday_hour, R.string.rem_friday_hour_desc, 60, true);
 
-    /** For PRE_ADHAN the "minutes" value is how long before the adhan, for IQAMA how long after; else a time of day. */
-    val isTimeOfDay get() = this != PRE_ADHAN && this != IQAMA
+    /**
+     * Minutes relative to a prayer: PRE_ADHAN before the adhan, IQAMA after it, SUHOOR before Fajr (Ramadan only),
+     * FRIDAY_HOUR before Maghrib on Fridays. The others are a time of day.
+     */
+    val isTimeOfDay get() = this != PRE_ADHAN && this != IQAMA && this != SUHOOR && this != FRIDAY_HOUR
 }
 
 /**
@@ -98,6 +103,22 @@ object Reminders {
                 }
                 continue
             }
+            if (type == ReminderType.SUHOOR || type == ReminderType.FRIDAY_HOUR) {
+                val gap = minutes(context, type) * 60_000L
+                for (offset in 0..8) {
+                    val day = (base.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, offset) }
+                    val ok = if (type == ReminderType.SUHOOR) HijriDate.of(context, day).month == 9
+                    else day.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
+                    if (!ok) continue
+                    val timings = PrayerRepository.dayTimings(context, day) ?: continue
+                    val anchor = timings.millisOf(if (type == ReminderType.SUHOOR) Prayer.FAJR else Prayer.MAGHRIB) ?: continue
+                    if (anchor - gap > now) {
+                        candidates.add(Next(type, anchor - gap))
+                        break
+                    }
+                }
+                continue
+            }
             for (offset in 0..8) {
                 val day = (base.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, offset) }
                 val at = atTime(day, minutes(context, type))
@@ -137,7 +158,8 @@ object Reminders {
             ReminderType.EVENING -> Triple(context.getString(R.string.rem_evening), context.getString(R.string.rem_evening_text), azkar(context, 27))
             ReminderType.SLEEP -> Triple(context.getString(R.string.rem_sleep), context.getString(R.string.rem_sleep_text), azkar(context, 28))
             ReminderType.KAHF -> Triple(
-                context.getString(R.string.rem_kahf), context.getString(R.string.rem_kahf_text),
+                context.getString(R.string.rem_kahf),
+                context.getString(R.string.rem_kahf_text) + (HadithQuotes.cite("friday_salawat")?.let { "\n\n$it" } ?: ""),
                 Intent(context, QuranPagerActivity::class.java).putExtra(QuranPagerActivity.EXTRA_PAGE, QuranData.surahStartPage(context, 18))
             )
             ReminderType.WIRD -> Triple(
@@ -149,6 +171,16 @@ object Reminders {
                 Intent(context, CalendarActivity::class.java)
             )
             ReminderType.IQAMA -> return
+            ReminderType.SUHOOR -> Triple(
+                context.getString(R.string.rem_suhoor_title),
+                HadithQuotes.cite("suhoor") ?: context.getString(R.string.rem_suhoor_desc),
+                Intent(context, RamadanActivity::class.java)
+            )
+            ReminderType.FRIDAY_HOUR -> Triple(
+                context.getString(R.string.rem_friday_hour_title),
+                HadithQuotes.cite("friday_last_hour") ?: context.getString(R.string.rem_friday_hour_desc),
+                MainActivity.intent(context, MainActivity.TAB_AZKAR)
+            )
             ReminderType.PRE_ADHAN -> {
                 val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
                 // Sound the opening "Allahu akbar, Allahu akbar" of the user's adhan, with the notice on screen.

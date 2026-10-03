@@ -202,6 +202,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
             return
         }
         b.cardRamadan.visibility = View.VISIBLE
+        b.cardRamadan.setOnClickListener { startActivity(android.content.Intent(context, RamadanActivity::class.java)) }
         b.textRamadanTitle.text = getString(R.string.ramadan_title, QuranData.toArabicDigits(hijri.day))
         val imsak = day.extras["Imsak"]
         val iftar = day.times[Prayer.MAGHRIB]
@@ -218,11 +219,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
     private fun renderDaily() {
         val b = _binding ?: return
         val context = b.root.context
-        val ayahs = QuranData.ensureLoaded(context)
-        val day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR) + Calendar.getInstance().get(Calendar.YEAR) * 366
-        // Prefer short, self-contained ayahs for the card.
-        val candidates = ayahs.filter { it.text.length in 60..220 }
-        val ayah = candidates[(day * 7919) % candidates.size]
+        val ayah = QuranData.ayahOfDay(context)
         b.textAyahOfDay.text = "${ayah.text} ﴿${QuranData.toArabicDigits(ayah.ayah)}﴾"
         b.textAyahOfDayRef.text = QuranData.styledName(
             context, "${QuranData.surahName(context, ayah.surah)} • ${getString(R.string.quran_page_number, QuranData.toArabicDigits(ayah.page))}", ayah.surah

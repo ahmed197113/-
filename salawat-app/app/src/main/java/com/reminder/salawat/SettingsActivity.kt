@@ -18,6 +18,20 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
     override val permissions = PermissionRequester(this)
     private lateinit var binding: ActivitySettingsBinding
 
+    private val exportLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            val ok = runCatching { Backup.export(this, uri) }.isSuccess
+            android.widget.Toast.makeText(this, if (ok) R.string.backup_done else R.string.backup_failed, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val importLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val ok = runCatching { Backup.restore(this, uri) }.isSuccess
+            android.widget.Toast.makeText(this, if (ok) R.string.restore_done else R.string.restore_failed, android.widget.Toast.LENGTH_LONG).show()
+            if (ok) recreate()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
@@ -190,6 +204,29 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
             choose(getString(R.string.settings_reading_mode), ReadingMode.values().map { getString(it.labelRes) }, reading.ordinal) {
                 ReadingMode.set(this, ReadingMode.values()[it])
             }
+        }
+        val scale = Prefs.textScale(this)
+        val scaleLabels = resources.getStringArray(R.array.text_scale_labels).toList()
+        val scaleIndex = Prefs.TEXT_SCALES.indexOfFirst { kotlin.math.abs(it - scale) < 0.01f }.coerceAtLeast(0)
+        Ui.row(display, R.drawable.ic_search, getString(R.string.settings_text_size), scaleLabels[scaleIndex]) {
+            choose(getString(R.string.settings_text_size), scaleLabels, scaleIndex) {
+                prefs.edit().putFloat(Prefs.KEY_TEXT_SCALE, Prefs.TEXT_SCALES[it]).apply()
+            }
+        }
+
+        // Backup
+        Ui.sectionTitle(c, getString(R.string.backup_section))
+        val backup = Ui.card(c)
+        Ui.row(backup, R.drawable.ic_share, getString(R.string.backup_export), getString(R.string.backup_export_desc)) {
+            exportLauncher.launch("rafiq-backup.json")
+        }
+        Ui.row(backup, R.drawable.ic_refresh, getString(R.string.backup_import), getString(R.string.backup_import_desc)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.backup_import)
+                .setMessage(R.string.backup_import_confirm)
+                .setPositiveButton(R.string.backup_import_choose) { _, _ -> importLauncher.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
         }
         c.addView(View(this).apply { minimumHeight = 1 })
     }

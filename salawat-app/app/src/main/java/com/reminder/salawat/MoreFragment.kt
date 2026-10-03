@@ -26,6 +26,7 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
         Ui.row(worship, R.drawable.ic_touch, getString(R.string.more_tasbih), getString(R.string.more_tasbih_desc)) { go(TasbihActivity::class.java) }
         Ui.row(worship, R.drawable.ic_compass, getString(R.string.qibla_title), getString(R.string.more_qibla_desc)) { go(QiblaActivity::class.java) }
         Ui.row(worship, R.drawable.ic_volume, getString(R.string.tile_adhan), getString(R.string.more_adhan_desc)) { go(AdhanSettingsActivity::class.java) }
+        Ui.row(worship, R.drawable.ic_moon, getString(R.string.ramadan_screen), getString(R.string.ramadan_desc)) { go(RamadanActivity::class.java) }
         Ui.row(worship, R.drawable.ic_bell, getString(R.string.tool_reminders), getString(R.string.tool_reminders_desc)) { go(RemindersActivity::class.java) }
 
         Ui.sectionTitle(c, getString(R.string.section_quran_sunnah))

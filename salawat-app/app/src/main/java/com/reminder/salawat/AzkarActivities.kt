@@ -96,6 +96,7 @@ class AzkarDetailActivity : AppCompatActivity() {
             val item = items[position]
             val context = holder.itemView.context
             holder.binding.textDuaArabic.text = item.text
+            holder.binding.textDuaArabic.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 19f * Prefs.textScale(context))
             val left = viewModel.remaining[position] ?: item.repeat
             holder.binding.textDuaCounter.text = if (left <= 0) "✓" else QuranData.toArabicDigits(left)
             holder.binding.textDuaRepeat.text = if (left <= 0) context.getString(R.string.azkar_done)

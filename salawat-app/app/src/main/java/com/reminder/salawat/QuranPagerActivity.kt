@@ -408,6 +408,7 @@ class QuranPagerActivity : AppCompatActivity() {
         val surahName = QuranData.surahName(this, ayah.surah)
         b.textSheetTitle.text = QuranData.styledName(this, getString(R.string.quran_sheet_title, surahName, QuranData.toArabicDigits(ayah.ayah)), ayah.surah)
         b.textSheetAyah.text = ayah.text
+        b.textSheetTafsir.setTextSize(TypedValue.COMPLEX_UNIT_SP, b.textSheetTafsir.textSize / resources.displayMetrics.scaledDensity * Prefs.textScale(this))
         b.btnSheetReciter.text = getString(R.string.quran_reciter, Reciters.selected(this).name)
         b.btnSheetReciter.setOnClickListener {
             chooseReciter {

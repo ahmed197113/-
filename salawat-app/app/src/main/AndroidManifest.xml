@@ -57,6 +57,7 @@
         <activity android:name=".NamesActivity" android:exported="false" />
         <activity android:name=".RuqyahActivity" android:exported="false" />
         <activity android:name=".QuranSearchActivity" android:exported="false" />
+        <activity android:name=".RamadanActivity" android:exported="false" />
 
         <receiver android:name=".PrayerAlarmReceiver" android:exported="false" />
         <receiver android:name=".ReminderReceiver" android:exported="false" />
@@ -97,6 +98,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <receiver android:name=".AyahWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ayah_widget_info" />
+        </receiver>
 
         <receiver android:name=".NextPrayerWidget" android:exported="false">
             <intent-filter>

@@ -28,6 +28,12 @@ object Prefs {
     const val KEY_ADHAN_FAJR = "adhan_fajr_id"
     const val KEY_ADHAN_CUSTOM_URI = "adhan_custom_uri"
 
+    const val KEY_TEXT_SCALE = "reading_text_scale"
+    val TEXT_SCALES = floatArrayOf(1f, 1.15f, 1.3f, 1.5f)
+
+    /** Size multiplier for reading text (azkar, hadith, tafsir), for readers who need larger print. */
+    fun textScale(context: Context): Float = get(context).getFloat(KEY_TEXT_SCALE, 1f)
+
     val INTERVAL_OPTIONS = longArrayOf(15, 30, 60, 120, 180)
 
     fun get(context: Context): SharedPreferences = context.getSharedPreferences(NAME, Context.MODE_PRIVATE)

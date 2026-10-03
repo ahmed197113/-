@@ -54,7 +54,7 @@ class RowsAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 b.textCardTitle.text = row.title
                 b.textCardBody.text = row.body
                 b.textCardBody.typeface = if (row.quranFont) quran(b.root) else ui(b.root)
-                b.textCardBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, row.bodySp)
+                b.textCardBody.setTextSize(TypedValue.COMPLEX_UNIT_SP, row.bodySp * Prefs.textScale(b.root.context))
                 // Amiri Quran has tall line metrics; keep big single words compact.
                 b.textCardBody.setLineSpacing(0f, if (row.bodySp >= 26f) 0.9f else 1.4f)
                 b.textCardBody.includeFontPadding = row.bodySp < 26f

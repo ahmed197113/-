@@ -87,6 +87,14 @@ object QuranData {
 
     fun byGlobal(context: Context, global: Int): QAyah? = ensureLoaded(context).getOrNull(global - 1)
 
+    /** The ayah of the day (home screen card and widget): a short, self-contained ayah, changing daily. */
+    fun ayahOfDay(context: Context): QAyah {
+        val now = java.util.Calendar.getInstance()
+        val day = now.get(java.util.Calendar.DAY_OF_YEAR) + now.get(java.util.Calendar.YEAR) * 366
+        val candidates = ensureLoaded(context).filter { it.text.length in 60..220 }
+        return candidates[(day * 7919) % candidates.size]
+    }
+
     fun surahStartPage(context: Context, surah: Int): Int {
         ensureLoaded(context)
         return surahStartPage[surah].coerceIn(1, PAGE_COUNT)

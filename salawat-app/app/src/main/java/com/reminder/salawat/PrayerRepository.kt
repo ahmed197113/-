@@ -195,6 +195,15 @@ object PrayerRepository {
             .putLong(KEY_LAST_FETCH, System.currentTimeMillis()).apply()
     }
 
+    /** Makes sure a (Gregorian) month is cached, fetching it if needed: the Ramadan timetable spans months ahead. */
+    suspend fun ensureMonth(context: Context, year: Int, month: Int): List<DayTimings>? {
+        loadMonth(context, year, month)?.let { return it }
+        if (!isConfigured(context)) return null
+        val body = fetchMonth(context, year, month)
+        withContext(Dispatchers.IO) { monthFile(context, year, month).writeTextAtomic(body) }
+        return loadMonth(context, year, month)
+    }
+
     private suspend fun fetchMonth(context: Context, year: Int, month: Int): String {
         val p = prefs(context)
         val method = p.getInt(KEY_METHOD, DEFAULT_METHOD)

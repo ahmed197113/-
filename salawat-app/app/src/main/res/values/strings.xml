@@ -491,10 +491,10 @@
     <string name="dua_after_adhan_text">قال رسول الله ﷺ: «مَنْ قَالَ حِينَ يَسْمَعُ النِّدَاءَ اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلاَةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ، حَلَّتْ لَهُ شَفَاعَتِي يَوْمَ الْقِيَامَةِ» — صحيح البخاري (614).\nتنبيه: في تسجيل الشيخ زيادات ليست في لفظ البخاري.</string>
     <string name="settings_dua_after_adhan">الدعاء بعد الأذان (بصوت الشيخ الشعراوي)</string>
     <string name="settings_iqama_sound">صوت الإقامة</string>
-    <string name="rem_minutes_after">بعد الأذان بـ %1$d دقيقة</string>
+    <string name="rem_minutes_after">بعد الأذان بـ%1$s</string>
     <string name="rem_pre_adhan_title">بقي %1$s على أذان %2$s</string>
     <string name="rem_pre_adhan_text">استعد للصلاة وتوضأ</string>
-    <string name="rem_minutes_before">قبل الأذان بـ %1$d دقيقة</string>
+    <string name="rem_minutes_before">قبل الأذان بـ%1$s</string>
     <string name="rem_at">الساعة %1$s</string>
 
     <!-- Settings extras -->
@@ -537,4 +537,41 @@
     <string name="share_image_footer">صدقة جارية على روح محمد عبد العظيم سلامة رحمه الله</string>
     <string name="share_image_too_long">الحديث أطول من أن يظهر كاملًا في صورة، فسيُشارك نصًّا</string>
     <string name="share_as_text">مشاركة كنص</string>
+    <!-- Ramadan & Friday -->
+    <string name="ramadan_screen">رمضان والإمساكية</string>
+    <string name="ramadan_desc">مواعيد الإمساك والفجر والمغرب طوال الشهر، وتذكير السحور</string>
+    <string name="ramadan_year">رمضان %1$s هـ</string>
+    <string name="ramadan_day">اليوم %1$s من رمضان — تقبّل الله منا ومنكم</string>
+    <string name="ramadan_countdown">باقي %1$s يومًا على رمضان (تقريبًا)</string>
+    <string name="ramadan_table">إمساكية الشهر</string>
+    <string name="ramadan_col_day">اليوم</string>
+    <string name="ramadan_col_imsak">الإمساك</string>
+    <string name="ramadan_note">المواعيد محسوبة لموقعك وطريقة الحساب المختارة في الإعدادات. بداية الشهر حسب التقويم، وقد تختلف يومًا حسب رؤية الهلال في بلدك؛ يمكنك تعديل التاريخ الهجري من الإعدادات.</string>
+    <string name="ramadan_offline">تعذّر تحميل المواعيد. تأكد من الاتصال بالإنترنت ثم افتح الصفحة مرة أخرى.</string>
+    <string name="ramadan_no_location">حدّد موقعك أو مدينتك أولًا من شاشة الصلاة.</string>
+    <string name="rem_suhoor">تذكير السحور (رمضان)</string>
+    <string name="rem_suhoor_desc">في أيام رمضان فقط، قبل أذان الفجر</string>
+    <string name="rem_suhoor_title">حان وقت السحور</string>
+    <string name="rem_friday_hour">ساعة الإجابة يوم الجمعة</string>
+    <string name="rem_friday_hour_desc">آخر ساعة من عصر الجمعة، قبل المغرب: وقتٌ للدعاء</string>
+    <string name="rem_friday_hour_title">ساعة الإجابة — أكثِر من الدعاء</string>
+    <string name="widget_ayah_description">آية اليوم بخط المصحف</string>
+    <string name="settings_text_size">حجم خط القراءة</string>
+    <string-array name="text_scale_labels">
+        <item>عادي</item>
+        <item>كبير</item>
+        <item>أكبر</item>
+        <item>كبير جدًا</item>
+    </string-array>
+    <string name="backup_section">النسخ الاحتياطي</string>
+    <string name="backup_export">حفظ نسخة احتياطية</string>
+    <string name="backup_export_desc">الإعدادات والموقع والختمة والعلامة وسجل الصلوات في ملف تحتفظ به (مثلًا على Google Drive)</string>
+    <string name="backup_import">استعادة نسخة احتياطية</string>
+    <string name="backup_import_desc">عند نقل التطبيق إلى هاتف جديد</string>
+    <string name="backup_import_confirm">ستحل بيانات النسخة الاحتياطية محل بياناتك الحالية في التطبيق. هل تريد المتابعة؟</string>
+    <string name="backup_import_choose">اختر الملف</string>
+    <string name="backup_done">تم حفظ النسخة الاحتياطية</string>
+    <string name="backup_failed">تعذّر حفظ النسخة الاحتياطية</string>
+    <string name="restore_done">تمت الاستعادة. ستُحدَّث مواقيت الصلاة عند الاتصال بالإنترنت.</string>
+    <string name="restore_failed">هذا الملف ليس نسخة احتياطية من «رفيق المسلم»</string>
 </resources>

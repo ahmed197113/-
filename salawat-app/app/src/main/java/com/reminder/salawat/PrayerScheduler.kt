@@ -68,6 +68,7 @@ object PrayerScheduler {
         schedule(context)
         Reminders.schedule(context)
         NextPrayerWidget.updateAll(context)
+        AyahWidget.updateAll(context)
     }
 }
 
