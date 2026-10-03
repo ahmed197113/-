@@ -18,10 +18,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  var surfaceConverted = false;
   Future<void> shot(WidgetTester tester, String name) async {
     await tester.pumpAndSettle(const Duration(milliseconds: 300));
-    await binding.convertFlutterSurfaceToImage();
-    await tester.pumpAndSettle();
+    if (!surfaceConverted && Platform.isAndroid) {
+      await binding.convertFlutterSurfaceToImage(); // once per test on Android
+      surfaceConverted = true;
+      await tester.pumpAndSettle();
+    }
     await binding.takeScreenshot(name);
   }
 

@@ -134,7 +134,7 @@ jobs:
           name: device-screenshots
           path: app/build/screenshots/
       - name: Attach screenshots to the release
-        if: github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: munasaba-build-${{ github.run_number }}
