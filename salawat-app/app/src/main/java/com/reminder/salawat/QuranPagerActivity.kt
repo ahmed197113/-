@@ -379,7 +379,9 @@ class QuranPagerActivity : AppCompatActivity() {
                     lifecycleScope.launch {
                         val ok = runCatching { MushafFonts.get(context, page) }.isSuccess
                         b.progressMushaf.visibility = View.GONE
-                        if (ok) notifyItemChanged(position)
+                        // get() can return without suspending (font already on disk), i.e. while RecyclerView is
+                        // still binding: refresh on the next frame, never in the middle of a layout pass.
+                        if (ok) b.root.post { if (position in 0 until itemCount) notifyItemChanged(position) }
                     }
                 } else b.progressMushaf.visibility = View.GONE
                 return

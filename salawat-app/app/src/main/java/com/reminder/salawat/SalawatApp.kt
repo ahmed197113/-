@@ -16,6 +16,8 @@ class SalawatApp : Application() {
         HadithQuotes.init(this)
         Notifications.createChannels(this)
         PrayerRefreshWorker.ensurePeriodic(this)
+        // Make sure the salawat reminder's alarm exists (it keeps its pending time if already armed).
+        ReminderWorker.apply(this)
         // v1 hadith books included non-sahih collections; they are replaced by the sahih-only v2 library.
         java.io.File(filesDir, "hadith").takeIf { it.exists() }?.deleteRecursively()
         Reminders.schedule(this)

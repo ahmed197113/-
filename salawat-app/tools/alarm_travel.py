@@ -9,7 +9,7 @@ best = None
 for i, line in enumerate(lines):
     if "com.reminder.salawat" not in line or receiver not in line:
         continue
-    for j in range(max(0, i - 3), min(len(lines), i + 6)):
+    for j in range(i, min(len(lines), i + 4)):  # the alarm's own details follow its tag line
         m = re.search(r"origWhen=(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)", lines[j])
         if m:
             t = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
