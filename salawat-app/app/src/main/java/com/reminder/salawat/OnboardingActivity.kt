@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.reminder.salawat.databinding.ActivityOnboardingBinding
 
 /** First-run setup in three short steps: welcome → location → alerts. */
-class OnboardingActivity : AppCompatActivity(), PermissionHost {
+class OnboardingActivity : LocalizedActivity(), PermissionHost {
 
     override val permissions = PermissionRequester(this)
     private lateinit var binding: ActivityOnboardingBinding

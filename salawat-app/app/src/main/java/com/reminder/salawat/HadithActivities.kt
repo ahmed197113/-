@@ -19,7 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Library of hadith books; the big ones download once (≈0.2–1.4 MB each) and then work offline. */
-class HadithBooksActivity : AppCompatActivity() {
+class HadithBooksActivity : LocalizedActivity() {
 
     private lateinit var binding: ActivityListBinding
     private val adapter = RowsAdapter()
@@ -89,7 +89,7 @@ class HadithBooksActivity : AppCompatActivity() {
     }
 }
 
-class HadithReaderActivity : AppCompatActivity() {
+class HadithReaderActivity : LocalizedActivity() {
 
     private lateinit var binding: ActivityListBinding
     private val adapter = RowsAdapter()

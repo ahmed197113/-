@@ -230,7 +230,8 @@ object Reminders {
 }
 
 class ReminderReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(raw: Context, intent: Intent) {
+        val context = Lang.wrap(raw)
         Reminders.deliver(context, intent)
         Reminders.schedule(context)
     }

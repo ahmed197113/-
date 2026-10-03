@@ -10,7 +10,7 @@ class SalawatApp : Application() {
         super.onCreate()
         // Arabic by default (even on phones set to another language); English when the user chooses it.
         Lang.install(this)
-        Lang.refresh(this)
+        Lang.wrap(this) // sets the language for code that runs without a screen
         applyTheme(this)
         Themes.install(this)
         HadithQuotes.init(this)

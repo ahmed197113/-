@@ -126,6 +126,8 @@ object AdhanCatalog {
 
 /** Plays the full adhan in a foreground service so it isn't cut off, with a "stop" action. */
 class AdhanService : Service() {
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(Lang.wrap(base))
+
 
     private var player: AudioPlayer? = null
 

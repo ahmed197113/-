@@ -82,7 +82,7 @@ class AdhanSettingsViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-class AdhanSettingsActivity : AppCompatActivity() {
+class AdhanSettingsActivity : LocalizedActivity() {
 
     private lateinit var binding: ActivityAdhanSettingsBinding
     private val viewModel: AdhanSettingsViewModel by viewModels()

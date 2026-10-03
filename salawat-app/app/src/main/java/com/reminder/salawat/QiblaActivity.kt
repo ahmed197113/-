@@ -15,7 +15,7 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-class QiblaActivity : AppCompatActivity(), SensorEventListener, PermissionHost {
+class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
 
     override val permissions = PermissionRequester(this)
 

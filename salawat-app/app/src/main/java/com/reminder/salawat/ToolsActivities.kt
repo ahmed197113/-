@@ -22,7 +22,7 @@ import java.util.Calendar
 import java.util.Locale
 
 /** Base for screens built from cards in a scrolling column (shares the Settings layout). */
-abstract class ColumnActivity : AppCompatActivity() {
+abstract class ColumnActivity : LocalizedActivity() {
     protected lateinit var binding: ActivitySettingsBinding
     protected val column get() = binding.settingsContainer
     abstract val titleRes: Int

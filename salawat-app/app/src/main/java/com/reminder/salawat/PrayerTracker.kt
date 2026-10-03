@@ -75,7 +75,8 @@ fun prayedPendingIntent(context: Context, prayer: Prayer, notificationId: Int): 
     )
 
 class PrayedReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(raw: Context, intent: Intent) {
+        val context = Lang.wrap(raw)
         val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: return
         PrayerTracker.setDone(context, Calendar.getInstance(), prayer, true)
         val id = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)

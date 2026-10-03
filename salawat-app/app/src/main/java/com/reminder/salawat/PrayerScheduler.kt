@@ -73,7 +73,8 @@ object PrayerScheduler {
 }
 
 class PrayerAlarmReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(raw: Context, intent: Intent) {
+        val context = Lang.wrap(raw)
         val prayer = intent.getStringExtra(PrayerScheduler.EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() }
         val millis = intent.getLongExtra(PrayerScheduler.EXTRA_MILLIS, 0L)
         val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, true)
@@ -109,7 +110,8 @@ fun postPrayerNotification(context: Context, prayer: Prayer) {
 }
 
 class BootReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(raw: Context, intent: Intent) {
+        val context = Lang.wrap(raw)
         PrayerScheduler.refreshDependents(context)
         ReminderWorker.apply(context)
     }

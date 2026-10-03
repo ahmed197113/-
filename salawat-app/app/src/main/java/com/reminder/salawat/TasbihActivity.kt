@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.chip.Chip
 import com.reminder.salawat.databinding.ActivityTasbihBinding
 
-class TasbihActivity : AppCompatActivity() {
+class TasbihActivity : LocalizedActivity() {
 
     private lateinit var binding: ActivityTasbihBinding
     private val prefs by lazy { Prefs.get(this) }

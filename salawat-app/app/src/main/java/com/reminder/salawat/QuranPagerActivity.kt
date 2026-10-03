@@ -138,7 +138,7 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-class QuranPagerActivity : AppCompatActivity() {
+class QuranPagerActivity : LocalizedActivity() {
 
     private lateinit var binding: ActivityQuranPagerBinding
     private val viewModel: QuranViewModel by viewModels()

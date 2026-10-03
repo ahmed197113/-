@@ -92,7 +92,8 @@ class ReminderWorker(context: Context, params: WorkerParameters) : Worker(contex
 
 /** Fires each salawat reminder and arms the next one. */
 class SalawatReceiver : android.content.BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
+    override fun onReceive(raw: Context, intent: Intent) {
+        val context = Lang.wrap(raw)
         ReminderWorker.post(context)
         ReminderWorker.apply(context, advance = true)
     }

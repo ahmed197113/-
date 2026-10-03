@@ -20,7 +20,8 @@ class NextPrayerWidget : AppWidgetProvider() {
             if (ids.isNotEmpty()) update(context, manager, ids)
         }
 
-        private fun update(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        private fun update(raw: Context, manager: AppWidgetManager, ids: IntArray) {
+            val context = Lang.wrap(raw)
             val views = RemoteViews(context.packageName, R.layout.widget_next_prayer)
             val next = PrayerRepository.nextPrayer(context)
             if (next != null) {

@@ -33,6 +33,9 @@ object Themes {
         version++
     }
 
+    /** Recreates every open screen when it next comes to the front (after a language change, for instance). */
+    fun refreshAll() { version++ }
+
     @Volatile private var version = 0
     private val applied = WeakHashMap<Activity, Int>()
 

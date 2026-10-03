@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment
 import com.reminder.salawat.databinding.ActivityMainBinding
 
 /** App shell: bottom navigation between the five main sections. */
-class MainActivity : AppCompatActivity(), PermissionHost {
+class MainActivity : LocalizedActivity(), PermissionHost {
 
     override val permissions = PermissionRequester(this)
     private lateinit var binding: ActivityMainBinding

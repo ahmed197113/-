@@ -53,7 +53,7 @@ class AzkarDetailViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-class AzkarDetailActivity : AppCompatActivity() {
+class AzkarDetailActivity : LocalizedActivity() {
 
     private lateinit var binding: ActivityAzkarDetailBinding
     private val viewModel: AzkarDetailViewModel by viewModels()

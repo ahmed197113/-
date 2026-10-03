@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.reminder.salawat.databinding.ActivitySettingsBinding
 
 /** All preferences in one place, grouped into clear sections. Rebuilt on resume so values stay current. */
-class SettingsActivity : AppCompatActivity(), PermissionHost {
+class SettingsActivity : LocalizedActivity(), PermissionHost {
 
     override val permissions = PermissionRequester(this)
     private lateinit var binding: ActivitySettingsBinding

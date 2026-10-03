@@ -39,7 +39,7 @@ private fun AppCompatActivity.openMushaf(ayah: QAyah) {
     )
 }
 
-class NamesActivity : AppCompatActivity() {
+class NamesActivity : LocalizedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val b = ActivityListBinding.inflate(layoutInflater)
@@ -54,7 +54,7 @@ class NamesActivity : AppCompatActivity() {
     }
 }
 
-class RuqyahActivity : AppCompatActivity() {
+class RuqyahActivity : LocalizedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val b = ActivityListBinding.inflate(layoutInflater)
@@ -80,7 +80,7 @@ class RuqyahActivity : AppCompatActivity() {
     }
 }
 
-class QuranSearchActivity : AppCompatActivity() {
+class QuranSearchActivity : LocalizedActivity() {
     private var job: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -31,7 +31,8 @@ class AyahWidget : AppWidgetProvider() {
             if (ids.isNotEmpty()) update(context, manager, ids)
         }
 
-        private fun update(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        private fun update(raw: Context, manager: AppWidgetManager, ids: IntArray) {
+            val context = Lang.wrap(raw)
             val ayah = QuranData.ayahOfDay(context)
             val views = RemoteViews(context.packageName, R.layout.widget_ayah)
             views.setImageViewBitmap(R.id.widgetAyahImage, render(context, ayah))
