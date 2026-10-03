@@ -104,6 +104,12 @@ object Ui {
         return sb
     }
 
+    /** Locale for formatting dates: Arabic or English, matching the UI. */
+    fun locale(): java.util.Locale = if (Lang.arabic) java.util.Locale("ar") else java.util.Locale.ENGLISH
+
+    /** List separator: "، " in Arabic, ", " in English. */
+    fun listSep() = Lang.pick("، ", ", ")
+
     /** "15:05" → "3:05 م" when the phone uses 12-hour time. */
     fun time(context: Context, hhmm: String?): String {
         if (hhmm.isNullOrBlank()) return "--:--"
@@ -111,7 +117,7 @@ object Ui {
         val parts = hhmm.split(":")
         val h = parts.getOrNull(0)?.toIntOrNull() ?: return hhmm
         val m = parts.getOrNull(1) ?: return hhmm
-        val suffix = if (h < 12) "ص" else "م"
+        val suffix = if (h < 12) Lang.pick("ص", "AM") else Lang.pick("م", "PM")
         val h12 = when {
             h == 0 -> 12
             h > 12 -> h - 12

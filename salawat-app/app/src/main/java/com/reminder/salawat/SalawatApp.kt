@@ -8,9 +8,9 @@ import androidx.core.os.LocaleListCompat
 class SalawatApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        // The whole UI is Arabic: force the Arabic locale so dialogs, pickers and layouts are right-to-left
-        // even on phones set to another language.
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ar"))
+        // Arabic by default (even on phones set to another language); English when the user chooses it.
+        Lang.install()
+        Lang.refresh(this)
         applyTheme(this)
         Themes.install(this)
         HadithQuotes.init(this)

@@ -69,7 +69,7 @@ class RuqyahActivity : AppCompatActivity() {
             else getString(R.string.ruqyah_passage, surah, QuranData.toArabicDigits(p.second), QuranData.toArabicDigits(p.third))
             Row.Card(
                 title = Ui.quranNames(this, title, surah),
-                body = ayahs.joinToString(" ") { "${it.text} ﴿${QuranData.toArabicDigits(it.ayah)}﴾" },
+                body = ayahs.joinToString(" ") { "${it.text} ﴿${QuranData.quranDigits(it.ayah)}﴾" },
                 quranFont = true,
                 bodySp = 21f,
                 action1 = getString(R.string.ruqyah_open) to { openMushaf(ayahs.first()) }

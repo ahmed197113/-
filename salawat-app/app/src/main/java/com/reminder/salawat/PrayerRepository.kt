@@ -119,7 +119,7 @@ object PrayerRepository {
         } else {
             val city = p.getString(KEY_CITY, "").orEmpty()
             val country = p.getString(KEY_COUNTRY, "").orEmpty()
-            if (city.isBlank()) null else listOf(city, country).filter { it.isNotBlank() }.joinToString("، ")
+            if (city.isBlank()) null else listOf(city, country).filter { it.isNotBlank() }.joinToString(Ui.listSep())
         }
     }
 
@@ -240,7 +240,7 @@ object PrayerRepository {
             val gregorian = date.getJSONObject("gregorian").getString("date").split("-") // dd-MM-yyyy
             val hijri = date.optJSONObject("hijri")
             val hijriText = if (hijri != null) {
-                "${hijri.optString("day")} ${hijri.optJSONObject("month")?.optString("ar").orEmpty()} ${hijri.optString("year")} هـ"
+                "${hijri.optString("day")} ${hijri.optJSONObject("month")?.optString(if (Lang.arabic) "ar" else "en").orEmpty()} ${hijri.optString("year")} ${HijriDate.ERA}"
             } else ""
             val tzId = o.optJSONObject("meta")?.optString("timezone")
             DayTimings(
@@ -267,6 +267,9 @@ object PrayerRepository {
     }
 
     private val monthMemo = HashMap<String, List<DayTimings>>()
+
+    /** Parsed months hold UI-language text (the Hijri date): drop them when the language changes. */
+    fun clearMemo() = synchronized(monthMemo) { monthMemo.clear() }
 
     private fun loadMonth(context: Context, year: Int, month: Int): List<DayTimings>? {
         val file = monthFile(context, year, month)

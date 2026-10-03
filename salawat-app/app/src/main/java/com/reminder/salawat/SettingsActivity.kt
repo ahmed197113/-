@@ -70,7 +70,7 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         val offsets = Prayer.values().filter { PrayerRepository.offset(this, it) != 0 }
         Ui.row(prayer, R.drawable.ic_refresh, getString(R.string.settings_offsets),
             if (offsets.isEmpty()) getString(R.string.settings_offsets_desc)
-            else offsets.joinToString("، ") { "${getString(it.nameRes)} ${getString(R.string.settings_offset_value, PrayerRepository.offset(this, it))}" }) {
+            else offsets.joinToString(Ui.listSep()) { "${getString(it.nameRes)} ${getString(R.string.settings_offset_value, PrayerRepository.offset(this, it))}" }) {
             editOffsets()
         }
         val hijri = HijriDate.offset(this)
@@ -179,6 +179,14 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         // Display
         Ui.sectionTitle(c, getString(R.string.settings_section_display))
         val display = Ui.card(c)
+        val languages = listOf("العربية", "English")
+        val langIndex = Lang.SUPPORTED.indexOf(Lang.current()).coerceAtLeast(0)
+        Ui.row(display, R.drawable.ic_apps, getString(R.string.settings_language), languages[langIndex]) {
+            choose(getString(R.string.settings_language), languages, langIndex) {
+                PrayerRepository.clearMemo()
+                Lang.set(Lang.SUPPORTED[it])
+            }
+        }
         val themes = resources.getStringArray(R.array.theme_labels)
         val theme = prefs.getInt(Prefs.KEY_THEME, 0)
         Ui.row(display, R.drawable.ic_sun, getString(R.string.settings_theme), themes[theme]) {

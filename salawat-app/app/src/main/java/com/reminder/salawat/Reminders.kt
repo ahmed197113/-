@@ -237,7 +237,7 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 /** "دقيقة واحدة", "دقيقتان", "5 دقائق", "15 دقيقة": Arabic counted-noun agreement. */
-fun arabicMinutes(n: Int): String = when {
+fun arabicMinutes(n: Int): String = if (!Lang.arabic) (if (n == 1) "1 minute" else "$n minutes") else when {
     n == 1 -> "دقيقة واحدة"
     n == 2 -> "دقيقتان"
     n % 100 in 3..10 -> "$n دقائق"

@@ -109,20 +109,20 @@ data class HadithBookInfo(val id: String, val title: String, val author: String,
 
 object Hadiths {
     private const val BASE = "https://github.com/ahmed197113/-/releases/download/salawat-hadith-v2/"
-    private const val SUNAN_NOTE = "الأحاديث التي صححها الشيخ الألباني فقط"
-    private const val SAHIH_NOTE = "جميع أحاديث الكتاب صحيحة"
+    private val SUNAN_NOTE get() = Lang.pick("الأحاديث التي صححها الشيخ الألباني فقط", "Only the hadith graded sahih by Sheikh al-Albani")
+    private val SAHIH_NOTE get() = Lang.pick("جميع أحاديث الكتاب صحيحة", "Every hadith in this book is sahih")
 
-    /** Authentic hadith only — see tools/prepare_hadith.py for the exact selection rules. */
-    val BOOKS = listOf(
-        HadithBookInfo("bukhari", "صحيح البخاري", "الإمام البخاري", 7580, "١٫٤", SAHIH_NOTE),
-        HadithBookInfo("muslim", "صحيح مسلم", "الإمام مسلم", 7357, "١٫١", SAHIH_NOTE),
-        HadithBookInfo("abudawud", "سنن أبي داود", "الإمام أبو داود", 3330, "٠٫٥", SUNAN_NOTE),
-        HadithBookInfo("tirmidhi", "جامع الترمذي", "الإمام الترمذي", 2472, "٠٫٥", SUNAN_NOTE),
-        HadithBookInfo("nasai", "سنن النسائي", "الإمام النسائي", 4396, "٠٫٦", SUNAN_NOTE),
-        HadithBookInfo("ibnmajah", "سنن ابن ماجه", "الإمام ابن ماجه", 2822, "٠٫٤", SUNAN_NOTE)
+    /** Authentic hadith only — see tools/prepare_hadith.py for the exact selection rules. (Texts stay Arabic.) */
+    val BOOKS get() = listOf(
+        HadithBookInfo("bukhari", Lang.pick("صحيح البخاري", "Sahih al-Bukhari"), Lang.pick("الإمام البخاري", "Imam al-Bukhari"), 7580, Lang.pick("١٫٤", "1.4"), SAHIH_NOTE),
+        HadithBookInfo("muslim", Lang.pick("صحيح مسلم", "Sahih Muslim"), Lang.pick("الإمام مسلم", "Imam Muslim"), 7357, Lang.pick("١٫١", "1.1"), SAHIH_NOTE),
+        HadithBookInfo("abudawud", Lang.pick("سنن أبي داود", "Sunan Abi Dawud"), Lang.pick("الإمام أبو داود", "Imam Abu Dawud"), 3330, Lang.pick("٠٫٥", "0.5"), SUNAN_NOTE),
+        HadithBookInfo("tirmidhi", Lang.pick("جامع الترمذي", "Jami at-Tirmidhi"), Lang.pick("الإمام الترمذي", "Imam at-Tirmidhi"), 2472, Lang.pick("٠٫٥", "0.5"), SUNAN_NOTE),
+        HadithBookInfo("nasai", Lang.pick("سنن النسائي", "Sunan an-Nasai"), Lang.pick("الإمام النسائي", "Imam an-Nasai"), 4396, Lang.pick("٠٫٦", "0.6"), SUNAN_NOTE),
+        HadithBookInfo("ibnmajah", Lang.pick("سنن ابن ماجه", "Sunan Ibn Majah"), Lang.pick("الإمام ابن ماجه", "Imam Ibn Majah"), 2822, Lang.pick("٠٫٤", "0.4"), SUNAN_NOTE)
     )
 
-    private val DAILY = HadithBookInfo("daily", "من الصحيحين", "", 0, "", SAHIH_NOTE, bundled = true)
+    private val DAILY get() = HadithBookInfo("daily", Lang.pick("من الصحيحين", "From the two Sahihs"), "", 0, "", SAHIH_NOTE, bundled = true)
 
     private fun file(context: Context, id: String) = File(File(context.filesDir, "hadith2"), "$id.json.gz")
 
@@ -161,7 +161,11 @@ object Hadiths {
         val book = load(context, DAILY)
         val day = Calendar.getInstance().let { it.get(Calendar.YEAR) * 366 + it.get(Calendar.DAY_OF_YEAR) }
         val h = book.hadiths[day % book.hadiths.size]
-        val source = book.chapters.firstOrNull { it.first == h.chapter }?.second ?: book.title
+        val source = when (h.chapter) {
+            1 -> Lang.pick("صحيح البخاري", "Sahih al-Bukhari")
+            2 -> Lang.pick("صحيح مسلم", "Sahih Muslim")
+            else -> book.chapters.firstOrNull { it.first == h.chapter }?.second ?: book.title
+        }
         return source to h
     }
 }

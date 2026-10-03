@@ -117,7 +117,7 @@ class QuranFragment : Fragment(R.layout.fragment_quran) {
                     val page = QuranData.juzStartPage(context, row.number)
                     val first = QuranData.page(context, page).firstOrNull()
                     b.textSurahNumber.text = QuranData.toArabicDigits(row.number)
-                    b.textSurahName.text = getString(R.string.quran_juz, JUZ_NAMES[row.number - 1])
+                    b.textSurahName.text = getString(R.string.quran_juz, if (Lang.arabic) JUZ_NAMES[row.number - 1] else row.number.toString())
                     b.textSurahMeta.text = first?.let { Ui.quranNames(context, QuranData.surahName(context, it.surah), QuranData.surahName(context, it.surah)) } ?: ""
                     b.textSurahPage.text = getString(R.string.quran_page_short, QuranData.toArabicDigits(page))
                     b.root.setOnClickListener { openPage(page) }

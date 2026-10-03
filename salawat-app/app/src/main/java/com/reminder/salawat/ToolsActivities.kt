@@ -84,11 +84,11 @@ class CalendarActivity : ColumnActivity() {
         nav.addView(navButton(R.drawable.ic_chevron_prev) { shift(-1) })
         val title = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER }
         nav.addView(title, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        text(title, "${HijriDate.MONTHS[month - 1]} ${QuranData.toArabicDigits(year)} هـ", R.style.Text_TitleLarge, R.color.accent_text, Gravity.CENTER)
+        text(title, "${HijriDate.MONTHS[month - 1]} ${QuranData.toArabicDigits(year)} ${HijriDate.ERA}", R.style.Text_TitleLarge, R.color.accent_text, Gravity.CENTER)
         val first = HijriDate.firstDayOf(this, year, month)
         val length = HijriDate.monthLength(this, year, month)
         val last = (first.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, length - 1) }
-        val fmt = SimpleDateFormat("d MMMM yyyy", Locale("ar"))
+        val fmt = SimpleDateFormat("d MMMM yyyy", Ui.locale())
         text(title, "${fmt.format(first.time)} — ${fmt.format(last.time)}", R.style.Text_BodySmall, R.color.text_secondary_light, Gravity.CENTER)
         nav.addView(navButton(R.drawable.ic_chevron_next) { shift(1) })
 
@@ -96,7 +96,8 @@ class CalendarActivity : ColumnActivity() {
         val card = Ui.card(column)
         val grid = GridLayout(this).apply { columnCount = 7; setPadding(dp(6), dp(8), dp(6), dp(8)) }
         card.addView(grid)
-        listOf("أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت").forEach { d ->
+        (if (Lang.arabic) listOf("أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت")
+        else listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")).forEach { d ->
             grid.addView(cell(d, null, header = true))
         }
         val lead = first.get(Calendar.DAY_OF_WEEK) - 1
@@ -105,7 +106,7 @@ class CalendarActivity : ColumnActivity() {
         for (i in 0 until length) {
             val g = (first.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, i) }
             val h = HijriDay(year, month, i + 1)
-            val events = HijriDate.events(h, g).filter { it.title != "يوم الجمعة" && !it.title.startsWith("صيام الإثنين") && !it.title.startsWith("صيام الخميس") }
+            val events = HijriDate.events(h, g).filter { !it.weekly }
             val v = cell(QuranData.toArabicDigits(i + 1), g.get(Calendar.DAY_OF_MONTH).toString())
             val isToday = PrayerTracker.dayKey(g) == todayKey
             val isSelected = selected?.let { PrayerTracker.dayKey(it) == PrayerTracker.dayKey(g) } == true
@@ -142,7 +143,7 @@ class CalendarActivity : ColumnActivity() {
         }
         val any = grouped.isNotEmpty()
         grouped.values.forEach { (e, days) ->
-            val hijriDays = days.joinToString("، ") { QuranData.toArabicDigits(it + 1) }
+            val hijriDays = days.joinToString(Ui.listSep()) { QuranData.toArabicDigits(it + 1) }
             val g = (first.clone() as Calendar).apply { add(Calendar.DAY_OF_MONTH, days.first()) }
             eventLine(list, e, "$hijriDays ${HijriDate.MONTHS[month - 1]} — ${fmt.format(g.time)}")
         }
@@ -256,7 +257,7 @@ class ZakatActivity : ColumnActivity() {
         val total = v(R.string.zakat_cash) + pureGold * goldPrice + v(R.string.zakat_silver) * v(R.string.zakat_silver_price) +
             v(R.string.zakat_trade) + v(R.string.zakat_receivables) - v(R.string.zakat_debts)
         val nisab = 85 * goldPrice
-        val nf = NumberFormat.getNumberInstance(Locale("ar")).apply { maximumFractionDigits = 2 }
+        val nf = NumberFormat.getNumberInstance(Ui.locale()).apply { maximumFractionDigits = 2 }
         val lines = mutableListOf(getString(R.string.zakat_total, nf.format(total.coerceAtLeast(0.0))), getString(R.string.zakat_nisab, nf.format(nisab)))
         lines.add(if (total >= nisab) getString(R.string.zakat_due, nf.format(total * 0.025)) else getString(R.string.zakat_not_due))
         result?.text = lines.joinToString("\n")

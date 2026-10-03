@@ -249,7 +249,7 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
         framePaint.strokeWidth = lineH * 0.015f
         val inner = RectF(rect.left + lineH * 0.08f, rect.top + lineH * 0.08f, rect.right - lineH * 0.08f, rect.bottom - lineH * 0.08f)
         canvas.drawRoundRect(inner, lineH * 0.15f, lineH * 0.15f, framePaint)
-        drawCentered(canvas, QuranData.surahName(context, surah), top, lineH, w, lineH * 0.42f, accentColor)
+        drawCentered(canvas, QuranData.arabicSurahName(context, surah), top, lineH, w, lineH * 0.42f, accentColor)
     }
 
     private fun drawCentered(canvas: Canvas, text: String, top: Float, lineH: Float, w: Float, size: Float, color: Int) {

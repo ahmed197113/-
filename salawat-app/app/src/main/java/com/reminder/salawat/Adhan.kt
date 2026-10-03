@@ -21,7 +21,9 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class AdhanSound(val id: String, val name: String, val archiveUrl: String = "", val fajr: Boolean = false)
+data class AdhanSound(val id: String, val arName: String, val archiveUrl: String = "", val fajr: Boolean = false, val enName: String = arName) {
+    val name get() = Lang.pick(arName, enName)
+}
 
 object AdhanCatalog {
     /** Play only the regular notification sound. */
@@ -37,21 +39,21 @@ object AdhanCatalog {
     private const val ARCHIVE = "https://archive.org/download/"
 
     val ALL = listOf(
-        AdhanSound("mulla_makkah", "الحرم المكي — الشيخ علي أحمد ملا", ARCHIVE + "adan-madeenah-nu3man/adan-mullah-al7aram-1414.mp3"),
-        AdhanSound("farooq_makkah", "الحرم المكي — الشيخ فاروق حضراوي", ARCHIVE + "adan-madeenah-nu3man/makkah-farooq.mp3"),
-        AdhanSound(BUNDLED, "الحرم النبوي (المدينة المنورة) ١"),
-        AdhanSound("madinah2", "الحرم النبوي (المدينة المنورة) ٢", ARCHIVE + "adhan-mp3-collection/adhan-al-haram-al-madani-al-madinah-1.mp3"),
-        AdhanSound("minshawi", "الشيخ محمد صديق المنشاوي", ARCHIVE + "SalatTimesMP3Adhan/Adhans_mp3_files/Adhan/menshawi_rast.mp3"),
-        AdhanSound("abdulbasit", "الشيخ عبد الباسط عبد الصمد", ARCHIVE + "adhan-mp3-collection/abdulbasit-abdusamad-1-egypt.mp3"),
-        AdhanSound("husary", "الشيخ محمود خليل الحصري", ARCHIVE + "adan-madeenah-nu3man/adan-al7usary.mp3"),
-        AdhanSound("shuaisha", "الشيخ أبو العينين شعيشع", ARCHIVE + "adhan-mp3-collection/abul-ainain-shuaisha-cairo.mp3"),
-        AdhanSound("alafasy", "الشيخ مشاري راشد العفاسي", ARCHIVE + "AdhanMisharyRashid/Adhan%20Mishary%20Rashid.mp3"),
-        AdhanSound("qatami", "الشيخ ناصر القطامي", ARCHIVE + "SalatTimesMP3Adhan/Adhans_mp3_files/Adhan/naser_qotami2.mp3"),
-        AdhanSound("aqsa", "المسجد الأقصى المبارك", ARCHIVE + "adhan-mp3-collection/adhan-al-aqsa-jerusalem.mp3"),
-        AdhanSound("fajr_makkah", "أذان الفجر — الحرم المكي", ARCHIVE + "adhan-mp3-collection/adhan-fajr-al-haram-al-maki.mp3", fajr = true),
-        AdhanSound("fajr_madinah", "أذان الفجر — الحرم النبوي", ARCHIVE + "adhan-mp3-collection/adhan-fajr-al-haram-al-madani.mp3", fajr = true),
-        AdhanSound("fajr_abdulbasit", "أذان الفجر — الشيخ عبد الباسط عبد الصمد", ARCHIVE + "adhan-mp3-collection/abdulbasit-abdusamad-7-fajr-egypt.mp3", fajr = true),
-        AdhanSound("fajr_alafasy", "أذان الفجر — الشيخ مشاري العفاسي", ARCHIVE + "SalatTimesMP3Adhan/Adhans_mp3_files/Adhan/afasi_sobh_hejaz.mp3", fajr = true)
+        AdhanSound("mulla_makkah", "الحرم المكي — الشيخ علي أحمد ملا", ARCHIVE + "adan-madeenah-nu3man/adan-mullah-al7aram-1414.mp3", enName = "Makkah — Sheikh Ali Ahmed Mulla"),
+        AdhanSound("farooq_makkah", "الحرم المكي — الشيخ فاروق حضراوي", ARCHIVE + "adan-madeenah-nu3man/makkah-farooq.mp3", enName = "Makkah — Sheikh Farooq Hadhrawi"),
+        AdhanSound(BUNDLED, "الحرم النبوي (المدينة المنورة) ١", enName = "Madinah (Prophet's Mosque) 1"),
+        AdhanSound("madinah2", "الحرم النبوي (المدينة المنورة) ٢", ARCHIVE + "adhan-mp3-collection/adhan-al-haram-al-madani-al-madinah-1.mp3", enName = "Madinah (Prophet's Mosque) 2"),
+        AdhanSound("minshawi", "الشيخ محمد صديق المنشاوي", ARCHIVE + "SalatTimesMP3Adhan/Adhans_mp3_files/Adhan/menshawi_rast.mp3", enName = "Sheikh Muhammad Siddiq al-Minshawi"),
+        AdhanSound("abdulbasit", "الشيخ عبد الباسط عبد الصمد", ARCHIVE + "adhan-mp3-collection/abdulbasit-abdusamad-1-egypt.mp3", enName = "Sheikh Abdul Basit Abdus Samad"),
+        AdhanSound("husary", "الشيخ محمود خليل الحصري", ARCHIVE + "adan-madeenah-nu3man/adan-al7usary.mp3", enName = "Sheikh Mahmoud Khalil al-Husary"),
+        AdhanSound("shuaisha", "الشيخ أبو العينين شعيشع", ARCHIVE + "adhan-mp3-collection/abul-ainain-shuaisha-cairo.mp3", enName = "Sheikh Abul Ainain Shuaisha"),
+        AdhanSound("alafasy", "الشيخ مشاري راشد العفاسي", ARCHIVE + "AdhanMisharyRashid/Adhan%20Mishary%20Rashid.mp3", enName = "Sheikh Mishary Rashid Alafasy"),
+        AdhanSound("qatami", "الشيخ ناصر القطامي", ARCHIVE + "SalatTimesMP3Adhan/Adhans_mp3_files/Adhan/naser_qotami2.mp3", enName = "Sheikh Nasser al-Qatami"),
+        AdhanSound("aqsa", "المسجد الأقصى المبارك", ARCHIVE + "adhan-mp3-collection/adhan-al-aqsa-jerusalem.mp3", enName = "Al-Aqsa Mosque"),
+        AdhanSound("fajr_makkah", "أذان الفجر — الحرم المكي", ARCHIVE + "adhan-mp3-collection/adhan-fajr-al-haram-al-maki.mp3", fajr = true, enName = "Fajr adhan — Makkah"),
+        AdhanSound("fajr_madinah", "أذان الفجر — الحرم النبوي", ARCHIVE + "adhan-mp3-collection/adhan-fajr-al-haram-al-madani.mp3", fajr = true, enName = "Fajr adhan — Madinah"),
+        AdhanSound("fajr_abdulbasit", "أذان الفجر — الشيخ عبد الباسط عبد الصمد", ARCHIVE + "adhan-mp3-collection/abdulbasit-abdusamad-7-fajr-egypt.mp3", fajr = true, enName = "Fajr adhan — Sheikh Abdul Basit"),
+        AdhanSound("fajr_alafasy", "أذان الفجر — الشيخ مشاري العفاسي", ARCHIVE + "SalatTimesMP3Adhan/Adhans_mp3_files/Adhan/afasi_sobh_hejaz.mp3", fajr = true, enName = "Fajr adhan — Sheikh Mishary Alafasy")
     )
 
     fun byId(id: String) = ALL.firstOrNull { it.id == id }

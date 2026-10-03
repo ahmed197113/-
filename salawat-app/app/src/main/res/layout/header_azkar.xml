@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layoutDirection="rtl"
+    android:layoutDirection="locale"
     android:orientation="vertical"
     android:paddingStart="16dp"
     android:paddingEnd="16dp">
@@ -17,7 +17,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:columnCount="2"
-        android:layoutDirection="rtl" />
+        android:layoutDirection="locale" />
 
     <TextView
         style="@style/SectionTitle"

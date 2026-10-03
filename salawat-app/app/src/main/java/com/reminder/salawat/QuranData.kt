@@ -109,17 +109,30 @@ object QuranData {
     fun styledName(context: Context, text: String, vararg surahs: Int): CharSequence =
         Ui.quranNames(context, text, *surahs.map { surahName(context, it) }.toTypedArray())
 
-    fun surahName(context: Context, surah: Int): String =
+    /** The surah's name in the UI language (English: its transliteration, e.g. "Al-Baqara"). */
+    fun surahName(context: Context, surah: Int): String {
+        val ref = QuranApi.loadSurahList(context).getOrNull(surah - 1) ?: return "$surah"
+        return if (Lang.arabic) ref.name else ref.englishName
+    }
+
+    /** The Uthmani Arabic name, as printed in the Mushaf (page headers), whatever the UI language. */
+    fun arabicSurahName(context: Context, surah: Int): String =
         QuranApi.loadSurahList(context).getOrNull(surah - 1)?.name ?: "$surah"
 
-    fun toArabicDigits(n: Int): String = n.toString().map { if (it in '0'..'9') '٠' + (it - '0') else it }.joinToString("")
+    /** Numbers in the UI: Arabic-Indic digits in Arabic, Western digits in English. */
+    fun toArabicDigits(n: Int): String = if (Lang.arabic) quranDigits(n) else n.toString()
+
+    /** Arabic-Indic digits whatever the language: ayah markers inside the Quran text, as in the Mushaf. */
+    fun quranDigits(n: Int): String = n.toString().map { if (it in '0'..'9') '٠' + (it - '0') else it }.joinToString("")
 }
 
 /**
  * A reciter with one recording per ayah: either an islamic.network edition ([bitrate]/[id]) or, when
  * [everyAyahFolder] is set, a folder on everyayah.com (files named SSSAAA.mp3).
  */
-data class Reciter(val id: String, val name: String, val bitrate: Int, val everyAyahFolder: String? = null) {
+data class Reciter(val id: String, val arName: String, val bitrate: Int, val everyAyahFolder: String? = null, val enName: String = arName) {
+    val name get() = Lang.pick(arName, enName)
+
     fun ayahUrl(context: Context, global: Int): String {
         everyAyahFolder?.let { folder ->
             val a = QuranData.byGlobal(context, global) ?: return ""
@@ -132,26 +145,26 @@ data class Reciter(val id: String, val name: String, val bitrate: Int, val every
 object Reciters {
     /** Editions verified on the islamic.network CDN (bitrate = best available ≤128 kbps). */
     val ALL = listOf(
-        Reciter("ar.alafasy", "مشاري راشد العفاسي", 128),
-        Reciter("ar.minshawi", "محمد صديق المنشاوي (مرتّل)", 128),
-        Reciter("ar.minshawimujawwad", "محمد صديق المنشاوي (مجوّد)", 64),
-        Reciter("ar.husary", "محمود خليل الحصري (مرتّل)", 128),
-        Reciter("ar.husarymujawwad", "محمود خليل الحصري (مجوّد)", 128),
-        Reciter("ar.abdulbasitmurattal", "عبد الباسط عبد الصمد (مرتّل)", 64),
-        Reciter("ar.abdulsamad", "عبد الباسط عبد الصمد (مجوّد)", 64),
-        Reciter("ar.mahermuaiqly", "ماهر المعيقلي", 128),
-        Reciter("everyayah.yasserdussary", "ياسر الدوسري", 128, everyAyahFolder = "Yasser_Ad-Dussary_128kbps"),
-        Reciter("ar.abdurrahmaansudais", "عبد الرحمن السديس", 64),
-        Reciter("ar.saoodshuraym", "سعود الشريم", 64),
-        Reciter("ar.shaatree", "أبو بكر الشاطري", 128),
-        Reciter("ar.ahmedajamy", "أحمد بن علي العجمي", 128),
-        Reciter("ar.hudhaify", "علي الحذيفي", 128),
-        Reciter("ar.muhammadayyoub", "محمد أيوب", 128),
-        Reciter("ar.muhammadjibreel", "محمد جبريل", 128),
-        Reciter("ar.abdullahbasfar", "عبد الله بصفر", 64),
-        Reciter("ar.hanirifai", "هاني الرفاعي", 64),
-        Reciter("ar.aymanswoaid", "أيمن سويد", 64),
-        Reciter("ar.ibrahimakhbar", "إبراهيم الأخضر", 32)
+        Reciter("ar.alafasy", "مشاري راشد العفاسي", 128, enName = "Mishary Rashid Alafasy"),
+        Reciter("ar.minshawi", "محمد صديق المنشاوي (مرتّل)", 128, enName = "Muhammad Siddiq al-Minshawi (Murattal)"),
+        Reciter("ar.minshawimujawwad", "محمد صديق المنشاوي (مجوّد)", 64, enName = "Muhammad Siddiq al-Minshawi (Mujawwad)"),
+        Reciter("ar.husary", "محمود خليل الحصري (مرتّل)", 128, enName = "Mahmoud Khalil al-Husary (Murattal)"),
+        Reciter("ar.husarymujawwad", "محمود خليل الحصري (مجوّد)", 128, enName = "Mahmoud Khalil al-Husary (Mujawwad)"),
+        Reciter("ar.abdulbasitmurattal", "عبد الباسط عبد الصمد (مرتّل)", 64, enName = "Abdul Basit Abdus Samad (Murattal)"),
+        Reciter("ar.abdulsamad", "عبد الباسط عبد الصمد (مجوّد)", 64, enName = "Abdul Basit Abdus Samad (Mujawwad)"),
+        Reciter("ar.mahermuaiqly", "ماهر المعيقلي", 128, enName = "Maher al-Muaiqly"),
+        Reciter("everyayah.yasserdussary", "ياسر الدوسري", 128, everyAyahFolder = "Yasser_Ad-Dussary_128kbps", enName = "Yasser al-Dosari"),
+        Reciter("ar.abdurrahmaansudais", "عبد الرحمن السديس", 64, enName = "Abdur-Rahman as-Sudais"),
+        Reciter("ar.saoodshuraym", "سعود الشريم", 64, enName = "Saud ash-Shuraim"),
+        Reciter("ar.shaatree", "أبو بكر الشاطري", 128, enName = "Abu Bakr ash-Shatri"),
+        Reciter("ar.ahmedajamy", "أحمد بن علي العجمي", 128, enName = "Ahmed al-Ajmi"),
+        Reciter("ar.hudhaify", "علي الحذيفي", 128, enName = "Ali al-Hudhaifi"),
+        Reciter("ar.muhammadayyoub", "محمد أيوب", 128, enName = "Muhammad Ayyub"),
+        Reciter("ar.muhammadjibreel", "محمد جبريل", 128, enName = "Muhammad Jibreel"),
+        Reciter("ar.abdullahbasfar", "عبد الله بصفر", 64, enName = "Abdullah Basfar"),
+        Reciter("ar.hanirifai", "هاني الرفاعي", 64, enName = "Hani ar-Rifai"),
+        Reciter("ar.aymanswoaid", "أيمن سويد", 64, enName = "Ayman Suwaid"),
+        Reciter("ar.ibrahimakhbar", "إبراهيم الأخضر", 32, enName = "Ibrahim al-Akhdar")
     )
 
     fun selected(context: Context): Reciter {
@@ -161,17 +174,20 @@ object Reciters {
 }
 
 object Tafasir {
-    val ALL = listOf(
-        "ar.muyassar" to "التفسير الميسر",
-        "ar.jalalayn" to "تفسير الجلالين",
-        "ar.waseet" to "التفسير الوسيط",
-        "ar.baghawi" to "تفسير البغوي",
-        "ar.qurtubi" to "تفسير القرطبي",
-        "ar.miqbas" to "تنوير المقباس"
+    /** Arabic tafsir editions, plus Saheeh International's English translation (alquran.cloud, from Tanzil). */
+    val ALL get() = listOf(
+        "ar.muyassar" to Lang.pick("التفسير الميسر", "Tafsir al-Muyassar (Arabic)"),
+        "ar.jalalayn" to Lang.pick("تفسير الجلالين", "Tafsir al-Jalalayn (Arabic)"),
+        "ar.waseet" to Lang.pick("التفسير الوسيط", "Tafsir al-Waseet (Arabic)"),
+        "ar.baghawi" to Lang.pick("تفسير البغوي", "Tafsir al-Baghawi (Arabic)"),
+        "ar.qurtubi" to Lang.pick("تفسير القرطبي", "Tafsir al-Qurtubi (Arabic)"),
+        "ar.miqbas" to Lang.pick("تنوير المقباس", "Tanwir al-Miqbas (Arabic)"),
+        "en.sahih" to Lang.pick("الترجمة الإنجليزية (صحيح إنترناشونال)", "Saheeh International (English translation)")
     )
 
     fun selected(context: Context): Pair<String, String> {
-        val id = Prefs.get(context).getString(Prefs.KEY_TAFSIR, null)
+        // English readers start with the translation; Arabic readers with al-Muyassar.
+        val id = Prefs.get(context).getString(Prefs.KEY_TAFSIR, null) ?: if (Lang.arabic) null else "en.sahih"
         return ALL.firstOrNull { it.first == id } ?: ALL.first()
     }
 }

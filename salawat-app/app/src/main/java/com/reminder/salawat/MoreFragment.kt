@@ -73,10 +73,10 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
     companion object {
         fun openMosques(context: Context) {
             try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode("مسجد"))))
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(Lang.pick("مسجد", "mosque")))))
             } catch (e: ActivityNotFoundException) {
                 try {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/" + Uri.encode("مسجد"))))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/" + Uri.encode(Lang.pick("مسجد", "mosque")))))
                 } catch (e2: ActivityNotFoundException) {
                     Toast.makeText(context, R.string.no_maps_app, Toast.LENGTH_SHORT).show()
                 }

@@ -41,6 +41,7 @@ object Themes {
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
                 activity.setTheme(selected(activity).style)
+                Lang.refresh(activity)
                 applied[activity] = version
             }
             override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {

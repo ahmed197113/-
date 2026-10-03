@@ -133,7 +133,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         b.textHijri.text = HijriDate.today(context)
         renderMyPrayers()
         renderOccasion()
-        b.textGregorian.text = SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar")).format(Date())
+        b.textGregorian.text = SimpleDateFormat(Lang.pick("EEEE، d MMMM yyyy", "EEEE, d MMMM yyyy"), Ui.locale()).format(Date())
         b.textPlace.text = PrayerRepository.placeLabel(context) ?: getString(R.string.home_place_unknown)
 
         val reminderOn = Prefs.get(context).getBoolean(Prefs.KEY_REMINDER_ENABLED, false) && Notifications.canPost(context)
@@ -220,7 +220,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val b = _binding ?: return
         val context = b.root.context
         val ayah = QuranData.ayahOfDay(context)
-        b.textAyahOfDay.text = "${ayah.text} ﴿${QuranData.toArabicDigits(ayah.ayah)}﴾"
+        b.textAyahOfDay.text = "${ayah.text} ﴿${QuranData.quranDigits(ayah.ayah)}﴾"
         b.textAyahOfDayRef.text = QuranData.styledName(
             context, "${QuranData.surahName(context, ayah.surah)} • ${getString(R.string.quran_page_number, QuranData.toArabicDigits(ayah.page))}", ayah.surah
         )

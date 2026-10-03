@@ -148,11 +148,11 @@ object LocationSheet {
     @Suppress("DEPRECATION")
     private suspend fun reverseGeocode(activity: AppCompatActivity, location: Location): Place = withContext(Dispatchers.IO) {
         runCatching {
-            val address = Geocoder(activity, Locale("ar")).getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
+            val address = Geocoder(activity, Ui.locale()).getFromLocation(location.latitude, location.longitude, 1)?.firstOrNull()
             if (address == null) Place(null, null, null)
             else {
                 val city = address.locality ?: address.subAdminArea ?: address.adminArea
-                Place(listOfNotNull(city, address.countryName).joinToString("، ").ifBlank { null }, address.countryCode, address.countryName)
+                Place(listOfNotNull(city, address.countryName).joinToString(Ui.listSep()).ifBlank { null }, address.countryCode, address.countryName)
             }
         }.getOrDefault(Place(null, null, null))
     }

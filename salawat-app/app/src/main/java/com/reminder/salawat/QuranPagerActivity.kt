@@ -569,7 +569,7 @@ class QuranPagerActivity : AppCompatActivity() {
                 if (ayah.ayah == 1) {
                     if (sb.isNotEmpty() && sb.last() != '\n') sb.append('\n')
                     val headerStart = sb.length
-                    sb.append("۞ ").append(QuranData.surahName(context, ayah.surah)).append(" ۞\n")
+                    sb.append("۞ ").append(QuranData.arabicSurahName(context, ayah.surah)).append(" ۞\n")
                     sb.setSpan(AlignmentSpan.Standard(Layout.Alignment.ALIGN_CENTER), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     sb.setSpan(ForegroundColorSpan(gold), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     sb.setSpan(RelativeSizeSpan(1.05f), headerStart, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -585,7 +585,7 @@ class QuranPagerActivity : AppCompatActivity() {
                 // the number never starts a line on its own).
                 sb.append(ayah.text).append('\u00A0')
                 val markerStart = sb.length
-                sb.append("\u200E\uFD3F").append(QuranData.toArabicDigits(ayah.ayah)).append("\uFD3E\u200F")
+                sb.append("\u200E\uFD3F").append(QuranData.quranDigits(ayah.ayah)).append("\uFD3E\u200F")
                 val markerEnd = sb.length
                 sb.append(' ')
                 val end = sb.length

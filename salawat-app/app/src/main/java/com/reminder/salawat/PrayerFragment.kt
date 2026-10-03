@@ -217,7 +217,7 @@ class PrayerFragment : Fragment(R.layout.fragment_prayer) {
         b.btnNextDay.isEnabled = configured
 
         val day = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, dayOffset) }
-        val dayName = SimpleDateFormat("EEEE، d MMMM", Locale("ar")).format(day.time)
+        val dayName = SimpleDateFormat(Lang.pick("EEEE، d MMMM", "EEEE, d MMMM"), Ui.locale()).format(day.time)
         b.textDay.text = if (dayOffset == 0) "${getString(R.string.today)} — $dayName" else dayName
         b.textPrayerPlace.text = PrayerRepository.placeLabel(context) ?: getString(R.string.home_place_unknown)
 

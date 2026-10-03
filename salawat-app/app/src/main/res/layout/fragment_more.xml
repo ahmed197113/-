@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_light"
-    android:layoutDirection="rtl"
+    android:layoutDirection="locale"
     android:orientation="vertical">
 
     <TextView
