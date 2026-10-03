@@ -48,6 +48,8 @@ object Lang {
     fun wrap(base: Context): Context {
         val locale = Locale.forLanguageTag(current(base))
         arabic = locale.language != "en"
+        // Views set to follow the locale, number and date formats read the default locale: keep it the app's.
+        Locale.setDefault(locale)
         val config = Configuration(base.resources.configuration)
         config.setLocale(locale)
         config.setLayoutDirection(locale)

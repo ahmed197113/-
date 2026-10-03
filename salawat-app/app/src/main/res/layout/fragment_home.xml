@@ -4,8 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_light"
-    android:fillViewport="true"
-    android:layoutDirection="locale">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -391,8 +390,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="11dp"
             android:layout_marginEnd="11dp"
-            android:columnCount="3"
-            android:layoutDirection="locale">
+            android:columnCount="3">
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/tileQuran"
                 android:layout_width="0dp"

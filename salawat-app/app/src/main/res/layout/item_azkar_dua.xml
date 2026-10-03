@@ -7,8 +7,7 @@
     android:layout_marginTop="10dp"
     android:layout_marginEnd="16dp"
     android:clickable="true"
-    android:focusable="true"
-    android:layoutDirection="locale">
+    android:focusable="true">
 
     <LinearLayout
         android:layout_width="match_parent"

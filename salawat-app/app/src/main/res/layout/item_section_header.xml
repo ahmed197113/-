@@ -3,7 +3,6 @@
     android:id="@+id/textSection"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layoutDirection="locale"
     android:paddingStart="20dp"
     android:paddingTop="20dp"
     android:paddingEnd="20dp"
