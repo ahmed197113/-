@@ -1,0 +1,34 @@
+name: Rafiq pack Madinah Mushaf layout
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/pack_mushaf.py"
+      - ".github/workflows/rafiq-pack-mushaf.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/pack_mushaf.py "$RUNNER_TEMP/m"
+      - name: Zip the page fonts
+        if: always()
+        run: cd "$RUNNER_TEMP/m" && ls fonts | head && (cd fonts && zip -q -r ../mushaf_fonts_v2.zip .) && ls -la
+      - if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-mushaf-fonts-v2
+          name: Madinah Mushaf layout + QCF v2 page fonts
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: |
+            ${{ runner.temp }}/m/*.txt
+            ${{ runner.temp }}/m/*.gz
+            ${{ runner.temp }}/m/*.zip
+            ${{ runner.temp }}/m/fonts/*

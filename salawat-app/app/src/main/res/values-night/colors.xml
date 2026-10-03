@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="teal_dark">#062522</color>
+    <color name="teal_primary">#1f7a72</color>
+    <color name="teal_light">#26998a</color>
+    <color name="gold">#d9b84a</color>
+
+    <color name="background_light">#0b1a19</color>
+    <color name="card_light">#132826</color>
+    <color name="card_tint">#183330</color>
+    <color name="outline">#25403d</color>
+    <color name="text_primary_light">#ecefee</color>
+    <color name="text_secondary_light">#a9b7b4</color>
+    <color name="accent_text">#86d6cb</color>
+    <color name="on_brand_secondary">#b6d4cf</color>
+    <color name="highlight">#3d3a1f</color>
+    <color name="error_text">#ffb4ab</color>
+    <color name="nav_indicator">#24504b</color>
+
+    <color name="page_background">#071a18</color>
+    <color name="page_paper">#0f2a26</color>
+    <color name="ayah_highlight">#66d4af37</color>
+    <color name="memorize_mask">#40A8B5B2</color>
+    <!-- tanzil.net colours ayah numbers #050 -->
+    <color name="ayah_number">#8fd18f</color>
+
+    <!-- Colour themes -->
+    <color name="th_blue_dark">#071628</color>
+    <color name="th_blue_primary">#3b74b8</color>
+    <color name="th_blue_light">#4a8bd6</color>
+    <color name="th_blue_accent">#9cc3f0</color>
+    <color name="th_blue_onsec">#bcd3ee</color>
+    <color name="th_blue_indicator">#1f3c5c</color>
+    <color name="th_blue_tint">#172b40</color>
+    <color name="th_green_dark">#06200f</color>
+    <color name="th_green_primary">#2e8b50</color>
+    <color name="th_green_light">#3fae68</color>
+    <color name="th_green_accent">#8fd9a8</color>
+    <color name="th_green_onsec">#bfe0ca</color>
+    <color name="th_green_indicator">#1f4a2f</color>
+    <color name="th_green_tint">#163222</color>
+    <color name="th_brown_dark">#22170f</color>
+    <color name="th_brown_primary">#8c6a4a</color>
+    <color name="th_brown_light">#a8845f</color>
+    <color name="th_brown_accent">#e0c09a</color>
+    <color name="th_brown_onsec">#dccab6</color>
+    <color name="th_brown_indicator">#4a3626</color>
+    <color name="th_brown_tint">#2e2219</color>
+    <color name="th_purple_dark">#180f29</color>
+    <color name="th_purple_primary">#6d58b0</color>
+    <color name="th_purple_light">#8a76cc</color>
+    <color name="th_purple_accent">#c8b8f2</color>
+    <color name="th_purple_onsec">#cfc4ea</color>
+    <color name="th_purple_indicator">#3a2d5e</color>
+    <color name="th_purple_tint">#221a36</color>
+    <color name="th_slate_dark">#0f1519</color>
+    <color name="th_slate_primary">#546e7a</color>
+    <color name="th_slate_light">#78909c</color>
+    <color name="th_slate_accent">#b0c4ce</color>
+    <color name="th_slate_onsec">#c3d0d6</color>
+    <color name="th_slate_indicator">#2c3a42</color>
+    <color name="th_slate_tint">#1a2328</color>
+</resources>

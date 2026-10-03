@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colours of the selected colour theme (see Themes.kt). -->
+    <attr name="brandDark" format="color" />
+    <attr name="brandPrimary" format="color" />
+    <attr name="brandLight" format="color" />
+    <attr name="brandAccentText" format="color" />
+    <attr name="brandOnSecondary" format="color" />
+    <attr name="brandIndicator" format="color" />
+    <attr name="brandTint" format="color" />
+</resources>

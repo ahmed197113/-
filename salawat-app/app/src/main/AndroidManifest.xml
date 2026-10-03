@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Exact alarms for the adhan at prayer time; the user grants it (asked on first run when needed).
+         USE_EXACT_ALARM is reserved by Play policy for alarm-clock and calendar apps, so it is not used. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Lets the adhan app ask (one tap) to be exempt from battery optimisation so alarms are not delayed. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.sensor.compass" android:required="false" />
+
+    <application
+        android:name=".SalawatApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
+        android:localeConfig="@xml/locales_config"
+        android:theme="@style/Theme.Salawat">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity>
+        <activity android:name=".OnboardingActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:label="@string/settings_title" android:exported="false" />
+        <activity android:name=".TasbihActivity" android:label="@string/more_tasbih" android:exported="false" />
+        <activity android:name=".AzkarDetailActivity" android:label="@string/azkar_title" android:exported="false" />
+        <activity android:name=".QuranPagerActivity" android:label="@string/quran_title" android:exported="false" android:launchMode="singleTop" />
+        <activity android:name=".AdhanSettingsActivity" android:label="@string/adhan_title" android:exported="false" />
+        <activity android:name=".QiblaActivity" android:label="@string/qibla_title" android:exported="false" android:screenOrientation="portrait" />
+
+        <activity android:name=".CalendarActivity" android:exported="false" />
+        <activity android:name=".ZakatActivity" android:exported="false" />
+        <activity android:name=".TrackerActivity" android:exported="false" />
+        <activity android:name=".RemindersActivity" android:exported="false" />
+        <activity android:name=".HadithBooksActivity" android:exported="false" />
+        <activity android:name=".HadithReaderActivity" android:exported="false" />
+        <activity android:name=".NamesActivity" android:exported="false" />
+        <activity android:name=".RuqyahActivity" android:exported="false" />
+        <activity android:name=".QuranSearchActivity" android:exported="false" />
+        <activity android:name=".RamadanActivity" android:exported="false" />
+
+        <receiver android:name=".PrayerAlarmReceiver" android:exported="false" />
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
+        <receiver android:name=".PrayedReceiver" android:exported="false" />
+        <receiver android:name=".SalawatReceiver" android:exported="false" />
+
+        <service
+            android:name=".AdhanService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <receiver android:name=".BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Lets AppCompat remember the forced Arabic locale on Android 12 and below. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <receiver android:name=".AyahWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ayah_widget_info" />
+        </receiver>
+
+        <receiver android:name=".NextPrayerWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_prayer_widget_info" />
+        </receiver>
+    </application>
+</manifest>

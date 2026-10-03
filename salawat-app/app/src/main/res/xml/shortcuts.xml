@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="quran" android:enabled="true" android:icon="@drawable/ic_shortcut_quran"
+        android:shortcutShortLabel="@string/tab_quran" android:shortcutLongLabel="@string/quran_title">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.reminder.salawat"
+            android:targetClass="com.reminder.salawat.MainActivity">
+            <extra android:name="tab" android:value="quran" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="azkar" android:enabled="true" android:icon="@drawable/ic_shortcut_azkar"
+        android:shortcutShortLabel="@string/tab_azkar" android:shortcutLongLabel="@string/azkar_title">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.reminder.salawat"
+            android:targetClass="com.reminder.salawat.MainActivity">
+            <extra android:name="tab" android:value="azkar" />
+        </intent>
+    </shortcut>
+    <shortcut android:shortcutId="tasbih" android:enabled="true" android:icon="@drawable/ic_shortcut_tasbih"
+        android:shortcutShortLabel="@string/shortcut_tasbih" android:shortcutLongLabel="@string/more_tasbih">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.reminder.salawat"
+            android:targetClass="com.reminder.salawat.TasbihActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="qibla" android:enabled="true" android:icon="@drawable/ic_shortcut_qibla"
+        android:shortcutShortLabel="@string/shortcut_qibla" android:shortcutLongLabel="@string/qibla_title">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.reminder.salawat"
+            android:targetClass="com.reminder.salawat.QiblaActivity" />
+    </shortcut>
+</shortcuts>

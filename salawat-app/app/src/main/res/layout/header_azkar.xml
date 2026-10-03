@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <TextView
+        style="@style/SectionTitle"
+        android:paddingTop="14dp"
+        android:text="@string/azkar_featured" />
+
+    <GridLayout
+        android:id="@+id/gridFeatured"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="2" />
+
+    <TextView
+        style="@style/SectionTitle"
+        android:text="@string/azkar_all" />
+</LinearLayout>
