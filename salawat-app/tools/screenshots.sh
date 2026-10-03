@@ -214,6 +214,17 @@ for combo in "blue SEPIA" "purple NIGHT"; do
   shot 51-theme-$1-mushaf-$2 5
 done
 
+# ---- Text (Tanzil) view of page 421 at night, as on a phone without the Mushaf page font ----
+adb shell am force-stop $pkg
+adb shell "run-as $pkg cat shared_prefs/salawat_prefs.xml" > /tmp/sp.xml
+sed -i '/mushaf_pages\|reading_mode/d; s#</map>#<boolean name="mushaf_pages" value="false" />\n<string name="reading_mode">NIGHT</string>\n</map>#' /tmp/sp.xml
+adb shell "run-as $pkg sh -c 'cat > shared_prefs/salawat_prefs.xml'" < /tmp/sp.xml
+start .QuranPagerActivity --ei page 421
+shot 64-text-page-421-night 5
+adb shell am force-stop $pkg
+sed -i '/mushaf_pages/d' /tmp/sp.xml
+adb shell "run-as $pkg sh -c 'cat > shared_prefs/salawat_prefs.xml'" < /tmp/sp.xml
+
 # ---- New screens (Arabic), then the English interface ----
 adb shell am force-stop $pkg
 start .RamadanActivity
