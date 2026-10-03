@@ -180,11 +180,11 @@ class SettingsActivity : AppCompatActivity(), PermissionHost {
         Ui.sectionTitle(c, getString(R.string.settings_section_display))
         val display = Ui.card(c)
         val languages = listOf("العربية", "English")
-        val langIndex = Lang.SUPPORTED.indexOf(Lang.current()).coerceAtLeast(0)
+        val langIndex = Lang.SUPPORTED.indexOf(Lang.current(this)).coerceAtLeast(0)
         Ui.row(display, R.drawable.ic_apps, getString(R.string.settings_language), languages[langIndex]) {
             choose(getString(R.string.settings_language), languages, langIndex) {
                 PrayerRepository.clearMemo()
-                Lang.set(Lang.SUPPORTED[it])
+                Lang.set(this, Lang.SUPPORTED[it])
             }
         }
         val themes = resources.getStringArray(R.array.theme_labels)

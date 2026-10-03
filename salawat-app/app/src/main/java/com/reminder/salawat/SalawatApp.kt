@@ -9,7 +9,7 @@ class SalawatApp : Application() {
     override fun onCreate() {
         super.onCreate()
         // Arabic by default (even on phones set to another language); English when the user chooses it.
-        Lang.install()
+        Lang.install(this)
         Lang.refresh(this)
         applyTheme(this)
         Themes.install(this)

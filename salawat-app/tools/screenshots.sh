@@ -239,7 +239,7 @@ adb shell am force-stop $pkg
 start .QuranSearchActivity --es query '\\u0627\\u0644\\u0631\\u062d\\u0645\\u0646'
 sleep 6
 shot 68a-search-results 1
-adb shell input tap 540 900
+tap_text "•" || adb shell input tap 540 700
 shot 68b-search-opened-mushaf 8
 
 # ---- New screens (Arabic), then the English interface ----
