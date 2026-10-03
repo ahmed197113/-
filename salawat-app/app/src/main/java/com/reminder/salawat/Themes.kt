@@ -43,6 +43,9 @@ object Themes {
                 activity.setTheme(selected(activity).style)
                 applied[activity] = version
             }
+            override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) {
+                EdgeToEdge.apply(activity)
+            }
             override fun onActivityResumed(activity: Activity) {
                 val v = applied[activity]
                 if (v != null && v != version) {

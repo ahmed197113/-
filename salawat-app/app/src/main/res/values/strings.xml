@@ -514,4 +514,6 @@
     <string name="rem_change_time">تغيير الوقت</string>
     <string name="rem_change_minutes">تغيير المدة</string>
     <string name="rem_turn_off">إيقاف التذكير</string>
+    <string name="shortcut_tasbih">المسبحة</string>
+    <string name="shortcut_qibla">القبلة</string>
 </resources>

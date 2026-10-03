@@ -9,12 +9,12 @@ val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
 android {
     namespace = "com.reminder.salawat"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.reminder.salawat"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 9
         versionName = "6.3"
     }
