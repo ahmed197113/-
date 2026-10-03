@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -143,6 +144,10 @@ class FirebaseGenerationRepository implements GenerationRepository {
             );
         paths.add(path);
       }
+      String? fcmToken;
+      try {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+      } catch (_) {}
       final res = await FirebaseFunctions.instanceFor(region: Env.functionsRegion)
           .httpsCallable('createGenerationJob', options: HttpsCallableOptions(timeout: const Duration(seconds: 30)))
           .call<Map<String, dynamic>>({
@@ -151,6 +156,7 @@ class FirebaseGenerationRepository implements GenerationRepository {
         'gender': request.gender,
         'aspectRatio': request.aspectRatio,
         'variations': request.variations,
+        'fcmToken': ?fcmToken,
       });
       return res.data['jobId'] as String;
     } on FirebaseFunctionsException catch (e) {

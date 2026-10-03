@@ -1,3 +1,4 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +18,11 @@ Future<bool> bootstrapFirebase() async {
         projectId: Env.firebaseProjectId,
         storageBucket: Env.firebaseStorageBucket,
       ),
+    );
+    // Callables enforce App Check (Play Integrity / App Attest).
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode ? const AndroidDebugProvider() : const AndroidPlayIntegrityProvider(),
+      providerApple: kDebugMode ? const AppleDebugProvider() : const AppleAppAttestProvider(),
     );
     // Push when a generation finishes (sent by processJob).
     await FirebaseMessaging.instance.requestPermission();

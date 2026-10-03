@@ -11,6 +11,7 @@ import { Moderator } from './lib/moderation';
 import { buildPrompt, isTemplateActive, TemplateDoc } from './lib/prompt';
 import { loadRuntime, recordCost } from './lib/runtime';
 import { generateWithFallback, makeProvider, resolveModel } from './providers';
+import { referralCode } from './referrals';
 
 const ASPECTS = new Set(['9:16', '4:5', '1:1']);
 
@@ -29,7 +30,7 @@ function creditsOf(d: FirebaseFirestore.DocumentData | undefined): UserCredits {
  */
 export const createGenerationJob = onCall(
   { enforceAppCheck: true, consumeAppCheckToken: false },
-  async (req: CallableRequest<{ templateId: string; selfiePaths: string[]; gender: string; aspectRatio: string; variations?: number }>) => {
+  async (req: CallableRequest<{ templateId: string; selfiePaths: string[]; gender: string; aspectRatio: string; variations?: number; fcmToken?: string }>) => {
     const uid = req.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'يرجى تسجيل الدخول');
     const { templateId, selfiePaths, gender, aspectRatio } = req.data ?? {};
@@ -61,7 +62,7 @@ export const createGenerationJob = onCall(
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) {
         // First use: create the account with the free trial grant.
-        tx.set(userRef, { credits: FREE_TRIAL_CREDITS, created_at: FieldValue.serverTimestamp() });
+        tx.set(userRef, { credits: FREE_TRIAL_CREDITS, referral_code: referralCode(uid), created_at: FieldValue.serverTimestamp() });
         tx.set(db.collection('transactions').doc(), {
           uid, type: 'signupBonus', amount: FREE_TRIAL_CREDITS, created_at: FieldValue.serverTimestamp(),
         });
@@ -77,6 +78,7 @@ export const createGenerationJob = onCall(
         credits: decision.next.credits,
         pro_used_week: decision.next.proUsedWeek,
         pro_week_start: decision.next.proWeekStart ? Timestamp.fromMillis(decision.next.proWeekStart) : null,
+        ...(typeof req.data.fcmToken === 'string' ? { fcm_token: req.data.fcmToken } : {}),
       }, { merge: true });
       tx.set(db.collection('transactions').doc(), {
         uid, type: 'generation', amount: decision.mode === 'pro' ? 0 : -cost, job_id: jobRef.id,
