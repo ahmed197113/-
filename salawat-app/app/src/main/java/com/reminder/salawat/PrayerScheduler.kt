@@ -79,7 +79,9 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Skip stale alarms (e.g. delivered long after the device was off).
         if (prayer != null && enabled && System.currentTimeMillis() - millis < 30 * 60_000L) {
             val adhan = AdhanCatalog.sourceFor(context, prayer)
-            val playing = adhan != null && Notifications.canPost(context) && AdhanService.start(context, prayer)
+            // The adhan plays even when notifications are blocked (the foreground service still runs; only its
+            // notice is hidden) — a missing permission must never silence the adhan.
+            val playing = adhan != null && AdhanService.start(context, prayer)
             if (!playing) postPrayerNotification(context, prayer)
         }
         PrayerScheduler.refreshDependents(context)

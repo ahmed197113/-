@@ -213,6 +213,36 @@ for combo in "blue SEPIA" "purple NIGHT"; do
   shot 51-theme-$1-mushaf-$2 5
 done
 
+# ---- End-to-end alarms: jump the clock to just before each scheduled alarm and let it fire on its own ----
+travel() {  # $1 receiver, $2 label
+  adb shell am force-stop $pkg   # app closed, as on a real phone
+  sleep 2
+  now=$(adb shell date "+%Y-%m-%d\ %H:%M:%S" | tr -d '\r')
+  secs=$(adb shell dumpsys alarm | python3 tools/alarm_travel.py "$1" "$now")
+  echo "== $2: next $1 alarm in ${secs:-NONE}s (device now $now)" >> "$out/alarms-e2e.log"
+  [ -z "$secs" ] && return
+  epoch=$(adb shell date +%s | tr -d '\r')
+  target=$((epoch + secs - 15))
+  adb shell "date @$target" > /dev/null 2>&1 || adb shell "toybox date $(python3 -c "import time;print(time.strftime('%m%d%H%M%Y.%S', time.localtime($target)))")" > /dev/null 2>&1
+  sleep 40
+  adb shell "dumpsys notification --noredact" | grep -E "pkg=com.reminder.salawat|android.title=|android.text=" | grep -B1 -A2 "com.reminder.salawat" | head -40 >> "$out/alarms-e2e.log"
+  adb shell "dumpsys audio" | grep -iE "player|usage=USAGE_ALARM|state:started" | head -10 >> "$out/alarms-e2e.log"
+  adb shell cmd statusbar expand-notifications || true
+  shot 60-e2e-$2 2
+  adb shell cmd statusbar collapse || true
+}
+adb shell settings put global auto_time 0 || true
+adb shell "dumpsys alarm" | grep -B2 -A4 "com.reminder.salawat" > "$out/alarms-before.log" || true
+travel SalawatReceiver salawat
+travel ReminderReceiver reminder-1
+travel PrayerAlarmReceiver adhan
+sleep 150
+adb shell "dumpsys notification --noredact" | grep -E "android.title=|android.text=" | head -20 >> "$out/alarms-e2e.log"
+shot 61-e2e-after-adhan 1
+travel ReminderReceiver reminder-2
+travel ReminderReceiver reminder-3
+adb shell "dumpsys alarm" | grep -B2 -A4 "com.reminder.salawat" > "$out/alarms-after.log" || true
+
 adb logcat -d -s AndroidRuntime:E > "$out/crash.log" || true
 [ -s "$out/crash.log" ] || echo "no crashes" > "$out/crash.log"
 ls -la "$out"

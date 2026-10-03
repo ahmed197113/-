@@ -60,6 +60,13 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         }
+        Ui.row(about, R.drawable.ic_quran, getString(R.string.licenses_title), getString(R.string.licenses_desc)) {
+            AlertDialog.Builder(context)
+                .setTitle(R.string.licenses_title)
+                .setMessage(R.string.licenses_text)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
     }
 
     companion object {
