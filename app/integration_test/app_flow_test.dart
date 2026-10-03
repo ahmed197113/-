@@ -65,7 +65,8 @@ void main() {
 
     container.read(routerProvider).push('/template/eid_elegant');
     await tester.pumpAndSettle();
-    expect(find.text('استخدم هذا القالب'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('استخدم هذا القالب'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
     await shot(tester, '05_template');
 
     await tester.tap(find.text('استخدم هذا القالب'));

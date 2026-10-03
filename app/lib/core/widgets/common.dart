@@ -6,6 +6,7 @@ import '../../features/credits/data/credits_repository.dart';
 import '../../features/templates/domain/occasion_template.dart';
 import '../art/occasion_art.dart';
 import '../l10n/tr.dart';
+import '../utils/arabic_text.dart';
 import '../theme/app_colors.dart';
 
 /// Template cover: sample image when available, procedural art otherwise.
@@ -91,7 +92,9 @@ class CreditsBadge extends ConsumerWidget {
           Icon(s?.isPro == true ? Icons.workspace_premium : Icons.toll, color: AppColors.gold, size: 18),
           const SizedBox(width: 6),
           Text(
-            s == null ? '…' : (s.isPro ? 'PRO' : '${s.balance}'),
+            s == null
+                ? '…'
+                : (s.isPro ? 'PRO' : (context.isArabic ? ArabicText.toArabicIndicDigits('${s.balance}') : '${s.balance}')),
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
         ]),

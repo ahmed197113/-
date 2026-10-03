@@ -102,6 +102,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               children: [
                 const Spacer(),
                 const GoldText('مناسبة', style: TextStyle(fontFamily: 'ArefRuqaa', fontSize: 72, height: 1.4)),
+                const SizedBox(height: 20),
                 Text(context.tr('استوديو صور المناسبات بالذكاء الاصطناعي', 'AI photo studio for Arab occasions'),
                     textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 16)),
                 const Spacer(),
