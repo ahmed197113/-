@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Selfies: owner may upload small JPEGs into their own folder; never read back
+    // by clients (the worker uses signed URLs). Deleted after 24h.
+    match /uploads/{uid}/{jobId}/{file} {
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow read, update, delete: if false;
+    }
+    // Results: written by the worker only, readable by their owner. Deleted after 30 days.
+    match /results/{uid}/{jobId}/{file} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /{all=**} { allow read, write: if false; }
+  }
+}
