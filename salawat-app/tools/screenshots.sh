@@ -35,6 +35,8 @@ if hit:
 adb root || true
 adb shell cmd alarm set-timezone Africa/Cairo || adb shell setprop persist.sys.timezone Africa/Cairo || true
 adb install -r "$apk"
+# The emulator image is cached between runs: always start in Arabic, whatever the last run left.
+adb shell cmd locale set-app-locales $pkg --locales ar || true
 # The emulator's launcher tends to ANR on CI and its dialog covers the screenshots; we start screens directly anyway.
 adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher || true
 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
