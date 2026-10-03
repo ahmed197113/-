@@ -164,8 +164,14 @@ class HadithReaderActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.hadith_copied, Toast.LENGTH_SHORT).show()
         },
         action2 = getString(R.string.quran_share) to {
-            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
-                .putExtra(Intent.EXTRA_TEXT, "${h.text}\n[${b.title} ${h.number}]"), null))
+            val reference = "${b.title} (${QuranData.toArabicDigits(h.number)})"
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setItems(arrayOf(getString(R.string.share_image), getString(R.string.share_as_text))) { _, which ->
+                    if (which == 0) ShareImage.hadith(this, h.text, reference)
+                    else startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(Intent.EXTRA_TEXT, "${h.text}\n[${b.title} ${h.number}]"), null))
+                }
+                .show()
         }
     )
 

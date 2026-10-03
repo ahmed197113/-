@@ -516,4 +516,25 @@
     <string name="rem_turn_off">إيقاف التذكير</string>
     <string name="shortcut_tasbih">المسبحة</string>
     <string name="shortcut_qibla">القبلة</string>
+    <!-- Memorisation -->
+    <string name="memorize_hide">إخفاء الآيات للتسميع</string>
+    <string name="memorize_show">إظهار الآيات</string>
+    <string name="memorize_hide_hint">وضع التسميع: تظهر أول كلمة من كل آية فقط. اقرأ من حفظك ثم اضغط على الآية لتظهر وتتأكد.</string>
+    <string name="memorize_repeat">تكرار للحفظ</string>
+    <string name="memorize_repeat_title">تكرار من %1$s: آية %2$s</string>
+    <string name="memorize_to_ayah">حتى آية</string>
+    <string name="memorize_each">تكرار كل آية</string>
+    <string name="memorize_loops">تكرار المقطع</string>
+    <string name="memorize_forever">بلا توقف</string>
+    <string name="memorize_start">ابدأ</string>
+    <string name="memorize_progress">التكرار %1$s · الدورة %2$s</string>
+    <string name="sleep_timer">مؤقت النوم</string>
+    <string name="sleep_off">إيقاف المؤقت</string>
+    <string name="sleep_minutes">بعد %1$s</string>
+    <string name="sleep_set">ستتوقف التلاوة بعد %1$s</string>
+    <string name="share_image">صورة للمشاركة</string>
+    <string name="share_image_ayah_ref">سورة %1$s · الآية %2$s</string>
+    <string name="share_image_footer">صدقة جارية على روح محمد عبد العظيم سلامة رحمه الله</string>
+    <string name="share_image_too_long">الحديث أطول من أن يظهر كاملًا في صورة، فسيُشارك نصًّا</string>
+    <string name="share_as_text">مشاركة كنص</string>
 </resources>

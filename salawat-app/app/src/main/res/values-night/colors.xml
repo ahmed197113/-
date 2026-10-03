@@ -20,6 +20,7 @@
     <color name="page_background">#071a18</color>
     <color name="page_paper">#0f2a26</color>
     <color name="ayah_highlight">#66d4af37</color>
+    <color name="memorize_mask">#40A8B5B2</color>
     <!-- tanzil.net colours ayah numbers #050 -->
     <color name="ayah_number">#8fd18f</color>
 

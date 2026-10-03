@@ -138,6 +138,13 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
     var highlighted: Set<Pair<Int, Int>> = emptySet()
         set(value) { field = value; invalidate() }
     var onWordClick: ((surah: Int, ayah: Int) -> Unit)? = null
+    /** Memorisation: ayahs for which this returns true show only their first word and their number. */
+    var isHidden: ((surah: Int, ayah: Int) -> Boolean)? = null
+        set(value) { field = value; invalidate() }
+    var maskColor = 0x33888888
+    private val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    /** Ayahs whose first word on this page has been drawn (the rest of a hidden ayah is masked). */
+    private val cued = HashSet<Pair<Int, Int>>()
 
     fun bind(page: Int, lines: List<MushafLayout.Line>, font: Typeface) {
         this.page = page
@@ -181,6 +188,7 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
         wordPaint.textSize = size
         val gapMin = size * 0.12f
         wordBoxes.clear()
+        cued.clear()
         lines.forEachIndexed { index, line ->
             val top = index * lineH
             val baseline = top + lineH * 0.72f
@@ -217,8 +225,16 @@ class MushafPageView @JvmOverloads constructor(context: Context, attrs: Attribut
                 highlightPaint.color = highlightColor
                 canvas.drawRect(box, highlightPaint)
             }
-            // the glyph's ink starts ink.left past its origin
-            canvas.drawText(word.glyphs, left - ink[i].left, baseline, wordPaint)
+            val key = word.surah to word.ayah
+            val firstWord = cued.add(key)
+            if (!word.isEnd && !firstWord && isHidden?.invoke(word.surah, word.ayah) == true) {
+                maskPaint.color = maskColor
+                val r = lineH * 0.12f
+                canvas.drawRoundRect(RectF(left, top + lineH * 0.22f, right, top + lineH * 0.86f), r, r, maskPaint)
+            } else {
+                // the glyph's ink starts ink.left past its origin
+                canvas.drawText(word.glyphs, left - ink[i].left, baseline, wordPaint)
+            }
             wordBoxes.add(box to word)
             x = left - gap
         }

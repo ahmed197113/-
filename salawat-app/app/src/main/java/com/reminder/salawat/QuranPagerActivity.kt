@@ -45,6 +45,13 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
     val audioError = MutableLiveData<Long>()
     private var continuous = false
     private var stopAtGlobal = Int.MAX_VALUE
+    /** Memorisation plan: the ayahs to recite in order (each already repeated), looped [planLoops] times (0 = forever). */
+    private var plan: List<Int>? = null
+    private var planIndex = 0
+    private var planLoops = 1
+    private var planLoop = 0
+    /** Sleep timer: recitation stops at the end of the ayah playing at this time. */
+    val sleepAt = MutableLiveData(0L)
 
     private val player = AudioPlayer(
         context = app,
@@ -54,6 +61,24 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Plays [global]; when [continuous], keeps going (optionally only up to [untilGlobal]). */
     fun play(global: Int, continuous: Boolean, untilGlobal: Int = Int.MAX_VALUE) {
+        plan = null
+        start(global, continuous, untilGlobal)
+    }
+
+    /** Recites [from]..[to] (global numbers), each ayah [eachTimes] times, the whole range [loops] times (0 = endless). */
+    fun playRepeat(from: Int, to: Int, eachTimes: Int, loops: Int) {
+        plan = (from..to).flatMap { g -> List(eachTimes) { g } }
+        planIndex = 0
+        planLoops = loops
+        planLoop = 0
+        start(plan!!.first(), continuous = false)
+    }
+
+    fun setSleepTimer(minutes: Int) {
+        sleepAt.value = if (minutes > 0) System.currentTimeMillis() + minutes * 60_000L else 0L
+    }
+
+    private fun start(global: Int, continuous: Boolean, untilGlobal: Int = Int.MAX_VALUE) {
         this.continuous = continuous
         stopAtGlobal = untilGlobal
         playingGlobal.value = global
@@ -68,14 +93,40 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
             audioError.value = System.currentTimeMillis()
             return
         }
+        val sleep = sleepAt.value ?: 0L
+        if (sleep > 0 && System.currentTimeMillis() >= sleep) {
+            sleepAt.value = 0L
+            stop()
+            return
+        }
+        val steps = plan
+        if (steps != null) {
+            planIndex++
+            if (planIndex >= steps.size) {
+                planLoop++
+                if (planLoops != 0 && planLoop >= planLoops) return stop()
+                planIndex = 0
+            }
+            start(steps[planIndex], continuous = false)
+            return
+        }
         if (continuous && current in 1 until 6236 && current < stopAtGlobal) {
-            play(current + 1, continuous = true, untilGlobal = stopAtGlobal)
+            start(current + 1, continuous = true, untilGlobal = stopAtGlobal)
         } else {
             stop()
         }
     }
 
+    /** Where a memorisation plan stands: (repetition of the current ayah, loop of the range), 1-based. */
+    fun planProgress(): Pair<Int, Int>? {
+        val steps = plan ?: return null
+        val g = steps.getOrNull(planIndex) ?: return null
+        val rep = (planIndex downTo 0).takeWhile { steps[it] == g }.count()
+        return rep to planLoop + 1
+    }
+
     fun stop() {
+        plan = null
         continuous = false
         player.stop()
         buffering.value = false
@@ -100,7 +151,7 @@ class QuranPagerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val prefs = Prefs.get(this)
-        adapter = PageAdapter(prefs.getFloat(Prefs.KEY_QURAN_FONT, 24f)) { ayah -> showAyahSheet(ayah) }
+        adapter = PageAdapter(prefs.getFloat(Prefs.KEY_QURAN_FONT, 24f)) { ayah -> onAyahTapped(ayah) }
         binding.pager.adapter = adapter
         binding.pager.offscreenPageLimit = 1
         binding.pager.post {
@@ -144,6 +195,9 @@ class QuranPagerActivity : AppCompatActivity() {
             if (page.isNotEmpty()) viewModel.play(page.first().global, continuous = true)
         }
         binding.btnStop.setOnClickListener { viewModel.stop() }
+        binding.btnSleep.setOnClickListener { chooseSleepTimer() }
+        binding.btnHide.setOnClickListener { toggleHide() }
+        updateHideButton()
 
         viewModel.playingGlobal.observe(this) { global -> onPlayingChanged(global) }
         viewModel.buffering.observe(this) { binding.progressAudio.visibility = if (it) View.VISIBLE else View.GONE }
@@ -165,6 +219,92 @@ class QuranPagerActivity : AppCompatActivity() {
     override fun onDestroy() {
         if (isFinishing) viewModel.stop()
         super.onDestroy()
+    }
+
+    // ---- Memorisation: hide the ayahs and reveal them one by one; repeat an ayah or a range ----
+
+    private fun toggleHide() {
+        adapter.hideMode = !adapter.hideMode
+        adapter.revealed.clear()
+        updateHideButton()
+        if (adapter.hideMode) Toast.makeText(this, R.string.memorize_hide_hint, Toast.LENGTH_LONG).show()
+        @Suppress("NotifyDataSetChanged")
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun updateHideButton() {
+        binding.btnHide.setIconResource(if (adapter.hideMode) R.drawable.ic_visibility else R.drawable.ic_visibility_off)
+        binding.btnHide.contentDescription = getString(if (adapter.hideMode) R.string.memorize_show else R.string.memorize_hide)
+    }
+
+    /** Tap on an ayah: while memorising, the first tap reveals it; otherwise (or once revealed) opens its sheet. */
+    private fun onAyahTapped(ayah: QAyah) {
+        if (adapter.hideMode && ayah.global !in adapter.revealed) {
+            adapter.revealed.add(ayah.global)
+            adapter.notifyItemChanged(ayah.page - 1)
+        } else showAyahSheet(ayah)
+    }
+
+    private fun showRepeatDialog(ayah: QAyah) {
+        val count = QuranData.ensureLoaded(this).count { it.surah == ayah.surah }
+        val ends = (ayah.ayah..count).toList()
+        val eachOptions = intArrayOf(1, 2, 3, 5, 7, 10, 15, 20)
+        val loopOptions = intArrayOf(1, 2, 3, 5, 10, 0)
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(pad, pad, pad, 0)
+        }
+        fun column(label: Int, values: List<String>, initial: Int): android.widget.NumberPicker {
+            val col = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+            }
+            col.addView(android.widget.TextView(this).apply {
+                setText(label)
+                gravity = android.view.Gravity.CENTER
+                setTextAppearance(R.style.Text_LabelMedium)
+            })
+            val picker = android.widget.NumberPicker(this).apply {
+                minValue = 0
+                maxValue = values.size - 1
+                displayedValues = values.toTypedArray()
+                value = initial
+                wrapSelectorWheel = false
+            }
+            col.addView(picker)
+            box.addView(col, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+            return picker
+        }
+        val toPicker = column(R.string.memorize_to_ayah, ends.map { QuranData.toArabicDigits(it) }, 0)
+        val eachPicker = column(R.string.memorize_each, eachOptions.map { QuranData.toArabicDigits(it) }, 2)
+        val loopPicker = column(R.string.memorize_loops, loopOptions.map {
+            if (it == 0) getString(R.string.memorize_forever) else QuranData.toArabicDigits(it)
+        }, 0)
+        AlertDialog.Builder(this)
+            .setTitle(QuranData.styledName(this, getString(R.string.memorize_repeat_title,
+                QuranData.surahName(this, ayah.surah), QuranData.toArabicDigits(ayah.ayah)), ayah.surah))
+            .setView(box)
+            .setPositiveButton(R.string.memorize_start) { _, _ ->
+                val to = ayah.global + (ends[toPicker.value] - ayah.ayah)
+                viewModel.playRepeat(ayah.global, to, eachOptions[eachPicker.value], loopOptions[loopPicker.value])
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun chooseSleepTimer() {
+        val minutes = intArrayOf(0, 5, 10, 15, 30, 45, 60)
+        val labels = minutes.map {
+            if (it == 0) getString(R.string.sleep_off) else getString(R.string.sleep_minutes, arabicMinutes(it))
+        }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.sleep_timer)
+            .setItems(labels) { _, which ->
+                viewModel.setSleepTimer(minutes[which])
+                if (minutes[which] > 0) Toast.makeText(this, getString(R.string.sleep_set, arabicMinutes(minutes[which])), Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     private fun updateTitle(page: Int) {
@@ -234,10 +374,13 @@ class QuranPagerActivity : AppCompatActivity() {
         refreshGlobal(global)
         if (binding.pager.currentItem != ayah.page - 1) binding.pager.setCurrentItem(ayah.page - 1, true)
         binding.playerBar.visibility = View.VISIBLE
+        val progress = viewModel.planProgress()?.let { (rep, loop) ->
+            "\n" + getString(R.string.memorize_progress, QuranData.toArabicDigits(rep), QuranData.toArabicDigits(loop))
+        } ?: ""
         binding.textNowPlaying.text = QuranData.styledName(this, getString(
             R.string.quran_now_playing, QuranData.surahName(this, ayah.surah),
             QuranData.toArabicDigits(ayah.ayah), Reciters.selected(this).name
-        ), ayah.surah)
+        ) + progress, ayah.surah)
     }
 
     private fun chooseReciter(onChosen: () -> Unit) {
@@ -277,6 +420,11 @@ class QuranPagerActivity : AppCompatActivity() {
             viewModel.play(ayah.global, continuous = true)
             sheet.dismiss()
         }
+        b.btnSheetRepeat.setOnClickListener {
+            sheet.dismiss()
+            showRepeatDialog(ayah)
+        }
+        b.btnSheetImage.setOnClickListener { ShareImage.ayah(this, ayah) }
         b.btnSheetBookmark.setOnClickListener {
             Prefs.get(this).edit().putInt(Prefs.KEY_BOOKMARK_GLOBAL, ayah.global).apply()
             Toast.makeText(this, getString(R.string.quran_bookmark_saved, ayah.ayah), Toast.LENGTH_SHORT).show()
@@ -330,6 +478,9 @@ class QuranPagerActivity : AppCompatActivity() {
     ) : RecyclerView.Adapter<PageAdapter.ViewHolder>() {
         var playingGlobal = -1
         var selectedGlobal = -1
+        /** Memorisation: ayahs are hidden (only their first word shows) until tapped. */
+        var hideMode = false
+        val revealed = HashSet<Int>()
         var colors: ReadingMode.Colors? = null
 
         inner class ViewHolder(val binding: ItemQuranPageBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -397,6 +548,10 @@ class QuranPagerActivity : AppCompatActivity() {
             b.mushafPage.bind(page, lines, font)
             b.mushafPage.highlighted = listOf(selectedGlobal, playingGlobal).filter { it > 0 }
                 .mapNotNull { QuranData.byGlobal(context, it) }.map { it.surah to it.ayah }.toSet()
+            b.mushafPage.maskColor = Themes.color(context, R.color.memorize_mask)
+            b.mushafPage.isHidden = if (!hideMode) null else { s, a ->
+                QuranData.ensureLoaded(context).firstOrNull { it.surah == s && it.ayah == a }?.global !in revealed
+            }
             b.mushafPage.onWordClick = { surah, ayah ->
                 QuranData.ensureLoaded(context).firstOrNull { it.surah == surah && it.ayah == ayah }?.let(onAyahClick)
             }
@@ -441,6 +596,17 @@ class QuranPagerActivity : AppCompatActivity() {
                 }, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 sb.setSpan(ForegroundColorSpan(ayahNumber), markerStart, markerEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 sb.setSpan(RelativeSizeSpan(0.9f), markerStart, markerEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                if (hideMode && ayah.global !in revealed) {
+                    // Hide all but the first word (a cue), keeping the line shapes: the letters are drawn in the
+                    // page colour over a soft bar, so the text itself is untouched.
+                    val firstSpace = ayah.text.indexOf(' ').let { if (it < 0) ayah.text.length else it }
+                    val hideStart = start + firstSpace
+                    val hideEnd = start + ayah.text.length
+                    if (hideEnd > hideStart) {
+                        sb.setSpan(ForegroundColorSpan(android.graphics.Color.TRANSPARENT), hideStart, hideEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        sb.setSpan(BackgroundColorSpan(Themes.color(context, R.color.memorize_mask)), hideStart, hideEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    }
+                }
                 if (ayah.global == playingGlobal || ayah.global == selectedGlobal) {
                     sb.setSpan(BackgroundColorSpan(highlight), start, end - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
