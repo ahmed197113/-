@@ -492,7 +492,7 @@
     <string name="settings_dua_after_adhan">الدعاء بعد الأذان (بصوت الشيخ الشعراوي)</string>
     <string name="settings_iqama_sound">صوت الإقامة</string>
     <string name="rem_minutes_after">بعد الأذان بـ %1$d دقيقة</string>
-    <string name="rem_pre_adhan_title">بقي %1$d دقيقة على أذان %2$s</string>
+    <string name="rem_pre_adhan_title">بقي %1$s على أذان %2$s</string>
     <string name="rem_pre_adhan_text">استعد للصلاة وتوضأ</string>
     <string name="rem_minutes_before">قبل الأذان بـ %1$d دقيقة</string>
     <string name="rem_at">الساعة %1$s</string>

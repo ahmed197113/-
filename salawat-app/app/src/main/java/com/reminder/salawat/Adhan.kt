@@ -324,7 +324,7 @@ class AdhanService : Service() {
             )
             return NotificationCompat.Builder(context, Notifications.CHANNEL_ADHAN)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(context.getString(R.string.rem_pre_adhan_title, minutes, context.getString(prayer.nameRes)))
+                .setContentTitle(context.getString(R.string.rem_pre_adhan_title, arabicMinutes(minutes), context.getString(prayer.nameRes)))
                 .setContentText(context.getString(R.string.rem_pre_adhan_text))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)

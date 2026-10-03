@@ -154,7 +154,7 @@ object Reminders {
                 // Sound the opening "Allahu akbar, Allahu akbar" of the user's adhan, with the notice on screen.
                 if (AdhanService.startTakbir(context, prayer, minutes(context, type))) return
                 Triple(
-                    context.getString(R.string.rem_pre_adhan_title, minutes(context, type), context.getString(prayer.nameRes)),
+                    context.getString(R.string.rem_pre_adhan_title, arabicMinutes(minutes(context, type)), context.getString(prayer.nameRes)),
                     context.getString(R.string.rem_pre_adhan_text),
                     MainActivity.intent(context, MainActivity.TAB_PRAYER)
                 )
@@ -202,4 +202,12 @@ class ReminderReceiver : BroadcastReceiver() {
         Reminders.deliver(context, intent)
         Reminders.schedule(context)
     }
+}
+
+/** "دقيقة واحدة", "دقيقتان", "5 دقائق", "15 دقيقة": Arabic counted-noun agreement. */
+fun arabicMinutes(n: Int): String = when {
+    n == 1 -> "دقيقة واحدة"
+    n == 2 -> "دقيقتان"
+    n % 100 in 3..10 -> "$n دقائق"
+    else -> "$n دقيقة"
 }
