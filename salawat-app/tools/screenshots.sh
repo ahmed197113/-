@@ -84,6 +84,7 @@ adb shell "run-as $pkg sh -c 'cat > shared_prefs/prayer_tracker.xml'" <<XML
 </map>
 XML
 adb shell pm grant $pkg android.permission.POST_NOTIFICATIONS || true
+adb shell appops set $pkg SCHEDULE_EXACT_ALARM allow || true
 
 start .MainActivity --es tab prayer
 shot 03-prayer 12
