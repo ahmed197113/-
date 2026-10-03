@@ -214,6 +214,37 @@ for combo in "blue SEPIA" "purple NIGHT"; do
   shot 51-theme-$1-mushaf-$2 5
 done
 
+# ---- New screens (Arabic), then the English interface ----
+adb shell am force-stop $pkg
+start .RamadanActivity
+shot 65-ramadan 10
+start .RemindersActivity
+shot 66-reminders 4
+start .QuranPagerActivity --ei page 50
+sleep 4
+adb shell input tap 540 1300
+shot 67-ayah-sheet 6
+adb shell am force-stop $pkg
+adb shell cmd locale set-app-locales $pkg --locales en || true
+start .MainActivity --es tab home
+shot 70-en-home 6
+start .MainActivity --es tab prayer
+shot 71-en-prayer 4
+start .MainActivity --es tab more
+shot 72-en-more 4
+start .SettingsActivity
+shot 73-en-settings 4
+start .RamadanActivity
+shot 74-en-ramadan 10
+start .MainActivity --es tab quran
+shot 75-en-quran-index 4
+start .QuranPagerActivity --ei page 50
+sleep 4
+adb shell input tap 540 1300
+shot 76-en-ayah-sheet 8
+adb shell am force-stop $pkg
+adb shell cmd locale set-app-locales $pkg --locales ar || true
+
 # ---- End-to-end alarms: jump the clock to just before each scheduled alarm and let it fire on its own ----
 travel() {  # $1 receiver, $2 label
   # App closed the way a phone closes it (swiped away / killed in the background). force-stop would also

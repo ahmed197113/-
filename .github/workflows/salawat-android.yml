@@ -48,21 +48,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease bundleRelease
-          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Rafiq-v6.3.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/Rafiq-v6.3.aab"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Rafiq-v7.0.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/Rafiq-v7.0.aab"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rafiq-v6.3-apk
-          path: ${{ runner.temp }}/Rafiq-v6.3.apk
+          name: Rafiq-v7.0-apk
+          path: ${{ runner.temp }}/Rafiq-v7.0.apk
 
       - name: Publish APK as a pre-release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: salawat-v6.3-build${{ github.run_number }}
-          name: رفيق المسلم v6.3 (build ${{ github.run_number }})
+          tag_name: salawat-v7.0-build${{ github.run_number }}
+          name: رفيق المسلم v7.0 (build ${{ github.run_number }})
           target_commitish: ${{ github.sha }}
           prerelease: true
           files: |
-            ${{ runner.temp }}/Rafiq-v6.3.apk
-            ${{ runner.temp }}/Rafiq-v6.3.aab
+            ${{ runner.temp }}/Rafiq-v7.0.apk
+            ${{ runner.temp }}/Rafiq-v7.0.aab
