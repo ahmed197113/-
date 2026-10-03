@@ -1,0 +1,29 @@
+name: Rafiq rebuild Madinah Mushaf layout
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/pack_mushaf_layout.py"
+      - ".github/workflows/rafiq-mushaf-layout.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/pack_mushaf_layout.py "$RUNNER_TEMP/m"
+      - if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-mushaf-layout-v3
+          name: Madinah Mushaf layout (rebuilt per word)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: |
+            ${{ runner.temp }}/m/*.txt
+            ${{ runner.temp }}/m/*.dat
