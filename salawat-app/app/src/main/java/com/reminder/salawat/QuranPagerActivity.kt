@@ -144,6 +144,8 @@ class QuranPagerActivity : AppCompatActivity() {
     private val viewModel: QuranViewModel by viewModels()
     private lateinit var adapter: PageAdapter
     private var sheetJob: Job? = null
+    /** The "Mushaf pages need the internet once" notice is shown once per visit. */
+    private var fontErrorShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -408,6 +410,7 @@ class QuranPagerActivity : AppCompatActivity() {
         val surahName = QuranData.surahName(this, ayah.surah)
         b.textSheetTitle.text = QuranData.styledName(this, getString(R.string.quran_sheet_title, surahName, QuranData.toArabicDigits(ayah.ayah)), ayah.surah)
         b.textSheetAyah.text = ayah.text
+        Ui.quranLines(b.textSheetAyah)
         b.textSheetTafsir.setTextSize(TypedValue.COMPLEX_UNIT_SP, b.textSheetTafsir.textSize / resources.displayMetrics.scaledDensity * Prefs.textScale(this))
         b.btnSheetReciter.text = getString(R.string.quran_reciter, Reciters.selected(this).name)
         b.btnSheetReciter.setOnClickListener {
@@ -504,6 +507,7 @@ class QuranPagerActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val page = position + 1
             holder.binding.textPageText.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSp)
+            Ui.quranLines(holder.binding.textPageText, 2.15f)
             colors?.let { c ->
                 (holder.binding.pageFrame.background.mutate() as? android.graphics.drawable.GradientDrawable)?.setColor(c.paper)
                 holder.binding.textPageText.setTextColor(c.text)
@@ -531,6 +535,10 @@ class QuranPagerActivity : AppCompatActivity() {
                     lifecycleScope.launch {
                         val ok = runCatching { MushafFonts.get(context, page) }.isSuccess
                         b.progressMushaf.visibility = View.GONE
+                        if (!ok && !fontErrorShown) {
+                            fontErrorShown = true
+                            Toast.makeText(context, R.string.mushaf_font_offline, Toast.LENGTH_LONG).show()
+                        }
                         // get() can return without suspending (font already on disk), i.e. while RecyclerView is
                         // still binding: refresh on the next frame, never in the middle of a layout pass.
                         if (ok) b.root.post { if (position in 0 until itemCount) notifyItemChanged(position) }

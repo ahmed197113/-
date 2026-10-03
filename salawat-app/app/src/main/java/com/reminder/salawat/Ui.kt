@@ -87,6 +87,16 @@ object Ui {
             .also { quranTypeface = it }
 
     /**
+     * Fixed line spacing for Quran text, as a multiple of the text size. Android 15+ measures the line height of
+     * apps' own fonts differently, which squeezed the Mushaf font's lines together (its marks then overlapped);
+     * a set line height looks the same on every Android version.
+     */
+    fun quranLines(tv: android.widget.TextView, factor: Float = 2f) {
+        if (android.os.Build.VERSION.SDK_INT >= 28) tv.setLineHeight((tv.textSize * factor).toInt())
+        else tv.setLineSpacing(0f, 1.35f)
+    }
+
+    /**
      * Uthmani surah names (e.g. سُورَةُ ٱلْفَاتِحَةِ) only render correctly in the Mushaf font: returns [text] with every
      * occurrence of [names] drawn in it.
      */

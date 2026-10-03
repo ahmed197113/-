@@ -221,6 +221,7 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val context = b.root.context
         val ayah = QuranData.ayahOfDay(context)
         b.textAyahOfDay.text = "${ayah.text} ﴿${QuranData.quranDigits(ayah.ayah)}﴾"
+        Ui.quranLines(b.textAyahOfDay)
         b.textAyahOfDayRef.text = QuranData.styledName(
             context, "${QuranData.surahName(context, ayah.surah)} • ${getString(R.string.quran_page_number, QuranData.toArabicDigits(ayah.page))}", ayah.surah
         )

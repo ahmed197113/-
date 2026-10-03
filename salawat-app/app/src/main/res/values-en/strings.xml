@@ -517,4 +517,5 @@
         <item>Larger</item>
         <item>Extra large</item>
     </string-array>
+    <string name="mushaf_font_offline">Madinah Mushaf pages are downloaded once, the first time each page is opened, and the download failed just now. The same text is shown in the Mushaf font until you are online.</string>
 </resources>
