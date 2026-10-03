@@ -1,0 +1,1790 @@
+[
+ {
+  "id": "ramadan_lantern",
+  "title_ar": "فانوس رمضان",
+  "title_en": "Ramadan Lantern",
+  "category": "ramadan",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "lantern",
+   "colors": [
+    "#1B1035",
+    "#C9A24A",
+    "#6B3FA0"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant modest traditional clothing, {outfit}, background: warm glowing Ramadan lanterns and fairy lights at night, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant modest traditional clothing",
+  "background": "warm glowing Ramadan lanterns and fairy lights at night",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "رمضان كريم",
+   "رمضان مبارك",
+   "اللهم بلغنا رمضان",
+   "كل عام وأنتم بخير"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 99,
+  "is_featured": true
+ },
+ {
+  "id": "ramadan_mosque",
+  "title_ar": "مسجد في الليل",
+  "title_en": "Mosque at Night",
+  "category": "ramadan",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "mosque",
+   "colors": [
+    "#0B1A33",
+    "#E8C873",
+    "#1E3A5F"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing modest elegant traditional clothing, {outfit}, background: beautiful mosque silhouette at blue hour with crescent moon, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "modest elegant traditional clothing",
+  "background": "beautiful mosque silhouette at blue hour with crescent moon",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "رمضان كريم",
+   "رمضان مبارك",
+   "اللهم بلغنا رمضان",
+   "كل عام وأنتم بخير"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 95,
+  "is_featured": false
+ },
+ {
+  "id": "ramadan_iftar",
+  "title_ar": "أجواء الإفطار",
+  "title_en": "Family Iftar Mood",
+  "category": "ramadan",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "crescent",
+   "colors": [
+    "#2A1508",
+    "#D9A441",
+    "#7A3B12"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing modest festive traditional clothing, {outfit}, background: warm iftar table with dates and arabic coffee, bokeh lights, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "modest festive traditional clothing",
+  "background": "warm iftar table with dates and arabic coffee, bokeh lights",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "رمضان كريم",
+   "رمضان مبارك",
+   "اللهم بلغنا رمضان",
+   "كل عام وأنتم بخير"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 90,
+  "is_featured": false
+ },
+ {
+  "id": "ramadan_gold",
+  "title_ar": "رمضان الذهبي",
+  "title_en": "Golden Ramadan",
+  "category": "ramadan",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#140F05",
+    "#E3B95B",
+    "#3D2B0B"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing luxurious modest clothing in black and gold, {outfit}, background: golden islamic geometric pattern wall, luxury lighting, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "luxurious modest clothing in black and gold",
+  "background": "golden islamic geometric pattern wall, luxury lighting",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "رمضان كريم",
+   "رمضان مبارك",
+   "اللهم بلغنا رمضان",
+   "كل عام وأنتم بخير"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": true,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 85,
+  "is_featured": false
+ },
+ {
+  "id": "eid_elegant",
+  "title_ar": "عيد أنيق",
+  "title_en": "Elegant Eid",
+  "category": "eid_fitr",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "crescent",
+   "colors": [
+    "#0F1A2E",
+    "#C9A24A",
+    "#2B3F66"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant new modest Eid outfit, {outfit}, background: elegant Eid decorations with golden crescent and stars, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant new modest Eid outfit",
+  "background": "elegant Eid decorations with golden crescent and stars",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيدكم مبارك",
+   "عيد سعيد",
+   "كل عام وأنتم بخير",
+   "تقبّل الله منا ومنكم",
+   "عساكم من عوّاده"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 100,
+  "is_featured": true
+ },
+ {
+  "id": "eid_balloons",
+  "title_ar": "عيد البالونات",
+  "title_en": "Eid Balloons",
+  "category": "eid_fitr",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "balloons",
+   "colors": [
+    "#F8F3E8",
+    "#C9A24A",
+    "#E57A9B"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing colorful modest festive Eid outfit, {outfit}, background: joyful pastel balloons and confetti, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "colorful modest festive Eid outfit",
+  "background": "joyful pastel balloons and confetti",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيدكم مبارك",
+   "عيد سعيد",
+   "كل عام وأنتم بخير",
+   "تقبّل الله منا ومنكم",
+   "عساكم من عوّاده"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#C9A24A",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 92,
+  "is_featured": false
+ },
+ {
+  "id": "eid_gold_luxury",
+  "title_ar": "عيد فاخر ذهبي",
+  "title_en": "Gold Luxury Eid",
+  "category": "eid_fitr",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "stars",
+   "colors": [
+    "#0A0A0A",
+    "#D4AF37",
+    "#3A2E0B"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing luxurious modest outfit with gold details, {outfit}, background: dark luxury studio with golden sparkles, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "luxurious modest outfit with gold details",
+  "background": "dark luxury studio with golden sparkles",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيدكم مبارك",
+   "عيد سعيد",
+   "كل عام وأنتم بخير",
+   "تقبّل الله منا ومنكم",
+   "عساكم من عوّاده"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": true,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 88,
+  "is_featured": false
+ },
+ {
+  "id": "eid_family",
+  "title_ar": "عيد العائلة",
+  "title_en": "Eid Family Vibes",
+  "category": "eid_fitr",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "lantern",
+   "colors": [
+    "#1D2B1F",
+    "#E0B85C",
+    "#3F6B4A"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing modest traditional festive outfit, {outfit}, background: garden courtyard decorated with Eid lanterns, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "modest traditional festive outfit",
+  "background": "garden courtyard decorated with Eid lanterns",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيدكم مبارك",
+   "عيد سعيد",
+   "كل عام وأنتم بخير",
+   "تقبّل الله منا ومنكم",
+   "عساكم من عوّاده"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 80,
+  "is_featured": false
+ },
+ {
+  "id": "adha_classic",
+  "title_ar": "عيد الأضحى المبارك",
+  "title_en": "Eid al-Adha Classic",
+  "category": "eid_adha",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "crescent",
+   "colors": [
+    "#102418",
+    "#D9B45A",
+    "#2E5A3C"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant modest traditional outfit, {outfit}, background: serene sunset with soft golden light and crescent decorations, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant modest traditional outfit",
+  "background": "serene sunset with soft golden light and crescent decorations",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد أضحى مبارك",
+   "كل عام وأنتم بخير",
+   "تقبّل الله طاعتكم"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 94,
+  "is_featured": true
+ },
+ {
+  "id": "adha_desert",
+  "title_ar": "أضحى الصحراء",
+  "title_en": "Desert Adha",
+  "category": "eid_adha",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "stars",
+   "colors": [
+    "#3B2412",
+    "#E8C873",
+    "#A8662E"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing traditional modest outfit, {outfit}, background: golden desert dunes at sunset, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "traditional modest outfit",
+  "background": "golden desert dunes at sunset",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد أضحى مبارك",
+   "عساكم من عوّاده"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 78,
+  "is_featured": false
+ },
+ {
+  "id": "grad_gown",
+  "title_ar": "تخرّج كلاسيكي",
+  "title_en": "Classic Graduation",
+  "category": "graduation",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "gradcap",
+   "colors": [
+    "#0D1B3D",
+    "#C9A24A",
+    "#24407A"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing graduation gown and cap, modest, {outfit}, background: university campus with soft sunlight, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "graduation gown and cap, modest",
+  "background": "university campus with soft sunlight",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "مبروك التخرج",
+   "ألف مبروك يا دكتور",
+   "تخرّجت بحمد الله",
+   "Class of 2026"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 97,
+  "is_featured": true
+ },
+ {
+  "id": "grad_studio",
+  "title_ar": "تخرّج استوديو",
+  "title_en": "Studio Graduation",
+  "category": "graduation",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "gradcap",
+   "colors": [
+    "#1A1A1A",
+    "#E8C873",
+    "#444444"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing graduation gown with gold sash, modest, {outfit}, background: dark studio backdrop with golden confetti, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "graduation gown with gold sash, modest",
+  "background": "dark studio backdrop with golden confetti",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "مبروك التخرج",
+   "الحمد لله الذي بنعمته تتم الصالحات"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 86,
+  "is_featured": false
+ },
+ {
+  "id": "grad_hijab",
+  "title_ar": "تخرّج بالحجاب",
+  "title_en": "Graduation with Hijab",
+  "category": "graduation",
+  "country_tags": [],
+  "gender_variant": "female",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "gradcap",
+   "colors": [
+    "#2B1736",
+    "#E3B95B",
+    "#5B3270"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing graduation gown and cap with elegant hijab, {outfit}, background: flower arch with soft pastel lights, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "graduation gown and cap with elegant hijab",
+  "background": "flower arch with soft pastel lights",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "مبروك التخرج",
+   "فرحة التخرج"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 84,
+  "is_featured": false
+ },
+ {
+  "id": "wedding_formal",
+  "title_ar": "زفاف رسمي",
+  "title_en": "Formal Wedding Portrait",
+  "category": "wedding",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "rings",
+   "colors": [
+    "#F8F3E8",
+    "#C9A24A",
+    "#E9D8B4"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant formal modest wedding attire, {outfit}, background: luxury wedding hall with white flowers, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant formal modest wedding attire",
+  "background": "luxury wedding hall with white flowers",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "بارك الله لكما",
+   "زواج مبارك",
+   "ألف مبروك"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#8A6A22",
+  "default_text_position": "bottom",
+  "is_premium": true,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 82,
+  "is_featured": false
+ },
+ {
+  "id": "engagement",
+  "title_ar": "خطوبة",
+  "title_en": "Engagement",
+  "category": "wedding",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "rings",
+   "colors": [
+    "#3A0F1E",
+    "#E8C873",
+    "#7A2440"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant modest evening outfit, {outfit}, background: romantic soft light with roses and candles, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant modest evening outfit",
+  "background": "romantic soft light with roses and candles",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "خطوبة مباركة",
+   "مبروك الخطوبة"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 76,
+  "is_featured": false
+ },
+ {
+  "id": "newborn",
+  "title_ar": "مولود جديد",
+  "title_en": "New Baby",
+  "category": "newborn",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "baby",
+   "colors": [
+    "#EAF2FB",
+    "#C9A24A",
+    "#BBD3EE"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing soft comfortable modest clothing, {outfit}, background: soft pastel nursery with clouds and stars, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "soft comfortable modest clothing",
+  "background": "soft pastel nursery with clouds and stars",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "أهلاً بالمولود",
+   "حياك الله يا صغيري",
+   "مبارك المولود"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#8A6A22",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 70,
+  "is_featured": false
+ },
+ {
+  "id": "birthday",
+  "title_ar": "عيد ميلاد",
+  "title_en": "Birthday",
+  "category": "birthday",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "cake",
+   "colors": [
+    "#2A0F3A",
+    "#F2C14E",
+    "#B83280"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing stylish modest party outfit, {outfit}, background: birthday party with balloons and confetti, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "stylish modest party outfit",
+  "background": "birthday party with balloons and confetti",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "كل عام وأنت بخير",
+   "عيد ميلاد سعيد",
+   "Happy Birthday"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 72,
+  "is_featured": false
+ },
+ {
+  "id": "sa_national",
+  "title_ar": "اليوم الوطني السعودي",
+  "title_en": "Saudi National Day",
+  "category": "national_day",
+  "country_tags": [
+   "SA"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#006C35",
+    "#FFFFFF",
+    "#0B3D22"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Saudi thobe and shemagh or modest abaya, {outfit}, background: green celebration with Riyadh skyline and fireworks, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Saudi thobe and shemagh or modest abaya",
+  "background": "green celebration with Riyadh skyline and fireworks",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "اليوم الوطني ٩٦",
+   "همة حتى القمة",
+   "دام عزك يا وطن"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-09-01",
+  "active_to": "2026-10-15",
+  "sort_priority": 98,
+  "is_featured": true
+ },
+ {
+  "id": "ae_national",
+  "title_ar": "عيد الاتحاد الإماراتي",
+  "title_en": "UAE National Day",
+  "category": "national_day",
+  "country_tags": [
+   "AE"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#00732F",
+    "#FFFFFF",
+    "#FF0000",
+    "#000000"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Emirati kandura and ghutra or modest abaya, {outfit}, background: Dubai skyline with fireworks and UAE flag colors, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Emirati kandura and ghutra or modest abaya",
+  "background": "Dubai skyline with fireworks and UAE flag colors",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد الاتحاد",
+   "كلنا الإمارات",
+   "عاشت الإمارات"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-11-15",
+  "active_to": "2026-12-10",
+  "sort_priority": 90,
+  "is_featured": false
+ },
+ {
+  "id": "eg_october",
+  "title_ar": "انتصارات أكتوبر",
+  "title_en": "Egypt October Victory",
+  "category": "national_day",
+  "country_tags": [
+   "EG"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#CE1126",
+    "#FFFFFF",
+    "#000000"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant modest outfit, {outfit}, background: Cairo skyline at sunset with Egyptian flag colors, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant modest outfit",
+  "background": "Cairo skyline at sunset with Egyptian flag colors",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "تحيا مصر",
+   "٦ أكتوبر",
+   "مصر أم الدنيا"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-09-25",
+  "active_to": "2026-10-12",
+  "sort_priority": 89,
+  "is_featured": false
+ },
+ {
+  "id": "kw_national",
+  "title_ar": "العيد الوطني الكويتي",
+  "title_en": "Kuwait National Day",
+  "category": "national_day",
+  "country_tags": [
+   "KW"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#007A3D",
+    "#FFFFFF",
+    "#CE1126",
+    "#000000"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Kuwaiti dishdasha or modest abaya, {outfit}, background: Kuwait Towers with festive lights, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Kuwaiti dishdasha or modest abaya",
+  "background": "Kuwait Towers with festive lights",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد وطني سعيد",
+   "هلا فبراير",
+   "يا كويت"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2027-02-01",
+  "active_to": "2027-02-28",
+  "sort_priority": 70,
+  "is_featured": false
+ },
+ {
+  "id": "qa_national",
+  "title_ar": "اليوم الوطني القطري",
+  "title_en": "Qatar National Day",
+  "category": "national_day",
+  "country_tags": [
+   "QA"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#8A1538",
+    "#FFFFFF",
+    "#5A0E25"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Qatari thobe or modest abaya, {outfit}, background: Doha skyline with maroon and white decorations, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Qatari thobe or modest abaya",
+  "background": "Doha skyline with maroon and white decorations",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "اليوم الوطني القطري",
+   "قطر في القلب"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-12-01",
+  "active_to": "2026-12-25",
+  "sort_priority": 70,
+  "is_featured": false
+ },
+ {
+  "id": "bh_national",
+  "title_ar": "العيد الوطني البحريني",
+  "title_en": "Bahrain National Day",
+  "category": "national_day",
+  "country_tags": [
+   "BH"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#CE1126",
+    "#FFFFFF"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Bahraini thobe or modest abaya, {outfit}, background: Manama skyline with red and white decorations, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Bahraini thobe or modest abaya",
+  "background": "Manama skyline with red and white decorations",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد وطني سعيد",
+   "البحرين في القلب"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-12-01",
+  "active_to": "2026-12-25",
+  "sort_priority": 65,
+  "is_featured": false
+ },
+ {
+  "id": "om_national",
+  "title_ar": "العيد الوطني العماني",
+  "title_en": "Oman National Day",
+  "category": "national_day",
+  "country_tags": [
+   "OM"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#DB161B",
+    "#FFFFFF",
+    "#008000"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Omani dishdasha with kumma or modest outfit, {outfit}, background: Muscat landscape with mountains and festive lights, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Omani dishdasha with kumma or modest outfit",
+  "background": "Muscat landscape with mountains and festive lights",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "العيد الوطني المجيد",
+   "عمان في القلب"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-11-05",
+  "active_to": "2026-11-30",
+  "sort_priority": 65,
+  "is_featured": false
+ },
+ {
+  "id": "jo_independence",
+  "title_ar": "عيد الاستقلال الأردني",
+  "title_en": "Jordan Independence Day",
+  "category": "national_day",
+  "country_tags": [
+   "JO"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#007A3D",
+    "#FFFFFF",
+    "#CE1126",
+    "#000000"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Jordanian shemagh or modest outfit, {outfit}, background: Amman citadel at golden hour, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Jordanian shemagh or modest outfit",
+  "background": "Amman citadel at golden hour",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد استقلال مجيد",
+   "الأردن أولاً"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2027-05-10",
+  "active_to": "2027-05-31",
+  "sort_priority": 60,
+  "is_featured": false
+ },
+ {
+  "id": "ma_throne",
+  "title_ar": "عيد العرش المغربي",
+  "title_en": "Morocco Throne Day",
+  "category": "national_day",
+  "country_tags": [
+   "MA"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#C1272D",
+    "#006233"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Moroccan djellaba or caftan, {outfit}, background: Moroccan riad with zellige tiles, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Moroccan djellaba or caftan",
+  "background": "Moroccan riad with zellige tiles",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد العرش المجيد",
+   "المغرب في القلب"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2027-07-15",
+  "active_to": "2027-08-05",
+  "sort_priority": 60,
+  "is_featured": false
+ },
+ {
+  "id": "dz_independence",
+  "title_ar": "عيد الاستقلال الجزائري",
+  "title_en": "Algeria Independence Day",
+  "category": "national_day",
+  "country_tags": [
+   "DZ"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#006233",
+    "#FFFFFF",
+    "#D21034"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant modest traditional outfit, {outfit}, background: Algiers bay with festive decorations, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant modest traditional outfit",
+  "background": "Algiers bay with festive decorations",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عيد استقلال سعيد",
+   "تحيا الجزائر"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2027-06-25",
+  "active_to": "2027-07-10",
+  "sort_priority": 60,
+  "is_featured": false
+ },
+ {
+  "id": "iq_national",
+  "title_ar": "اليوم الوطني العراقي",
+  "title_en": "Iraq National Day",
+  "category": "national_day",
+  "country_tags": [
+   "IQ"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "flag",
+   "colors": [
+    "#CE1126",
+    "#FFFFFF",
+    "#000000",
+    "#007A3D"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant modest outfit, {outfit}, background: Baghdad landmarks at sunset, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant modest outfit",
+  "background": "Baghdad landmarks at sunset",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "عاش العراق",
+   "يوم وطني سعيد"
+  ],
+  "default_font": "ReemKufi",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": "2026-09-25",
+  "active_to": "2026-10-10",
+  "sort_priority": 60,
+  "is_featured": false
+ },
+ {
+  "id": "trad_saudi",
+  "title_ar": "ثوب وشماغ سعودي",
+  "title_en": "Saudi Thobe & Shemagh",
+  "category": "traditional",
+  "country_tags": [
+   "SA"
+  ],
+  "gender_variant": "male",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#2B1D0E",
+    "#E8C873",
+    "#5E4321"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing white Saudi thobe with red shemagh and bisht, {outfit}, background: traditional Najdi mud architecture at golden hour, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "white Saudi thobe with red shemagh and bisht",
+  "background": "traditional Najdi mud architecture at golden hour",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "أصالة",
+   "فخر",
+   "يا هلا"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 83,
+  "is_featured": false
+ },
+ {
+  "id": "trad_emirati",
+  "title_ar": "كندورة إماراتية",
+  "title_en": "Emirati Kandura",
+  "category": "traditional",
+  "country_tags": [
+   "AE"
+  ],
+  "gender_variant": "male",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#1F2A2E",
+    "#D8C08A",
+    "#41575E"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing white Emirati kandura with ghutra and agal, {outfit}, background: Al Fahidi heritage district, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "white Emirati kandura with ghutra and agal",
+  "background": "Al Fahidi heritage district",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "أصالة إماراتية",
+   "يا هلا"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 75,
+  "is_featured": false
+ },
+ {
+  "id": "trad_galabeya",
+  "title_ar": "جلابية مصرية",
+  "title_en": "Egyptian Galabeya",
+  "category": "traditional",
+  "country_tags": [
+   "EG"
+  ],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#3A2A12",
+    "#E3B95B",
+    "#8A6A2E"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant Egyptian galabeya, {outfit}, background: Nile river at sunset with feluccas, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant Egyptian galabeya",
+  "background": "Nile river at sunset with feluccas",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "أصل الحكاية",
+   "من قلب مصر"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 74,
+  "is_featured": false
+ },
+ {
+  "id": "trad_caftan",
+  "title_ar": "قفطان مغربي",
+  "title_en": "Moroccan Caftan",
+  "category": "traditional",
+  "country_tags": [
+   "MA"
+  ],
+  "gender_variant": "female",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#2B0F2E",
+    "#E8C873",
+    "#6E2A6B"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing luxurious embroidered Moroccan caftan, modest, {outfit}, background: Moroccan riad with zellige and fountain, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "luxurious embroidered Moroccan caftan, modest",
+  "background": "Moroccan riad with zellige and fountain",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "زين القفطان",
+   "تبارك الله"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": true,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 81,
+  "is_featured": false
+ },
+ {
+  "id": "trad_palestinian",
+  "title_ar": "ثوب فلسطيني مطرّز",
+  "title_en": "Palestinian Embroidered Thobe",
+  "category": "traditional",
+  "country_tags": [],
+  "gender_variant": "female",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#1A1A1A",
+    "#C8102E",
+    "#2E2E2E"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing traditional Palestinian thobe with tatreez embroidery, modest, {outfit}, background: olive trees in warm sunlight, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "traditional Palestinian thobe with tatreez embroidery, modest",
+  "background": "olive trees in warm sunlight",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "تراثنا هويتنا",
+   "من أرض الزيتون"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 79,
+  "is_featured": false
+ },
+ {
+  "id": "trad_abaya",
+  "title_ar": "أناقة العباية",
+  "title_en": "Abaya Fashion",
+  "category": "traditional",
+  "country_tags": [],
+  "gender_variant": "female",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "stars",
+   "colors": [
+    "#0A0A0A",
+    "#C9A24A",
+    "#262626"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing elegant black abaya with gold embroidery and hijab, {outfit}, background: luxury minimal studio with soft light, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "elegant black abaya with gold embroidery and hijab",
+  "background": "luxury minimal studio with soft light",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "أناقة",
+   "فخامة"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": true,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 87,
+  "is_featured": false
+ },
+ {
+  "id": "trad_omani",
+  "title_ar": "زي عماني",
+  "title_en": "Omani Traditional",
+  "category": "traditional",
+  "country_tags": [
+   "OM"
+  ],
+  "gender_variant": "male",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#14281D",
+    "#E0C27A",
+    "#2E5A3C"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing Omani dishdasha with embroidered kumma and khanjar, {outfit}, background: Omani fort at sunset, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "Omani dishdasha with embroidered kumma and khanjar",
+  "background": "Omani fort at sunset",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "يا هلا",
+   "عمان"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 60,
+  "is_featured": false
+ },
+ {
+  "id": "trad_levant",
+  "title_ar": "زي شامي",
+  "title_en": "Levantine Heritage",
+  "category": "traditional",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "pattern",
+   "colors": [
+    "#2E1A0E",
+    "#E3B95B",
+    "#6B4426"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing traditional Levantine modest outfit, {outfit}, background: old Damascus courtyard with jasmine, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "traditional Levantine modest outfit",
+  "background": "old Damascus courtyard with jasmine",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "ياسمين الشام",
+   "أهلاً وسهلاً"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#E8C873",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 62,
+  "is_featured": false
+ },
+ {
+  "id": "hajj_umrah",
+  "title_ar": "حج مبرور",
+  "title_en": "Blessed Hajj",
+  "category": "hajj_umrah",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "crescent",
+   "colors": [
+    "#F8F3E8",
+    "#C9A24A",
+    "#DCCFB4"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing white ihram clothing or modest white abaya and hijab, {outfit}, background: soft white clouds and golden light, respectful and serene, no crowds, no sacred structures, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "white ihram clothing or modest white abaya and hijab",
+  "background": "soft white clouds and golden light, respectful and serene, no crowds, no sacred structures",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "حج مبرور وسعي مشكور",
+   "عمرة مقبولة",
+   "تقبّل الله"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#8A6A22",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 77,
+  "is_featured": false
+ },
+ {
+  "id": "pro_linkedin",
+  "title_ar": "صورة مهنية لينكدإن",
+  "title_en": "LinkedIn Headshot",
+  "category": "professional",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "studio",
+   "colors": [
+    "#1C2733",
+    "#C9A24A",
+    "#3A4D63"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing professional business attire, modest, {outfit}, background: clean neutral grey studio backdrop, corporate headshot, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "professional business attire, modest",
+  "background": "clean neutral grey studio backdrop, corporate headshot",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "م. أحمد محمد",
+   "Ahmed Mohamed | أحمد محمد"
+  ],
+  "default_font": "Cairo",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 91,
+  "is_featured": true
+ },
+ {
+  "id": "pro_ceo",
+  "title_ar": "صورة تنفيذية",
+  "title_en": "Executive Portrait",
+  "category": "professional",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "studio",
+   "colors": [
+    "#0E0E10",
+    "#D4AF37",
+    "#2A2A30"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing premium dark suit or modest executive attire, {outfit}, background: modern office with city view, shallow depth of field, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "premium dark suit or modest executive attire",
+  "background": "modern office with city view, shallow depth of field",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "م. أحمد محمد",
+   "Ahmed Mohamed | أحمد محمد"
+  ],
+  "default_font": "Cairo",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": true,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 73,
+  "is_featured": false
+ },
+ {
+  "id": "pro_doctor",
+  "title_ar": "طبيب / طبيبة",
+  "title_en": "Medical Professional",
+  "category": "professional",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "studio",
+   "colors": [
+    "#0F2A3A",
+    "#E8F1F5",
+    "#1E5873"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing white medical coat with stethoscope, modest, {outfit}, background: bright modern clinic, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "white medical coat with stethoscope, modest",
+  "background": "bright modern clinic",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "د. أحمد محمد",
+   "مبروك المزاولة"
+  ],
+  "default_font": "Cairo",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 66,
+  "is_featured": false
+ },
+ {
+  "id": "winter_night",
+  "title_ar": "ليالي الشتاء",
+  "title_en": "Winter Nights",
+  "category": "birthday",
+  "country_tags": [],
+  "gender_variant": "unisex",
+  "cover_image_url": "",
+  "sample_images": [],
+  "cover_style": {
+   "motif": "stars",
+   "colors": [
+    "#0B1630",
+    "#BFD7FF",
+    "#25406E"
+   ]
+  },
+  "prompt_template": "professional studio-quality portrait photo of a {gender} person wearing cozy modest winter outfit, {outfit}, background: desert winter camp with fire and stars, {background}, soft cinematic lighting, sharp focus, photorealistic, 85mm lens",
+  "outfit": "cozy modest winter outfit",
+  "background": "desert winter camp with fire and stars",
+  "negative_prompt": "text, letters, watermark, logo, writing, calligraphy, signature, revealing clothing, cleavage, alcohol, deformed face, extra fingers, blurry, lowres, cartoon",
+  "style_strength": 0.8,
+  "model_id": "default",
+  "aspect_ratios": [
+   "9:16",
+   "1:1",
+   "4:5"
+  ],
+  "text_presets": [
+   "ليالي الشتاء",
+   "شتاء دافئ"
+  ],
+  "default_font": "ArefRuqaa",
+  "default_text_color": "#FFFFFF",
+  "default_text_position": "bottom",
+  "is_premium": false,
+  "credits_cost": 1,
+  "active_from": null,
+  "active_to": null,
+  "sort_priority": 55,
+  "is_featured": false
+ }
+]
