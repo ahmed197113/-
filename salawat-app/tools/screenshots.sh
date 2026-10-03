@@ -225,6 +225,12 @@ adb shell am force-stop $pkg
 sed -i '/mushaf_pages/d' /tmp/sp.xml
 adb shell "run-as $pkg sh -c 'cat > shared_prefs/salawat_prefs.xml'" < /tmp/sp.xml
 
+# ---- Surah headers that sit on the last line of the previous page (An-Nisa 76/77, Abasa 584/585) ----
+for pg in 76 77 584 585; do
+  start .QuranPagerActivity --ei page $pg
+  shot 63-mushaf-page-$pg 8
+done
+
 # ---- New screens (Arabic), then the English interface ----
 adb shell am force-stop $pkg
 start .RamadanActivity

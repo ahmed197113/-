@@ -68,8 +68,31 @@ object MushafLayout {
                 if (i >= 2 && lines[i - 2] == null) lines[i - 2] = Line.Header(first.surah)
             }
         }
+        // As in the print, a surah that starts at the top of the next page may have its header (and basmala) on the
+        // empty last line(s) of this page.
+        if (page in 2 until 604 && lines[14] == null) {
+            nextPageOpening(context, page + 1)?.let { (surah, emptyAbove) ->
+                val need = if (surah == 9) 1 else 2
+                val missing = need - emptyAbove
+                if (missing >= 2 && lines[13] == null) {
+                    lines[13] = Line.Header(surah)
+                    lines[14] = Line.Basmala
+                } else if (missing >= 1) {
+                    lines[14] = Line.Header(surah)
+                }
+            }
+        }
         val count = if (page <= 2) 8 else 15
         return (0 until count).map { lines[it] ?: Line.Blank }
+    }
+
+    /** If [page] opens with a surah's first ayah, that surah and how many empty lines precede it on that page. */
+    private fun nextPageOpening(context: Context, page: Int): Pair<Int, Int>? {
+        val json = load(context).optJSONObject(page.toString()) ?: return null
+        val first = (1..15).firstOrNull { json.has(it.toString()) } ?: return null
+        val w = json.getJSONArray(first.toString()).getJSONArray(0)
+        val (s, a) = w.getString(1).split(":").map { it.toInt() }
+        return if (a == 1) s to (first - 1) else null
     }
 }
 
