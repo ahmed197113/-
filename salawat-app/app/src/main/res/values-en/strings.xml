@@ -436,7 +436,7 @@
     <string name="memorize_hide">Hide ayahs to test yourself</string>
     <string name="memorize_show">Show ayahs</string>
     <string name="memorize_hide_hint">Memorisation mode: only the first word of each ayah shows. Recite from memory, then tap the ayah to reveal and check it.</string>
-    <string name="memorize_repeat">Repeat to memorise</string>
+    <string name="memorize_repeat">Memorise</string>
     <string name="memorize_repeat_title">Repeat from %1$s: ayah %2$s</string>
     <string name="memorize_to_ayah">To ayah</string>
     <string name="memorize_each">Each ayah</string>
