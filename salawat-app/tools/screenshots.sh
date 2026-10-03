@@ -216,7 +216,10 @@ done
 
 # ---- End-to-end alarms: jump the clock to just before each scheduled alarm and let it fire on its own ----
 travel() {  # $1 receiver, $2 label
-  adb shell am force-stop $pkg   # app closed, as on a real phone
+  # App closed the way a phone closes it (swiped away / killed in the background). force-stop would also
+  # cancel every alarm, which Android only does when the user stops the app from its settings page.
+  adb shell input keyevent KEYCODE_HOME
+  adb shell am kill $pkg
   sleep 2
   now=$(adb shell date "+%Y-%m-%d\ %H:%M:%S" | tr -d '\r')
   secs=$(adb shell dumpsys alarm | python3 tools/alarm_travel.py "$1" "$now")
