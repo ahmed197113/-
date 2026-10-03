@@ -34,6 +34,7 @@ if hit:
 
 adb root || true
 adb shell cmd alarm set-timezone Africa/Cairo || adb shell setprop persist.sys.timezone Africa/Cairo || true
+adb uninstall $pkg >/dev/null 2>&1 || true   # fresh app: no language or data left from a cached emulator
 adb install -r "$apk"
 # The emulator image is cached between runs: always start in Arabic, whatever the last run left.
 adb shell cmd locale set-app-locales $pkg --locales ar || true
@@ -232,6 +233,14 @@ for pg in 76 77 584 585; do
   start .QuranPagerActivity --ei page $pg
   shot 63-mushaf-page-$pg 8
 done
+
+# ---- Search, then open a result in the Mushaf while the keyboard is still up ----
+adb shell am force-stop $pkg
+start .QuranSearchActivity --es query '\\u0627\\u0644\\u0631\\u062d\\u0645\\u0646'
+sleep 6
+shot 68a-search-results 1
+adb shell input tap 540 900
+shot 68b-search-opened-mushaf 8
 
 # ---- New screens (Arabic), then the English interface ----
 adb shell am force-stop $pkg

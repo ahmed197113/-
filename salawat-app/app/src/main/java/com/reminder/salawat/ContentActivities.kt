@@ -30,6 +30,8 @@ private fun ActivityListBinding.intro(text: String) {
 }
 
 private fun AppCompatActivity.openMushaf(ayah: QAyah) {
+    // Close the search keyboard first, so the Mushaf opens with the whole screen.
+    currentFocus?.let { v -> getSystemService(android.view.inputmethod.InputMethodManager::class.java)?.hideSoftInputFromWindow(v.windowToken, 0) }
     startActivity(
         Intent(this, QuranPagerActivity::class.java)
             .putExtra(QuranPagerActivity.EXTRA_PAGE, ayah.page)

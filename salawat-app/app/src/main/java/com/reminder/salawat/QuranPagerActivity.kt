@@ -156,12 +156,17 @@ class QuranPagerActivity : AppCompatActivity() {
         adapter = PageAdapter(prefs.getFloat(Prefs.KEY_QURAN_FONT, 24f)) { ayah -> onAyahTapped(ayah) }
         binding.pager.adapter = adapter
         binding.pager.offscreenPageLimit = 1
-        binding.pager.post {
+        // The page fits the room the pager has; re-measure whenever that changes (e.g. the keyboard of the previous
+        // screen closing after the Mushaf opened from a search), so the page is never squeezed.
+        binding.pager.addOnLayoutChangeListener { v, _, top, _, bottom, _, oldTop, _, oldBottom ->
+            if (bottom - top == oldBottom - oldTop || bottom - top <= 0) return@addOnLayoutChangeListener
             // page frame margins/padding and the page-number line
             val chrome = (10 * 2 + 12 + 8 + 40) * resources.displayMetrics.density
-            MushafPageView.maxPageHeight = (binding.pager.height - chrome).toInt()
-            @Suppress("NotifyDataSetChanged")
-            adapter.notifyDataSetChanged()
+            MushafPageView.maxPageHeight = (bottom - top - chrome).toInt()
+            v.post {
+                @Suppress("NotifyDataSetChanged")
+                adapter.notifyDataSetChanged()
+            }
         }
 
         val startPage = intent.getIntExtra(EXTRA_PAGE, 0).takeIf { it in 1..QuranData.PAGE_COUNT }
