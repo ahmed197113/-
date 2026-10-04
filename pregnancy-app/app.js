@@ -267,7 +267,7 @@ function progressCard(st) {
     <span class="kicker">رحلتك بالأقمار</span>
     <h2>أنتِ في الأسبوع ${st.week} — اليوم ${ORD[st.extra]}</h2>
     <div class="moons">${Array.from({ length: 9 }, (_, i) => moon(Math.max(0, Math.min(1, (st.days - i * L) / L)), `${i + 1}`, i + 1 === st.month)).join('')}</div>
-    <p class="muted" style="margin:6px 0 12px">كل قمر شهر من حملك — يكتمل البدر التاسع يوم اللقاء 🌕</p>
+    <div style="height:12px"></div>
     <div class="ticket">
       <div><small>مضى</small><b>${wd(st.days)}</b></div>
       <div><small>بقي</small><b>${st.left >= 0 ? wd(st.left) : 'تجاوزتِ الموعد'}</b></div>
@@ -282,49 +282,36 @@ function viewHome() {
   const sel = route.week || st.week, w = WEEKS[sel - 1];
   const tKey = iso(today());
   const water = S.water[tKey] || 0, vit = !!S.vitamins[tKey];
+  const c = S.checks.find(x => x.date === tKey), tr = c && triage(c, st.week);
+  const badLabs = Object.values(latestLabs()).filter(l => labEval(l, st.tri).s !== 'ok').length;
   const nextAppt = S.appts.filter(a => a.date >= tKey && !a.done).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
-  const upcoming = APPOINTMENTS.filter(a => a.to >= st.week).slice(0, 2);
+  const nextTest = APPOINTMENTS.find(a => a.to >= st.week);
+  const next = nextAppt ? { ic: '🩺', t: nextAppt.title, d: fmtShort.format(parse(nextAppt.date)), sub: 'appts' }
+    : nextTest ? { ic: '🔬', t: nextTest.title, d: `الأسبوع ${nextTest.from}${nextTest.to !== nextTest.from ? '–' + nextTest.to : ''}`, sub: 'tests' } : null;
   return `
   ${hero(sel)}
-  <div class="sec-head"><h2>رحلتك أسبوعاً بأسبوع</h2><button class="link" data-week="${sel}">التفاصيل ‹</button></div>
   ${weekStrip(sel, st)}
   ${progressCard(st)}
-  ${homeExtras(st)}
 
-  <div class="card">
-    <div class="sec-head" style="margin-top:0"><h2>${p.babyName ? esc(p.babyName) : 'طفلك'} في الأسبوع ${sel}</h2><span class="fruit" style="font-size:2rem">${w.emoji}</span></div>
-    <p class="muted" style="margin:0 0 6px">بحجم ${w.size}</p>
-    <ul class="list">
-      <li>${w.baby[0]}</li>
-      <li>${w.mom[0]}</li>
-      <li>${w.tips[0]}</li>
-    </ul>
-    <button class="btn block" data-week="${sel}" style="margin-top:10px">كل تفاصيل الأسبوع ${sel}</button>
+  <div class="card today">
+    <div class="sec-head" style="margin-top:0"><h3 style="margin:0">يومك</h3><span class="muted">${fmtDayMonth.format(today())}</span></div>
+    <div class="today-grid">
+      <button class="t-act ${tr ? 'lv-' + tr.cls : ''}" data-sub="checkin"><span>${tr ? tr.ic : '🩺'}</span><b>فحص اليوم</b><small>${tr ? tr.title : 'دقيقة واحدة'}</small></button>
+      <button class="t-act ${vit ? 'done' : ''}" id="vitToday"><span>💊</span><b>الفيتامين</b><small>${vit ? 'تم ✓' : 'لم يُؤخذ'}</small></button>
+      <button class="t-act" id="waterPlus"><span>💧</span><b>الماء</b><small>${water} من 10 · اضغطي +1</small></button>
+      ${st.week >= 28 ? `<button class="t-act" data-sub="kicks"><span>👣</span><b>الحركة</b><small>عدّ الركلات</small></button>` : `<button class="t-act" data-sub="journal"><span>📝</span><b>يومياتي</b><small>كيف حالك؟</small></button>`}
+    </div>
+    ${badLabs ? `<button class="alert-line" data-sub="labs">🧪 ${badLabs} تحليل يحتاج انتباهك ‹</button>` : ''}
   </div>
 
   <div class="card">
-    <h3>مهام اليوم</h3>
-    <label class="check ${vit ? 'done' : ''}"><input type="checkbox" id="vitToday" ${vit ? 'checked' : ''}><span>💊 تناولت الفيتامينات (حمض الفوليك / الحديد)</span></label>
-    <div class="row" style="margin-top:8px"><span>💧 الماء: <b>${water}</b> / 10 أكواب</span><span class="grow"></span>
-      <button class="btn sm ghost" id="waterMinus" aria-label="نقص كوب">−</button><button class="btn sm" id="waterPlus">+ كوب</button></div>
-    <div class="progress" style="margin-top:10px"><i style="width:${Math.min(100, water * 10)}%"></i></div>
-    ${st.week >= 28 ? `<button class="btn ghost block" style="margin-top:12px" data-sub="kicks">👣 عدّ حركات الجنين اليوم</button>` : ''}
+    <div class="sec-head" style="margin-top:0"><h3 style="margin:0">${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</h3><span class="fruit" style="font-size:1.8rem">${w.emoji}</span></div>
+    <p style="margin:0">${w.baby[0]}</p>
+    <button class="link" data-week="${sel}" style="color:var(--gold)">اقرئي كل تفاصيل الأسبوع ${sel} ‹</button>
   </div>
 
-  <div class="card">
-    <h3>القادم</h3>
-    ${nextAppt ? `<div class="item-row"><div class="em">🩺</div><div><b>${esc(nextAppt.title)}</b><div class="muted">${fmt.format(parse(nextAppt.date))} ${esc(nextAppt.time || '')}</div></div></div>` : ''}
-    ${upcoming.map(a => `<div class="item-row"><div class="em">🔬</div><div><b>${a.title}</b>
-      <div class="muted">الأسبوع ${a.from}${a.to !== a.from ? '–' + a.to : ''} · ${fmtShort.format(weekDate(st, a.from))}</div>
-      <div style="font-size:.9rem">${a.desc}</div></div></div>`).join('')}
-    <button class="btn ghost block" data-sub="appts" style="margin-top:8px">إدارة مواعيدي</button>
-  </div>
-
-  <div class="card">
-    <h3>وصول سريع</h3>
-    <div class="tools-grid">${(st.week >= 28 ? ['kicks', 'contractions', 'bag', 'weight', 'appts', 'journal'] : ['weight', 'appts', 'journal', 'tests', 'food', 'water']).map(k => toolBtn(TOOLS.find(t => t[0] === k))).join('')}</div>
-  </div>
-  <div class="card warn-card nav-row" data-sub="warnings"><span class="ic">🚨</span><div class="grow"><b>علامات تستدعي الطبيب فوراً</b><div class="muted">اضغطي لعرض القائمة</div></div><span class="chev">‹</span></div>
+  ${next ? `<div class="card nav-row" data-sub="${next.sub}"><span class="ic">${next.ic}</span><div class="grow"><small class="muted">القادم</small><div><b>${esc(next.t)}</b></div><div class="muted">${next.d}</div></div><span class="chev">‹</span></div>` : ''}
+  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:0 auto 10px;color:var(--gold)">🎉 وُلد طفلي؟ ابدئي رحلة ما بعد الولادة</button>` : ''}
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
 const toolBtn = ([k, ic, name]) => `<div class="tool" data-sub="${k}"><span>${ic}</span>${name}</div>`;
@@ -350,19 +337,7 @@ function viewWeeks() {
   return `${modeSeg}
   ${hero(sel)}
   ${weekStrip(sel, st)}
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <div class="row"><span class="badge">الأسبوع ${sel}</span><span class="badge alt">${tri.name}</span></div>
-      <span class="badge soft">${!away ? 'أنتِ هنا 📍' : sel < st.week ? 'أسبوع مضى' : 'أسبوع قادم'}</span>
-    </div>
-    <div class="size-row" style="margin-top:12px"><span class="fruit">${w.emoji}</span>
-      <div><div class="muted">حجم الجنين يعادل</div><b style="font-size:1.15rem">${w.size}</b></div></div>
-    <div class="grid3" style="margin-top:12px">
-      <div class="stat"><b style="font-size:.95rem">${w.len}</b><small>الطول</small></div>
-      <div class="stat"><b style="font-size:.95rem">${w.wt}</b><small>الوزن</small></div>
-      <div class="stat"><b style="font-size:.95rem">${fmtShort.format(date)}</b><small>يبدأ في</small></div>
-    </div>
-  </div>
+  <div class="week-meta"><span class="badge">الأسبوع ${sel}</span><span class="badge alt">${tri.name}</span><span class="muted">يبدأ ${fmtShort.format(date)}${!away ? ' · أنتِ هنا 📍' : ''}</span></div>
   <div class="sec-tabs" id="secTabs">
     ${SECS.map(([k, ic, name]) => `<button data-sec="${k}" class="${sec === k ? 'on' : ''}"><span>${ic}</span>${name}${k === 'todo' && w.todo.length ? `<i>${w.todo.length}</i>` : ''}</button>`).join('')}
   </div>
@@ -371,12 +346,12 @@ function viewWeeks() {
       ? items.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')
       : `<ul class="list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`}
   </div>
-  <p class="sources">📚 المصادر: ${SOURCES.map(s => s[0]).join(' · ')} — <a href="${nhsWeekUrl(sel)}" target="_blank" rel="noopener">اقرئي المزيد</a><br><span>المعلومات للتثقيف العام؛ طبيبك هو المرجع لحالتك.</span></p>
+  <p class="sources">📚 ${SOURCES.map(s => s[0]).join(' · ')} — <a href="${nhsWeekUrl(sel)}" target="_blank" rel="noopener">المصدر</a></p>
   <div class="row">
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
     <button class="btn grow" data-wk="${Math.min(40, sel + 1)}" ${sel === 40 ? 'disabled' : ''}>الأسبوع ${Math.min(40, sel + 1)} ←</button>
   </div>
-  ${away ? `<button class="btn ghost block" data-wk="${st.week}" style="margin-top:10px">↩ العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
+`;
 }
 
 /* ---------- خارطة الطريق ---------- */
@@ -702,7 +677,7 @@ function bind() {
   const t = iso(today());
 
   // الرئيسية
-  on('#vitToday', e => { S.vitamins[t] = e.target.checked; save(); render(false); }, 'onchange');
+  on('#vitToday', () => { S.vitamins[t] = !S.vitamins[t]; save(); render(false); });
   on('#waterPlus', () => { S.water[t] = (S.water[t] || 0) + 1; save(); render(false); });
   on('#waterMinus', () => { S.water[t] = Math.max(0, (S.water[t] || 0) - 1); save(); render(false); });
 
