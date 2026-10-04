@@ -23,8 +23,8 @@
   --warn: #ef6b6b;
   --shadow: 0 12px 32px rgba(0, 0, 0, .35);
   --radius: 22px;
-  --font: 'Almarai', system-ui, 'Segoe UI', Tahoma, sans-serif;
-  --display: 'Almarai', system-ui, sans-serif;
+  --font: 'Rubik', system-ui, 'Segoe UI', Tahoma, sans-serif;
+  --display: 'Rubik', system-ui, sans-serif;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -256,7 +256,7 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 .water button.on { filter: none; }
 .counter-big {
   width: 180px; height: 180px; border-radius: 50%; border: 0; margin: 12px auto; display: grid; place-items: center;
-  background: radial-gradient(circle at 35% 30%, #ff8fa6, var(--primary) 60%, #b8304e); color: #fff; font-size: 3rem; font-weight: 800;
+  background: radial-gradient(circle at 35% 30%, #ff8fa6, var(--primary) 60%, #b8304e); color: #fff; font-size: 3rem; font-weight: 700;
   cursor: pointer; box-shadow: 0 12px 30px rgba(239, 79, 108, .4);
 }
 .counter-big:active { transform: scale(.96); }
@@ -377,7 +377,7 @@ a.btn { text-decoration: none; display: inline-block; }
 
 
 /* ================= لمسات الهوية ================= */
-h1, h2, h3 { font-family: var(--display); font-weight: 800; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; }
 .btn { color: var(--on-primary); background: linear-gradient(135deg, var(--rose), var(--gold)); }
 .btn.ghost { color: var(--text); background: var(--card-2); }
 .btn.danger { background: var(--warn); color: #fff; }
