@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">وَفْر</string>
+    <string name="tile_label">سجّل مصروف</string>
+    <string name="widget_big">وَفْر — الوَفْرة اليومية</string>
+    <string name="widget_small">وَفْر — إضافة سريعة</string>
+    <string name="shortcut_add">مصروف جديد</string>
+    <string name="shortcut_add_long">سجّل مصروفاً جديداً</string>
+</resources>
