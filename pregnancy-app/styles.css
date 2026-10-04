@@ -438,3 +438,7 @@ ul.list li::before { background: var(--gold); transform: rotate(45deg); border-r
 .welcome .photo { border-radius: 50%; overflow: hidden; }
 .week-strip.tiles button.sel b { background: none; color: var(--text); }
 .week-strip.tiles button.sel small { color: var(--gold); }
+
+.sources { font-size: .8rem; color: var(--muted); text-align: center; margin: 4px 0 14px; line-height: 1.8; }
+.sources a { color: var(--gold); }
+.sources span { font-size: .74rem; }

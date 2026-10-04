@@ -371,6 +371,7 @@ function viewWeeks() {
       ? items.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')
       : `<ul class="list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`}
   </div>
+  <p class="sources">📚 المصادر: ${SOURCES.map(s => s[0]).join(' · ')} — <a href="${nhsWeekUrl(sel)}" target="_blank" rel="noopener">اقرئي المزيد</a><br><span>المعلومات للتثقيف العام؛ طبيبك هو المرجع لحالتك.</span></p>
   <div class="row">
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
     <button class="btn grow" data-wk="${Math.min(42, sel + 1)}" ${sel === 42 ? 'disabled' : ''}>الأسبوع ${Math.min(42, sel + 1)} ←</button>
