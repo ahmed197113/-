@@ -13,6 +13,8 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
+    env:
+      PLAY_KEYSTORE_B64: ${{ secrets.PLAY_KEYSTORE_B64 }}
     defaults:
       run:
         working-directory: pregnancy-app/android-app
@@ -21,12 +23,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Build the single-file web app
         working-directory: pregnancy-app
@@ -40,6 +42,7 @@ jobs:
           npx cap add android
           npx @capacitor/assets generate --android --assetPath assets || echo "icon generation skipped"
           cp -r res/. android/app/src/main/res/
+          python3 patch_android.py $((GITHUB_RUN_NUMBER + 100))
           npx cap sync android
 
       - name: Use a fixed signing key so updates install over older versions
@@ -56,11 +59,33 @@ jobs:
           name: nabd-apk
           path: pregnancy-app/android-app/android/app/build/outputs/apk/debug/app-debug.apk
 
+      # نسخة Google Play: ملف AAB موقّع بمفتاح الرفع (أسرار المستودع PLAY_*)
+      - name: Build the signed Google Play bundle (AAB)
+        if: env.PLAY_KEYSTORE_B64 != ''
+        working-directory: pregnancy-app/android-app/android
+        env:
+          PLAY_KEYSTORE_PASSWORD: ${{ secrets.PLAY_KEYSTORE_PASSWORD }}
+        run: |
+          echo "$PLAY_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/upload.jks" \
+            -Pandroid.injected.signing.store.password="$PLAY_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias=nabd-upload \
+            -Pandroid.injected.signing.key.password="$PLAY_KEYSTORE_PASSWORD"
+          rm -f "$RUNNER_TEMP/upload.jks"
+          cp app/build/outputs/bundle/release/app-release.aab "../nabd-play-$(cat ../VERSION)-$((GITHUB_RUN_NUMBER + 100)).aab"
+
+      - uses: actions/upload-artifact@v4
+        if: env.PLAY_KEYSTORE_B64 != ''
+        with:
+          name: nabd-google-play-aab
+          path: pregnancy-app/android-app/nabd-play-*.aab
+
       - name: Publish the APK as a downloadable release
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk nabd.apk
           gh release delete nabd-latest --yes --cleanup-tag || true
-          gh release create nabd-latest nabd.apk --target "$GITHUB_SHA" --prerelease \
+          gh release create nabd-latest nabd.apk ../dist/nabd.html --target "$GITHUB_SHA" --prerelease \
             --title "نبضٌ صغير — أحدث نسخة أندرويد" \
             --notes "ملف APK للتجربة. على الجوال: نزّلي الملف ثم افتحيه، واسمحي بالتثبيت من مصادر غير معروفة إذا طُلب. إن ظهر تحذير Play Protect اضغطي: التثبيت على أي حال."
         env:

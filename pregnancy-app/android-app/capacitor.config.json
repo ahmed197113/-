@@ -9,6 +9,10 @@
     "LocalNotifications": {
       "smallIcon": "ic_stat_nabd",
       "iconColor": "#FA1A7F"
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
     }
   }
 }
