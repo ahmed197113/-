@@ -1694,8 +1694,6 @@ function viewWeeks() {
       <div class="stat"><b style="font-size:.95rem">${fmtShort.format(date)}</b><small>يبدأ في</small></div>
     </div>
   </div>
-  ${labels ? `<details class="card legend" ${route.legend !== false ? 'open' : ''} id="legend"><summary><b>🔎 ماذا يعني كل جزء في الصورة؟</b></summary>
-    ${Photos.parts(sel).map(l => `<div class="item-row"><span class="pill-name">${l.n}</span><div class="muted grow">${l.d}</div></div>`).join('')}</details>` : ''}
   <div class="sec-tabs" id="secTabs">
     ${SECS.map(([k, ic, name]) => `<button data-sec="${k}" class="${sec === k ? 'on' : ''}"><span>${ic}</span>${name}${k === 'todo' && w.todo.length ? `<i>${w.todo.length}</i>` : ''}</button>`).join('')}
   </div>
