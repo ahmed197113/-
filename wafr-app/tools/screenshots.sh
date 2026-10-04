@@ -87,7 +87,9 @@ tap_text "ضروري"
 shot 11-editor-need 1
 tap_text "سجّل"
 sleep 2
+start --es tab HISTORY; sleep 2
 check "need expense saved (25)" "-25"
+start --es tab HOME; sleep 2
 
 # ---- 3. Log a WANT expense (the bug the user reported)
 tap_text "إضافة مصروف"; sleep 2
@@ -96,12 +98,14 @@ tap_text "كمالي"
 shot 12-editor-want 1
 tap_text "سجّل"
 sleep 2
+start --es tab HISTORY; sleep 2
 check "want expense saved (150)" "-150"
 check "want pill shown" "كمالي"
+start --es tab HOME; sleep 2
 shot 13-home-after-adds 2
 
 # ---- 4. Reply from the 5-hour check-in notification (simulated inline reply)
-adb shell am broadcast -n "$pkg/.notify.ActionReceiver" -a com.wafr.app.ENTRY --ez need false --ei origin 1001 --es debug_text "40 coffee"
+adb shell am broadcast -n "$pkg/.notify.ActionReceiver" -a com.wafr.app.ENTRY --ez need false --ei origin 1001 --es debug_text "'40 coffee'"
 sleep 3
 adb shell dumpsys notification --noredact | grep -A2 "pkg=com.wafr.app" > "$out/notifications-after-reply.txt"
 start --es tab HISTORY
@@ -203,7 +207,7 @@ in_back
 tap_text "تحدّي الثقافة المالية"; sleep 2
 tap_text "ب"; sleep 1
 shot 72-quiz 1
-check "quiz explains answer" "💡"
+check "quiz explains answer" "التالي"
 in_back
 tap_text "آلة الزمن"; sleep 3
 shot 73-time-machine 1

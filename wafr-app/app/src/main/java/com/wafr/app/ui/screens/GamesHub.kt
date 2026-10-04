@@ -489,9 +489,10 @@ private fun GrowthChart(series: List<Pair<Double, Double>>) {
         if (series.isEmpty()) return@Canvas
         val maxV = series.maxOf { it.second }.coerceAtLeast(1.0)
         val n = series.size
-        fun pt(i: Int, v: Double) = Offset(size.width - size.width * (i + 1) / n, size.height - (size.height * (v / maxV) * anim.value).toFloat())
-        val total = Path().apply { moveTo(size.width, size.height); series.forEachIndexed { i, p -> lineTo(pt(i, p.second).x, pt(i, p.second).y) }; lineTo(0f, size.height); close() }
-        val dep = Path().apply { moveTo(size.width, size.height); series.forEachIndexed { i, p -> lineTo(pt(i, p.first).x, pt(i, p.first).y) }; lineTo(0f, size.height); close() }
+        // Time flows left → right so growth reads as rising, like any growth chart.
+        fun pt(i: Int, v: Double) = Offset(size.width * (i + 1) / n, size.height - (size.height * (v / maxV) * anim.value).toFloat())
+        val total = Path().apply { moveTo(0f, size.height); series.forEachIndexed { i, p -> lineTo(pt(i, p.second).x, pt(i, p.second).y) }; lineTo(size.width, size.height); close() }
+        val dep = Path().apply { moveTo(0f, size.height); series.forEachIndexed { i, p -> lineTo(pt(i, p.first).x, pt(i, p.first).y) }; lineTo(size.width, size.height); close() }
         drawPath(total, Brush.verticalGradient(listOf(c.glow1.copy(alpha = 0.7f), c.glow1.copy(alpha = 0.05f))))
         drawPath(dep, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.05f))))
         val line = Path().apply { series.forEachIndexed { i, p -> val o = pt(i, p.second); if (i == 0) moveTo(o.x, o.y) else lineTo(o.x, o.y) } }
