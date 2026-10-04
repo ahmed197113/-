@@ -17,6 +17,9 @@ const val TARGET_BUDGET = 15
 /** Maximum swipes that can be earned back per day by doing rescue activities. */
 const val MAX_EARN_PER_DAY = 30
 
+/** Cooling-off period before an emergency exit from strict mode takes effect. */
+const val UNLOCK_DELAY_MS = 24L * 60 * 60 * 1000
+
 /** Length of the recovery program in days. */
 const val PROGRAM_DAYS = 30
 
@@ -65,7 +68,17 @@ data class AppData(
     val gateSeconds: Int = 6,
     val futureMsg: String = "أنا أقوى من خوارزمية صُمّمت لتسرق وقتي.",
     val lastDay: String = LocalDate.now().toString(),
+    val onboarded: Boolean = false,
+    val strictUntil: Long = 0L,
+    val unlockRequestAt: Long = 0L,
 ) {
+    val strictActive: Boolean get() = strictUntil > System.currentTimeMillis()
+
+    /** Time left (ms) before a pending emergency unlock takes effect, or null when none is pending. */
+    val unlockLeftMs: Long?
+        get() = if (unlockRequestAt == 0L) null
+        else (unlockRequestAt + UNLOCK_DELAY_MS - System.currentTimeMillis()).coerceAtLeast(0L)
+
     val todayKey: String get() = LocalDate.now().toString()
     val today: DayStat get() = day(todayKey)
 
@@ -166,6 +179,9 @@ object Store {
             }
         }
         val now = System.currentTimeMillis()
+        if (d.unlockRequestAt > 0 && (now >= d.unlockRequestAt + UNLOCK_DELAY_MS || d.strictUntil <= now)) {
+            update { it.copy(strictUntil = 0L, unlockRequestAt = 0L) }
+        }
         if (!d.focusRewarded && d.focusUntil in 1..now) {
             update {
                 it.brainBy(it.focusMinutes / 5f)
@@ -231,6 +247,26 @@ object Store {
     fun setNightHours(start: Int, end: Int) = update { it.copy(nightStart = start, nightEnd = end) }
     fun setZombieCheck(v: Boolean) = update { it.copy(zombieCheck = v) }
     fun setFutureMsg(v: String) = update { it.copy(futureMsg = v) }
+    fun startStrict(days: Int) = update {
+        it.copy(strictUntil = System.currentTimeMillis() + days * 24L * 60 * 60 * 1000, unlockRequestAt = 0L)
+    }
+
+    fun requestUnlock() = update { if (it.strictActive) it.copy(unlockRequestAt = System.currentTimeMillis()) else it }
+    fun cancelUnlock() = update { it.copy(unlockRequestAt = 0L) }
+
+    fun finishOnboarding(budget: Int, gate: Int, msg: String, strictDays: Int) = update {
+        val base = it.copy(
+            onboarded = true,
+            startBudget = budget,
+            gateSeconds = gate,
+            futureMsg = msg.ifBlank { it.futureMsg },
+            programStart = LocalDate.now().toString(),
+        )
+        if (strictDays > 0) {
+            base.copy(strictUntil = System.currentTimeMillis() + strictDays * 24L * 60 * 60 * 1000, unlockRequestAt = 0L)
+        } else base
+    }
+
     fun restartProgram() = update { it.copy(programStart = LocalDate.now().toString()) }
 
     // ---------- JSON ----------
@@ -273,6 +309,9 @@ object Store {
         o.put("gateSeconds", d.gateSeconds)
         o.put("futureMsg", d.futureMsg)
         o.put("lastDay", d.lastDay)
+        o.put("onboarded", d.onboarded)
+        o.put("strictUntil", d.strictUntil)
+        o.put("unlockRequestAt", d.unlockRequestAt)
         return o.toString()
     }
 
@@ -322,6 +361,9 @@ object Store {
             gateSeconds = o.optInt("gateSeconds", def.gateSeconds),
             futureMsg = o.optString("futureMsg", def.futureMsg),
             lastDay = o.optString("lastDay", def.lastDay),
+            onboarded = o.optBoolean("onboarded", false),
+            strictUntil = o.optLong("strictUntil", 0L),
+            unlockRequestAt = o.optLong("unlockRequestAt", 0L),
         )
     }
 }

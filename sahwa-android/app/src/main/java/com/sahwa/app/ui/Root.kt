@@ -49,6 +49,11 @@ fun SahwaRoot(tab: MutableState<Tab>) {
                 }
             }
 
+            if (!data.onboarded) {
+                OnboardingScreen(now)
+                return@CompositionLocalProvider
+            }
+
             Box(Modifier.fillMaxSize()) {
                 Scaffold(
                     containerColor = C.Bg,

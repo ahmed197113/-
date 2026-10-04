@@ -254,8 +254,10 @@ private fun FocusCard(d: AppData, now: Long) {
                 "المقاطع القصيرة مغلقة تمامًا. ستكسب +${d.focusMinutes / 5} 🧠 عند الانتهاء.",
                 color = C.Muted, fontSize = 13.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
             )
-            OutlinedButton(onClick = { Store.cancelFocus() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Text("إنهاء مبكر (-1 🧠)", color = C.Muted)
+            if (!d.strictActive) {
+                OutlinedButton(onClick = { Store.cancelFocus() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    Text("إنهاء مبكر (-1 🧠)", color = C.Muted)
+                }
             }
         } else {
             Text("اغلق المقاطع القصيرة كليًا واعمل على ما يهم.", color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp))

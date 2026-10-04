@@ -68,6 +68,7 @@ fun SettingsScreen(d: AppData, now: Long) {
                 ) { Text(if (guardOn) "إعدادات إمكانية الوصول" else "تفعيل الدرع") }
             }
         }
+        item { StrictCard(d) }
         item {
             GlowCard(accent = C.Cyan) {
                 SectionTitle("⚡ ميزانية البداية: ${d.startBudget} تمريرة/يوم")
@@ -77,7 +78,7 @@ fun SettingsScreen(d: AppData, now: Long) {
                 )
                 Slider(
                     value = d.startBudget.toFloat(),
-                    onValueChange = { Store.setStartBudget(it.toInt()) },
+                    onValueChange = { v -> if (!d.strictActive || v.toInt() <= d.startBudget) Store.setStartBudget(v.toInt()) },
                     valueRange = 15f..200f,
                     colors = sliderColors(C.Cyan),
                 )
@@ -89,7 +90,7 @@ fun SettingsScreen(d: AppData, now: Long) {
                 Text("مدة التنفس قبل كل جلسة. تزيد 5 ثوانٍ مع كل جلسة إضافية في اليوم.", color = C.Muted, fontSize = 12.sp)
                 Slider(
                     value = d.gateSeconds.toFloat(),
-                    onValueChange = { Store.setGateSeconds(it.toInt()) },
+                    onValueChange = { v -> if (!d.strictActive || v.toInt() >= d.gateSeconds) Store.setGateSeconds(v.toInt()) },
                     valueRange = 3f..30f,
                     colors = sliderColors(C.Violet),
                 )
@@ -97,16 +98,20 @@ fun SettingsScreen(d: AppData, now: Long) {
         }
         item {
             GlowCard(accent = C.Indigo) {
-                ToggleRow("🌙 درع الليل", "إغلاق المقاطع القصيرة ليلًا لحماية نومك", d.nightShield) { Store.setNightShield(it) }
+                ToggleRow("🌙 درع الليل", "إغلاق المقاطع القصيرة ليلًا لحماية نومك", d.nightShield, locked = d.strictActive && d.nightShield) { Store.setNightShield(it) }
                 if (d.nightShield) {
-                    HourStepper("من الساعة", d.nightStart) { Store.setNightHours(it, d.nightEnd) }
-                    HourStepper("حتى الساعة", d.nightEnd) { Store.setNightHours(d.nightStart, it) }
+                    if (d.strictActive) {
+                        Text("ساعات الليل مقفلة أثناء الوضع الصارم.", color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+                    } else {
+                        HourStepper("من الساعة", d.nightStart) { Store.setNightHours(it, d.nightEnd) }
+                        HourStepper("حتى الساعة", d.nightEnd) { Store.setNightHours(d.nightStart, it) }
+                    }
                 }
             }
         }
         item {
             GlowCard(accent = C.Pink) {
-                ToggleRow("🧟 كاشف وضع الزومبي", "تنبيه عند التمرير القهري السريع (12 تمريرة في دقيقة)", d.zombieCheck) {
+                ToggleRow("🧟 كاشف وضع الزومبي", "تنبيه عند التمرير القهري السريع (12 تمريرة في دقيقة)", d.zombieCheck, locked = d.strictActive && d.zombieCheck) {
                     Store.setZombieCheck(it)
                 }
             }
@@ -130,7 +135,7 @@ fun SettingsScreen(d: AppData, now: Long) {
             GlowCard(accent = C.Green) {
                 SectionTitle("🌱 برنامج التعافي")
                 Text("اليوم ${d.programDay}. إعادة البدء ترجع الميزانية لقيمة البداية.", color = C.Muted, fontSize = 12.sp)
-                OutlinedButton(onClick = { confirmRestart = true }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                OutlinedButton(onClick = { confirmRestart = true }, enabled = !d.strictActive, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                     Text("إعادة بدء البرنامج")
                 }
             }
@@ -168,7 +173,7 @@ private fun sliderColors(c: Color) = SliderDefaults.colors(
 )
 
 @Composable
-private fun ToggleRow(title: String, desc: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun ToggleRow(title: String, desc: String, checked: Boolean, locked: Boolean = false, onChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             SectionTitle(title)
@@ -177,6 +182,7 @@ private fun ToggleRow(title: String, desc: String, checked: Boolean, onChange: (
         Switch(
             checked = checked,
             onCheckedChange = onChange,
+            enabled = !locked,
             colors = SwitchDefaults.colors(checkedTrackColor = C.Cyan, checkedThumbColor = Color.Black),
         )
     }
@@ -189,5 +195,67 @@ private fun HourStepper(label: String, hour: Int, onChange: (Int) -> Unit) {
         TextButton(onClick = { onChange((hour + 23) % 24) }) { Text("−", fontSize = 20.sp) }
         Text("%02d:00".format(hour), color = C.Text, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         TextButton(onClick = { onChange((hour + 1) % 24) }) { Text("+", fontSize = 20.sp) }
+    }
+}
+
+@Composable
+private fun StrictCard(d: AppData) {
+    var pickDays by remember { mutableStateOf<Int?>(null) }
+    GlowCard(accent = C.Red) {
+        SectionTitle("🔒 الوضع الصارم")
+        if (d.strictActive) {
+            val left = d.strictUntil - System.currentTimeMillis()
+            val days = left / 86_400_000L
+            val hours = (left % 86_400_000L) / 3_600_000L
+            Text("مفعّل — متبقٍ $days يوم و $hours ساعة", color = C.Red, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+            Text(
+                "لا يمكنك الآن رفع الميزانية، تقليل البوابة، إيقاف درع الليل أو كاشف الزومبي، أو إنهاء التركيز مبكرًا.",
+                color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(vertical = 6.dp),
+            )
+            val pending = d.unlockLeftMs
+            if (pending == null) {
+                OutlinedButton(onClick = { Store.requestUnlock() }, modifier = Modifier.fillMaxWidth()) {
+                    Text("🚨 خروج طوارئ (يُفعَّل بعد 24 ساعة)", color = C.Muted)
+                }
+            } else {
+                Text(
+                    "طلب الخروج قيد الانتظار: يُلغى الوضع الصارم بعد ${pending / 3_600_000L} س ${(pending % 3_600_000L) / 60_000L} د. " +
+                        "غالبًا ستزول الرغبة قبل ذلك 😉",
+                    color = C.Amber, fontSize = 12.sp,
+                )
+                Button(
+                    onClick = { Store.cancelUnlock() },
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = C.Green, contentColor = Color.Black),
+                ) { Text("تراجعت — أبقِ الوضع الصارم 💪") }
+            }
+        } else {
+            Text(
+                "التزام لا رجعة فيه: تُقفل إعداداتك فلا يمكن تخفيفها في لحظة ضعف. الخروج المبكر يحتاج انتظار 24 ساعة.",
+                color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(vertical = 6.dp),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(3, 7, 14, 30).forEach { n ->
+                    OutlinedButton(onClick = { pickDays = n }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(4.dp)) {
+                        Text("$n يوم", fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+    }
+    pickDays?.let { n ->
+        AlertDialog(
+            onDismissRequest = { pickDays = null },
+            containerColor = C.Panel2,
+            title = { Text("تفعيل الوضع الصارم $n يوم؟") },
+            text = { Text("لن تستطيع تخفيف أي حد طوال المدة. الخروج المبكر يتطلب الانتظار 24 ساعة.", color = C.Muted) },
+            confirmButton = {
+                TextButton(onClick = {
+                    Store.startStrict(n)
+                    pickDays = null
+                }) { Text("نعم، ألتزم", color = C.Red) }
+            },
+            dismissButton = { TextButton(onClick = { pickDays = null }) { Text("إلغاء") } },
+        )
     }
 }
