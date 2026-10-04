@@ -12,7 +12,10 @@
    - مفتاح Gemini المجاني من aistudio.google.com ← Get API key (بحساب Google، بدون بطاقة).
    - `admin_token`: كلمة سر طويلة لصفحة الإشراف.
 6. **اختبار:** افتحي `https://دومينك/nabd-api/admin.php` وادخلي بكلمة الإشراف.
-7. **إيميل رموز الدخول (للحساب):** Site Tools ← Email ← Accounts: أنشئي إيميلاً مثل `no-reply@دومينك`، واكتبيه في `mail_from` داخل `config.php`. يفضّل تفعيل SPF وDKIM من Site Tools ← Email ← Authentication حتى لا تذهب الرموز إلى Spam.
+7. **إيميل رموز الدخول (للحساب):** Site Tools ← Email ← Accounts: أنشئي إيميلاً على دومين الموقع نفسه (مثل `no-reply@nabd.khatta.net`)، واكتبيه في `mail_from` داخل `config.php`.
+   حتى لا تذهب الرموز إلى Spam أضيفي سجلّي SPF وDKIM. إن كان DNS الدومين خارج SiteGround فأضيفيهما عند الجهة التي تدير DNS:
+   - SPF: سجل TXT على اسم الدومين، وقيمته من Site Tools ← Email ← Authentication ← SPF.
+   - DKIM: سجل TXT باسم `default._domainkey.<الدومين>`، وقيمته من Site Tools ← Email ← Authentication ← DKIM.
 8. أرسلي رابط `https://دومينك/nabd-api` ليوضع في `config.js` داخل التطبيق.
 
 ## تحديث سيرفر قائم (إضافة الحساب)

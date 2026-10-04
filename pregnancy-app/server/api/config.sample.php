@@ -16,8 +16,9 @@ return [
   'ai_daily_labs' => 5,
   'ai_daily_ip'   => 200,
 
-  // الإيميل الذي تُرسل منه رموز الدخول (أنشئيه من Site Tools ← Email ← Accounts، مثل no-reply@دومينك)
-  'mail_from' => 'no-reply@example.com',
+  // الإيميل الذي تُرسل منه رموز الدخول — على نفس دومين الموقع في SiteGround
+  // (أنشئيه من Site Tools ← Email ← Accounts، مثل no-reply@nabd.khatta.net)
+  'mail_from' => 'no-reply@nabd.khatta.net',
 
   // كلمة سر صفحة الإشراف admin.php (اختاري كلمة طويلة)
   'admin_token' => 'CHANGE-ME-LONG-RANDOM',
