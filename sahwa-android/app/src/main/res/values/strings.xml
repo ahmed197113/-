@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">صحوة</string>
+    <string name="guard_label">درع صحوة</string>
+    <string name="guard_description">يكتشف درع صحوة لحظة دخولك إلى المقاطع القصيرة (Shorts / Reels / TikTok) فقط، ليعرض بوابة الوعي ويحسب تمريراتك ويطبّق ميزانيتك اليومية. لا يقرأ رسائلك ولا يجمع أي بيانات، وكل شيء يبقى على هاتفك.</string>
+</resources>

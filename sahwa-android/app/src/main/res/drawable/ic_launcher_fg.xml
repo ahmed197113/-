@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- outer ring -->
+    <path
+        android:pathData="M54,26a28,28 0,1 1,0 56a28,28 0,1 1,0 -56z"
+        android:strokeWidth="3"
+        android:strokeColor="#FF22D3EE"
+        android:fillColor="#00000000" />
+    <!-- inner glow -->
+    <path
+        android:pathData="M54,36a18,18 0,1 1,0 36a18,18 0,1 1,0 -36z"
+        android:fillColor="#3322D3EE" />
+    <!-- neural links -->
+    <path
+        android:pathData="M42,48 L54,40 L66,48 L62,64 L46,64 Z M42,48 L62,64 M66,48 L46,64"
+        android:strokeWidth="2"
+        android:strokeColor="#FFA78BFA"
+        android:fillColor="#00000000" />
+    <path android:pathData="M54,37a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" android:fillColor="#FFE6EDF7" />
+    <path android:pathData="M42,45a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" android:fillColor="#FF22D3EE" />
+    <path android:pathData="M66,45a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" android:fillColor="#FF22D3EE" />
+    <path android:pathData="M46,61a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" android:fillColor="#FFA78BFA" />
+    <path android:pathData="M62,61a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" android:fillColor="#FFA78BFA" />
+</vector>
