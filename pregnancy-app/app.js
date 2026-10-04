@@ -7,7 +7,7 @@ const DAY = 86400000;
 const defaults = () => ({
   profile: null, // {name, babyName, method, lmp, cycle, conception, ivf, ivfDay, due, height, preWeight}
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
-  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'auto'
+  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark'
 });
 
 let S = load();
@@ -83,7 +83,7 @@ $('#backBtn').onclick = () => history.back();
 window.addEventListener('popstate', e => { route = e.state || { view: 'home' }; render(false); });
 
 function go(view, sub = null, week = null) {
-  route = { view, sub, week, labels: route.labels, art: route.art };
+  route = { view, sub, week, slide: route.slide };
   history.pushState(route, '');
   render();
 }
@@ -108,7 +108,7 @@ function render(scroll = true) {
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
-  const titles = { home: `${APP_NAME} 💗`, weeks: route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', track: 'متابعتي', guide: 'دليل الحامل', more: 'حسابي' };
+  const titles = { home: fmtDayMonth.format(today()), weeks: route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', track: 'متابعتي', guide: 'دليل الحامل', more: 'حسابي' };
   let html;
   if (route.sub) {
     const t = TOOLS.find(x => x[0] === route.sub);
@@ -128,7 +128,7 @@ function viewSetup(first) {
   const p = S.profile || { method: 'lmp', cycle: 28, ivfDay: 5 };
   const m = p.method;
   return `
-  ${first ? `<div class="welcome">${Art.baby(22, 170)}
+  ${first ? `<div class="welcome">${Photos.figure(24, { cls: 'round' })}
     <h2>أهلاً بكِ في ${APP_NAME} 💗</h2>
     <p class="muted">خارطة طريقك من بداية الحمل حتى لحظة الولادة — أسبوعاً بأسبوع.</p></div>` : ''}
   <div class="card">
@@ -206,62 +206,83 @@ function bindSetup() {
 }
 
 /* ---------- الرئيسية ---------- */
+const ICON = {
+  scale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 10a5 5 0 0 1 8 0M12 10l2-2"/></svg>',
+  ruler: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m3 16 13-13 5 5L8 21zM7 12l2 2M10 9l2 2M13 6l2 2"/></svg>',
+  seed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="10" r="6"/><path d="M12 16v5M9 21h6M10 9.5a2 2 0 0 1 2-2"/></svg>',
+  baby: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 11h.01M15 11h.01M9.5 15a3.5 3.5 0 0 0 5 0M12 3c-1.2 1.8-.4 3.2 1.4 3.2"/></svg>'
+};
+const ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع'];
+const fmtDayMonth = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long' });
+const fmtDate = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
+const wd = (n) => `${Math.floor(n / 7)} أسبوعاً و ${n % 7} ${n % 7 === 1 ? 'يوم' : 'أيام'}`;
+
+function hero(sel) {
+  const w = WEEKS[sel - 1];
+  const chips = w.wt === '—'
+    ? `<div class="float-chip chip-bl"><span class="ic pink">${ICON.seed}</span><div><small>المرحلة</small><b>${w.size}</b></div></div>`
+    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${w.wt}</b></div></div>
+       <div class="float-chip chip-bl"><span class="ic pink">${ICON.ruler}</span><div><small>الطول</small><b>${w.len}</b></div></div>`;
+  return `<div class="hero-stage">
+    <div class="carousel" id="car">
+      <div class="slide">${Photos.figure(sel, { cls: 'round' })}${chips}</div>
+      <div class="slide">${Photos.figure(sel, { labels: true, cls: 'square' })}<span class="slide-cap">الأسبوع ${sel} · أسماء الأجزاء</span></div>
+    </div>
+    <div class="dots" id="dots"><i class="${route.slide ? '' : 'on'}"></i><i class="${route.slide ? 'on' : ''}"></i></div>
+  </div>`;
+}
+function weekStrip(sel, st) {
+  return `<div class="week-strip" id="strip">${WEEKS.map(x => `<button data-wk="${x.w}" class="${x.w === sel ? 'sel' : ''} ${x.w === st.week ? 'cur' : ''}" aria-label="الأسبوع ${x.w}">
+    <span>${x.w === st.week ? 'أسبوعي' : 'أسبوع'}</span><b>${x.w}</b></button>`).join('')}</div>
+  ${sel !== st.week ? `<button class="back-now" data-wk="${st.week}">↩ العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
+}
+function progressCard(st) {
+  return `<div class="card">
+    <div class="prog-head"><h2>أنتِ في الأسبوع ${st.week} واليوم ${ORD[st.extra]}</h2><span class="badge soft">الشهر ${['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع'][st.month - 1]}</span></div>
+    <div class="prog-bar"><span class="end start">${ICON.seed}</span><div class="track"><i style="width:${Math.round(st.pct * 100)}%"></i></div><span class="end">${ICON.baby}</span></div>
+    <div class="prog-dates"><span class="start">الحمل: ${fmtDate.format(st.start)}</span><span class="end">الولادة: ${fmtDate.format(st.due)}</span></div>
+  </div>
+  <div class="grid2" style="margin-bottom:14px">
+    <div class="card mini pattern"><small>مضى من الحمل</small><b>${wd(st.days)}</b></div>
+    <div class="card mini pattern"><small>تبقّى للولادة</small><b>${st.left >= 0 ? wd(st.left) : 'تجاوزتِ الموعد'}</b></div>
+  </div>`;
+}
+
 function viewHome() {
-  const st = status(), w = WEEKS[st.week - 1], p = S.profile;
+  const st = status(), p = S.profile;
+  const sel = route.week || st.week, w = WEEKS[sel - 1];
   const tKey = iso(today());
   const water = S.water[tKey] || 0, vit = !!S.vitamins[tKey];
   const nextAppt = S.appts.filter(a => a.date >= tKey && !a.done).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0];
   const upcoming = APPOINTMENTS.filter(a => a.to >= st.week).slice(0, 2);
-  const tri = TRIMESTERS[st.tri - 1];
-  const born = st.left <= -1 && st.week >= 40;
   return `
-  <div class="card hero">
-    <div class="muted">${p.name ? `مرحباً ${esc(p.name)} 💕` : 'مرحباً بكِ 💕'}</div>
-    ${Art.ring(st.pct, 180, `${st.weeksDone}+${st.extra}`, 'أسبوع + يوم')}
-    <div class="row" style="justify-content:center;margin-top:6px">
-      <span class="badge">الأسبوع ${st.week}</span>
-      <span class="badge alt">${tri.name}</span>
-      <span class="badge soft">الشهر ${st.month}</span>
-    </div>
-    <div class="grid3" style="margin-top:14px">
-      <div class="stat"><b>${Math.max(0, st.left)}</b><small>يوم متبقٍ</small></div>
-      <div class="stat"><b>${Math.round(st.pct * 100)}%</b><small>من الرحلة</small></div>
-      <div class="stat"><b>${Math.max(0, 40 - st.weeksDone)}</b><small>أسبوع متبقٍ</small></div>
-    </div>
-    <p style="margin:12px 0 0"><span class="muted">موعد الولادة:</span> <b>${fmt.format(st.due)}</b>
-      ${fmtHijri ? `<br><span class="muted">${fmtHijri.format(st.due)}</span>` : ''}</p>
-    ${born ? `<p><b>تجاوزتِ موعد الولادة — تابعي مع طبيبك 🩺</b></p>` : ''}
+  ${hero(sel)}
+  <div class="sec-head"><h2>تقدم حملك بالأسابيع</h2><button class="link" data-week="${sel}">عرض التفاصيل ‹</button></div>
+  ${weekStrip(sel, st)}
+  ${progressCard(st)}
+
+  <div class="card">
+    <div class="sec-head" style="margin-top:0"><h2>${p.babyName ? esc(p.babyName) : 'طفلك'} في الأسبوع ${sel}</h2><span class="fruit" style="font-size:2rem">${w.emoji}</span></div>
+    <p class="muted" style="margin:0 0 6px">بحجم ${w.size}</p>
+    <ul class="list">
+      <li>${w.baby[0]}</li>
+      <li>${w.mom[0]}</li>
+      <li>${w.tips[0]}</li>
+    </ul>
+    <button class="btn block" data-week="${sel}" style="margin-top:10px">كل تفاصيل الأسبوع ${sel}</button>
   </div>
 
   <div class="card">
-    <h2>${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</h2>
-    <div class="baby-card">
-      ${Art.baby(st.week, 140)}
-      <div class="grow">
-        <div class="row"><span class="fruit">${w.emoji}</span><div><div class="muted">بحجم</div><b>${w.size}</b></div></div>
-        <div class="grid2" style="margin-top:8px">
-          <div class="stat"><b style="font-size:1rem">${w.len}</b><small>الطول</small></div>
-          <div class="stat"><b style="font-size:1rem">${w.wt}</b><small>الوزن</small></div>
-        </div>
-      </div>
-    </div>
-    <p style="margin:12px 0 4px">👶 ${w.baby[0]}</p>
-    <p style="margin:4px 0">🤰 ${w.mom[0]}</p>
-    <p style="margin:4px 0">💡 ${w.tips[0]}</p>
-    <button class="btn block" data-week="${st.week}" style="margin-top:8px">كل تفاصيل الأسبوع ${st.week} ←</button>
-  </div>
-
-  <div class="card">
-    <h3>✅ مهام اليوم</h3>
+    <h3>مهام اليوم</h3>
     <label class="check ${vit ? 'done' : ''}"><input type="checkbox" id="vitToday" ${vit ? 'checked' : ''}><span>💊 تناولت الفيتامينات (حمض الفوليك / الحديد)</span></label>
     <div class="row" style="margin-top:8px"><span>💧 الماء: <b>${water}</b> / 10 أكواب</span><span class="grow"></span>
-      <button class="btn sm ghost" id="waterMinus">−</button><button class="btn sm" id="waterPlus">+ كوب</button></div>
-    <div class="progress" style="margin-top:8px"><i style="width:${Math.min(100, water * 10)}%"></i></div>
-    ${st.week >= 28 ? `<button class="btn ghost block" style="margin-top:10px" data-sub="kicks">👣 عدّ حركات الجنين اليوم</button>` : ''}
+      <button class="btn sm ghost" id="waterMinus" aria-label="نقص كوب">−</button><button class="btn sm" id="waterPlus">+ كوب</button></div>
+    <div class="progress" style="margin-top:10px"><i style="width:${Math.min(100, water * 10)}%"></i></div>
+    ${st.week >= 28 ? `<button class="btn ghost block" style="margin-top:12px" data-sub="kicks">👣 عدّ حركات الجنين اليوم</button>` : ''}
   </div>
 
   <div class="card">
-    <h3>📆 القادم</h3>
+    <h3>القادم</h3>
     ${nextAppt ? `<div class="item-row"><div class="em">🩺</div><div><b>${esc(nextAppt.title)}</b><div class="muted">${fmt.format(parse(nextAppt.date))} ${esc(nextAppt.time || '')}</div></div></div>` : ''}
     ${upcoming.map(a => `<div class="item-row"><div class="em">🔬</div><div><b>${a.title}</b>
       <div class="muted">الأسبوع ${a.from}${a.to !== a.from ? '–' + a.to : ''} · ${fmtShort.format(weekDate(st, a.from))}</div>
@@ -270,12 +291,10 @@ function viewHome() {
   </div>
 
   <div class="card">
-    <h3>⚡ وصول سريع</h3>
+    <h3>وصول سريع</h3>
     <div class="tools-grid">${(st.week >= 28 ? ['kicks', 'contractions', 'bag', 'weight', 'appts', 'journal'] : ['weight', 'appts', 'journal', 'tests', 'food', 'water']).map(k => toolBtn(TOOLS.find(t => t[0] === k))).join('')}</div>
   </div>
-  <div class="card warn-card" data-sub="warnings" style="cursor:pointer">
-    <b>🚨 علامات تستدعي الطبيب فوراً</b><div class="muted">اضغطي لعرض القائمة</div>
-  </div>
+  <div class="card warn-card nav-row" data-sub="warnings"><span class="ic">🚨</span><div class="grow"><b>علامات تستدعي الطبيب فوراً</b><div class="muted">اضغطي لعرض القائمة</div></div><span class="chev">‹</span></div>
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
 const toolBtn = ([k, ic, name]) => `<div class="tool" data-sub="${k}"><span>${ic}</span>${name}</div>`;
@@ -294,43 +313,28 @@ function viewWeeks() {
   const w = WEEKS[sel - 1];
   const tri = TRIMESTERS[sel <= 13 ? 0 : sel <= 27 ? 1 : 2];
   const date = weekDate(st, sel);
-  const labels = route.labels !== false;
-  const sono = route.art === 'sono';
+  const labels = true;
   const sec = SECS.some(x => x[0] === route.sec) ? route.sec : 'baby';
   const items = sec === 'todo' ? w.todo : w[sec].filter(x => x !== '—');
   const away = sel !== st.week;
   return `${modeSeg}
-  <div class="week-strip" id="strip">
-    ${WEEKS.map(x => `<button data-wk="${x.w}" class="${x.w === sel ? 'sel' : ''} ${x.w === st.week ? 'cur' : ''}">
-      <small>${x.w === st.week ? '📍 أنتِ' : 'أسبوع'}</small><b>${x.w}</b></button>`).join('')}
-  </div>
-  ${away ? `<button class="back-now" data-wk="${st.week}">📍 العودة لأسبوعي الحالي (${st.week})</button>` : ''}
-  <div class="card hero">
-    <div class="row" style="justify-content:center">
-      <span class="badge">الأسبوع ${sel}</span><span class="badge alt">${tri.name}</span>
-      ${!away ? '<span class="badge soft">أنتِ هنا 📍</span>' : `<span class="badge soft">${sel < st.week ? 'أسبوع مضى' : 'أسبوع قادم'}</span>`}
+  ${hero(sel)}
+  ${weekStrip(sel, st)}
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="row"><span class="badge">الأسبوع ${sel}</span><span class="badge alt">${tri.name}</span></div>
+      <span class="badge soft">${!away ? 'أنتِ هنا 📍' : sel < st.week ? 'أسبوع مضى' : 'أسبوع قادم'}</span>
     </div>
-    <div class="row art-tools">
-      <div class="seg" id="artSeg">
-        <button data-art="draw" class="${!sono ? 'on' : ''}">🎨 رسم</button>
-        <button data-art="sono" class="${sono ? 'on' : ''}">🩻 سونار</button></div>
-      <button class="chip ${labels ? 'on' : ''}" id="lblToggle">🏷️ ${labels ? 'إخفاء الأسماء' : 'إظهار الأسماء'}</button>
-    </div>
-    <div class="art-frame">${sono ? Art.sono(sel, 250, { labels }) : Art.baby(sel, 250, { labels })}</div>
-    <p class="muted" style="margin:4px 0 10px;font-size:.8rem">${sel <= 3 ? 'منظر مجهري تقريبي لما يحدث داخل الجسم في هذا الأسبوع' : 'رسم تقريبي يوضح شكل الجنين ونسبة حجمه داخل الرحم'}</p>
-    <div class="size-row">
-      <span class="fruit">${w.emoji}</span>
-      <div><div class="muted">حجم الجنين يعادل</div><b style="font-size:1.15rem">${w.size}</b></div>
-      ${Art.mom(sel, 90)}
-    </div>
+    <div class="size-row" style="margin-top:12px"><span class="fruit">${w.emoji}</span>
+      <div><div class="muted">حجم الجنين يعادل</div><b style="font-size:1.15rem">${w.size}</b></div></div>
     <div class="grid3" style="margin-top:12px">
       <div class="stat"><b style="font-size:.95rem">${w.len}</b><small>الطول</small></div>
       <div class="stat"><b style="font-size:.95rem">${w.wt}</b><small>الوزن</small></div>
       <div class="stat"><b style="font-size:.95rem">${fmtShort.format(date)}</b><small>يبدأ في</small></div>
     </div>
   </div>
-  ${labels ? `<details class="card legend" ${route.legend ? 'open' : ''} id="legend"><summary><b>🔎 ماذا تعني الأسماء في الرسم؟</b></summary>
-    ${Art.parts(sel).map(l => `<div class="item-row"><span class="pill-name">${l.n}</span><div class="muted grow">${l.d}</div></div>`).join('')}</details>` : ''}
+  ${labels ? `<details class="card legend" ${route.legend !== false ? 'open' : ''} id="legend"><summary><b>🔎 ماذا يعني كل جزء في الصورة؟</b></summary>
+    ${Photos.parts(sel).map(l => `<div class="item-row"><span class="pill-name">${l.n}</span><div class="muted grow">${l.d}</div></div>`).join('')}</details>` : ''}
   <div class="sec-tabs" id="secTabs">
     ${SECS.map(([k, ic, name]) => `<button data-sec="${k}" class="${sec === k ? 'on' : ''}"><span>${ic}</span>${name}${k === 'todo' && w.todo.length ? `<i>${w.todo.length}</i>` : ''}</button>`).join('')}
   </div>
@@ -343,7 +347,7 @@ function viewWeeks() {
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
     <button class="btn grow" data-wk="${Math.min(42, sel + 1)}" ${sel === 42 ? 'disabled' : ''}>الأسبوع ${Math.min(42, sel + 1)} ←</button>
   </div>
-  ${away ? `<button class="btn ghost block" data-wk="${st.week}" style="margin-top:10px">📍 العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
+  ${away ? `<button class="btn ghost block" data-wk="${st.week}" style="margin-top:10px">↩ العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
 }
 
 /* ---------- خارطة الطريق ---------- */
@@ -366,7 +370,7 @@ function viewRoadmap() {
       const cls = i < st.week ? 'done' : i === st.week ? 'now' : '';
       html += `<div class="tl-item ${cls}"><span class="dot"></span>
         <div class="card" data-week="${i}"><div class="row">
-          <span class="fruit" style="font-size:1.8rem">${w.emoji}</span>
+          <img class="tl-thumb" src="${Photos.src(i)}" alt="" loading="lazy">
           <div class="grow"><b>الأسبوع ${i}</b> ${i === st.week ? '<span class="badge soft">أنتِ هنا</span>' : ''}
             <div class="muted">${fmtShort.format(weekDate(st, i))} · ${w.size}</div></div>
         </div>
@@ -751,11 +755,18 @@ function bind() {
   app.querySelectorAll('[data-cup]').forEach(b => b.onclick = () => { const n = +b.dataset.cup; S.water[t] = S.water[t] === n ? n - 1 : n; save(); render(false); });
 
   // التغذية والأسماء
+  const car = $('#car');
+  if (car) {
+    const dots = [...document.querySelectorAll('#dots i')];
+    if (route.slide) car.children[route.slide]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    car.onscroll = () => {
+      const i = Math.round(Math.abs(car.scrollLeft) / car.clientWidth);
+      if (i !== (route.slide || 0)) { route.slide = i; history.replaceState(route, ''); dots.forEach((d, k) => d.classList.toggle('on', k === i)); }
+    };
+  }
   app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { route.mode = b.dataset.mode; history.replaceState(route, ''); render(); });
   app.querySelectorAll('[data-sec]').forEach(b => b.onclick = () => { route.sec = b.dataset.sec; history.replaceState(route, ''); render(false); });
-  on('#lblToggle', () => { route.labels = route.labels === false; history.replaceState(route, ''); render(false); });
   const lg = $('#legend'); if (lg) lg.ontoggle = () => { route.legend = lg.open; history.replaceState(route, ''); };
-  app.querySelectorAll('#artSeg button').forEach(b => b.onclick = () => { route.art = b.dataset.art; history.replaceState(route, ''); render(false); });
   app.querySelectorAll('#foodSeg button').forEach(b => b.onclick = () => { route.tab = b.dataset.ft; render(false); });
   app.querySelectorAll('#nameSeg button').forEach(b => b.onclick = () => { route.tab = b.dataset.g; render(false); });
   app.querySelectorAll('[data-name]').forEach(b => b.onclick = () => {
