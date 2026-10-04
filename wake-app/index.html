@@ -236,7 +236,7 @@ body.flash .sky{background:rgba(239,90,74,.25)}
     <p><b>4. حارس الصباح:</b> كل عادة سيئة تتحول إلى مهمة تُثبتها: صورة مكان الماء، صورة نافذة مضيئة، خطوات وقرفصاء يعدّها حساس الحركة، بقاء داخل التطبيق. لا يكفي أن تضغط "تم". ويسألك فجأة "هل أنت صاحٍ؟"؛ إن لم ترد خلال 30 ثانية عاد المنبه وعليك تصوير مكان الصحوة من جديد.</p>
     <p><b>إن أغلقت التطبيق:</b> عند فتحه يرن المنبه فوراً مع عقوبة (−20 نقطة و+5 دقائق حراسة). وإن لم تعد خلال 3 ساعات من الموعد، يُسجَّل الصباح ضائعاً وتذبل النبتة بقوة.</p>
     <p><b>5. الحكم:</b> تحصل على نتيجة الصباح، وتنمو نبتتك أو تذبل.</p>
-    <p>ملاحظة: هذا تطبيق ويب، لذلك يجب أن تبقى الصفحة مفتوحة والجوال على الشاحن وصوته مرتفعاً. التطبيق يطلب إبقاء الشاشة مضاءة.</p>
+    <p id="webNote">ملاحظة: هذا تطبيق ويب، لذلك يجب أن تبقى الصفحة مفتوحة والجوال على الشاحن وصوته مرتفعاً. التطبيق يطلب إبقاء الشاشة مضاءة. نسخة أندرويد (APK) ترن والجوال مقفل.</p>
   </div>
 </section>
 
@@ -348,6 +348,8 @@ body.flash .sky{background:rgba(239,90,74,.25)}
 (() => {
 "use strict";
 const $ = id => document.getElementById(id);
+const NATIVE = window.SahwaNative || null; // set by the Android app: real alarm clock + alarm-stream sound
+const nat = (fn, ...a) => { try{ if(NATIVE) NATIVE[fn](...a); }catch(e){} };
 const store = {
   get(k, d){ try{ const v = localStorage.getItem("sahwa."+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
   set(k, v){ try{ localStorage.setItem("sahwa."+k, JSON.stringify(v)); }catch(e){} }
@@ -452,14 +454,17 @@ function startAlarm(){
   const beat = () => {
     const ramp = Math.min(1, 0.35 + (Date.now()-ringStartLocal)/30000 * 0.65); // full volume in 30 s
     alarmGain.gain.setTargetAtTime(ramp, ac.currentTime, 0.3);
-    const v = currentVoice(); v.play(R.voices.pitch);
-    $("ringVoice").textContent = `النغمة الآن: ${v.name} · تتبدل كل 25 ثانية`;
+    const v = currentVoice();
+    if(NATIVE) $("ringVoice").textContent = "صوت المنبه من نظام أندرويد على أعلى درجة · يتبدل كل 25 ثانية";
+    else { v.play(R.voices.pitch); $("ringVoice").textContent = `النغمة الآن: ${v.name} · تتبدل كل 25 ثانية`; }
     document.body.classList.toggle("flash");
   };
   beat(); alarmTimer = setInterval(beat, 1100);
-  if(navigator.vibrate){ clearInterval(vibTimer); vibTimer = setInterval(() => navigator.vibrate([600,200,600]), 1500); }
+  nat("startRing");
+  if(navigator.vibrate && !NATIVE){ clearInterval(vibTimer); vibTimer = setInterval(() => navigator.vibrate([600,200,600]), 1500); }
 }
 function stopAlarm(){
+  nat("stopRing");
   clearInterval(alarmTimer); alarmTimer = null; clearInterval(vibTimer); vibTimer = null;
   if(navigator.vibrate) navigator.vibrate(0);
   document.body.classList.remove("flash");
@@ -662,6 +667,7 @@ function arm(testSeconds){
   R = {phase:"armed", alarmAt, test:!!testSeconds, sunrise:S.sunrise && !testSeconds, early:false,
        snoozes:0, escapes:0, missed:0, closed:0, unverified:0, step:0, solved:0, fails:0, alt:-1,
        guardStart:0, guardEnd:0, done:{}, texts:{}, fb:{}, nextCheck:0, rangAt:0, mini:null, matches:[]};
+  nat("schedule", alarmAt);
   saveR(); enter("armed");
 }
 function enter(phase){
@@ -674,7 +680,7 @@ function enter(phase){
     if(!R.early || R.mini || Date.now() >= R.alarmAt) startAlarm();
     renderMission();
   }
-  if(phase === "guard"){ stopAlarm(); show("s-guard"); renderGuard(); }
+  if(phase === "guard"){ stopAlarm(); nat("setGuard", true); show("s-guard"); renderGuard(); }
   if(phase === "done"){ stopAlarm(); stopChime(); show("s-done"); }
 }
 function renderArmed(){
@@ -774,6 +780,7 @@ $("btnSnooze").onclick = () => {
   if(R.snoozes >= SNOOZE_MIN.length) return;
   const mins = SNOOZE_MIN[R.snoozes];
   R.snoozes++; R.step = 0; R.solved = 0; R.fails = 0; R.alt = -1; R.alarmAt = Date.now() + mins*60000; R.sunrise = false;
+  nat("schedule", R.alarmAt);
   saveR(); enter("armed"); toast(`غفوة ${mins} د. الدَّين الآن ${R.snoozes*DEBT_SQUATS} قرفصاء.`);
 };
 function punish(why){ // back to the alarm; out of bed again if a wake spot exists
@@ -918,9 +925,13 @@ function openCheck(){
   btn.onclick = () => { clearInterval(checkTimer); ov.hidden = true; softDing(true); R.nextCheck = Date.now() + rnd(180,330)*1000; saveR(); };
 }
 
-/* leaving the app = escape */
+/* leaving the app = escape (the camera opened for a proof photo does not count) */
+let camAt = 0;
+document.addEventListener("click", e => { if(e.target.closest && e.target.closest(".cam")){ camAt = Date.now(); if(R){ R.camAt = camAt; saveR(); } } }, true);
+const inCamera = () => Date.now() - Math.max(camAt, (R && R.camAt) || 0) < 180000;
 document.addEventListener("visibilitychange", () => {
   if(!R) return;
+  if(document.visibilityState === "visible" && inCamera()){ camAt = 0; R.camAt = 0; R.leftAt = 0; saveR(); holdScreen(); return; }
   if(document.visibilityState === "hidden"){
     if(["ring","guard"].includes(R.phase)){ R.leftAt = Date.now(); saveR(); }
   } else {
@@ -935,7 +946,7 @@ document.addEventListener("visibilitychange", () => {
 /* ---------- verdict ---------- */
 function scoreOf(r){ return Math.max(0, Math.min(100, 100 - r.snoozes*15 - r.escapes*10 - r.missed*5 - r.closed*20 + (r.early ? 15 : 0))); }
 function finish(){
-  stopRunning();
+  stopRunning(); nat("setGuard", false); nat("cancel");
   const score = scoreOf(R);
   const wakeMin = R.wokeAt && R.rangAt ? Math.round((R.wokeAt - R.rangAt)/60000) : 0;
   if(!R.test){
@@ -964,6 +975,7 @@ function finish(){
   R = null; store.set("run", null);
 }
 function recordLost(){ // closed the alarm and never came back
+  nat("setGuard", false); nat("cancel");
   if(!R.test){
     D.history = D.history.filter(x => x.date !== todayKey(new Date(R.alarmAt)))
       .concat({date:todayKey(new Date(R.alarmAt)), score:0, snoozes:R.snoozes, escapes:R.escapes, missed:R.missed, closed:true, early:false}).slice(-60);
@@ -1019,18 +1031,23 @@ $("btnArm").onclick = () => {
 };
 $("btnTest").onclick = () => { readForm(); arm(10); toast("سيرن المنبه بعد 10 ثوانٍ. هذه تجربة لا تُحسب."); };
 $("btnHow").onclick = () => { $("howBox").hidden = !$("howBox").hidden; };
-$("btnDisarm").onclick = () => { stopChime(); R = null; store.set("run", null); show("s-home"); renderHome(); toast("أُلغي المنبه."); };
+$("btnDisarm").onclick = () => { stopChime(); nat("cancel"); R = null; store.set("run", null); show("s-home"); renderHome(); toast("أُلغي المنبه."); };
 $("btnEarly").onclick = () => { audioInit(); stopChime(); R.early = true; R.rangAt = Date.now(); saveR(); enter("ring"); toast("أحسنت. أكمل المهام لتثبت أنك صاحٍ."); };
 $("badChips").addEventListener("change", () => { S.bad = [...document.querySelectorAll("#badChips input:checked")].map(i => i.value); saveS(); renderSwap(); renderSpots(); });
 $("btnResume").onclick = () => { $("ovResume").hidden = true; audioInit(); holdScreen(); enter(R.phase); };
 
 /* ---------- boot: did the user close the alarm to escape? ---------- */
+if(NATIVE){
+  $("webNote").textContent = "نسخة أندرويد: المنبه يرن والجوال مقفل والتطبيق مغلق، على صوت المنبه بأعلى درجة. إن خرجت أثناء الحراسة يرن بعد دقيقة.";
+  document.querySelectorAll("#s-armed .panel.flat p.muted").forEach((el,i) => { if(i < 2) el.textContent = ["• يمكنك قفل الشاشة. المنبه سيرن ويفتح التطبيق فوق شاشة القفل.", "• اشحن الجوال في مكان الصحوة بعيداً عن السرير."][i]; });
+}
 renderHome();
 tick();
 if(R && R.phase && R.phase !== "done"){
   const now = Date.now(), active = ["sunrise","ring","guard"].includes(R.phase);
-  const missedAlarm = R.phase === "armed" && now > R.alarmAt + 60000;
-  const closedMidMorning = active && (now - (R.beat || 0) > 60000 || (R.leftAt && now - R.leftAt > 4000));
+  // The Android app is woken by the system alarm, so a late open there is not an escape.
+  const missedAlarm = R.phase === "armed" && now > R.alarmAt + 60000 && !NATIVE;
+  const closedMidMorning = active && !inCamera() && (now - (R.beat || 0) > 60000 || (R.leftAt && now - R.leftAt > 4000));
   let msg = "أُعيد تحميل الصفحة. اضغط ليعود الصوت والحراسة كما كانت.", title = "أكمل الحراسة";
   if((active || missedAlarm) && now - R.alarmAt > 3*3600000 && !R.test){
     recordLost();
@@ -1046,6 +1063,7 @@ if(R && R.phase && R.phase !== "done"){
     msg = "إغلاق التطبيق لا يوقف المنبه. العقوبة: −20 نقطة و+5 دقائق حراسة، والمنبه سيرن الآن حتى تُكمل المهام.";
     $("btnResume").textContent = "ابدأ";
   }
+  if(NATIVE && R && R.phase === "armed" && now >= R.alarmAt && title === "أكمل الحراسة"){ show("s-home"); enter("ring"); return; }
   $("ovResume").querySelector("h2").textContent = title;
   $("ovResume").querySelector("p").textContent = msg;
   $("ovResume").hidden = false;

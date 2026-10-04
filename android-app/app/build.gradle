@@ -1,0 +1,35 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.sahwa.alarm"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.sahwa.alarm"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    lint {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.13.1"
+    implementation "androidx.webkit:webkit:1.11.0"
+}
+
+// The UI is the same single-file web app published in /wake-app.
+tasks.register("copyWebApp", Copy) {
+    from "$rootDir/../wake-app/sahwa.html"
+    into "$projectDir/src/main/assets"
+}
+preBuild.dependsOn "copyWebApp"
