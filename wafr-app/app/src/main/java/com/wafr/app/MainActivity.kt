@@ -22,6 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wafr.app.notify.Notifications
 import com.wafr.app.notify.ReminderScheduler
 import com.wafr.app.ui.MainViewModel
+import androidx.compose.runtime.mutableStateOf
+import com.wafr.app.ui.NavRequest
 import com.wafr.app.ui.Overlay
 import com.wafr.app.ui.Tab
 import com.wafr.app.ui.WafrRoot
@@ -31,6 +33,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val vm: MainViewModel by viewModels()
+    private val nav = mutableStateOf(NavRequest())
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         appScope.launch { repo.changed() }
     }
@@ -38,10 +41,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val openAdd = intent?.action == ACTION_ADD
+        nav.value = parse(intent)
         // Debug-only hooks used by the CI screenshot job.
-        val startTab = intent?.getStringExtra("tab")?.let { t -> Tab.entries.firstOrNull { it.name == t } } ?: Tab.HOME
-        val startOverlay = intent?.getStringExtra("overlay")?.let { o -> Overlay.entries.firstOrNull { it.name == o } } ?: Overlay.NONE
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo", false) == true) {
             appScope.launch { if (repo.allExpenses().isEmpty()) repo.seedDemo() }
         }
@@ -67,13 +68,25 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onAskNotifications = { askNotifications() },
                             )
-                            else -> WafrRoot(vm, openAdd, startTab, startOverlay)
+                            else -> WafrRoot(vm, nav.value)
                         }
                     }
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        nav.value = parse(intent)
+    }
+
+    private fun parse(i: Intent?) = NavRequest(
+        tab = i?.getStringExtra("tab")?.let { t -> Tab.entries.firstOrNull { it.name == t } },
+        overlay = i?.getStringExtra("overlay")?.let { o -> Overlay.entries.firstOrNull { it.name == o } },
+        add = i?.action == ACTION_ADD,
+    )
 
     override fun onResume() {
         super.onResume()

@@ -85,8 +85,8 @@ start --es overlay HISTORY; shot 65-history 5
 adb shell am force-stop $pkg
 adb shell am start -W -a com.wafr.app.ADD -n "$pkg/.MainActivity" >/dev/null
 sleep 4
-tap_text "تسوق وملابس"
-for k in 9 0 0; do tap_text "$k"; done
+tap_text "مطاعم وقهوة"
+for k in 3 5 0; do tap_text "$k"; done
 shot 70-add-expense 3
 
 # 4. Floating quick-add (tile / widget target)
@@ -98,11 +98,13 @@ shot 71-quick-add 5
 adb shell am force-stop $pkg
 start --ez notify true
 sleep 4
+adb shell dumpsys notification --noredact | grep -A3 "pkg=com.wafr.app" | head -40 > "$out/notifications.txt" || true
 adb shell cmd statusbar expand-notifications
-shot 80-notification-shade 4
+sleep 3
+adb exec-out screencap -p > "$out/80-notification-shade.png"
+adb shell input swipe 540 700 540 1800 300
+sleep 2
+adb exec-out screencap -p > "$out/81-notification-shade-full.png"
 adb shell cmd statusbar collapse
 
-# 6. Light theme
-adb shell am force-stop $pkg
-adb shell "run-as $pkg ls files/datastore" || true
 echo done

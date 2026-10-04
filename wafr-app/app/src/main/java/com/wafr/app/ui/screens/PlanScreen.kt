@@ -95,7 +95,7 @@ fun PlanScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 GlassCard(Modifier.weight(1f), onClick = { dialog = PlanDialog.Budget }) {
-                    Text("الوَفْرة الشهرية", color = c.muted, style = MaterialTheme.typography.bodySmall)
+                    Text("الميزانية الشهرية", color = c.muted, style = MaterialTheme.typography.bodySmall)
                     Text(if (settings.monthlyBudget > 0) Money.format(settings.monthlyBudget, settings.currency) else "حدّدها ✏️", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                 }
                 GlassCard(Modifier.weight(1f), onClick = { dialog = PlanDialog.Income }) {
@@ -111,7 +111,7 @@ fun PlanScreen(
                 GlassCard(Modifier.fillMaxWidth()) {
                     Text(
                         if (save >= 0) "💰 خطتك تدّخر ${Money.format(save, settings.currency)} شهرياً ($rate% من دخلك)"
-                        else "⚠️ وَفْرتك أعلى من دخلك بـ ${Money.format(-save, settings.currency)}",
+                        else "⚠️ ميزانيتك أعلى من دخلك بـ ${Money.format(-save, settings.currency)}",
                         fontWeight = FontWeight.SemiBold,
                         color = if (save >= 0) c.good else c.danger,
                     )
@@ -126,7 +126,7 @@ fun PlanScreen(
             SectionTitle("حدود الفئات", action = "+ فئة", onAction = { dialog = PlanDialog.Cat(null) })
             if (limitsTotal > 0 && settings.monthlyBudget > 0) {
                 Text(
-                    "مجموع الحدود ${Money.format(limitsTotal, settings.currency)} من وَفْرة ${Money.format(settings.monthlyBudget, settings.currency)}",
+                    "مجموع الحدود ${Money.format(limitsTotal, settings.currency)} من ميزانية ${Money.format(settings.monthlyBudget, settings.currency)}",
                     style = MaterialTheme.typography.bodySmall, color = if (limitsTotal > settings.monthlyBudget) c.danger else c.muted,
                 )
             }
@@ -252,7 +252,7 @@ fun PlanScreen(
 
     when (val d = dialog) {
         PlanDialog.Budget -> AmountDialog(
-            "الوَفْرة الشهرية", settings.monthlyBudget, settings.currency,
+            "الميزانية الشهرية", settings.monthlyBudget, settings.currency,
             hint = if (settings.monthlyIncome > 0) "اقتراح: ${Money.format(settings.monthlyIncome * 7 / 10, settings.currency)} (70% من دخلك)" else null,
             onDismiss = { dialog = null },
         ) { v -> vm.updateSettings { it.copy(monthlyBudget = v) }; dialog = null }

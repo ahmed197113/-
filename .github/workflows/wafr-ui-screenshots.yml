@@ -50,4 +50,6 @@ jobs:
           name: Wafr UI screenshots ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           prerelease: true
-          files: ${{ runner.temp }}/shots/*.png
+          files: |
+            ${{ runner.temp }}/shots/*.png
+            ${{ runner.temp }}/shots/*.txt

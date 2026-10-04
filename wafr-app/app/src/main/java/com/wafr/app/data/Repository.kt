@@ -263,6 +263,8 @@ class Repository(private val context: Context) {
         settingsStore.update {
             it.copy(onboarded = true, userName = "أحمد", monthlyBudget = 600000, monthlyIncome = 900000, cycleStartDay = 1)
         }
+        val limits = mapOf("طعام وبقالة" to 120000L, "مطاعم وقهوة" to 40000L, "تسوق وملابس" to 50000L, "مواصلات ووقود" to 60000L, "ترفيه" to 25000L)
+        categoriesOnce().forEach { cat -> limits[cat.name]?.let { db.categories().update(cat.copy(monthlyLimit = it)) } }
         val cats = categoriesOnce().associateBy { it.name }
         fun c(name: String) = cats[name]?.id ?: 0L
         val today = LocalDate.now()

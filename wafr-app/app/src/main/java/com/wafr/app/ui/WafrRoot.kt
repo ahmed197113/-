@@ -48,6 +48,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,12 +88,15 @@ enum class Tab(val label: String, val icon: ImageVector) {
 
 enum class Overlay { NONE, SETTINGS, HISTORY, PLANNER }
 
+/** A navigation request from an intent (launcher shortcut, notification, widget). */
+data class NavRequest(val tab: Tab? = null, val overlay: Overlay? = null, val add: Boolean = false, val id: Long = System.nanoTime())
+
 /** Editor sheet state: null = closed. */
 private data class EditorState(val expense: Expense? = null)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WafrRoot(vm: MainViewModel, openAddOnStart: Boolean, startTab: Tab = Tab.HOME, startOverlay: Overlay = Overlay.NONE) {
+fun WafrRoot(vm: MainViewModel, request: NavRequest) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val snap by vm.snapshot.collectAsStateWithLifecycle()
     val categories by vm.categories.collectAsStateWithLifecycle()
@@ -105,9 +109,14 @@ fun WafrRoot(vm: MainViewModel, openAddOnStart: Boolean, startTab: Tab = Tab.HOM
     val suggestions by vm.suggestions.collectAsStateWithLifecycle()
     val game by vm.game.collectAsStateWithLifecycle()
 
-    var tab by rememberSaveable { mutableStateOf(startTab) }
-    var overlay by rememberSaveable { mutableStateOf(startOverlay) }
-    var editor by remember { mutableStateOf(if (openAddOnStart) EditorState() else null) }
+    var tab by rememberSaveable { mutableStateOf(request.tab ?: Tab.HOME) }
+    var overlay by rememberSaveable { mutableStateOf(request.overlay ?: Overlay.NONE) }
+    var editor by remember { mutableStateOf(if (request.add) EditorState() else null) }
+    LaunchedEffect(request.id) {
+        request.tab?.let { tab = it; overlay = Overlay.NONE }
+        request.overlay?.let { overlay = it }
+        if (request.add) editor = EditorState()
+    }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 

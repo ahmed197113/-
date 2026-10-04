@@ -92,8 +92,10 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             Spacer(Modifier.height(28.dp))
                             Feature("⚡", "سجّل في 3 ثوانٍ", "من الإشعار، أو ستارة الإشعارات، أو الويدجت، دون فتح التطبيق.")
                             Feature("💭", "يسألك كل 5 ساعات", "«هل صرفت شيئاً؟» وتجيب بكتابة المبلغ مباشرة في الإشعار.")
-                            Feature("⚖️", "ضروري أم كمالي؟", "كل مصروف يُوزن… فتعرف بالضبط كم كان يمكنك أن توفّر.")
-                            Feature("🎯", "المسموح لك اليوم", "رقم واحد واضح يوميّاً يحميك من تجاوز وَفْرة الشهر.")
+                            Feature("🛍️", "ضروري أم كمالي؟", "كل مصروف يُصنّف… فتعرف بالضبط كم كان يمكنك أن توفّر.")
+                            Feature("🎯", "المسموح لك اليوم", "رقم واحد واضح يوميّاً، وتنبيه فوري عند تجاوز ميزانية أي بند.")
+                            Feature("🧭", "مخطط الراتب", "قل لي راتبك وأوزّعه لك حسب قواعد كتب الثراء.")
+                            Feature("🎲", "العب وتعلّم", "لعبة «سباق الحرية» المستوحاة من «الأب الغني والأب الفقير».")
                             Feature("🔒", "خصوصية تامة", "بياناتك على جهازك فقط. بلا إعلانات ولا اشتراكات.")
                         }
                         1 -> {
@@ -107,12 +109,12 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             }
                             Spacer(Modifier.height(18.dp))
                             AmountField(income, { income = it }, "دخلك الشهري (اختياري)", currency)
-                            Text("يساعدنا على اقتراح وَفْرة وحساب نسبة ادّخارك.", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            Text("يساعدنا على اقتراح ميزانية وحساب نسبة ادّخارك.", style = MaterialTheme.typography.bodySmall, color = c.muted)
                         }
                         2 -> {
-                            Title("وَفْرتك الشهرية 🎯", "كم تريد أن تصرف كحد أقصى في الشهر؟ (بدون الادخار)")
+                            Title("ميزانيتك الشهرية 🎯", "كم تريد أن تصرف كحد أقصى في الشهر؟ (بدون الادخار)")
                             val inc = parseAmount(income) ?: 0L
-                            AmountField(budget, { budget = it }, "الوَفْرة", currency)
+                            AmountField(budget, { budget = it }, "الميزانية", currency)
                             if (inc > 0) {
                                 Spacer(Modifier.height(10.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -124,7 +126,7 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             }
                             Spacer(Modifier.height(22.dp))
                             Text("يبدأ شهرك يوم: ${day.toInt()}", fontWeight = FontWeight.SemiBold)
-                            Text("اختر يوم نزول الراتب، فتتطابق الوَفْرة مع واقعك.", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            Text("اختر يوم نزول الراتب، فتتطابق الميزانية مع واقعك.", style = MaterialTheme.typography.bodySmall, color = c.muted)
                             Slider(day, { day = it }, valueRange = 1f..28f, steps = 26)
                             val b = parseAmount(budget) ?: 0L
                             if (b > 0) {

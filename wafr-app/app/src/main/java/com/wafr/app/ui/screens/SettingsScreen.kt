@@ -139,7 +139,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
             GlassCard(Modifier.fillMaxWidth()) {
                 ActionRow("🔔", "اختصار في ستارة الإشعارات", "زر «سجّل مصروف» في الإعدادات السريعة") { requestTile(context) }
                 Hairline()
-                ActionRow("🧩", "ويدجت الوَفْرة (كبير)", "المسموح اليوم + أزرار ضروري/كمالي") { requestWidget(context, false) }
+                ActionRow("🧩", "ويدجت الميزانية (كبير)", "المسموح اليوم + أزرار ضروري/كمالي") { requestWidget(context, false) }
                 Hairline()
                 ActionRow("➕", "ويدجت صغير", "رقم اليوم وزر إضافة") { requestWidget(context, true) }
                 Hairline()

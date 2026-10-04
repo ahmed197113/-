@@ -24,9 +24,9 @@ object Insights {
 
         if (s.hasBudget) {
             if (s.remaining < 0) {
-                out += Insight("🚨", "تجاوزت الوَفْرة", "تجاوزت وَفْرة الدورة بمقدار ${s.money(-s.remaining)}. ركّز على الضروريات فقط حتى ${s.period.end.dayOfMonth}/${s.period.end.monthValue}.", Tone.WARN)
+                out += Insight("🚨", "تجاوزت الميزانية", "تجاوزت ميزانية الدورة بمقدار ${s.money(-s.remaining)}. ركّز على الضروريات فقط حتى ${s.period.end.dayOfMonth}/${s.period.end.monthValue}.", Tone.WARN)
             } else if (s.projected > s.budget) {
-                out += Insight("📉", "انتبه للوتيرة", "بهذا المعدل ستتجاوز وَفْرتك بحوالي ${s.money(s.projected - s.budget)}. حاول ألا تتعدى ${s.money(s.dailyAllowance)} يومياً.", Tone.WARN)
+                out += Insight("📉", "انتبه للوتيرة", "بهذا المعدل ستتجاوز ميزانيتك بحوالي ${s.money(s.projected - s.budget)}. حاول ألا تتعدى ${s.money(s.dailyAllowance)} يومياً.", Tone.WARN)
             } else {
                 out += Insight("🎯", "أنت على المسار الصحيح", "بهذا المعدل ستنهي الدورة وقد وفّرت حوالي ${s.money(s.budget - s.projected)}. استمر!", Tone.GOOD)
             }
