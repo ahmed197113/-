@@ -2,7 +2,7 @@
 import { L } from './i18n';
 import { date, money } from './format';
 
-export type TemplateKind = 'before3' | 'dueDay' | 'late' | 'turn' | 'invite' | 'thanks' | 'lottery';
+export type TemplateKind = 'before3' | 'dueDay' | 'late' | 'turn' | 'invite' | 'thanks' | 'lottery' | 'statement';
 
 export interface TemplateVars {
   name: string;
@@ -17,6 +17,7 @@ export interface TemplateVars {
   link?: string;
   organizer?: string;
   order?: string;
+  statement?: string;
 }
 
 export function template(kind: TemplateKind, v: TemplateVars): string {
@@ -52,6 +53,11 @@ export function template(kind: TemplateKind, v: TemplateVars): string {
       return L(
         `🎲 نتيجة قرعة "${v.circle}"\n(البذرة: ${v.code} — يمكن لأي عضو التحقق منها في التطبيق)\n\n${v.order}\n\nبالتوفيق للجميع 🤍`,
         `🎲 "${v.circle}" lottery result\n(seed: ${v.code} — verifiable in the app)\n\n${v.order}`,
+      );
+    case 'statement':
+      return L(
+        `📋 كشف حساب ${v.name} — "${v.circle}"\n${v.statement}\n\nللاستفسار تواصل معي. شكراً لالتزامك 🤍`,
+        `📋 ${v.name}'s statement — "${v.circle}"\n${v.statement}`,
       );
     case 'thanks':
       return L(

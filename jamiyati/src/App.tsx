@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { todayISO } from './domain/dates';
 import { L, setLang } from './lib/i18n';
-import { runReminders } from './lib/reminders';
+import { runReminders, syncNativeSchedule } from './lib/reminders';
 import { getDB, useDB } from './store/db';
 import { Icon } from './ui/components/Icon';
 import { Toaster } from './ui/components/ui';
@@ -23,18 +23,22 @@ import { SettingsScreen } from './ui/screens/Settings';
 
 const UNLOCK_KEY = 'jamiyati:unlocked';
 
+function sessionUnlocked() {
+  try {
+    return sessionStorage.getItem(UNLOCK_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
   const db = useDB();
   const { settings } = db;
   setLang(settings.lang);
   const { parts } = useRoute();
-  const [unlocked, setUnlocked] = useState(() => {
-    try {
-      return sessionStorage.getItem(UNLOCK_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
+  const [unlockedState, setUnlocked] = useState(false);
+  // يُقرأ في كل عرض: تفعيل القفل من الإعدادات يعلّم الجلسة كمفتوحة فلا يظهر القفل فوراً
+  const unlocked = unlockedState || sessionUnlocked();
 
   useEffect(() => {
     const el = document.documentElement;
@@ -44,6 +48,13 @@ export function App() {
     const dark = settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0b1412' : '#0f766e');
   }, [settings.theme, settings.fontScale]);
+
+  // في تطبيق أندرويد: إعادة جدولة التذكيرات بعد كل تغيير في البيانات (مؤجلة قليلاً)
+  useEffect(() => {
+    if (!db.currentUserId) return;
+    const id = setTimeout(() => syncNativeSchedule(getDB()), 800);
+    return () => clearTimeout(id);
+  }, [db]);
 
   // التذكيرات: عند الفتح، وعند العودة للتطبيق، وكل ساعة
   useEffect(() => {

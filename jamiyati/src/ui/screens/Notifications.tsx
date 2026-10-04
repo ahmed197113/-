@@ -6,13 +6,14 @@ import { useDB } from '../../store/db';
 import { Icon } from '../components/Icon';
 import { Empty, toast, TopBar } from '../components/ui';
 import { go } from '../router';
+import { isNative, notificationPermission, requestNotifications } from '../../lib/native';
 
 const ICON = { reminder: 'clock', proof: 'receipt', turn: 'star', summary: 'chart', swap: 'swap', info: 'bell' } as const;
 
 export function Notifications() {
   const db = useDB();
   const mine = db.notifications.filter((n) => n.userId === db.currentUserId).sort((a, b) => b.at.localeCompare(a.at));
-  const [perm, setPerm] = useState(typeof Notification !== 'undefined' ? Notification.permission : 'denied');
+  const [perm, setPerm] = useState(notificationPermission());
   const unread = mine.filter((n) => !n.read).length;
   // تُعلَّم كمقروءة عند مغادرة الشاشة
   useEffect(() => () => A.markAllRead(), []);
@@ -30,7 +31,7 @@ export function Notifications() {
         }
       />
       <main>
-        {perm === 'default' && (
+        {perm !== 'granted' && (perm === 'default' || isNative()) && (
           <div className="card row">
             <span className="avatar">
               <Icon name="bell" />
@@ -39,7 +40,7 @@ export function Notifications() {
             <button
               className="btn sm"
               onClick={async () => {
-                const p = await Notification.requestPermission();
+                const p = await requestNotifications();
                 setPerm(p);
                 if (p === 'granted') toast(L('تم تفعيل الإشعارات ✓', 'Notifications enabled ✓'));
               }}

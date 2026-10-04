@@ -113,7 +113,9 @@ export function SettingsScreen() {
               onClick={async () => {
                 if (s.biometricId) return set({ biometricId: undefined });
                 try {
-                  set({ biometricId: await registerBiometric(me.name) });
+                  const id = await registerBiometric(me.name);
+                  sessionStorage.setItem('jamiyati:unlocked', '1');
+                  set({ biometricId: id });
                   toast(L('فُعّل القفل بالبصمة ✓', 'Biometric lock enabled ✓'));
                 } catch (e) {
                   toastError(e);
@@ -129,13 +131,16 @@ export function SettingsScreen() {
           <h2>
             <Icon name="download" size={20} /> {L('التصدير والنسخ الاحتياطي', 'Export & backup')}
           </h2>
+          <div className="note small">
+            {L('بياناتك محفوظة على هذا الجهاز. احفظ نسخة احتياطية كل شهر وأرسلها لنفسك على واتساب أو البريد، لتستعيدها إن غيّرت جوالك.', 'Your data lives on this device. Save a backup monthly and send it to yourself so you can restore it on a new phone.')}
+          </div>
           <button className="btn soft block" onClick={() => csv(transactionsCSV(getDB(), me.id, today), 'jamiyati-transactions.csv')}>
             {L('الحركات (CSV) لتطبيق الميزانية', 'Transactions CSV')}
           </button>
           <button className="btn soft block" onClick={() => csv(recurringCSV(getDB(), me.id, today), 'jamiyati-recurring.csv')}>
             {L('الالتزامات: قسط = مصروف ثابت، استلام = دخل متوقع', 'Recurring: installment = fixed expense, payout = expected income')}
           </button>
-          <button className="btn ghost block" onClick={() => downloadBlob(new Blob([exportBackup()], { type: 'application/json' }), `jamiyati-backup-${today}.json`)}>
+          <button className="btn ghost block" onClick={async () => downloadBlob(new Blob([await exportBackup()], { type: 'application/json' }), `jamiyati-backup-${today}.json`)}>
             {L('نسخة احتياطية كاملة (JSON)', 'Full backup (JSON)')}
           </button>
           <label className="btn ghost block" style={{ cursor: 'pointer' }}>
@@ -149,7 +154,7 @@ export function SettingsScreen() {
                 if (!f) return;
                 if (!confirm(L('ستُستبدل بياناتك الحالية بالنسخة الاحتياطية. متابعة؟', 'Replace current data with the backup?'))) return;
                 try {
-                  importBackup(await f.text());
+                  await importBackup(await f.text());
                   toast(L('تمت الاستعادة ✓', 'Restored ✓'));
                 } catch (er) {
                   toastError(er);
@@ -235,8 +240,9 @@ function PinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
           className="btn block"
           disabled={a.length !== 4 || a !== b}
           onClick={async () => {
-            A.updateSettings({ pinHash: await sha256(a) });
+            const hash = await sha256(a);
             sessionStorage.setItem('jamiyati:unlocked', '1');
+            A.updateSettings({ pinHash: hash });
             toast(L('فُعّل القفل ✓', 'PIN lock enabled ✓'));
             setA('');
             setB('');

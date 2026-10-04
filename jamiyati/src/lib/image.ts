@@ -1,5 +1,5 @@
 /** يضغط صورة الإثبات (أقصى بعد 1100px، JPEG 0.72) ليبقى حجم التخزين صغيراً */
-export function compressImage(file: File, max = 1100, quality = 0.72): Promise<string> {
+export function compressImage(file: File, max = 1000, quality = 0.62): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) return reject(new Error('الملف ليس صورة'));
     const url = URL.createObjectURL(file);
@@ -18,7 +18,13 @@ export function compressImage(file: File, max = 1100, quality = 0.72): Promise<s
   });
 }
 
+import { isNative, saveFileNative } from './native';
+
 export function downloadBlob(blob: Blob, filename: string) {
+  if (isNative()) {
+    saveFileNative(blob, filename, true);
+    return;
+  }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
@@ -28,6 +34,10 @@ export function downloadBlob(blob: Blob, filename: string) {
 
 /** مشاركة ملف عبر قائمة المشاركة في الجوال، وإلا تنزيله */
 export async function shareOrDownload(blob: Blob, filename: string, title: string) {
+  if (isNative()) {
+    await saveFileNative(blob, filename, true);
+    return;
+  }
   const file = new File([blob], filename, { type: blob.type });
   const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
   if (nav.canShare?.({ files: [file] })) {

@@ -164,6 +164,7 @@ describe('الإنشاء والقرعة', () => {
   });
 
   it('حد الخطة المجانية', () => {
+    A.updateSettings({ premium: false });
     A.createCircle({ name: 'ثانية', installment: 100, currency: 'SAR', frequency: 'monthly', startDate: today, graceDays: 0, sharesCount: 2, rules: '', organizerUnits: 1, members: [] });
     expect(() => A.createCircle({ name: 'ثالثة', installment: 100, currency: 'SAR', frequency: 'monthly', startDate: today, graceDays: 0, sharesCount: 2, rules: '', organizerUnits: 1, members: [] })).toThrow(/الخطة المجانية/);
   });

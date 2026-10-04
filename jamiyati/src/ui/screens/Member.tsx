@@ -12,6 +12,24 @@ import { PaySheet, ReputationLine, WhatsAppSheet } from '../components/sheets';
 import { attempt, Avatar, Empty, Field, Seg, Sheet, StatusChip, TopBar } from '../components/ui';
 import { roleLabel } from './Home';
 
+/** كشف حساب نصي للعضو يُرسل عبر واتساب (لمن لا يملك التطبيق) */
+function statementText(v: NonNullable<ReturnType<typeof circleView>>, row: NonNullable<ReturnType<typeof circleView>>['rows'][number], led: ReturnType<typeof ledgerFor>) {
+  const cur = v.circle.currency;
+  const mark: Record<string, string> = { paid: '✅', pending: '⏳', late: '❌', partial: '🟠', due: '🔵', upcoming: '⚪', none: '' };
+  const lines = v.schedule
+    .filter((cy) => cy.dueDate <= todayISO() || row.cells[cy.index].confirmed > 0)
+    .map((cy) => `${mark[row.cells[cy.index].status]} ${L('الدورة', 'Cycle')} ${cy.index + 1} (${date(cy.dueDate)}): ${money(row.cells[cy.index].confirmed, cur)} / ${money(row.cells[cy.index].due, cur)}`);
+  const turns = row.positions.map((p) => `${p} — ${date(v.schedule[p - 1]?.dueDate)}`).join('، ');
+  return [
+    ...lines,
+    '',
+    `${L('المدفوع', 'Paid')}: ${money(led.paid, cur)}`,
+    led.arrears > 0 ? `${L('المتأخرات', 'Arrears')}: ${money(led.arrears, cur)}` : `${L('لا متأخرات', 'No arrears')} 👍`,
+    `${L('الباقي حتى نهاية الجمعية', 'Left to pay')}: ${money(led.remainingToPay, cur)}`,
+    `🎯 ${L('دورك في الاستلام', 'Your turn')}: ${turns} · ${money(led.units * v.pot, cur)}${led.received ? ` (${L('استلمت', 'received')} ✓)` : ''}`,
+  ].join('\n');
+}
+
 export function MemberScreen({ circleId, memberId }: { circleId: string; memberId: string }) {
   const db = useDB();
   const today = todayISO();
@@ -171,8 +189,15 @@ export function MemberScreen({ circleId, memberId }: { circleId: string; memberI
           open={wa}
           onClose={() => setWa(false)}
           phone={m.phone}
-          kinds={nextUnpaid >= 0 ? (row.cells[nextUnpaid].status === 'late' ? ['late', 'dueDay', 'before3', 'thanks'] : ['before3', 'dueDay', 'late', 'thanks']) : ['thanks']}
-          vars={{ name: m.name.split(' ')[0], circle: v.circle.name, amount: nextUnpaid >= 0 ? row.cells[nextUnpaid].remaining : row.due, currency: v.circle.currency, dueDate: v.schedule[Math.max(0, nextUnpaid)].dueDate }}
+          kinds={nextUnpaid >= 0 ? (row.cells[nextUnpaid].status === 'late' ? ['late', 'statement', 'dueDay', 'before3'] : ['before3', 'dueDay', 'statement', 'late']) : ['statement', 'thanks']}
+          vars={{
+            name: m.name.split(' ')[0],
+            circle: v.circle.name,
+            amount: nextUnpaid >= 0 ? row.cells[nextUnpaid].remaining : row.due,
+            currency: v.circle.currency,
+            dueDate: v.schedule[Math.max(0, nextUnpaid)].dueDate,
+            statement: led ? statementText(v, row, led) : '',
+          }}
         />
       )}
       {edit && <EditMember memberId={m.id} organizer={organizer} onClose={() => setEdit(false)} />}

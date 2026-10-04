@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { auth, COUNTRIES, normalizePhone } from '../../lib/auth';
+import { auth, COUNTRIES, normalizePhone, REQUIRE_OTP } from '../../lib/auth';
 import { getLang, L } from '../../lib/i18n';
 import * as A from '../../store/actions';
 import { getDB, setDB } from '../../store/db';
@@ -82,8 +82,19 @@ export function Login() {
   const existing = getDB().users.find((u) => u.phone === full);
   const valid = phone.replace(/\D/g, '').length >= 8;
 
+  const finish = () => {
+    if (!existing && !name.trim()) {
+      setErr(L('اكتب اسمك ليعرفك أعضاء الجمعية', 'Enter your name'));
+      return;
+    }
+    A.signIn(full, name.trim());
+    const c = COUNTRIES.find((x) => x.code === country);
+    if (c) sessionStorage.setItem('jamiyati:currency', c.cur);
+    go('/', true);
+  };
   const send = async () => {
     setErr('');
+    if (!REQUIRE_OTP) return finish();
     try {
       const r = await auth.sendOtp(full);
       setDemo(r.demoCode);
@@ -97,14 +108,7 @@ export function Login() {
       setErr(L('الرمز غير صحيح. تأكد من الأرقام أو اطلب رمزاً جديداً.', 'Incorrect code. Check it or request a new one.'));
       return;
     }
-    if (!existing && !name.trim()) {
-      setErr(L('اكتب اسمك ليعرفك أعضاء الجمعية', 'Enter your name'));
-      return;
-    }
-    A.signIn(full, name.trim());
-    const c = COUNTRIES.find((x) => x.code === country);
-    if (c) sessionStorage.setItem('jamiyati:currency', c.cur);
-    go('/', true);
+    finish();
   };
 
   return (
@@ -113,7 +117,7 @@ export function Login() {
         <button className="icon-btn" onClick={() => (step === 'otp' ? setStep('phone') : go('/'))} aria-label={L('رجوع', 'Back')}>
           <Icon name="back" className="flip" />
         </button>
-        <h1>{L('تسجيل الدخول', 'Sign in')}</h1>
+        <h1>{L('حسابك', 'Your account')}</h1>
       </header>
       <main>
         {step === 'phone' ? (
@@ -131,10 +135,20 @@ export function Login() {
             <Field label={L('رقم الجوال', 'Phone number')}>
               <input className="input ltr num" inputMode="tel" autoComplete="tel-national" placeholder="05xxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} autoFocus />
             </Field>
-            <button className="btn block" disabled={!valid} onClick={send}>
-              {L('أرسل رمز التحقق', 'Send code')}
+            {!REQUIRE_OTP && !existing && (
+              <Field label={L('اسمك', 'Your name')}>
+                <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+              </Field>
+            )}
+            {err && <div className="error">{err}</div>}
+            <button className="btn block" disabled={!valid || (!REQUIRE_OTP && !existing && !name.trim())} onClick={send}>
+              {REQUIRE_OTP ? L('أرسل رمز التحقق', 'Send code') : L('ابدأ', 'Start')}
             </button>
-            <div className="small muted">{L('سنرسل رمزاً من 6 أرقام. لا نشارك رقمك مع أعضاء الجمعيات إلا بإذنك.', "We'll send a 6-digit code. Your number is never shown to others without permission.")}</div>
+            <div className="small muted">
+              {REQUIRE_OTP
+                ? L('سنرسل رمزاً من 6 أرقام. لا نشارك رقمك مع أعضاء الجمعيات إلا بإذنك.', "We'll send a 6-digit code. Your number is never shown to others without permission.")
+                : L('بياناتك محفوظة على جهازك فقط. رقمك يُستخدم لربطك بالجمعيات ورسائل واتساب، ولا يظهر لأحد إلا بإذنك.', 'Your data stays on this device. Your number is never shown without permission.')}
+            </div>
           </div>
         ) : (
           <div className="card stack">

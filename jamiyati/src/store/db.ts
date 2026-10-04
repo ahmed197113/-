@@ -2,6 +2,7 @@
 // كل التعديلات تمر عبر mutate() لضمان الحفظ وإشعار الواجهة.
 import { useSyncExternalStore } from 'react';
 import type { ActivityEntry, DB, Settings } from '../domain/types';
+import { allProofs, restoreProofs } from '../lib/proofs';
 
 const KEY = 'jamiyati:db:v1';
 export const DB_VERSION = 1;
@@ -12,7 +13,7 @@ export const defaultSettings: Settings = {
   calendar: 'gregory',
   digits: 'latn',
   fontScale: 1,
-  premium: false,
+  premium: true, // نسخة شخصية: كل المزايا مفعلة. نموذج الربح (حدود الخطة المجانية) موجود ويُفعَّل بجعلها false
   onboarded: false,
 };
 
@@ -143,12 +144,16 @@ export function verifyLog(entries: ActivityEntry[]): number {
   return -1;
 }
 
-export function exportBackup(): string {
-  return JSON.stringify(state, null, 2);
+/** نسخة احتياطية كاملة تشمل صور الإثبات المخزنة في IndexedDB */
+export async function exportBackup(): Promise<string> {
+  const proofs = await allProofs().catch(() => ({}));
+  return JSON.stringify({ ...state, proofs });
 }
 
-export function importBackup(json: string) {
-  const parsed = JSON.parse(json) as DB;
+export async function importBackup(json: string) {
+  const parsed = JSON.parse(json) as DB & { proofs?: Record<string, string> };
   if (!parsed || !Array.isArray(parsed.circles) || !Array.isArray(parsed.payments)) throw new Error('ملف غير صالح');
+  if (parsed.proofs) await restoreProofs(parsed.proofs);
+  delete parsed.proofs;
   setDB({ ...emptyDB(), ...parsed, settings: { ...defaultSettings, ...parsed.settings } });
 }

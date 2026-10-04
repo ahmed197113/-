@@ -1,12 +1,13 @@
 // محرك التذكيرات: يعمل عند فتح التطبيق ويومياً، ويولّد إشعارات مرة واحدة لكل (جمعية، دورة، نوع).
 // في الإنتاج: نفس المنطق يعمل كـ Supabase Edge Function مجدولة (cron) ويرسل Web Push.
 import { reminderFor } from '../domain/calc';
-import { addDays, todayISO } from '../domain/dates';
+import { addDays, parseISODate, todayISO } from '../domain/dates';
 import type { DB } from '../domain/types';
 import { mutate, nowISO, uid } from '../store/db';
 import { circleView, cycleSummary, myCircles } from '../store/selectors';
 import { L } from './i18n';
 import { money, date } from './format';
+import { native, scheduleNative, type ScheduledReminder } from './native';
 
 export function runReminders(db: DB, today = todayISO()) {
   const userId = db.currentUserId;
@@ -74,9 +75,61 @@ export function runReminders(db: DB, today = todayISO()) {
   }
 }
 
-/** إشعار نظام عبر Service Worker إن منح المستخدم الإذن */
+/** إشعار نظام: في التطبيق الأصلي عبر أندرويد، وفي المتصفح عبر Service Worker إن منح المستخدم الإذن */
 export async function showSystemNotifications(texts: string[]) {
+  const n = native();
+  if (n) {
+    if (n.notificationPermission() === 'granted') for (const body of texts.slice(0, 3)) n.notify(L('جمعيتي', 'Jamiyati'), body);
+    return;
+  }
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
   const reg = await navigator.serviceWorker.getRegistration();
   for (const body of texts.slice(0, 3)) reg?.showNotification(L('جمعيتي', 'Jamiyati'), { body, icon: 'icon.svg', dir: 'auto', lang: 'ar' });
+}
+
+/** وقت محلي على تاريخ معين */
+function at(iso: string, hour: number): number {
+  const d = parseISODate(iso);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hour, 0, 0).getTime();
+}
+
+/**
+ * يحسب التذكيرات القادمة (60 يوماً) ويجدولها في نظام أندرويد لتصل والتطبيق مغلق.
+ * يُستدعى عند كل فتح وبعد كل تعديل؛ الجدولة الجديدة تستبدل القديمة (من دفع لا يصله تذكير).
+ */
+export function upcomingReminders(db: DB, today = todayISO(), now = Date.now()): ScheduledReminder[] {
+  const userId = db.currentUserId;
+  if (!userId) return [];
+  const horizon = now + 60 * 86_400_000;
+  const out: ScheduledReminder[] = [];
+  const add = (id: string, t: number, body: string) => {
+    if (t > now && t < horizon) out.push({ id, at: t, title: L('جمعيتي', 'Jamiyati'), body });
+  };
+  for (const card of myCircles(db, userId, today)) {
+    const { circle, schedule } = card.view;
+    if (circle.status !== 'active') continue;
+    const row = card.view.rows.find((r) => r.member.id === card.member.id);
+    schedule.forEach((cy, i) => {
+      if (row) {
+        const cell = row.cells[i];
+        if (cell.status !== 'paid' && cell.status !== 'pending') {
+          const amt = money(cell.remaining, circle.currency);
+          add(`${circle.id}:${i}:before3`, at(addDays(cy.dueDate, -3), 9), L(`قسط "${circle.name}" (${amt}) بعد 3 أيام — ${date(cy.dueDate)}`, `"${circle.name}" (${amt}) due in 3 days`));
+          add(`${circle.id}:${i}:dueDay`, at(cy.dueDate, 9), L(`اليوم موعد قسط "${circle.name}" (${amt})`, `"${circle.name}" installment due today`));
+          add(`${circle.id}:${i}:late`, at(addDays(cy.lateAfter, 1), 10), L(`قسط "${circle.name}" للدورة ${i + 1} متأخر (${amt}) — ادفع وارفع الإثبات`, `"${circle.name}" cycle ${i + 1} is late`));
+        }
+      }
+      const s = cycleSummary(card.view, i);
+      if (s.recipients.length)
+        add(`${circle.id}:${i}:turn`, at(cy.dueDate, 12), L(`دور ${s.recipients.map((r) => r.name).join(' و')} في "${circle.name}" اليوم، المبلغ ${money(card.view.pot, circle.currency)}`, `Turn day in "${circle.name}"`));
+      if (card.role !== 'member')
+        add(`${circle.id}:${i}:summary`, at(addDays(cy.dueDate, -3), 20), L(`"${circle.name}": الدورة ${i + 1} بعد 3 أيام — راجع من دفع ومن بقي`, `"${circle.name}": cycle ${i + 1} in 3 days`));
+    });
+  }
+  return out.sort((a, b) => a.at - b.at).slice(0, 60);
+}
+
+export function syncNativeSchedule(db: DB) {
+  if (!native()) return;
+  scheduleNative(upcomingReminders(db));
 }

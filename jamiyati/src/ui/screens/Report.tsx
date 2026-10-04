@@ -9,6 +9,7 @@ import { useDB, verifyLog } from '../../store/db';
 import { circleView, cycleSummary, ledgerFor, lineage, roleIn } from '../../store/selectors';
 import { Icon } from '../components/Icon';
 import { Sheet, TopBar } from '../components/ui';
+import { printPage } from '../../lib/native';
 
 const MARK: Record<string, string> = { paid: '✓', pending: '…', late: '✗', partial: '½', due: '•', upcoming: '', none: '' };
 
@@ -31,7 +32,7 @@ export function Report({ circleId }: { circleId: string }) {
     payouts.map((p) => ({ ...p, memberId: toCurrent(p.memberId) })),
   );
   const totalConfirmed = settle.totalPaid;
-  const print = () => (db.settings.premium ? window.print() : setUpsell(true));
+  const print = () => (db.settings.premium ? printPage(circle.name) : setUpsell(true));
 
   return (
     <>
@@ -208,7 +209,7 @@ export function Report({ circleId }: { circleId: string }) {
             onClick={() => {
               A.updateSettings({ premium: true });
               setUpsell(false);
-              setTimeout(() => window.print(), 300);
+              setTimeout(() => printPage(circle.name), 300);
             }}
           >
             {L('تفعيل المميز (تجريبي) والطباعة', 'Enable Premium (demo) & print')}

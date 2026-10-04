@@ -1,3 +1,5 @@
+import { isNative, NATIVE_BIO_ID, nativeAuthenticate, nativeBiometricAvailable } from './native';
+
 // المصادقة برقم الجوال + OTP.
 // النسخة الحالية: تجريبية محلية (الرمز يظهر على الشاشة). للإنتاج فعّل SupabaseAuth أدناه:
 //
@@ -25,6 +27,12 @@ export const LocalDemoAuth: AuthProvider = {
 };
 
 export const auth: AuthProvider = LocalDemoAuth;
+
+/**
+ * بلا خادم تبقى البيانات على هذا الجهاز فقط، فلا معنى لرمز OTP وهمي: الدخول بالاسم والجوال مباشرة.
+ * عند ربط Supabase اجعلها true ليُطلب رمز التحقق.
+ */
+export const REQUIRE_OTP = false;
 
 /** يطبّع الرقم إلى صيغة دولية بلا +: 05xxxxxxxx ← 9665xxxxxxxx، 01xxxxxxxxx ← 201xxxxxxxxx */
 export function normalizePhone(raw: string, country: string): string {
@@ -57,6 +65,7 @@ const b64 = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b)));
 const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 export async function biometricAvailable(): Promise<boolean> {
+  if (isNative()) return nativeBiometricAvailable();
   try {
     return !!window.PublicKeyCredential && (await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
   } catch {
@@ -65,6 +74,10 @@ export async function biometricAvailable(): Promise<boolean> {
 }
 
 export async function registerBiometric(userName: string): Promise<string> {
+  if (isNative()) {
+    if (!(await nativeAuthenticate('تفعيل القفل بالبصمة'))) throw new Error('لم يتم التحقق من البصمة');
+    return NATIVE_BIO_ID;
+  }
   const cred = (await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -79,6 +92,7 @@ export async function registerBiometric(userName: string): Promise<string> {
 }
 
 export async function verifyBiometric(id: string): Promise<boolean> {
+  if (id === NATIVE_BIO_ID) return nativeAuthenticate('افتح جمعيتي');
   try {
     const r = await navigator.credentials.get({
       publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: 'public-key', id: unb64(id) }], userVerification: 'required', timeout: 60000 },

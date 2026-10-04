@@ -13,6 +13,13 @@ import { badges, reliabilityScore } from '../../domain/calc';
 import { Icon } from './Icon';
 import { attempt, Field, ReasonSheet, Seg, Sheet, StatusChip, toast } from './ui';
 import { go } from '../router';
+import { copyText } from '../../lib/native';
+import { storeProof, useProof } from '../../lib/proofs';
+
+function ProofImg({ refId }: { refId: string }) {
+  const src = useProof(refId);
+  return src ? <img src={src} className="proof" alt={L('إثبات التحويل', 'Transfer proof')} /> : <div className="small muted">{L('جارٍ التحميل…', 'Loading…')}</div>;
+}
 
 // ───────── دفعت / تسجيل دفعة ─────────
 
@@ -33,6 +40,7 @@ export function PaySheet({ open, onClose, circleId, memberId, cycleIndex }: { op
   const [proof, setProof] = useState<string>();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const proofSrc = useProof(proof);
 
   useEffect(() => {
     if (!open) return;
@@ -112,7 +120,7 @@ export function PaySheet({ open, onClose, circleId, memberId, cycleIndex }: { op
                 if (!f) return;
                 setBusy(true);
                 try {
-                  setProof(await compressImage(f));
+                  setProof(await storeProof(await compressImage(f)));
                 } catch (er) {
                   toast(String((er as Error).message));
                 } finally {
@@ -122,7 +130,7 @@ export function PaySheet({ open, onClose, circleId, memberId, cycleIndex }: { op
             />
           </label>
         </Field>
-        {proof && <img src={proof} alt={L('معاينة الإثبات', 'Proof preview')} className="proof" />}
+        {proofSrc && <img src={proofSrc} alt={L('معاينة الإثبات', 'Proof preview')} className="proof" />}
         <Field label={L('ملاحظة (اختياري)', 'Note (optional)')}>
           <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
@@ -164,7 +172,7 @@ export function PaymentItem({ p, currency, staff, organizer }: { p: Payment; cur
           <button className="btn sm ghost" onClick={() => setShowProof((s) => !s)}>
             <Icon name="receipt" size={18} /> {showProof ? L('إخفاء الإثبات', 'Hide proof') : L('عرض الإثبات', 'View proof')}
           </button>
-          {showProof && <img src={p.proofImage} className="proof" alt={L('إثبات التحويل', 'Transfer proof')} />}
+          {showProof && <ProofImg refId={p.proofImage} />}
         </>
       )}
       <div className="btns">
@@ -231,6 +239,7 @@ export function WhatsAppSheet({ open, onClose, phone, kinds, vars }: { open: boo
     invite: L('دعوة', 'Invite'),
     thanks: L('شكر', 'Thanks'),
     lottery: L('نتيجة القرعة', 'Lottery result'),
+    statement: L('كشف حساب', 'Statement'),
   };
   return (
     <Sheet open={open} onClose={onClose} title={L('رسالة واتساب', 'WhatsApp message')}>
@@ -241,7 +250,7 @@ export function WhatsAppSheet({ open, onClose, phone, kinds, vars }: { open: boo
         <a className="btn whatsapp block" href={waLink(phone, text)} target="_blank" rel="noreferrer" onClick={onClose}>
           <Icon name="whatsapp" /> {phone ? L('إرسال عبر واتساب', 'Send on WhatsApp') : L('اختيار جهة في واتساب', 'Pick a WhatsApp chat')}
         </a>
-        <button className="btn ghost block" onClick={() => navigator.clipboard?.writeText(text).then(() => toast(L('نُسخ النص', 'Copied')))}>
+        <button className="btn ghost block" onClick={() => copyText(text).then(() => toast(L('نُسخ النص', 'Copied')))}>
           <Icon name="copy" /> {L('نسخ النص', 'Copy text')}
         </button>
       </div>
@@ -272,7 +281,7 @@ export function InviteSheet({ open, onClose, circleId }: { open: boolean; onClos
           </div>
         )}
         <div className="btns" style={{ width: '100%' }}>
-          <button className="btn soft" onClick={() => navigator.clipboard?.writeText(link).then(() => toast(L('نُسخ الرابط', 'Link copied')))}>
+          <button className="btn soft" onClick={() => copyText(link).then(() => toast(L('نُسخ الرابط', 'Link copied')))}>
             <Icon name="copy" /> {L('نسخ الرابط', 'Copy link')}
           </button>
           <button className="btn whatsapp" onClick={() => setWa(true)}>

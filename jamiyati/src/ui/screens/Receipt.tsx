@@ -3,6 +3,7 @@ import { date, dateTime, methodLabel, money, num } from '../../lib/format';
 import { renderReceiptPNG } from '../../lib/receipt';
 import { shareOrDownload } from '../../lib/image';
 import { waLink } from '../../lib/whatsapp';
+import { printPage } from '../../lib/native';
 import { useDB } from '../../store/db';
 import { roleIn } from '../../store/selectors';
 import { Icon } from '../components/Icon';
@@ -94,7 +95,7 @@ export function Receipt({ paymentId }: { paymentId: string }) {
           >
             <Icon name="share" /> {L('مشاركة كصورة', 'Share image')}
           </button>
-          <button className="btn soft" onClick={() => window.print()}>
+          <button className="btn soft" onClick={() => printPage(L('إيصال', 'Receipt') + ' ' + data.receiptNo)}>
             <Icon name="download" /> PDF
           </button>
           <a className="btn whatsapp" href={waLink(member.phone, text)} target="_blank" rel="noreferrer">
