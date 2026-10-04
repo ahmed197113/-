@@ -149,6 +149,7 @@ fun MizaniRoot(vm: MainViewModel, openAddOnStart: Boolean) {
                                 val r = snackbar.showSnackbar("حُذف المصروف", actionLabel = "تراجع", withDismissAction = true)
                                 if (r == SnackbarResult.ActionPerformed) vm.restoreExpense(e)
                             }
+                            Unit
                         }
                     },
                     onClose = { editor = null },

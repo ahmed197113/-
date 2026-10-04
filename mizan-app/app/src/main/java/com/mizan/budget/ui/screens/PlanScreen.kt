@@ -173,11 +173,11 @@ fun PlanScreen(
         }
         is PlanDialog.Cat -> CategoryDialog(
             d.category, settings.currency, onDismiss = { dialog = null },
-            onArchive = d.category?.takeIf { it.name != "أخرى" }?.let { cat -> { vm.archiveCategory(cat); dialog = null } },
+            onArchive = d.category?.takeIf { it.name != "أخرى" }?.let { cat -> { vm.archiveCategory(cat); dialog = null; Unit } },
         ) { vm.saveCategory(it); dialog = null }
         is PlanDialog.GoalEdit -> GoalDialog(
             d.goal, settings.currency, onDismiss = { dialog = null },
-            onDelete = d.goal?.let { g -> { vm.deleteGoal(g); dialog = null } },
+            onDelete = d.goal?.let { g -> { vm.deleteGoal(g); dialog = null; Unit } },
         ) { vm.saveGoal(it); dialog = null }
         null -> {}
     }
