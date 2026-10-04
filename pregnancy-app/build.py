@@ -10,6 +10,9 @@ ph = ph.replace(old, "const IMG = " + imgs + ";\n  const src = w => IMG[Math.min
 for f in ['data.js', 'data2.js', 'data3.js', 'config.js', 'app.js', 'features.js', 'community.js']:
     h = h.replace(f'<script src="{f}"></script>', '<script>\n' + open(d + f, encoding='utf-8').read() + '\n</script>')
 h = h.replace('<script src="photos.js"></script>', '<script>\n' + ph + '\n</script>')
+fc = open(d + 'fonts.css', encoding='utf-8').read()
+fc = re.sub(r'url\(fonts/([^)]+)\)', lambda m: 'url(data:font/woff2;base64,' + base64.b64encode(open(d + 'fonts/' + m.group(1), 'rb').read()).decode() + ')', fc)
+h = h.replace('<link rel="stylesheet" href="fonts.css">', '<style>\n' + fc + '</style>')
 h = h.replace('<link rel="stylesheet" href="styles.css">', '<style>\n' + open(d + 'styles.css', encoding='utf-8').read() + '\n</style>')
 icon = 'data:image/svg+xml;base64,' + base64.b64encode(open(d + 'icons/icon.svg', 'rb').read()).decode()
 h = h.replace('href="icons/icon.svg"', f'href="{icon}"')

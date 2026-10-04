@@ -23,8 +23,8 @@
   --warn: #ef6b6b;
   --shadow: 0 12px 32px rgba(0, 0, 0, .35);
   --radius: 22px;
-  --font: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, 'Segoe UI', Tahoma, sans-serif;
-  --display: 'Reem Kufi', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font: 'Almarai', system-ui, 'Segoe UI', Tahoma, sans-serif;
+  --display: 'Almarai', system-ui, sans-serif;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -377,7 +377,7 @@ a.btn { text-decoration: none; display: inline-block; }
 
 
 /* ================= لمسات الهوية ================= */
-h1, h2, h3 { font-family: var(--display); font-weight: 700; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; }
 .btn { color: var(--on-primary); background: linear-gradient(135deg, var(--rose), var(--gold)); }
 .btn.ghost { color: var(--text); background: var(--card-2); }
 .btn.danger { background: var(--warn); color: #fff; }
