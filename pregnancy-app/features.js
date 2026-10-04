@@ -659,9 +659,9 @@ function featBind() {
   // الألبوم والرسائل
   app.querySelectorAll('[data-bump]').forEach(inp => inp.onchange = async () => {
     const f = inp.files[0]; if (!f) return; const d = await shrink(f); if (!d) return toast('تعذّر قراءة الصورة');
-    await IDB.put('bump-' + inp.dataset.bump, d); toast('تم حفظ صورة الأسبوع ' + inp.dataset.bump); render(false);
+    await IDB.put('bump-' + inp.dataset.bump, d); Account.changed(); toast('تم حفظ صورة الأسبوع ' + inp.dataset.bump); render(false);
   });
-  on('#babyPhoto', async e => { const f = e.target.files[0]; if (!f) return; const d = await shrink(f); if (d) { await IDB.put('baby-photo', d); render(false); } }, 'onchange');
+  on('#babyPhoto', async e => { const f = e.target.files[0]; if (!f) return; const d = await shrink(f); if (d) { await IDB.put('baby-photo', d); Account.changed(); render(false); } }, 'onchange');
   on('#letterAdd', () => {
     const tx = $('#letterT').value.trim(); if (!tx) return;
     S.letters.push({ id: Date.now().toString(36), date: t, week: S.baby ? null : status().week, text: tx }); save(); toast('حُفظت رسالتك 💌'); render(false);

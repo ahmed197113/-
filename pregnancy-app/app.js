@@ -5,7 +5,7 @@ const KEY = 'rihlati_v1';
 const DAY = 86400000;
 
 const defaults = () => ({
-  profile: null, // {name, babyName, method, lmp, cycle, conception, ivf, ivfDay, due, height, preWeight}
+  profile: null, // {name, babyName, method, lmp, conception, ivf, ivfDay, due, height, preWeight}
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
   bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark',
   labs: [], checks: [], med: {}, letters: [], baby: null, feeds: [], diapers: [], sleeps: [], growth: [],
@@ -20,7 +20,10 @@ function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); }
   catch { return defaults(); }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
+  if (typeof Account !== 'undefined') Account.changed(); // حفظ تلقائي في الحساب إن كانت مسجّلة
+}
 
 /* ---------- أدوات التاريخ ---------- */
 const fmt = new Intl.DateTimeFormat('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -38,7 +41,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 /* حساب موعد الولادة حسب الطريقة */
 function calcDue(p) {
   switch (p.method) {
-    case 'lmp': return addDays(parse(p.lmp), 280 + ((+p.cycle || 28) - 28));
+    case 'lmp': return addDays(parse(p.lmp), 280); // قاعدة نيجل: أول يوم في آخر دورة + 280 يوماً (40 أسبوعاً)
     case 'conception': return addDays(parse(p.conception), 266);
     case 'ivf': return addDays(parse(p.ivf), 266 - (+p.ivfDay || 5));
     case 'due': return parse(p.due);
@@ -100,7 +103,7 @@ const TOOLS = [
   ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن أم لا؟'], ['album', '📸', 'ألبوم رحلتي'],
   ['born', '🎉', 'وُلد طفلي'], ['feeds', '🍼', 'الرضاعة'], ['diapers', '💧', 'الحفاضات'], ['sleep', '😴', 'نوم الطفل'], ['growth', '📈', 'نمو الطفل'],
   ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل'],
-  ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
+  ['account', '☁️', 'حسابي'], ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
 ];
 const APP_NAME = 'نبضٌ صغير';
 
@@ -109,8 +112,10 @@ function render(scroll = true) {
   applyTheme();
   const tab = $('#tabbar');
   if (!S.profile) {
-    tab.hidden = true; $('#backBtn').hidden = true; $('#title').textContent = `${APP_NAME} 💗`;
-    app.innerHTML = viewSetup(true); bindSetup(); return;
+    // جوال جديد: إما بيانات جديدة أو تسجيل الدخول لاسترجاع المحفوظ
+    const acc = route.sub === 'account';
+    tab.hidden = true; $('#backBtn').hidden = !acc; $('#title').textContent = acc ? '☁️ حسابي' : `${APP_NAME} 💗`;
+    app.innerHTML = acc ? viewAccount() : viewSetup(true); acc ? accBind() : bindSetup(); return;
   }
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
@@ -170,13 +175,14 @@ function guessCountry() {
   try { const r = (navigator.languages || [navigator.language]).map(l => (l.split('-')[1] || '').toUpperCase()).find(c => COUNTRIES.some(x => x.c === c)); return r || 'SA'; } catch { return 'SA'; }
 }
 function viewSetup(first) {
-  const p = S.profile || { method: 'lmp', cycle: 28, ivfDay: 5 };
+  const p = S.profile || { method: 'lmp', ivfDay: 5 };
   const m = p.method;
   return `
   ${first ? `<div class="welcome">${Photos.figure(24, { cls: 'round' })}
     <img class="app-logo" src="icons/icon.svg" alt="${APP_NAME}">
     <h2>أهلاً بكِ في ${APP_NAME} 💗</h2>
-    <p class="muted">خارطة طريقك من بداية الحمل حتى لحظة الولادة — أسبوعاً بأسبوع.</p></div>` : ''}
+    <p class="muted">خارطة طريقك من بداية الحمل حتى لحظة الولادة — أسبوعاً بأسبوع.</p></div>
+    ${Server.on() ? '<button class="btn ghost block" id="toAccount" style="margin-bottom:12px">🔑 عندك حساب؟ سجّلي الدخول لاسترجاع بياناتك</button>' : ''}` : ''}
   <div class="card">
     <h2>احسبي موعد ولادتك</h2>
     <label class="f">اسمك (اختياري)<input id="s_name" value="${esc(p.name)}" placeholder="مثال: سارة"></label>
@@ -200,8 +206,7 @@ function viewSetup(first) {
 function setupFields(p) {
   const t = iso(today());
   switch (p.method) {
-    case 'lmp': return `<label class="f">أول يوم في آخر دورة شهرية<input id="s_lmp" type="date" max="${t}" value="${esc(p.lmp)}"></label>
-      <label class="f">متوسط طول الدورة (أيام)<input id="s_cycle" type="number" min="20" max="45" value="${esc(p.cycle || 28)}"></label>`;
+    case 'lmp': return `<label class="f">أول يوم في آخر دورة شهرية<input id="s_lmp" type="date" max="${t}" value="${esc(p.lmp)}"></label>`;
     case 'conception': return `<label class="f">تاريخ الإخصاب / الإباضة<input id="s_conc" type="date" max="${t}" value="${esc(p.conception)}"></label>`;
     case 'ivf': return `<label class="f">تاريخ إرجاع الأجنة<input id="s_ivf" type="date" max="${t}" value="${esc(p.ivf)}"></label>
       <label class="f">عمر الجنين عند الإرجاع<select id="s_ivfday">${[3, 5, 6].map(d => `<option value="${d}" ${+p.ivfDay === d ? 'selected' : ''}>اليوم ${d}</option>`).join('')}</select></label>`;
@@ -215,7 +220,7 @@ function readSetup() {
   S.country = $('#s_country').value;
   p.height = $('#s_height').value; p.preWeight = $('#s_pre').value;
   const v = id => $(id) && $(id).value;
-  if (p.method === 'lmp') { p.lmp = v('#s_lmp'); p.cycle = v('#s_cycle') || 28; }
+  if (p.method === 'lmp') { p.lmp = v('#s_lmp'); delete p.cycle; }
   if (p.method === 'conception') p.conception = v('#s_conc');
   if (p.method === 'ivf') { p.ivf = v('#s_ivf'); p.ivfDay = v('#s_ivfday'); }
   if (p.method === 'due') p.due = v('#s_due');
@@ -243,6 +248,7 @@ function bindSetup() {
   });
   app.querySelectorAll('input,select').forEach(i => i.oninput = preview);
   preview();
+  accBind();
   $('#s_save').onclick = () => {
     const p = readSetup();
     if (!p) return toast('أدخلي التاريخ أولاً');
@@ -452,8 +458,11 @@ function viewMore() {
   <div class="set-block"><h3>👤 بيانات الحمل</h3>
     <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
+  ${Server.on() ? `<div class="set-block"><h3>☁️ حسابي</h3>
+    <p class="muted" style="margin-top:0">${Account.state().token ? `مسجّلة بـ <b dir="ltr">${esc(Account.state().email)}</b> — بياناتك وصورك تُحفظ تلقائياً.` : 'سجّلي الدخول بإيميلك لتُحفظ بياناتك وصورك وتسترجعيها لو غيّرتِ جوالك.'}</p>
+    <button class="btn block" data-sub="account">${Account.state().token ? 'إدارة الحساب' : 'تسجيل الدخول بالإيميل'}</button></div>` : ''}
   <div class="set-block"><h3>💾 النسخ الاحتياطي</h3>
-    <p class="muted">بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.</p>
+    <p class="muted">${Server.on() && Account.state().token ? 'نسخة إضافية في ملف تحتفظين به بنفسك.' : 'بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.'}</p>
     <div class="row"><button class="btn grow" id="exportBtn">⬇️ تصدير</button>
       <label class="btn ghost grow center" style="cursor:pointer">⬆️ استيراد ملف<input type="file" id="importFile" accept=".json" hidden></label></div>
     <textarea id="backupBox" class="input" rows="4" placeholder="أو الصقي هنا نص النسخة الاحتياطية" dir="ltr" style="margin-top:10px"></textarea>
@@ -637,9 +646,8 @@ const SUBVIEWS = {
   calc() {
     return `<div class="card"><p class="muted" style="margin-top:0">احسبي موعد ولادة لأي تاريخ (لا يغير بياناتك).</p>
       <label class="f">أول يوم في آخر دورة<input type="date" id="cLmp"></label>
-      <label class="f">طول الدورة<input type="number" id="cCycle" value="28"></label>
       <div id="cOut"></div></div>
-      <div class="card"><h3>كيف يُحسب؟</h3><p>قاعدة نيجل: أول يوم من آخر دورة + سنة − 3 أشهر + 7 أيام (= 280 يوماً). يُضاف الفرق إذا كانت دورتك أطول أو أقصر من 28 يوماً.</p></div>`;
+      <div class="card"><h3>كيف يُحسب؟</h3><p>قاعدة نيجل: أول يوم من آخر دورة + سنة − 3 أشهر + 7 أيام (= 280 يوماً، أي 40 أسبوعاً). وطبيبك قد يعدّل الموعد حسب السونار.</p></div>`;
   },
 
   postpartum() {
@@ -721,7 +729,8 @@ function bind() {
     f.text().then(txt => { const d = JSON.parse(txt); if (!d.profile) throw 0; S = Object.assign(defaults(), d); save(); toast('تم الاستيراد ✅'); render(); })
       .catch(() => toast('ملف غير صالح'));
   }, 'onchange');
-  on('#resetBtn', confirmTap('#resetBtn', () => { S = defaults(); save(); route = { view: 'home' }; render(); }));
+  // الحذف يمسح الجوال فقط: نسجّل الخروج أولاً حتى لا تُمسح النسخة المحفوظة في الحساب
+  on('#resetBtn', confirmTap('#resetBtn', async () => { if (Account.state().token) await Account.logout(); S = defaults(); save(); route = { view: 'home' }; render(); }));
   on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
 
@@ -812,14 +821,15 @@ function bind() {
   // الحاسبة
   const calc = () => {
     const l = $('#cLmp').value; if (!l) return;
-    const d = addDays(parse(l), 280 + ((+$('#cCycle').value || 28) - 28));
+    const d = addDays(parse(l), 280);
     const days = diffDays(today(), addDays(d, -280));
     $('#cOut').innerHTML = `<div class="card hero"><div class="muted">موعد الولادة المتوقع</div><h2 style="margin:4px 0">${fmt.format(d)}</h2>
       ${days >= 0 && days <= 300 ? `<span class="badge">عمر الحمل اليوم: ${Math.floor(days / 7)} أسبوع و${days % 7} يوم</span>` : ''}</div>`;
   };
-  on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
+  on('#cLmp', calc, 'oninput');
   const lt = $('#lblToggle'); if (lt) lt.onclick = () => { route.labels = !route.labels; history.replaceState(route, ''); render(false); };
   featBind();
+  accBind();
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */

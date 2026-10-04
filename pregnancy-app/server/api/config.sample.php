@@ -16,6 +16,9 @@ return [
   'ai_daily_labs' => 5,
   'ai_daily_ip'   => 200,
 
+  // الإيميل الذي تُرسل منه رموز الدخول (أنشئيه من Site Tools ← Email ← Accounts، مثل no-reply@دومينك)
+  'mail_from' => 'no-reply@example.com',
+
   // كلمة سر صفحة الإشراف admin.php (اختاري كلمة طويلة)
   'admin_token' => 'CHANGE-ME-LONG-RANDOM',
 ];
