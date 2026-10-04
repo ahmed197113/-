@@ -2,7 +2,7 @@
 // • "جمعية الأصدقاء": 10 أعضاء، 1000 ر.س شهرياً، بدأت قبل 3 أشهر، فيها عضو متأخر (خالد) وطلب تبديل مفتوح.
 // • "جمعية العائلة": أسبوعية، المستخدم عضو فيها بنصف سهم مع أخيه (المنظِّمة هند).
 // • "جمعية الزملاء 2025": مكتملة — تُغذي سجل الالتزام والشارات.
-import { buildSchedule, potAmount } from '../domain/calc';
+import { buildSchedule, potAmount, seededShuffle } from '../domain/calc';
 import { addDays, addMonths, todayISO } from '../domain/dates';
 import type { Circle, DB, Member, Payment, Payout, Share, User } from '../domain/types';
 import { appendLog, emptyDB, uid } from './db';
@@ -86,10 +86,14 @@ export function buildDemoDB(today = todayISO()): DB {
   // يوسف مساعد المنظم
   members[6].role = 'assistant';
   db.members.push(...members);
-  const shares: Share[] = members.map((m, i) => ({ id: uid('s_'), circleId: friends.id, position: i + 1, holders: [{ memberId: m.id, fraction: 1 }] }));
+  // القرعة حقيقية وقابلة للتحقق: نخلط معرفات الأسهم بالبذرة المعلنة، والعضو رقم i يأخذ السهم الذي وقع في الموضع i
+  const LOTTERY_SEED = 482913;
+  const shareIds = members.map(() => uid('s_')).sort();
+  const drawn = seededShuffle(shareIds, LOTTERY_SEED);
+  const shares: Share[] = members.map((m, i) => ({ id: drawn[i], circleId: friends.id, position: i + 1, holders: [{ memberId: m.id, fraction: 1 }] }));
   db.shares.push(...shares);
   const lotteryAt = iso(addDays(start, -5), 19);
-  friends.lottery = { seed: 482913, at: lotteryAt, byUserId: me.id, result: shares.map((s) => s.id) };
+  friends.lottery = { seed: LOTTERY_SEED, at: lotteryAt, byUserId: me.id, result: drawn };
 
   const log = (at: string, actor: User | undefined, type: string, msg: string) => appendLog(db, friends.id, actor?.id ?? me.id, type, msg, at);
   log(friends.createdAt, me, 'circle.create', `أنشأ الجمعية "${friends.name}": قسط 1000 SAR، 10 أسهم`);

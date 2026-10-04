@@ -59,8 +59,15 @@ export function monthTitle(iso: string, calendar: 'gregory' | 'islamic-umalqura'
   return fmt(iso, calendar, { month: 'long', year: 'numeric' });
 }
 
+export function monthShort(iso: string) {
+  const { calendar } = getDB().settings;
+  return fmt(iso, calendar === 'islamic' ? 'islamic-umalqura' : 'gregory', { month: 'short' });
+}
+
 export function dayNum(iso: string, calendar: 'gregory' | 'islamic-umalqura' = 'gregory') {
-  return fmt(iso, calendar, { day: 'numeric' });
+  const d = parseISODate(iso);
+  const part = new Intl.DateTimeFormat(`${locale()}-ca-${calendar}`, { timeZone: 'UTC', day: 'numeric' }).formatToParts(d).find((x) => x.type === 'day');
+  return part?.value ?? '';
 }
 
 export function dateTime(isoFull: string): string {

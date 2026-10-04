@@ -2,7 +2,7 @@
 import { L } from './i18n';
 import { date, money } from './format';
 
-export type TemplateKind = 'before3' | 'dueDay' | 'late' | 'turn' | 'invite' | 'thanks';
+export type TemplateKind = 'before3' | 'dueDay' | 'late' | 'turn' | 'invite' | 'thanks' | 'lottery';
 
 export interface TemplateVars {
   name: string;
@@ -16,6 +16,7 @@ export interface TemplateVars {
   code?: string;
   link?: string;
   organizer?: string;
+  order?: string;
 }
 
 export function template(kind: TemplateKind, v: TemplateVars): string {
@@ -46,6 +47,11 @@ export function template(kind: TemplateKind, v: TemplateVars): string {
       return L(
         `السلام عليكم 🌿\nأدعوك للانضمام إلى جمعية "${v.circle}" على تطبيق جمعيتي.\nالقسط: ${amt}\nكود الدعوة: ${v.code}\n${v.link ?? ''}`,
         `Hi 🌿\nYou're invited to join "${v.circle}" on Jamiyati.\nInstallment: ${amt}\nInvite code: ${v.code}\n${v.link ?? ''}`,
+      );
+    case 'lottery':
+      return L(
+        `🎲 نتيجة قرعة "${v.circle}"\n(البذرة: ${v.code} — يمكن لأي عضو التحقق منها في التطبيق)\n\n${v.order}\n\nبالتوفيق للجميع 🤍`,
+        `🎲 "${v.circle}" lottery result\n(seed: ${v.code} — verifiable in the app)\n\n${v.order}`,
       );
     case 'thanks':
       return L(

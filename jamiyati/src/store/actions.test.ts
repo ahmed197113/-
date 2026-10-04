@@ -5,7 +5,7 @@ import { getDB, setDB, verifyLog } from './db';
 import { buildDemoDB } from './seed';
 import * as A from './actions';
 import { circleView, ledgerFor, myCircles, userReliability, cycleSummary } from './selectors';
-import { finalSettlement } from '../domain/calc';
+import { finalSettlement, seededShuffle } from '../domain/calc';
 
 const today = todayISO();
 const friends = () => getDB().circles.find((c) => c.name === 'جمعية الأصدقاء')!;
@@ -23,6 +23,12 @@ describe('البيانات التجريبية', () => {
     expect(late).toEqual(['خالد المطيري']);
     expect(getDB().swaps.filter((s) => s.status === 'open')).toHaveLength(1);
     expect(cycleSummary(v, 2).rate).toBeLessThan(100);
+  });
+
+  it('قرعة البيانات التجريبية قابلة للتحقق بالبذرة', () => {
+    const c = friends();
+    const ids = getDB().shares.filter((s) => s.circleId === c.id).map((s) => s.id).sort();
+    expect(seededShuffle(ids, c.lottery!.seed)).toEqual(c.lottery!.result);
   });
 
   it('سلسلة سجل النشاط سليمة لكل جمعية', () => {
