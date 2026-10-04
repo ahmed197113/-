@@ -1,5 +1,8 @@
-/* إعدادات النسخة المستقلة — لتفعيل مجتمع الأمهات اربطي مشروع Supabase (راجعي COMMUNITY.md) */
+/* إعدادات النسخة المستقلة
+   apiBase: رابط مجلد السيرفر على استضافتك (راجعي server/README.md) — يشغّل المساعد الذكي وقراءة التحاليل ومجتمع الأمهات.
+   supabaseUrl/supabaseKey: بديل للمجتمع فقط عبر Supabase (راجعي COMMUNITY.md). */
 window.NABD_CONFIG = {
-  supabaseUrl: '', // مثال: https://xxxx.supabase.co
-  supabaseKey: ''  // المفتاح العام anon key
+  apiBase: '', // مثال: https://example.com/nabd-api
+  supabaseUrl: '',
+  supabaseKey: ''
 };

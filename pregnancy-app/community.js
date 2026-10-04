@@ -51,6 +51,19 @@ const SupaStore = {
   remove(qid) { return this.req(`questions?id=eq.${encodeURIComponent(qid)}&uid=eq.${encodeURIComponent(CM.uid)}`, { method: 'DELETE' }); }
 };
 
+/* ---------- المحوّل: سيرفرك الخاص (server/api/community.php) ---------- */
+const ServerStore = {
+  c: (action, body = {}) => Server.call('community.php', { action, ...body }),
+  async list() { return (await this.c('list')).items; },
+  async add(q) { return (await this.c('add', q)).id; },
+  async answers(qid) { return (await this.c('answers', { qid })).items; },
+  answer(qid, a) { return this.c('answer', { qid, ...a }); },
+  helpful(qid, aid) { return this.c('helpful', { aid }); },
+  report(r) { return this.c('report', { ref: r.ref }); },
+  remove(qid) { return this.c('remove', { qid }); },
+  aiAnswer(qid) { return this.c('ai_answer', { qid }); }
+};
+
 CM.ready = (async () => {
   try {
     if (window.claude && window.claude.use) {
@@ -63,6 +76,7 @@ CM.ready = (async () => {
       }
     }
   } catch { CM.mode = null; }
+  if (!CM.mode && Server.on()) { CM.store = ServerStore; CM.mode = 'server'; CM.uid = 'me'; CM.canWrite = true; }
   if (!CM.mode && window.NABD_CONFIG && window.NABD_CONFIG.supabaseUrl) {
     if (!S.devId) { S.devId = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); save(); }
     CM.store = SupaStore; CM.mode = 'supabase'; CM.uid = S.devId; CM.canWrite = true;
@@ -168,6 +182,7 @@ Object.assign(SUBVIEWS, {
 async function aiAnswer(x) {
   const b = $('#aiAns'); if (b) { b.disabled = true; b.textContent = 'نبض تكتب ردها…'; }
   try {
+    if (CM.mode === 'server') { await CM.store.aiAnswer(x.id); x.ac = (x.ac || 0) + 1; await CM.loadAnswers(x.id, true); return; }
     const r = await AI.sample(`${AI_RULES}\n\nهذا سؤال نشرته أم في مجتمع التطبيق (${x.stage}):\nالعنوان: ${x.title}\nالتفاصيل: ${x.body}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط.`, { modelTier: 'default' });
     await CM.store.answer(x.id, { uid: 'ai', ai: true, nick: 'نبض', body: r.text.trim(), t: Date.now(), hp: 0 });
     x.ac = (x.ac || 0) + 1; await CM.loadAnswers(x.id, true);
@@ -195,7 +210,7 @@ function cmBind() {
       const id = await CM.store.add(q);
       CM.qs.unshift({ id, ...q }); route.draft = null; toast('نُشر سؤالك 💗');
       route = { view: route.view, sub: 'cq', qid: id }; history.replaceState(route, ''); render();
-    } catch (e) { btn.disabled = false; btn.textContent = 'نشر السؤال'; toast(e && e.code === 'quota_exceeded' ? 'المجتمع ممتلئ حالياً' : 'تعذّر النشر — تأكدي من الاتصال'); }
+    } catch (e) { btn.disabled = false; btn.textContent = 'نشر السؤال'; toast(e && e.code === 'quota_exceeded' ? 'المجتمع ممتلئ حالياً' : (e && e.text) || 'تعذّر النشر — تأكدي من الاتصال'); }
   });
   on('#aPost', async () => {
     const body = $('#aBody').value.trim(), anon = $('#aAnon').checked, err = checkText(body, 3, 1000);
@@ -205,7 +220,7 @@ function cmBind() {
     try {
       await CM.store.answer(x.id, { uid: CM.uid || S.devId || 'anon', nick: anon ? '' : S.nick, anon, body, stage: myStage(), t: Date.now(), hp: 0 });
       x.ac = (x.ac || 0) + 1; toast('تم إرسال ردك 💗'); await CM.loadAnswers(x.id, true);
-    } catch { btn.disabled = false; toast('تعذّر الإرسال'); }
+    } catch (e) { btn.disabled = false; toast(e.text || 'تعذّر الإرسال'); }
   });
   app.querySelectorAll('[data-help]').forEach(b => b.onclick = async () => {
     const aid = b.dataset.help; if (S.voted[aid]) return;

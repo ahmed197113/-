@@ -44,6 +44,34 @@ async function fillIdbImages() {
   }
 }
 
+/* ---------- السيرفر الخاص (استضافتك) ---------- */
+const Server = {
+  on: () => !!(window.NABD_CONFIG && window.NABD_CONFIG.apiBase),
+  dev() { if (!S.devId) { S.devId = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); save(); } return S.devId; },
+  async call(file, body) {
+    const r = await fetch(`${window.NABD_CONFIG.apiBase.replace(/\/$/, '')}/${file}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device': Server.dev() }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(j.error || r.status), { code: j.error === 'rate_limited' ? 'rate_limited' : j.error, text: j.text });
+    return j;
+  },
+  // نفس واجهة المساعد داخل نسخة Claude: نص أو محادثة → { text }
+  async sample(turns, opts = {}) {
+    const ctx = Array.isArray(turns) ? turns[0].content : '', messages = Array.isArray(turns) ? turns.slice(2) : [{ role: 'user', content: turns }];
+    const r = await Server.call('ai.php', { mode: 'chat', context: ctx, messages });
+    if (opts.onText) opts.onText({ text: r.text });
+    return { text: r.text };
+  }
+};
+Server.sample.limits = async () => ({ images: true });
+Server.sample.json = async (prompt, opts = {}) => {
+  const url = opts.images ? await shrink(opts.images, 1600) : null;
+  if (!url) throw new Error('bad_image');
+  const r = await Server.call('ai.php', { mode: 'labs', prompt, image: url.split(',')[1], image_type: 'image/jpeg' });
+  const m = (r.text || '').match(/\[[\s\S]*\]/);
+  return m ? JSON.parse(m[0]) : [];
+};
+
 /* ---------- المساعد الذكي ---------- */
 const AI = { sample: null, images: false };
 AI.ready = (async () => {
@@ -53,6 +81,7 @@ AI.ready = (async () => {
       if (AI.sample) { const l = await AI.sample.limits().catch(() => null); AI.images = !!(l && l.images); }
     }
   } catch { AI.sample = null; }
+  if (!AI.sample && Server.on()) { AI.sample = Server.sample; AI.images = true; }
   if (route.view === 'assist' || route.sub === 'labs') render(false);
 })();
 

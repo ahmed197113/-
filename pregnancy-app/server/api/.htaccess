@@ -1,0 +1,5 @@
+# منع الوصول المباشر لملفات الإعدادات والمكتبة
+<FilesMatch "^(config|config\.sample|lib)\.php$|\.sql$">
+  Require all denied
+</FilesMatch>
+Options -Indexes
