@@ -299,7 +299,11 @@ function viewWeeks() {
       <span class="badge">الأسبوع ${sel}</span><span class="badge alt">${tri.name}</span>
       ${sel === st.week ? '<span class="badge soft">أنتِ هنا 📍</span>' : ''}
     </div>
-    <div class="big-art">${Art.baby(sel, 230)}${Art.mom(sel, 150)}</div>
+    <div class="seg" id="artSeg" style="justify-content:center">
+      <button data-art="draw" class="${route.art !== 'sono' ? 'on' : ''}">🎨 رسم توضيحي</button>
+      <button data-art="sono" class="${route.art === 'sono' ? 'on' : ''}">🩻 محاكاة سونار</button></div>
+    <div class="big-art">${route.art === 'sono' ? Art.sono(sel, 250) : Art.baby(sel, 230)}${Art.mom(sel, 150)}</div>
+    <p class="muted" style="margin:0 0 8px;font-size:.8rem">${sel <= 3 ? 'منظر مجهري تقريبي لما يحدث في هذا الأسبوع' : 'رسم تقريبي يوضح شكل الجنين ونسبة حجمه داخل الرحم'}</p>
     <div class="row" style="justify-content:center"><span class="fruit">${w.emoji}</span>
       <div style="text-align:right"><div class="muted">حجم الجنين يعادل</div><b style="font-size:1.2rem">${w.size}</b></div></div>
     <div class="grid3" style="margin-top:12px">
@@ -691,6 +695,7 @@ function bind() {
   app.querySelectorAll('[data-cup]').forEach(b => b.onclick = () => { const n = +b.dataset.cup; S.water[t] = S.water[t] === n ? n - 1 : n; save(); render(false); });
 
   // التغذية والأسماء
+  app.querySelectorAll('#artSeg button').forEach(b => b.onclick = () => { route.art = b.dataset.art; history.replaceState(route, ''); render(false); });
   app.querySelectorAll('#foodSeg button').forEach(b => b.onclick = () => { route.tab = b.dataset.ft; render(false); });
   app.querySelectorAll('#nameSeg button').forEach(b => b.onclick = () => { route.tab = b.dataset.g; render(false); });
   app.querySelectorAll('[data-name]').forEach(b => b.onclick = () => {

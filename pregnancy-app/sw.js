@@ -1,4 +1,4 @@
-const CACHE = 'rihlati-v1';
+const CACHE = 'rihlati-v2';
 const FILES = ['./', 'index.html', 'styles.css', 'data.js', 'art.js', 'app.js', 'manifest.webmanifest', 'icons/icon.svg'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(
