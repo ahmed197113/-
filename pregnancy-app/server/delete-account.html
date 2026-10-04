@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حذف الحساب — نبضٌ صغير</title>
+<style>
+  :root { --p: #fa1a7f; --bg: #fbf7f9; --card: #fff; --text: #2c3048; --muted: #7c8098; --line: #e8e2e6; --danger: #d33a3a; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0f1428; --card: #181f3a; --text: #f3eee9; --muted: #a9a6bd; --p: #ff4d9a; --line: #2a3256; --danger: #ff6b6b; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; line-height: 1.9; }
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { color: var(--p); font-size: 1.4rem; }
+  section { background: var(--card); border-radius: 16px; padding: 6px 18px 16px; margin: 14px 0; }
+  .m { color: var(--muted); font-size: .9rem; }
+  input { width: 100%; box-sizing: border-box; font: inherit; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  button { width: 100%; margin-top: 10px; font: inherit; font-weight: 600; padding: 12px; border: 0; border-radius: 12px; background: var(--p); color: #fff; cursor: pointer; }
+  button.danger { background: var(--danger); }
+  button:disabled { opacity: .6; }
+  #msg { min-height: 1.5em; font-weight: 600; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body><main>
+<h1>حذف حسابك في تطبيق «نبضٌ صغير»</h1>
+
+<section><h2>من داخل التطبيق</h2>
+<p>المزيد ← الإعدادات ← ☁️ حسابي ← «حذف حسابي وبياناتي من السيرفر».</p></section>
+
+<section><h2>أو من هنا</h2>
+<p class="m">يُحذف نهائياً: إيميلك، والنسخة المحفوظة من بيانات الحمل والطفل والتحاليل، وكل الصور. لا يمكن التراجع. البيانات الموجودة على جوالك لا تُحذف بهذا، ويمكنك مسحها من التطبيق: المزيد ← الإعدادات ← «حذف جميع البيانات». أسئلتك في مجتمع الأمهات تُحذف من صفحة كل سؤال داخل التطبيق.</p>
+
+<div id="s1">
+  <input id="mail" type="email" autocomplete="email" placeholder="الإيميل المسجّل في التطبيق" dir="ltr">
+  <button id="send">أرسلي رمز التأكيد</button>
+</div>
+<div id="s2" hidden>
+  <p>أرسلنا رمزاً من 6 أرقام إلى إيميلك (افحصي Spam أيضاً).</p>
+  <input id="code" inputmode="numeric" maxlength="6" placeholder="الرمز" dir="ltr">
+  <button id="del" class="danger">حذف الحساب نهائياً</button>
+</div>
+<p id="msg"></p>
+</section>
+</main>
+<script>
+const API = 'https://nabd.khatta.net/nabd-api/account.php';
+const dev = 'w' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+const $ = id => document.getElementById(id), say = t => { $('msg').textContent = t; };
+async function call(body) {
+  const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device': dev }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.text || 'تعذّر الاتصال، حاولي مرة أخرى.');
+  return j;
+}
+$('send').onclick = async () => {
+  const email = $('mail').value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return say('اكتبي إيميلاً صحيحاً');
+  $('send').disabled = true; say('');
+  try { await call({ action: 'send_code', email }); $('s1').hidden = true; $('s2').hidden = false; $('code').focus(); }
+  catch (e) { say(e.message); }
+  $('send').disabled = false;
+};
+$('del').onclick = async () => {
+  const email = $('mail').value.trim().toLowerCase(), code = $('code').value.replace(/\D/g, '');
+  if (code.length !== 6) return say('الرمز 6 أرقام');
+  $('del').disabled = true; say('');
+  try {
+    const { token } = await call({ action: 'verify', email, code });
+    await call({ action: 'delete_account', token });
+    $('s2').hidden = true; say('تم حذف حسابك وكل بياناته من السيرفر ✅');
+  } catch (e) { say(e.message); $('del').disabled = false; }
+};
+</script>
+</body>
+</html>
