@@ -1,0 +1,6 @@
+{
+  "appId": "app.nabd.pregnancy",
+  "appName": "نبضٌ صغير",
+  "webDir": "www",
+  "android": { "allowMixedContent": false }
+}

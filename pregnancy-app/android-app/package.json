@@ -1,0 +1,14 @@
+{
+  "name": "nabd-android",
+  "private": true,
+  "version": "1.0.0",
+  "description": "غلاف أندرويد لتطبيق نبضٌ صغير (Capacitor)",
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
+  }
+}
