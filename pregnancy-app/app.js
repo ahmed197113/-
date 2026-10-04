@@ -7,7 +7,7 @@ const DAY = 86400000;
 const defaults = () => ({
   profile: null, // {name, babyName, method, lmp, cycle, conception, ivf, ivfDay, due, height, preWeight}
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
-  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark',
+  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'auto',
   labs: [], checks: [], med: {}, letters: [], baby: null, feeds: [], diapers: [], sleeps: [], growth: [],
   vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: [], voted: {}
 });
@@ -85,7 +85,7 @@ $('#backBtn').onclick = () => history.back();
 window.addEventListener('popstate', e => { route = e.state || { view: 'home' }; render(false); });
 
 function go(view, sub = null, week = null) {
-  route = { view, sub, week, slide: route.slide };
+  route = { view, sub, week, labels: route.labels };
   history.pushState(route, '');
   render();
 }
@@ -231,34 +231,72 @@ const fmtDayMonth = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', mo
 const fmtDate = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
 const wd = (n) => `${Math.floor(n / 7)} أسبوعاً و ${n % 7} ${n % 7 === 1 ? 'يوم' : 'أيام'}`;
 
-function hero(sel) {
-  const w = WEEKS[sel - 1];
-  const chips = w.wt === '—'
-    ? `<div class="float-chip chip-bl"><span class="ic pink">${ICON.seed}</span><div><small>المرحلة</small><b>${w.size}</b></div></div>`
-    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${w.wt}</b></div></div>
-       <div class="float-chip chip-bl"><span class="ic pink">${ICON.ruler}</span><div><small>الطول</small><b>${w.len}</b></div></div>`;
-  return `<div class="hero-stage">
-    <div class="carousel" id="car">
-      <div class="slide">${Photos.figure(sel, { cls: 'round' })}${chips}</div>
-      <div class="slide">${Photos.figure(sel, { labels: true, cls: 'square' })}<span class="slide-cap">الأسبوع ${sel} · أسماء الأجزاء</span></div>
-    </div>
-    <div class="dots" id="dots"><i class="${route.slide ? '' : 'on'}"></i><i class="${route.slide ? 'on' : ''}"></i></div>
+// ألوان الأثلاث الثلاثة في دائرة الرحلة
+const TRI_COL = ['var(--teal)', 'var(--gold)', 'var(--pom)'];
+const triOf = w => w <= 13 ? 0 : w <= 27 ? 1 : 2;
+
+// دائرة الرحلة: 40 قطعة حول صورة الجنين، تُقرأ من اليمين عكس عقارب الساعة
+function dial(sel, st) {
+  const C = 190, R = 160, step = 9;
+  const pt = (a, r) => [C + r * Math.cos(a * Math.PI / 180), C + r * Math.sin(a * Math.PI / 180)];
+  const seg = w => {
+    const a0 = -90 - (w - 1) * step - .9, a1 = -90 - w * step + .9;
+    const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
+    const past = w <= st.week, on = w === sel;
+    return `<path data-wk="${w}" d="M${x0.toFixed(1)} ${y0.toFixed(1)}A${R} ${R} 0 0 0 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${TRI_COL[triOf(w)]}"
+      stroke-width="${on ? 22 : 13}" stroke-opacity="${on ? 1 : past ? .9 : .22}" fill="none" class="seg${on ? ' on' : ''}"><title>الأسبوع ${w}</title></path>`;
+  };
+  const cur = Math.min(40, st.week), [cx, cy] = pt(-90 - (cur - .5) * step, R);
+  const marks = [10, 20, 30, 40].map(w => { const [x, y] = pt(-90 - (w - .5) * step, R + 21); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle">${w}</text>`; }).join('');
+  return `<div class="dial">
+    <svg viewBox="0 0 380 380" class="dial-ring" role="img" aria-label="دائرة الرحلة: الأسبوع ${st.week} من 40">
+      ${Array.from({ length: 40 }, (_, i) => seg(i + 1)).join('')}
+      ${marks}
+      ${st.week <= 40 ? `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" class="pulse"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="var(--paper)"/>` : ''}
+    </svg>
+    <div class="dial-photo">${Photos.figure(sel, { cls: 'round' })}</div>
+    <span class="dial-tag">الأسبوع ${sel}</span>
   </div>`;
 }
+function hero(sel) {
+  const st = status(), w = WEEKS[sel - 1], lab = !!route.labels;
+  return `<section class="journey">
+    ${lab ? `<div class="lab-view">${Photos.figure(sel, { labels: true, cls: 'square' })}</div>` : dial(sel, st)}
+    <div class="dial-meta">
+      <div><small>بحجم</small><b>${w.emoji} ${w.size}</b></div>
+      ${w.wt !== '—' ? `<div><small>الطول</small><b>${w.len}</b></div><div><small>الوزن</small><b>${w.wt}</b></div>` : ''}
+    </div>
+    <button class="toggle-lbl" id="lblToggle">${lab ? '⭕ عرض دائرة الرحلة' : '🏷️ أسماء أجزاء الجنين'}</button>
+  </section>`;
+}
+// مسطرة القياس لاختيار الأسبوع
+function ruler(items, sel, cur, attr, unit) {
+  return `<div class="ruler" id="strip" role="listbox" aria-label="اختاري ${unit}">${items.map(n => `<button ${attr}="${n}" class="tick ${n % 4 === 0 ? 'major' : ''} ${n === sel ? 'sel' : ''} ${n === cur ? 'cur' : ''}" role="option" aria-selected="${n === sel}" aria-label="${unit} ${n}"><i></i><span>${n}</span></button>`).join('')}</div>`;
+}
 function weekStrip(sel, st) {
-  return `<div class="week-strip" id="strip">${WEEKS.map(x => `<button data-wk="${x.w}" class="${x.w === sel ? 'sel' : ''} ${x.w === st.week ? 'cur' : ''}" aria-label="الأسبوع ${x.w}">
-    <span>${x.w === st.week ? 'أسبوعي' : 'أسبوع'}</span><b>${x.w}</b></button>`).join('')}</div>
+  return `<div class="ruler-wrap"><div class="ruler-head"><span class="kicker">مسطرة الأسابيع</span><span class="muted">اسحبي واختاري أسبوعاً</span></div>
+    ${ruler(WEEKS.map(x => x.w), sel, st.week, 'data-wk', 'الأسبوع')}</div>
   ${sel !== st.week ? `<button class="back-now" data-wk="${st.week}">↩ العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
 }
+// قمر بنسبة إضاءة f (يمتلئ من اليمين)
+function moon(f, label, now) {
+  const c = 18, r = 14, rx = (r * Math.abs(1 - 2 * f)).toFixed(2);
+  const lit = f <= 0 ? '' : f >= 1 ? `<circle cx="${c}" cy="${c}" r="${r}" fill="var(--gold)"/>`
+    : `<path d="M${c} ${c - r}A${r} ${r} 0 0 1 ${c} ${c + r}A${rx} ${r} 0 0 ${f < .5 ? 0 : 1} ${c} ${c - r}Z" fill="var(--gold)"/>`;
+  return `<div class="moon ${now ? 'now' : ''}"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="var(--moon-dark)"/>${lit}<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--gold)" stroke-opacity=".5"/></svg><span>${label}</span></div>`;
+}
 function progressCard(st) {
-  return `<div class="card">
-    <div class="prog-head"><h2>أنتِ في الأسبوع ${st.week} واليوم ${ORD[st.extra]}</h2><span class="badge soft">الشهر ${['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع'][st.month - 1]}</span></div>
-    <div class="prog-bar"><span class="end start">${ICON.seed}</span><div class="track"><i style="width:${Math.round(st.pct * 100)}%"></i></div><span class="end">${ICON.baby}</span></div>
-    <div class="prog-dates"><span class="start">الحمل: ${fmtDate.format(st.start)}</span><span class="end">الولادة: ${fmtDate.format(st.due)}</span></div>
-  </div>
-  <div class="grid2" style="margin-bottom:14px">
-    <div class="card mini pattern"><small>مضى من الحمل</small><b>${wd(st.days)}</b></div>
-    <div class="card mini pattern"><small>تبقّى للولادة</small><b>${st.left >= 0 ? wd(st.left) : 'تجاوزتِ الموعد'}</b></div>
+  const L = 280 / 9;
+  return `<div class="card moons-card">
+    <span class="kicker">رحلتك بالأقمار</span>
+    <h2>أنتِ في الأسبوع ${st.week} — اليوم ${ORD[st.extra]}</h2>
+    <div class="moons">${Array.from({ length: 9 }, (_, i) => moon(Math.max(0, Math.min(1, (st.days - i * L) / L)), `${i + 1}`, i + 1 === st.month)).join('')}</div>
+    <p class="muted" style="margin:6px 0 12px">كل قمر شهر من حملك — يكتمل البدر التاسع يوم اللقاء 🌕</p>
+    <div class="ticket">
+      <div><small>مضى</small><b>${wd(st.days)}</b></div>
+      <div><small>بقي</small><b>${st.left >= 0 ? wd(st.left) : 'تجاوزتِ الموعد'}</b></div>
+      <div><small>موعد اللقاء</small><b>${fmtShort.format(st.due)}</b></div>
+    </div>
   </div>`;
 }
 
@@ -272,8 +310,8 @@ function viewHome() {
   const upcoming = APPOINTMENTS.filter(a => a.to >= st.week).slice(0, 2);
   return `
   ${hero(sel)}
-  <div class="sec-head"><h2>تقدم حملك بالأسابيع</h2><button class="link" data-week="${sel}">عرض التفاصيل ‹</button></div>
   ${weekStrip(sel, st)}
+  <button class="link more-link" data-week="${sel}">كل تفاصيل الأسبوع ${sel} ‹</button>
   ${progressCard(st)}
   ${homeExtras(st)}
 
@@ -809,6 +847,7 @@ function bind() {
       ${days >= 0 && days <= 300 ? `<span class="badge">عمر الحمل اليوم: ${Math.floor(days / 7)} أسبوع و${days % 7} يوم</span>` : ''}</div>`;
   };
   on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
+  const lt = $('#lblToggle'); if (lt) lt.onclick = () => { route.labels = !route.labels; history.replaceState(route, ''); render(false); };
   featBind();
 }
 

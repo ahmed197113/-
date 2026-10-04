@@ -1,37 +1,46 @@
 /* نبضٌ صغير — تصميم داكن بتدرج بنفسجي وبطاقات مستديرة
    الطبقات: هيدر متدرج → عارض الصور → أزرار الأسابيع → بطاقات المحتوى → شريط تنقل عائم */
+/* هوية «نبض»: حبر أخضر مزرق، رمّان، وذهب الأقمار — دائرة الرحلة ومسطرة القياس */
 :root {
-  --bg: #17151c;
-  --card: #24222b;
-  --card-2: #2d2b35;
-  --text: #f4f1f6;
-  --muted: #a5a0b0;
-  --primary: #ef4f6c;
-  --primary-2: #8f67da;
-  --soft: #3a2531;
-  --soft-2: #2f2742;
-  --border: #35323f;
-  --track: #3a3744;
-  --hero-1: #7a3f78;
-  --hero-2: #43306e;
-  --ok: #4caf7d;
-  --warn: #ef5350;
-  --shadow: 0 10px 30px rgba(0, 0, 0, .35);
-  --radius: 22px;
-  --font: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, 'Segoe UI', Tahoma, sans-serif;
-  color-scheme: dark;
+  --paper: #f2f6f4;
+  --bg: #f2f6f4;
+  --card: #ffffff;
+  --card-2: #e8f0ed;
+  --text: #12302f;
+  --muted: #5d7472;
+  --teal: #1f7a72;
+  --gold: #d9982b;
+  --pom: #c8384f;
+  --primary: #c8384f;
+  --primary-2: #1f7a72;
+  --soft: #f8e3e6;
+  --soft-2: #dcebe7;
+  --border: #d6e2de;
+  --track: #dbe5e2;
+  --moon-dark: #2a4645;
+  --hero-1: #d4ebe5;
+  --hero-2: #f6e7cf;
+  --ok: #2e9b6b;
+  --warn: #d64545;
+  --shadow: 0 1px 0 rgba(18, 48, 47, .06), 0 8px 24px rgba(18, 48, 47, .07);
+  --radius: 14px;
+  --font: 'Readex Pro', 'IBM Plex Sans Arabic', system-ui, 'Segoe UI', Tahoma, sans-serif;
+  --display: 'Reem Kufi', 'Readex Pro', system-ui, sans-serif;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #f6f2f8; --card: #ffffff; --card-2: #f3eef6; --text: #261f2c; --muted: #7b7287;
-    --soft: #fde4ea; --soft-2: #ece4fa; --border: #ebe3ef; --track: #ece5f1;
-    --hero-1: #f2c4dd; --hero-2: #d6c8f5; --shadow: 0 10px 26px rgba(80, 40, 90, .12); color-scheme: light;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d2122; --bg: #0d2122; --card: #132d2e; --card-2: #1a3a3a; --text: #e6f1ee; --muted: #94aeaa;
+    --teal: #3fb5a8; --gold: #f0b54a; --pom: #ff6f86; --primary: #ff6f86; --primary-2: #3fb5a8;
+    --soft: #3a2230; --soft-2: #1d3d3b; --border: #24474a; --track: #234243; --moon-dark: #0a1819;
+    --hero-1: #134240; --hero-2: #3a3020; --shadow: 0 10px 28px rgba(0, 0, 0, .35); color-scheme: dark;
   }
 }
-:root[data-theme="light"] {
-  --bg: #f6f2f8; --card: #ffffff; --card-2: #f3eef6; --text: #261f2c; --muted: #7b7287;
-  --soft: #fde4ea; --soft-2: #ece4fa; --border: #ebe3ef; --track: #ece5f1;
-  --hero-1: #f2c4dd; --hero-2: #d6c8f5; --shadow: 0 10px 26px rgba(80, 40, 90, .12); color-scheme: light;
+:root[data-theme="dark"] {
+  --paper: #0d2122; --bg: #0d2122; --card: #132d2e; --card-2: #1a3a3a; --text: #e6f1ee; --muted: #94aeaa;
+  --teal: #3fb5a8; --gold: #f0b54a; --pom: #ff6f86; --primary: #ff6f86; --primary-2: #3fb5a8;
+  --soft: #3a2230; --soft-2: #1d3d3b; --border: #24474a; --track: #234243; --moon-dark: #0a1819;
+  --hero-1: #134240; --hero-2: #3a3020; --shadow: 0 10px 28px rgba(0, 0, 0, .35); color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -366,3 +375,106 @@ a.btn { text-decoration: none; display: inline-block; }
 .mini-rows { display: grid; gap: 6px; font-size: .92rem; }
 .now-card { border-color: var(--primary); }
 .tabbar[hidden] { display: none; }
+
+
+/* ================= الهوية الجديدة ================= */
+body::before {
+  height: 420px; opacity: 1;
+  background:
+    radial-gradient(70% 60% at 85% 0%, var(--hero-1), transparent 70%),
+    radial-gradient(60% 50% at 10% 5%, var(--hero-2), transparent 70%);
+}
+h1, h2, h3, .kicker, .dial-tag, .dial-meta b { font-family: var(--display); font-weight: 600; letter-spacing: 0; }
+.card { box-shadow: var(--shadow); }
+.kicker { display: inline-block; font-size: .78rem; color: var(--teal); border-bottom: 2px solid var(--gold); padding-bottom: 2px; margin-bottom: 6px; }
+
+/* الهيدر بخط النبض */
+.topbar { background: color-mix(in srgb, var(--bg) 70%, transparent); border-bottom: 1px solid var(--border); }
+.topbar::after {
+  content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 18px; pointer-events: none; opacity: .55;
+  background: no-repeat center / 220px 18px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'%3E%3Cpath d='M0 12h80l6-8 6 14 7-18 6 12h115' fill='none' stroke='%23c8384f' stroke-width='1.6'/%3E%3C/svg%3E");
+}
+.icon-btn { border-radius: 12px; }
+
+/* شريط التنقل: مثبت بالأسفل مع زر «نبض» البارز */
+.tabbar {
+  inset-inline: 0; bottom: 0; max-width: none; border-radius: 0; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  border: 0; border-top: 1px solid var(--border); background: var(--card); box-shadow: 0 -6px 20px rgba(0, 0, 0, .06);
+}
+.tabbar button { border-radius: 12px; }
+.tabbar button.active { background: transparent; color: var(--primary); }
+.tabbar button.active svg { stroke-width: 2.4; }
+.tabbar button.mid { color: var(--text); margin-top: -26px; }
+.tabbar button.mid svg { width: 30px; height: 30px; padding: 14px; box-sizing: content-box; border-radius: 50%; color: #fff;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--pom) 70%, #fff), var(--pom)); box-shadow: 0 6px 18px color-mix(in srgb, var(--pom) 45%, transparent); border: 4px solid var(--card); }
+.tabbar button.mid.active { color: var(--primary); }
+body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+.sticky-ask { bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+.toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+
+/* دائرة الرحلة */
+.journey { text-align: center; margin: 4px 0 14px; }
+.dial { position: relative; width: min(360px, 92vw); aspect-ratio: 1; margin: 0 auto; max-width: 100%; }
+.dial-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dial-ring .seg { cursor: pointer; stroke-linecap: butt; transition: stroke-width .2s; }
+.dial-ring .seg:hover { stroke-opacity: 1; }
+.dial-ring text { font-size: 11px; fill: var(--muted); font-family: var(--font); }
+.dial-ring .pulse { fill: var(--pom); animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pulse { 0% { opacity: .9; transform: scale(.8); } 70% { opacity: 0; transform: scale(2.2); } 100% { opacity: 0; } }
+.dial-photo { position: absolute; inset: 17%; border-radius: 50%; overflow: hidden; }
+.dial-photo .photo { width: 100%; }
+.dial-tag { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); background: var(--gold); color: #2b1c05; padding: 3px 14px; border-radius: 8px; font-size: .9rem; box-shadow: var(--shadow); }
+.lab-view { display: flex; justify-content: center; }
+.lab-view .photo { width: min(360px, 92vw); }
+.dial-meta { display: flex; justify-content: center; gap: 0; margin: 12px auto 8px; max-width: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+.dial-meta > div { flex: 1; padding: 8px 6px; border-inline-start: 1px dashed var(--border); }
+.dial-meta > div:first-child { border-inline-start: 0; }
+.dial-meta small { display: block; color: var(--muted); font-size: .75rem; }
+.dial-meta b { font-size: .98rem; font-variant-numeric: tabular-nums; }
+.toggle-lbl { border: 1px solid var(--teal); color: var(--teal); background: transparent; border-radius: 999px; padding: 6px 16px; cursor: pointer; font-size: .85rem; }
+
+/* مسطرة القياس */
+.ruler-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 0 0; margin-bottom: 10px; box-shadow: var(--shadow); }
+.ruler-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 14px; }
+.ruler-head .muted { font-size: .78rem; }
+.ruler { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 18px 40% 8px;
+  background: repeating-linear-gradient(to left, transparent 0 43px, var(--border) 43px 44px) top / 100% 8px no-repeat; }
+.ruler::-webkit-scrollbar { display: none; }
+.ruler .tick { flex: 0 0 44px; scroll-snap-align: center; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; color: var(--muted); position: relative; }
+.ruler .tick i { width: 2px; height: 16px; background: var(--muted); opacity: .5; border-radius: 2px; }
+.ruler .tick.major i { height: 26px; opacity: .8; }
+.ruler .tick span { font-size: .8rem; font-variant-numeric: tabular-nums; }
+.ruler .tick.cur::before { content: ''; position: absolute; top: -12px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
+.ruler .tick.sel i { background: var(--pom); width: 4px; height: 34px; opacity: 1; }
+.ruler .tick.sel span { color: #fff; background: var(--pom); border-radius: 8px; padding: 0 8px; font-weight: 700; font-size: .95rem; }
+.more-link { display: block; margin: 0 auto 12px; color: var(--teal); }
+.back-now { background: var(--teal); box-shadow: 0 6px 16px color-mix(in srgb, var(--teal) 40%, transparent); border-radius: 12px; }
+
+/* الأقمار التسعة */
+.moons-card h2 { font-size: 1.12rem; margin: 2px 0 12px; }
+.moons { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
+.moon { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.moon svg { width: 100%; max-width: 36px; height: auto; }
+.moon.now span { color: var(--pom); font-weight: 700; }
+.moon.now svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 70%, transparent)); }
+.ticket { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px dashed var(--border); border-radius: 12px; overflow: hidden; }
+.ticket > div { padding: 8px 6px; text-align: center; border-inline-start: 1px dashed var(--border); }
+.ticket > div:first-child { border-inline-start: 0; }
+.ticket small { display: block; color: var(--muted); font-size: .74rem; }
+.ticket b { font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+/* عناصر عامة بلمسة الهوية */
+.btn { border-radius: 12px; }
+.badge { border-radius: 8px; }
+.badge.alt { background: var(--teal); }
+.seg button.on, .sec-tabs button.on, .seg.big button.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.chip.on { background: var(--soft-2); border-color: var(--teal); color: var(--teal); }
+ul.list li::before { background: var(--gold); border-radius: 2px; transform: rotate(45deg); }
+.nav-row .ic, .tool { border-radius: 12px; }
+.hero-soft { background: linear-gradient(135deg, var(--soft-2), var(--card)); }
+.tl-tri { border-radius: var(--radius); }
+.photo.round { -webkit-mask-image: none; mask-image: none; }
+.welcome .photo { border-radius: 50%; overflow: hidden; border: 6px solid var(--card); box-shadow: var(--shadow); }
+.baby-photo { border-color: var(--gold); }
+.quick4 button, .sec-tabs button { border-radius: 12px; }
+.bubble.user { background: var(--teal); }

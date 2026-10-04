@@ -457,7 +457,8 @@ Object.assign(SUBVIEWS, {
     const cur = Math.min(23, Math.floor(diffDays(today(), parse(S.baby.date)) / 30.44));
     const m = route.bm != null ? route.bm : cur, g = BABY_GUIDE[m];
     const row = (ic, t, v) => v ? `<div class="item-row"><div class="em">${ic}</div><div><b>${t}</b><div>${v}</div></div></div>` : '';
-    return `<div class="week-strip" id="strip">${BABY_GUIDE.map(x => `<button data-bm="${x.m}" class="${x.m === m ? 'sel' : ''} ${x.m === cur ? 'cur' : ''}"><span>${x.m === cur ? 'الآن' : 'شهر'}</span><b>${x.m + 1}</b></button>`).join('')}</div>
+    return `<div class="ruler-wrap"><div class="ruler-head"><span class="kicker">مسطرة الشهور</span><span class="muted">من الشهر 1 إلى 24</span></div>
+      ${ruler(BABY_GUIDE.map(x => x.m + 1), m + 1, cur + 1, 'data-bmn', 'الشهر')}</div>
       ${m !== cur ? `<button class="back-now" data-bm="${cur}">↩ العودة لشهره الحالي (${cur + 1})</button>` : ''}
       <div class="card hero-soft"><h2 style="margin:0">${g.t}</h2><p style="margin:6px 0 0">${g.dev}</p></div>
       <div class="card">${row('🍼', 'الأكل والرضاعة', g.feed)}${row('😴', 'النوم', g.sleep)}${row('🩺', 'الصحة والتطعيمات', g.health)}${row('🧸', 'العبي معه', g.play)}</div>
@@ -565,6 +566,7 @@ function featBind() {
   app.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { route.as = b.dataset.as; history.replaceState(route, ''); render(false); });
   app.querySelectorAll('[data-go-cm]').forEach(b => b.onclick = () => { route = { view: 'assist', as: 'cm' }; history.pushState(route, ''); render(); });
   app.querySelectorAll('[data-bm]').forEach(b => b.onclick = () => { route.bm = +b.dataset.bm; history.replaceState(route, ''); render(); });
+  app.querySelectorAll('[data-bmn]').forEach(b => b.onclick = () => { route.bm = +b.dataset.bmn - 1; history.replaceState(route, ''); render(); });
   const t = iso(today());
   fillIdbImages();
 
