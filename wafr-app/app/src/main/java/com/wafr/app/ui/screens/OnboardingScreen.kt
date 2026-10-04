@@ -127,7 +127,7 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             Spacer(Modifier.height(22.dp))
                             Text("يبدأ شهرك يوم: ${day.toInt()}", fontWeight = FontWeight.SemiBold)
                             Text("اختر يوم نزول الراتب، فتتطابق الميزانية مع واقعك.", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                            Slider(day, { day = it }, valueRange = 1f..28f, steps = 26)
+                            Slider(day, { day = it }, valueRange = 1f..28f)
                             val b = parseAmount(budget) ?: 0L
                             if (b > 0) {
                                 GlassCard(Modifier.fillMaxWidth()) {

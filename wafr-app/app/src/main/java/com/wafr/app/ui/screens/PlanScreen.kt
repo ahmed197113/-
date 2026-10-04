@@ -143,7 +143,7 @@ fun PlanScreen(
                     Row {
                         Text(cat.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         Text(
-                            if (cat.monthlyLimit > 0) "${Money.plain(spent)} / ${Money.plain(cat.monthlyLimit)}" else Money.plain(spent),
+                            if (cat.monthlyLimit > 0) "${Money.plain(spent)} من ${Money.plain(cat.monthlyLimit)}" else Money.plain(spent),
                             color = if (cat.monthlyLimit in 1 until spent) c.danger else c.muted, fontSize = 13.sp,
                         )
                     }

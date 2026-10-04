@@ -160,7 +160,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
                     Text("كل ${settings.reminderHours} ساعات", fontWeight = FontWeight.Bold)
                     var hours by remember(settings.reminderHours) { mutableStateOf(settings.reminderHours.toFloat()) }
                     Slider(
-                        value = hours, onValueChange = { hours = it }, valueRange = 1f..12f, steps = 10,
+                        value = hours, onValueChange = { hours = it }, valueRange = 1f..12f,
                         onValueChangeFinished = { vm.updateSettings(reschedule = true) { it.copy(reminderHours = hours.toInt()) } },
                     )
                     Text("أوقات الهدوء (بدون تذكير): من ${settings.quietStart}:00 إلى ${settings.quietEnd}:00", style = MaterialTheme.typography.bodySmall, color = c.muted)
@@ -190,7 +190,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
                 Text("يوم بداية الشهر (يوم الراتب): ${settings.cycleStartDay}", fontWeight = FontWeight.SemiBold)
                 var day by remember(settings.cycleStartDay) { mutableStateOf(settings.cycleStartDay.toFloat()) }
                 Slider(
-                    value = day, onValueChange = { day = it }, valueRange = 1f..28f, steps = 26,
+                    value = day, onValueChange = { day = it }, valueRange = 1f..28f,
                     onValueChangeFinished = { vm.updateSettings { it.copy(cycleStartDay = day.toInt()) } },
                 )
                 Hairline()

@@ -202,7 +202,7 @@ fun BillDialog(initial: com.wafr.app.data.Bill?, categories: List<Category>, cur
                 }
                 AmountField(amount, { amount = it }, "المبلغ الشهري", currency)
                 Text("يوم الاستحقاق: ${day.toInt()}")
-                androidx.compose.material3.Slider(day, { day = it }, valueRange = 1f..31f, steps = 29)
+                androidx.compose.material3.Slider(day, { day = it }, valueRange = 1f..31f)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(categories) { c -> FilterChip(c.id == catId, { catId = c.id }, { Text("${c.emoji} ${c.name}") }) }
                 }
