@@ -27,20 +27,70 @@ function me(array $in): array {
   return $u;
 }
 
+/* إرسال عبر SMTP (مثل Gmail بكلمة مرور التطبيقات): رسائل موثّقة تصل للبريد الوارد،
+   بخلاف mail() على الاستضافة المشتركة التي قد يرفضها Gmail دون توثيق SPF/DKIM للدومين */
+function smtp_send(array $c, string $from, string $to, string $msg): bool {
+  $secure = $c['secure'] ?? 'ssl';
+  $fp = @stream_socket_client(($secure === 'ssl' ? 'ssl://' : 'tcp://') . $c['host'] . ':' . (int)($c['port'] ?? 465), $errno, $err, 20);
+  if (!$fp) { $GLOBALS['mail_err'] = "connect: $err"; error_log('nabd smtp ' . $GLOBALS['mail_err']); return false; }
+  stream_set_timeout($fp, 20);
+  // يرسل سطراً ويتحقق من رمز الرد؛ label للسجل فقط حتى لا تُكتب كلمة السر فيه
+  $step = function (string $label, ?string $line, string $ok) use ($fp): void {
+    if ($line !== null) fwrite($fp, $line . "\r\n");
+    $r = '';
+    while (($l = fgets($fp, 1024)) !== false) { $r .= $l; if (strlen($l) < 4 || $l[3] === ' ') break; }
+    if (strncmp($r, $ok, 3) !== 0) throw new RuntimeException("$label: " . trim($r));
+  };
+  try {
+    $helo = 'EHLO ' . preg_replace('/[^a-z0-9.-]/i', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    $step('greeting', null, '220');
+    $step('ehlo', $helo, '250');
+    if ($secure === 'tls') {
+      $step('starttls', 'STARTTLS', '220');
+      if (!stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new RuntimeException('starttls handshake');
+      $step('ehlo', $helo, '250');
+    }
+    if (!empty($c['user'])) {
+      $step('auth', 'AUTH LOGIN', '334');
+      $step('auth user', base64_encode((string)$c['user']), '334');
+      $step('auth pass', base64_encode((string)$c['pass']), '235');
+    }
+    $step('mail from', "MAIL FROM:<$from>", '250');
+    $step('rcpt to', "RCPT TO:<$to>", '250');
+    $step('data', 'DATA', '354');
+    $step('send', preg_replace('/^\./m', '..', $msg) . "\r\n.", '250');
+    fwrite($fp, "QUIT\r\n");
+    fclose($fp);
+    return true;
+  } catch (RuntimeException $e) {
+    $GLOBALS['mail_err'] = $e->getMessage();
+    error_log('nabd smtp ' . $e->getMessage());
+    fclose($fp);
+    return false;
+  }
+}
+
 function send_code_mail(string $email, string $code): bool {
   global $CFG;
   $host = preg_replace('/^www\./', '', (string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
-  $from = (string)($CFG['mail_from'] ?? ('no-reply@' . $host));
-  $name = 'نبضٌ صغير';
-  $subject = "رمز الدخول: $code";
-  $body = "مرحباً 💗\n\nرمز الدخول إلى تطبيق نبضٌ صغير هو:\n\n    $code\n\nالرمز صالح لمدة 15 دقيقة. إن لم تطلبيه فتجاهلي هذه الرسالة.\n";
-  $headers = implode("\r\n", [
-    'From: =?UTF-8?B?' . base64_encode($name) . "?= <$from>",
+  $smtp = $CFG['smtp'] ?? null;
+  // مع Gmail يجب أن يكون المرسل هو حساب Gmail نفسه
+  $from = (string)($smtp ? ($smtp['from'] ?? $smtp['user']) : ($CFG['mail_from'] ?? ('no-reply@' . $host)));
+  $enc = fn(string $t) => '=?UTF-8?B?' . base64_encode($t) . '?=';
+  $subject = $enc("رمز الدخول: $code");
+  $body = chunk_split(base64_encode("مرحباً 💗\n\nرمز الدخول إلى تطبيق نبضٌ صغير هو:\n\n    $code\n\nالرمز صالح لمدة 15 دقيقة. إن لم تطلبيه فتجاهلي هذه الرسالة.\n"));
+  $headers = [
+    'From: ' . $enc('نبضٌ صغير') . " <$from>",
+    'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . (explode('@', $from)[1] ?? $host) . '>',
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: base64',
-  ]);
-  return mail($email, '=?UTF-8?B?' . base64_encode($subject) . '?=', chunk_split(base64_encode($body)), $headers, '-f' . $from);
+  ];
+  if ($smtp) {
+    $msg = implode("\r\n", array_merge(['Date: ' . date('r'), "To: <$email>", "Subject: $subject"], $headers)) . "\r\n\r\n" . $body;
+    return smtp_send($smtp, $from, $email, $msg);
+  }
+  return mail($email, $subject, $body, implode("\r\n", $headers), '-f' . $from);
 }
 
 switch ($act) {
@@ -53,6 +103,14 @@ switch ($act) {
       ->execute([$email, password_hash($code, PASSWORD_DEFAULT), time() + CODE_TTL]);
     if (!send_code_mail($email, $code)) out(['error' => 'mail_failed', 'text' => 'تعذّر إرسال الإيميل، جرّبي بعد قليل.'], 502);
     out(['ok' => true]);
+
+  // فحص الإرسال من صفحة الإشراف أو المتصفح: يحتاج كلمة الإشراف ويُرجع سبب الفشل بالتفصيل
+  case 'mail_test':
+    if (!hash_equals((string)$CFG['admin_token'], (string)($in['admin'] ?? ''))) out(['error' => 'forbidden'], 403);
+    $to = strtolower(trim((string)($in['email'] ?? '')));
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) out(['error' => 'bad_email'], 400);
+    $ok = send_code_mail($to, '000000');
+    out(['ok' => $ok, 'via' => isset($CFG['smtp']) ? 'smtp' : 'mail()', 'error' => $ok ? null : ($GLOBALS['mail_err'] ?? 'mail() returned false')]);
 
   case 'verify':
     $email = strtolower(trim((string)($in['email'] ?? '')));

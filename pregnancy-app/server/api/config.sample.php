@@ -20,6 +20,10 @@ return [
   // (أنشئيه من Site Tools ← Email ← Accounts، مثل no-reply@nabd.khatta.net)
   'mail_from' => 'no-reply@nabd.khatta.net',
 
+  // الأفضل: الإرسال من حساب Gmail بكلمة مرور التطبيقات (myaccount.google.com/apppasswords)
+  // تصل الرموز للبريد الوارد بدون إعداد DNS. عند وجوده يُتجاهل mail_from ويكون المرسل هو حساب Gmail.
+  // 'smtp' => ['host' => 'smtp.gmail.com', 'port' => 465, 'secure' => 'ssl', 'user' => 'xxx@gmail.com', 'pass' => 'abcdefghijklmnop'],
+
   // كلمة سر صفحة الإشراف admin.php (اختاري كلمة طويلة)
   'admin_token' => 'CHANGE-ME-LONG-RANDOM',
 ];

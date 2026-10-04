@@ -12,7 +12,10 @@
    - مفتاح Gemini المجاني من aistudio.google.com ← Get API key (بحساب Google، بدون بطاقة).
    - `admin_token`: كلمة سر طويلة لصفحة الإشراف.
 6. **اختبار:** افتحي `https://دومينك/nabd-api/admin.php` وادخلي بكلمة الإشراف.
-7. **إيميل رموز الدخول (للحساب):** Site Tools ← Email ← Accounts: أنشئي إيميلاً على دومين الموقع نفسه (مثل `no-reply@nabd.khatta.net`)، واكتبيه في `mail_from` داخل `config.php`.
+7. **إيميل رموز الدخول (للحساب) — الطريقة الأضمن:** أنشئي حساب Gmail خاصاً بالتطبيق، وفعّلي فيه التحقق بخطوتين، ثم من myaccount.google.com/apppasswords أنشئي «كلمة مرور تطبيق» (16 حرفاً). أضيفي في `config.php`:
+   `'smtp' => ['host' => 'smtp.gmail.com', 'port' => 465, 'secure' => 'ssl', 'user' => 'الحساب@gmail.com', 'pass' => 'كلمة المرور بدون مسافات'],`
+   للفحص: أرسلي POST إلى `account.php` بالمحتوى `{"action":"mail_test","admin":"<admin_token>","email":"<إيميلك>"}` ويرجع سبب الفشل إن وُجد.
+   **أو بدون Gmail:** Site Tools ← Email ← Accounts: أنشئي إيميلاً على دومين الموقع نفسه (مثل `no-reply@nabd.khatta.net`)، واكتبيه في `mail_from` داخل `config.php`.
    حتى لا تذهب الرموز إلى Spam أضيفي سجلّي SPF وDKIM. إن كان DNS الدومين خارج SiteGround فأضيفيهما عند الجهة التي تدير DNS:
    - SPF: سجل TXT على اسم الدومين، وقيمته من Site Tools ← Email ← Authentication ← SPF.
    - DKIM: سجل TXT باسم `default._domainkey.<الدومين>`، وقيمته من Site Tools ← Email ← Authentication ← DKIM.
@@ -25,5 +28,6 @@
 - مفتاح Gemini على السيرفر فقط، وتعليمات المساعد ثابتة ولا تُغيَّر من التطبيق.
 - حد يومي لكل جهاز ولكل IP (قابل للتعديل في `config.php`).
 - منع الروابط وأرقام الهواتف في المجتمع، وإخفاء تلقائي بعد 3 بلاغات، وحظر من صفحة الإشراف.
+- Gmail المجاني يرسل حتى 500 رسالة يومياً تقريباً، وهذا يكفي في البداية.
 - الحساب بلا كلمة سر: رمز من 6 أرقام على الإيميل صالح 15 دقيقة و5 محاولات، و6 رموز يومياً لكل إيميل.
 - `.htaccess` يمنع فتح `config.php` و`lib.php` و`schema.sql` من المتصفح.
