@@ -73,6 +73,7 @@ function contextText() {
     const st = status();
     lines.push(`المستخدمة حامل في الأسبوع ${st.week} (${st.weeksDone} أسبوع و${st.extra} يوم)، الثلث ${st.tri}، موعد الولادة ${iso(st.due)}.`);
   }
+  if (S.country) lines.push(`تعيش في: ${countryOf(S.country).n}. راعي عادات بلدها وأكله ونظامه الصحي عند الحاجة.`);
   const m = S.med || {};
   if (m.conditions) lines.push(`أمراض أو حالات: ${m.conditions}`);
   if (m.meds) lines.push(`أدوية حالية: ${m.meds}`);
@@ -87,7 +88,7 @@ function contextText() {
   if (ws.length) lines.push(`آخر وزن: ${ws[ws.length - 1].kg} كغ، الوزن قبل الحمل: ${S.profile?.preWeight || 'غير معروف'}.`);
   return lines.join('\n');
 }
-const AI_RULES = `أنتِ "نبض"، رفيقة ذكية داخل تطبيق متابعة حمل عربي، تتكلمين بلهجة مصرية بسيطة ودافئة ومحترمة.
+const AI_RULES = `أنتِ "نبض"، رفيقة ذكية داخل تطبيق متابعة حمل عربي، تتكلمين بعربية بسيطة دافئة يفهمها كل العرب، وإن كتبت المستخدمة بلهجة بلدها فجاوبيها بلهجة قريبة منها.
 قواعدك:
 - أجيبي باختصار ووضوح في نقاط قصيرة، وبلغة يفهمها أي شخص غير متخصص.
 - استخدمي بيانات المستخدمة أدناه لتكون الإجابة شخصية لها هي.
@@ -96,7 +97,7 @@ const AI_RULES = `أنتِ "نبض"، رفيقة ذكية داخل تطبيق م
 - اختمي عند الحاجة بجملة قصيرة تذكّر بأن المعلومات للتثقيف ولا تغني عن الطبيب.`;
 
 function offlineAnswer(q) {
-  const STOP = ['هل', 'آمن', 'آمنة', 'امن', 'امنة', 'ممكن', 'ايه', 'إيه', 'اللي', 'أقدر', 'اقدر', 'عندي', 'كده', 'ينفع', 'مسموح', 'الحمل', 'حامل', 'وانا', 'وأنا', 'انا', 'أنا', 'ليه', 'إزاي', 'ازاي', 'امتى', 'إمتى'];
+  const STOP = ['ماذا', 'كيف', 'متى', 'لماذا', 'هل', 'آمن', 'آمنة', 'امن', 'امنة', 'ممكن', 'ايه', 'إيه', 'اللي', 'أقدر', 'اقدر', 'عندي', 'كده', 'ينفع', 'مسموح', 'الحمل', 'حامل', 'وانا', 'وأنا', 'انا', 'أنا', 'ليه', 'إزاي', 'ازاي', 'امتى', 'إمتى'];
   const norm = w => w.replace(/^(و|ف|ب)?ال/, '').replace(/[ةه]$/, 'ه').replace(/[أإآ]/g, 'ا');
   const words = q.replace(/[؟?.,،!]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.includes(w)).map(norm).filter(w => w.length > 2);
   const score = text => { const t = text.replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه'); return words.reduce((n, w) => n + (t.includes(w) ? 1 : 0), 0); };
@@ -129,10 +130,13 @@ function triage(c, week) {
     ['💚', 'كل شيء يبدو مطمئناً', 'استمري في روتينك وراقبي نفسك.', 'ok'],
     ['👀', 'راقبي وأخبري طبيبك في الزيارة', 'ليست حالة طارئة، لكن سجّليها واذكريها لطبيبك.', 'low'],
     ['📞', 'كلمي طبيبك اليوم', 'هذه الأعراض تحتاج رأي طبيبك خلال اليوم.', 'high'],
-    ['🚨', 'توجهي للطوارئ الآن', 'لا تنتظري — اذهبي لأقرب طوارئ نساء وولادة أو اتصلي بالإسعاف (123 في مصر).', 'danger']
+    ['🚨', 'توجهي للطوارئ الآن', 'لا تنتظري — اذهبي لأقرب طوارئ نساء وولادة أو اتصلي بالإسعاف.', 'danger']
   ][lvl];
   return { lvl, ic: lv[0], title: lv[1], act: lv[2], cls: lv[3], reasons };
 }
+const emergencyNo = () => (S.med && S.med.emergency) || countryOf(S.country).e || '112';
+const gluUnit = () => S.gluUnit || countryOf(S.country).g;
+const showVal = (t, v) => t.glu && gluUnit() === 'mmol' ? `${Math.round(v / 18 * 10) / 10} <small class="muted">mmol/L</small>` : `${v} <small class="muted">${t.u}</small>`;
 const waLink = (text, phone) => `https://wa.me/${(phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`;
 
 /* ---------- عناصر مساعدة للعرض ---------- */
@@ -216,7 +220,7 @@ function viewBabyHome() {
   <div class="card nav-row" data-sub="momguide"><span class="ic">🌷</span><div class="grow"><b>لكِ أنتِ: ${mg[1]}</b><div class="muted">${mg[2][0]}</div></div><span class="chev">‹</span></div>
   ${nextM ? `<div class="card nav-row" data-sub="miles"><span class="ic">⭐</span><div class="grow"><b>المرحلة القادمة (شهر ${nextM[0]})</b><div class="muted">${nextM[1]}</div></div><span class="chev">‹</span></div>` : ''}
   <div class="card ask-card"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>اسألي نبض عن طفلك</b><div class="muted">رضاعة، نوم، مغص، حرارة، تطعيمات…</div></div></div>
-    <form class="ask-row" id="homeAsk"><input class="input" id="homeAskQ" placeholder="مثال: ابني عنده مغص بالليل أعمل إيه؟" autocomplete="off"><button class="btn" aria-label="اسألي">↖</button></form></div>
+    <form class="ask-row" id="homeAsk"><input class="input" id="homeAskQ" placeholder="مثال: طفلي عنده مغص في الليل، ماذا أفعل؟" autocomplete="off"><button class="btn" aria-label="اسألي">↖</button></form></div>
   ${communityTeaser()}
   <div class="card nav-row" data-sub="momcare"><span class="ic">🤱</span><div class="grow"><b>صحتك أنتِ بعد الولادة</b><div class="muted">التعافي، والمزاج، والرضاعة</div></div><span class="chev">‹</span></div>
   <div class="card warn-card nav-row" data-sub="babywarn"><span class="ic">🚨</span><div class="grow"><b>متى أذهب بطفلي للطوارئ؟</b><div class="muted">علامات لا تنتظر</div></div><span class="chev">‹</span></div>`;
@@ -244,10 +248,10 @@ Object.assign(SUBVIEWS, {
     return `${res ? `<div class="card result lv-${res.cls}"><div class="row"><span class="big-ic">${res.ic}</span><div class="grow"><h2 style="margin:0">${res.title}</h2><div>${res.act}</div></div></div>
         ${res.reasons.length ? `<ul class="list" style="margin-top:10px">${res.reasons.map(r => `<li>${r}</li>`).join('')}</ul>` : ''}
         ${res.lvl >= 2 ? `<div class="row" style="margin-top:12px">
-          <a class="btn grow center" href="tel:123">📞 الإسعاف 123</a>
+          <a class="btn grow center" href="tel:${emergencyNo()}">📞 الإسعاف ${emergencyNo()}</a>
           ${S.med.docPhone ? `<a class="btn ghost grow center" href="tel:${esc(S.med.docPhone)}">👩‍⚕️ اتصلي بطبيبك</a>` : ''}
-          <a class="btn ghost grow center" target="_blank" rel="noopener" href="${waLink(`🚨 محتاجاكي/محتاجاك دلوقتي. فحص نبض بيقول: ${res.title}. ${res.reasons.join(' ')}`, S.med.partnerPhone)}">💬 أبلغي زوجك</a></div>
-          <p class="muted" style="margin:8px 0 0">رقم الإسعاف في مصر 123 — اكتبيه يدوياً لو لم يعمل الزر.</p>` : ''}
+          <a class="btn ghost grow center" target="_blank" rel="noopener" href="${waLink(`🚨 أحتاجك الآن. نتيجة فحص نبض: ${res.title}. ${res.reasons.join(' ')}`, S.med.partnerPhone)}">💬 أبلغي زوجك</a></div>
+          <p class="muted" style="margin:8px 0 0">رقم الإسعاف في ${countryOf(S.country).n}: ${emergencyNo()} — اكتبيه يدوياً لو لم يعمل الزر. <button class="link" data-sub="medinfo">تعديل الرقم</button></p>` : ''}
       </div>` : ''}
     <div class="card"><h3>1) الضغط (اختياري)</h3>
       <div class="row"><input class="input grow" id="cSys" type="number" inputmode="numeric" placeholder="الانقباضي (الكبير) مثل 120" value="${esc(c.sys)}" style="margin:0">
@@ -273,13 +277,14 @@ Object.assign(SUBVIEWS, {
         ${pending.map((p, i) => { const t = LAB_TESTS.find(x => x.k === p.k); return `<label class="check"><input type="checkbox" data-pend="${i}" checked><span>${t.n}: <b>${p.v}</b> ${t.u}</span></label>`; }).join('')}
         <div class="row" style="margin-top:8px"><button class="btn grow" id="pendSave">حفظ المحدد</button><button class="btn ghost grow" id="pendCancel">إلغاء</button></div></div>` : ''}
       <label class="f">التحليل<select id="lK">${LAB_TESTS.map(t => `<option value="${t.k}">${t.ic} ${t.n} (${t.u})</option>`).join('')}</select></label>
-      <div class="grid2"><label class="f">النتيجة<input id="lV" type="number" step="0.01" inputmode="decimal"></label><label class="f">التاريخ<input id="lD" type="date" value="${iso(today())}"></label></div>
+      <div class="grid2"><label class="f">النتيجة<input id="lV" type="number" step="0.01" inputmode="decimal"></label><label class="f">الوحدة<select id="lU"></select></label></div>
+      <div><label class="f">التاريخ<input id="lD" type="date" value="${iso(today())}"></label></div>
       <button class="btn block" id="lAdd">حفظ وشرح النتيجة</button>
     </div>
     ${LAB_TESTS.filter(t => lat[t.k]).map(t => {
       const l = lat[t.k], e = t.check(+l.v, tri), hist = S.labs.filter(x => x.k === t.k).sort((a, b) => a.date.localeCompare(b.date));
       return `<div class="card lab-card"><div class="row"><span class="big-ic">${t.ic}</span><div class="grow"><b>${t.n}</b><div class="muted">${fmtShort.format(parse(l.date))}</div></div>
-        <div class="center"><b style="font-size:1.3rem">${l.v}</b> <small class="muted">${t.u}</small><br>${chipS(e.s)}</div></div>
+        <div class="center"><b style="font-size:1.3rem">${showVal(t, l.v)}</b><br>${chipS(e.s)}</div></div>
         <p style="margin:10px 0 0">${e.t}</p>${spark(hist.map(h => +h.v), 300, 50)}
         <details><summary class="muted">ما هذا التحليل؟ · السجل (${hist.length})</summary><p class="muted">${t.about}</p>
         ${hist.slice().reverse().map(h => `<div class="row" style="justify-content:space-between"><span>${fmtShort.format(parse(h.date))}</span><b>${h.v}</b><button class="btn sm ghost" data-labdel="${h.id}">✕</button></div>`).join('')}</details></div>`;
@@ -298,7 +303,7 @@ Object.assign(SUBVIEWS, {
       ${f('allergies', 'حساسية من أدوية أو أطعمة', 'لا يوجد')}
       ${f('prev', 'حمل وولادات سابقة', 'مثال: ولادة طبيعية 2022')}
       ${f('doctor', 'اسم الطبيب')}${f('docPhone', 'رقم الطبيب', '', 'tel')}
-      ${f('hospital', 'المستشفى المختار')}${f('partnerPhone', 'رقم واتساب الزوج (بمفتاح الدولة مثل 2010…)', '201xxxxxxxxx', 'tel')}
+      ${f('hospital', 'المستشفى المختار')}${f('partnerPhone', 'رقم واتساب الزوج (بمفتاح الدولة)', 'مثال: 9665xxxxxxxx', 'tel')}${f('emergency', 'رقم الإسعاف في منطقتك (اختياري)', countryOf(S.country).e || '112', 'tel')}
       <button class="btn block" id="medSave">حفظ</button></div>`;
   },
 
@@ -353,7 +358,7 @@ Object.assign(SUBVIEWS, {
     const q = (route.q || '').trim(), f = route.ff || 'all';
     const list = LOCAL_FOODS.filter(([n, s]) => (f === 'all' || s === f) && (!q || n.includes(q)));
     const lab = { ok: ['✅', 'آمن'], care: ['⚠️', 'باعتدال'], no: ['⛔', 'تجنبيه'] };
-    return `<input class="input" id="lfQ" placeholder="ابحثي: فول، فسيخ، حلبة…" value="${esc(q)}" style="margin:0 0 10px">
+    return `<input class="input" id="lfQ" placeholder="ابحثي: كبسة، فول، كسكس، حلبة…" value="${esc(q)}" style="margin:0 0 10px">
       <div class="seg">${[['all', 'الكل'], ['ok', '✅ آمن'], ['care', '⚠️ باعتدال'], ['no', '⛔ تجنبيه']].map(([k, v]) => `<button data-lf="${k}" class="${f === k ? 'on' : ''}">${v}</button>`).join('')}</div>
       <div class="card">${list.map(([n, s, d]) => `<div class="item-row"><div class="em">${lab[s][0]}</div><div class="grow"><b>${n}</b> <span class="st-chip" style="--c:${s === 'ok' ? '#4caf7d' : s === 'care' ? '#f2a03d' : '#ef5350'}">${lab[s][1]}</span><div class="muted">${d}</div></div></div>`).join('') || '<p class="muted">لا نتائج — اسألي نبض عنه ✨</p>'}</div>`;
   },
@@ -429,7 +434,7 @@ Object.assign(SUBVIEWS, {
     const birth = parse(S.baby.date), d = diffDays(today(), birth);
     return `<div class="card">${VACCINES.map(v => { const due = addDays(birth, v.d), done = !!S.vax[v.d], late = !done && d > v.d + 14;
       return `<label class="check ${done ? 'done' : ''}"><input type="checkbox" data-vax="${v.d}" ${done ? 'checked' : ''}><span class="grow"><b>${v.at}</b> · ${fmtShort.format(due)} ${late ? '<span class="st-chip" style="--c:#ef5350">متأخر</span>' : ''}<br><small class="muted">${v.n}</small></span></label>`; }).join('')}</div>
-      <div class="card"><p class="muted" style="margin:0">${OPTIONAL_VACCINES}<br>الجدول تقريبي حسب برنامج التطعيمات الإجبارية في مصر — راجعي مكتب الصحة أو طبيب الأطفال.</p></div>`;
+      <div class="card"><p class="muted" style="margin:0">${OPTIONAL_VACCINES}<br>الجدول عام تقريبي — المرجع جدول وزارة الصحة في بلدك وطبيب الأطفال.</p></div>`;
   },
 
   miles() {
@@ -473,12 +478,12 @@ Object.assign(SUBVIEWS, {
 
 function partnerMsg(st, pt, w) {
   return `💗 تحديث الأسبوع ${st.week} من رحلتنا
-👶 بيبي دلوقتي بحجم ${w.size} (${w.len}، ${w.wt})
+👶 طفلنا الآن بحجم ${w.size} (${w.len}، ${w.wt})
 ✨ ${w.baby[0]}
-🤰 أنا حاسة بـ: ${pt.feel}
-🙏 ممكن تساعدني في:
+🤰 ما أشعر به: ${pt.feel}
+🙏 تستطيع أن تساعدني في:
 ${pt.help.map(h => '• ' + h).join('\n')}
-⏳ فاضل ${Math.max(0, st.left)} يوم على ميعاد الولادة (${fmtDate.format(st.due)})`;
+⏳ باقٍ ${Math.max(0, st.left)} يوماً على موعد الولادة (${fmtDate.format(st.due)})`;
 }
 function fileText() {
   const st = status(), m = S.med, tri = st.tri;
@@ -499,14 +504,14 @@ function viewAssist() {
 }
 function viewAssistAI() {
   const chat = S.chat;
-  const sug = S.baby ? ['ابني بيعيط كتير بالليل', 'إمتى أبدأ الأكل الصلب؟', 'حرارة 38 لطفل عمره شهرين', 'إزاي أعرف إن الرضاعة كفاية؟']
-    : ['إيه معنى نتيجة تحاليلي؟', 'أقدر أصوم رمضان؟', 'هل الحلبة آمنة؟', 'إيه اللي يحصل لبيبي الأسبوع ده؟', 'عندي صداع وتورم في رجلي'];
+  const sug = S.baby ? ['طفلي يبكي كثيراً في الليل', 'متى أبدأ الأكل الصلب؟', 'حرارة 38 لطفل عمره شهران', 'كيف أعرف أن الرضاعة كافية؟']
+    : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
     <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق. المساعد الذكي الكامل متاح داخل نسخة Claude.'}</div></div></div></div>
     <div id="chat">${chat.length ? chat.map(m => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
-    <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف 123.</p></div>`;
+    <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف ${emergencyNo()}.</p></div>`;
 }
 let askBusy = false;
 async function ask(q) {
@@ -536,7 +541,7 @@ async function readLabPhoto(file) {
   const out = $('#labAiOut'); out.innerHTML = '<p class="muted">جاري قراءة التحليل… قد يستغرق دقيقة.</p>';
   try {
     const keys = LAB_TESTS.map(t => `${t.k}: ${t.n} (${t.u})`).join('\n');
-    const r = await AI.sample.json(`هذه صورة ورقة تحاليل طبية لامرأة حامل. استخرجي القيم الموجودة فقط من هذه القائمة:\n${keys}\nللزلال في البول: 0 سلبي، 1 آثار، 2 ++، 3 +++. حوّلي الوحدات إلى المذكورة (مثلاً الصفائح إلى آلاف).\nأعيدي فقط مصفوفة JSON مثل: [{"k":"hb","v":10.8,"date":"2026-05-01"}] — date إن وُجد في الورقة، وإلا اتركيه فارغاً. إن لم تجدي شيئاً أعيدي [].`, { images: file, modelTier: 'default' });
+    const r = await AI.sample.json(`هذه صورة ورقة تحاليل طبية لامرأة حامل. استخرجي القيم الموجودة فقط من هذه القائمة:\n${keys}\nللزلال في البول: 0 سلبي، 1 آثار، 2 ++، 3 +++. حوّلي الوحدات إلى المذكورة: السكر من mmol/L إلى mg/dL (×18)، والهيموجلوبين من g/L إلى g/dL (÷10)، وفيتامين د من nmol/L إلى ng/mL (÷2.5)، والصفائح إلى آلاف.\nأعيدي فقط مصفوفة JSON مثل: [{"k":"hb","v":10.8,"date":"2026-05-01"}] — date إن وُجد في الورقة، وإلا اتركيه فارغاً. إن لم تجدي شيئاً أعيدي [].`, { images: file, modelTier: 'default' });
     const found = (Array.isArray(r) ? r : []).filter(x => LAB_TESTS.some(t => t.k === x.k) && isFinite(+x.v));
     if (!found.length) { out.innerHTML = '<p class="muted">لم نجد قيماً واضحة — أدخليها يدوياً.</p>'; return; }
     route.pending = found.map(x => ({ k: x.k, v: +x.v, date: /^\d{4}-\d{2}-\d{2}$/.test(x.date || '') ? x.date : iso(today()) }));
@@ -580,11 +585,18 @@ function featBind() {
 
   // التحاليل
   on('#lAdd', () => {
-    const k = $('#lK').value, v = parseFloat($('#lV').value), d = $('#lD').value;
+    const k = $('#lK').value, d = $('#lD').value, t0 = LAB_TESTS.find(x => x.k === k), uSel = $('#lU').value;
+    let v = parseFloat($('#lV').value);
+    if (t0.alt && uSel === t0.alt[0]) v = Math.round(v * t0.alt[1] * 100) / 100;
+    if (t0.glu) { S.gluUnit = uSel === 'mmol/L' ? 'mmol' : 'mg'; }
     if (!isFinite(v) || !d) return toast('أدخلي النتيجة والتاريخ');
     S.labs.push({ id: Date.now().toString(36), k, v, date: d }); save(); toast('تم الحفظ'); render(false);
   });
   app.querySelectorAll('[data-labdel]').forEach(b => b.onclick = () => { S.labs = S.labs.filter(x => x.id !== b.dataset.labdel); save(); render(false); });
+  const fillUnits = () => { if (!$('#lK')) return; const t0 = LAB_TESTS.find(x => x.k === $('#lK').value), u = $('#lU'); if (!t0 || !u) return;
+    const pref = t0.glu && gluUnit() === 'mmol' ? t0.alt[0] : t0.u;
+    u.innerHTML = [t0.u, ...(t0.alt ? [t0.alt[0]] : [])].map(x => `<option ${x === pref ? 'selected' : ''}>${x}</option>`).join(''); };
+  on('#lK', fillUnits, 'onchange'); fillUnits();
   on('#labPhoto', e => { const f = e.target.files[0]; if (f) readLabPhoto(f); }, 'onchange');
   on('#pendSave', () => {
     const keep = [...app.querySelectorAll('[data-pend]')].filter(c => c.checked).map(c => route.pending[+c.dataset.pend]);
@@ -595,7 +607,7 @@ function featBind() {
 
   // البيانات الطبية والملف
   on('#medSave', () => {
-    ['blood', 'rh', 'conditions', 'meds', 'allergies', 'prev', 'doctor', 'docPhone', 'hospital', 'partnerPhone'].forEach(k => { const el = $('#m_' + k); if (el) S.med[k] = el.value.trim(); });
+    ['blood', 'rh', 'conditions', 'meds', 'allergies', 'prev', 'doctor', 'docPhone', 'hospital', 'partnerPhone', 'emergency'].forEach(k => { const el = $('#m_' + k); if (el) S.med[k] = el.value.trim(); });
     save(); toast('تم الحفظ'); history.back();
   });
   on('#filePrint', () => window.print());

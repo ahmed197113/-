@@ -97,7 +97,7 @@ const TOOLS = [
   ['warnings', '🚨', 'علامات الخطر'], ['names', '👶', 'أسماء المواليد'], ['calc', '🧮', 'حاسبة الولادة'],
   ['postpartum', '🤱', 'بعد الولادة'], ['faq', '❓', 'أسئلة شائعة'], ['tests', '🔬', 'الفحوصات والتحاليل'],
   ['checkin', '🩺', 'فحص اليوم'], ['labs', '🧪', 'افهمي تحاليلك'], ['file', '📄', 'ملفي الطبي'], ['medinfo', '🩺', 'بياناتي الطبية'],
-  ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن ولا لأ؟'], ['album', '📸', 'ألبوم رحلتي'],
+  ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن أم لا؟'], ['album', '📸', 'ألبوم رحلتي'],
   ['born', '🎉', 'وُلد طفلي'], ['feeds', '🍼', 'الرضاعة'], ['diapers', '💧', 'الحفاضات'], ['sleep', '😴', 'نوم الطفل'], ['growth', '📈', 'نمو الطفل'],
   ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل'],
   ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
@@ -132,6 +132,10 @@ function render(scroll = true) {
 }
 
 /* ---------- الإعداد ---------- */
+// تخمين البلد من لغة الجهاز (مثل ar-SA)
+function guessCountry() {
+  try { const r = (navigator.languages || [navigator.language]).map(l => (l.split('-')[1] || '').toUpperCase()).find(c => COUNTRIES.some(x => x.c === c)); return r || 'SA'; } catch { return 'SA'; }
+}
 function viewSetup(first) {
   const p = S.profile || { method: 'lmp', cycle: 28, ivfDay: 5 };
   const m = p.method;
@@ -142,6 +146,7 @@ function viewSetup(first) {
   <div class="card">
     <h2>احسبي موعد ولادتك</h2>
     <label class="f">اسمك (اختياري)<input id="s_name" value="${esc(p.name)}" placeholder="مثال: سارة"></label>
+    <label class="f">بلدك<select id="s_country">${COUNTRIES.map(c => `<option value="${c.c}" ${(S.country || guessCountry()) === c.c ? 'selected' : ''}>${c.f} ${c.n}</option>`).join('')}</select></label>
     <label class="f">اسم الجنين أو لقبه (اختياري)<input id="s_baby" value="${esc(p.babyName)}" placeholder="مثال: نونو"></label>
     <div class="muted">طريقة الحساب</div>
     <div class="seg" id="s_method">
@@ -173,6 +178,7 @@ function readSetup() {
   const p = { ...(S.profile || {}) };
   p.method = document.querySelector('#s_method .on').dataset.m;
   p.name = $('#s_name').value.trim(); p.babyName = $('#s_baby').value.trim();
+  S.country = $('#s_country').value;
   p.height = $('#s_height').value; p.preWeight = $('#s_pre').value;
   const v = id => $(id) && $(id).value;
   if (p.method === 'lmp') { p.lmp = v('#s_lmp'); p.cycle = v('#s_cycle') || 28; }
@@ -431,7 +437,7 @@ function viewGuide() {
   return `
   <div class="card warn-card nav-row" data-sub="warnings"><span class="ic">🚨</span><div class="grow"><b>علامات تستدعي الطبيب فوراً</b><div class="muted">اقرئيها مرة واحدة على الأقل</div></div><span class="chev">‹</span></div>
   ${group('🔬 الفحوصات', [navRow('tests', nextT ? `القادم لك: ${nextT.title}` : 'جدول الفحوصات من البداية للنهاية')])}
-  ${group('🍎 الأكل والعافية', [navRow('localfood', 'فول، فسيخ، حلبة، كركديه… آمن ولا لأ؟'), navRow('food', 'المفيد والممنوع والعناصر المهمة'), navRow('ramadan', 'هل أصوم؟ وخطة يوم الصيام'), navRow('exercise', 'تمارين آمنة لكل مرحلة')])}
+  ${group('🍎 الأكل والعافية', [navRow('localfood', 'كبسة، فول، كسكس، حلبة… آمن أم لا؟'), navRow('food', 'المفيد والممنوع والعناصر المهمة'), navRow('ramadan', 'هل أصوم؟ وخطة يوم الصيام'), navRow('exercise', 'تمارين آمنة لكل مرحلة')])}
   ${group('👶 المولود وما بعد الولادة', [navRow('born', S.baby ? 'تعديل بيانات الولادة' : 'سجّلي ولادة طفلك وابدئي رحلته'), navRow('names', 'اختاري واحفظي الأسماء المفضلة'), navRow('postpartum', 'النفاس والرضاعة والصحة النفسية')])}
   ${group('🧮 أدوات وأسئلة', [navRow('calc', 'احسبي موعد ولادة لأي تاريخ'), navRow('faq', 'إجابات لأكثر الأسئلة شيوعاً')])}`;
 }
@@ -452,7 +458,7 @@ function viewMore() {
   <div class="card"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
   <div class="card"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
-  <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً.</p>`;
+  <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
 }
 
 /* ---------- الشاشات الفرعية ---------- */
@@ -807,7 +813,7 @@ function bind() {
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { history.replaceState(route, ''); render(); });
+window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});

@@ -365,3 +365,4 @@ a.btn { text-decoration: none; display: inline-block; }
 .tip-card { display: flex; gap: 12px; align-items: flex-start; background: color-mix(in srgb, #f2c94c 9%, var(--card)); }
 .mini-rows { display: grid; gap: 6px; font-size: .92rem; }
 .now-card { border-color: var(--primary); }
+.tabbar[hidden] { display: none; }

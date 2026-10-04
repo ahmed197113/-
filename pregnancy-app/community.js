@@ -5,7 +5,7 @@
 const CATS = [['all', 'الكل'], ['t1', 'الثلث الأول'], ['t2', 'الثلث الثاني'], ['t3', 'الثلث الثالث'], ['birth', 'الولادة'],
   ['bf', 'الرضاعة'], ['baby', 'الطفل'], ['sleep', 'النوم'], ['food', 'الأكل'], ['mental', 'نفسية'], ['other', 'عام']];
 const catName = k => (CATS.find(c => c[0] === k) || CATS[CATS.length - 1])[1];
-const URGENT_RE = /نزيف|دم |دم$|نزل (مني )?ماء|نزلت مية|مش بيتحرك|مبيتحركش|حركته قلت|تشنج|ازرق|إغماء|اغماء|حرارة 3[89]|حرارته|مش بيتنفس|صعوبة (في )?التنفس|انتحار|أذي نفسي|اذي نفسي/;
+const URGENT_RE = /نزيف|ينزف|سائل ينزل|لا يتحرك|ما يتحرك|ما عم يتحرك|دم |دم$|نزل (مني )?ماء|نزلت مية|مش بيتحرك|مبيتحركش|حركته قلت|تشنج|ازرق|إغماء|اغماء|حرارة 3[89]|حرارته|مش بيتنفس|صعوبة (في )?التنفس|انتحار|أذي نفسي|اذي نفسي/;
 const BLOCK_RE = /(https?:\/\/|www\.)|(\d[\s-]?){8,}/;
 
 const CM = { mode: null, uid: null, canWrite: null, qs: [], loaded: false, loading: false, err: '', ans: {} };
@@ -86,6 +86,10 @@ CM.loadAnswers = async (qid, force) => {
 };
 
 const myStage = () => {
+  const fl = S.country && S.country !== 'XX' ? countryOf(S.country).f + ' ' : '';
+  return fl + myStage0();
+};
+const myStage0 = () => {
   if (S.baby) { const d = diffDays(today(), parse(S.baby.date)); return d < 60 ? `أم لطفل عمره ${Math.floor(d / 7)} أسابيع` : `أم لطفل عمره ${Math.floor(d / 30.44)} شهراً`; }
   return `حامل · الأسبوع ${status().week}`;
 };
@@ -131,8 +135,8 @@ Object.assign(SUBVIEWS, {
     return `<div class="card"><label class="f">اسمك في المجتمع<input id="nNick" value="${esc(S.nick || '')}" placeholder="مثال: أم يوسف" maxlength="30"></label>
       <label class="check"><input type="checkbox" id="nAnon" ${d.anon ? 'checked' : ''}><span>انشري بدون اسم 🤍</span></label>
       <label class="f" style="margin-top:10px">التصنيف<select id="nCat">${CATS.slice(1).map(([k, v]) => `<option value="${k}" ${(d.cat || myCat()) === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
-      <label class="f">سؤالك باختصار<input id="nTitle" maxlength="120" value="${esc(d.title || '')}" placeholder="مثال: إمتى حسيتوا بأول حركة؟"></label>
-      <label class="f">التفاصيل<textarea id="nBody" rows="5" maxlength="1500" placeholder="احكي أكثر عشان الأمهات يقدروا يساعدوكي">${esc(d.body || '')}</textarea></label>
+      <label class="f">سؤالك باختصار<input id="nTitle" maxlength="120" value="${esc(d.title || '')}" placeholder="مثال: متى شعرتنّ بأول حركة للجنين؟"></label>
+      <label class="f">التفاصيل<textarea id="nBody" rows="5" maxlength="1500" placeholder="اكتبي التفاصيل حتى تستطيع الأمهات مساعدتك">${esc(d.body || '')}</textarea></label>
       <div id="nWarn"></div>
       <p class="muted" style="margin:0 0 10px">سيظهر مع سؤالك: «${esc(myStage())}»</p>
       <button class="btn block" id="nPost">نشر السؤال</button></div>
@@ -145,7 +149,7 @@ Object.assign(SUBVIEWS, {
     if (CM.ans[x.id] === undefined) CM.loadAnswers(x.id);
     const ans = CM.ans[x.id], hasAi = (ans || []).some(a => a.ai);
     const sorted = (ans || []).slice().sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
-    return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (123 في مصر).</div></div>` : ''}
+    return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).</div></div>` : ''}
       <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
         <h2 style="margin:12px 0 6px">${esc(x.title)}</h2><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
         <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : `<button class="link" data-report="q:${esc(x.id)}">🚩 إبلاغ</button>`}</div></div>
