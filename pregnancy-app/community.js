@@ -85,7 +85,8 @@ CM.ready = (async () => {
 })();
 
 CM.load = async (force) => {
-  if (!CM.mode || CM.loading || (CM.loaded && !force)) return;
+  // بعد فشل التحميل لا نعيد المحاولة تلقائياً مع كل رسم للشاشة (كان يسبب حلقة طلبات لا تنتهي) — زر 🔄 يعيدها
+  if (!CM.mode || CM.loading || ((CM.loaded || CM.err) && !force)) return;
   CM.loading = true; CM.err = '';
   try { CM.qs = await CM.store.list(); CM.loaded = true; }
   catch (e) { CM.err = 'تعذّر تحميل المجتمع الآن. حاولي مرة أخرى.'; }
@@ -194,7 +195,9 @@ function cmBind() {
   app.querySelectorAll('[data-qid]').forEach(el => el.onclick = () => { route = { view: route.view, sub: 'cq', qid: el.dataset.qid, as: route.as }; history.pushState(route, ''); render(); });
   app.querySelectorAll('[data-cf]').forEach(b => b.onclick = () => { route.cf = b.dataset.cf; render(false); });
   app.querySelectorAll('[data-ct]').forEach(b => b.onclick = () => { route.ct = b.dataset.ct; render(false); });
-  on('#cmQ', e => { route.cq = e.target.value; const p = e.target.selectionStart; render(false); const i = $('#cmQ'); i.focus(); i.setSelectionRange(p, p); }, 'oninput');
+  // لا نعيد رسم الشاشة أثناء تركيب الكلمة في كيبورد الجوال، وإلا تنقطع الكتابة
+  const cmSearch = e => { if (e.isComposing) return; route.cq = e.target.value; const p = e.target.selectionStart; render(false); const i = $('#cmQ'); i.focus(); i.setSelectionRange(p, p); };
+  on('#cmQ', cmSearch, 'oninput'); on('#cmQ', cmSearch, 'oncompositionend');
   on('#cmRefresh', () => { CM.load(true); toast('جاري التحديث…'); });
   on('#nBody', e => { const w = $('#nWarn'); if (w) w.innerHTML = URGENT_RE.test(e.target.value) ? '<div class="card lv-danger" style="margin-bottom:10px">🚨 يبدو أنها قد تكون حالة طارئة — لا تنتظري الردود، اذهبي للطوارئ أو كلمي طبيبك الآن.</div>' : ''; }, 'oninput');
   on('#nPost', async () => {

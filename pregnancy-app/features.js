@@ -652,7 +652,8 @@ function featBind() {
   on('#pMsg', e => { $('#pSend').href = waLink(e.target.value, S.med.partnerPhone); }, 'oninput');
 
   // الأكل المحلي
-  on('#lfQ', e => { route.q = e.target.value; const pos = e.target.selectionStart; render(false); const i = $('#lfQ'); i.focus(); i.setSelectionRange(pos, pos); }, 'oninput');
+  const lfSearch = e => { if (e.isComposing) return; route.q = e.target.value; const pos = e.target.selectionStart; render(false); const i = $('#lfQ'); i.focus(); i.setSelectionRange(pos, pos); };
+  on('#lfQ', lfSearch, 'oninput'); on('#lfQ', lfSearch, 'oncompositionend');
   app.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { route.ff = b.dataset.lf; render(false); });
 
   // الألبوم والرسائل

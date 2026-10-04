@@ -138,7 +138,10 @@ function render(scroll = true) {
     lastDepth = depth; lastView = route.view;
   }
   const prevStrip = $('#strip') ? $('#strip').scrollLeft : null, prevY = window.scrollY;
+  // الانتقال الناعم يؤخّر التبديل قليلاً؛ إن رُسمت الشاشة من جديد خلال ذلك فلا نكتب فوقها بالنسخة الأقدم
+  const seq = ++renderSeq;
   const swap = () => {
+    if (seq !== renderSeq) return;
     app.innerHTML = html; bind();
     if (weekChanged && !REDUCED) {
       app.querySelector('.hero-stage')?.classList.add('swap');
@@ -158,7 +161,7 @@ function render(scroll = true) {
   }
   lastKey = key; lastWeek = route.week; lastInner = inner;
 }
-let lastKey = '', lastWeek, lastInner, lastDepth = 0, lastView = 'home';
+let renderSeq = 0, lastKey = '', lastWeek, lastInner, lastDepth = 0, lastView = 'home';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- الإعداد ---------- */
