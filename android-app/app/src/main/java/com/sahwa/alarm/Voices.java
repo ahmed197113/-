@@ -34,14 +34,12 @@ final class Voices {
                 float[] m = {1, 1.25f, 1.5f, 2, 2.5f, 3};
                 for (int i = 0; i < m.length; i++) tone(b, i * .12f, .12f, 440 * p * m[i], .9f, SAW);
                 break;
-            case 5: // knocking on the door
-                float[] w = {0, .16f, .32f, .62f, .78f};
-                for (float s : w) knock(b, s, .11f, 1f, rnd);
+            case 5: // classic alarm-clock beeps
+                float[] w = {0, .13f, .26f, .39f, .62f, .75f, .88f};
+                for (float s : w) tone(b, s, .09f, 2000 * p, .9f, SQUARE);
                 break;
-            case 6: // low pulse + whistle
-                tone(b, 0, .5f, 110 * p, 1f, SAW);
-                tone(b, .55f, .06f, 3000 * p, .6f, SQUARE);
-                tone(b, .75f, .06f, 3000 * p, .6f, SQUARE);
+            case 6: // fire-alarm whoop
+                sweep(b, 0, .9f, 500 * p, 1800 * p, .9f, SQUARE);
                 break;
             default: // morse
                 float t = 0;
@@ -87,15 +85,6 @@ final class Voices {
             double f = f1 + (f2 - f1) * i / (double) n;
             ph += f / SR;
             b[s + i] += wave(type, ph) * vol * env(i, n) * .5f;
-        }
-    }
-
-    private static void knock(float[] b, float start, float dur, float vol, Random rnd) {
-        int s = (int) (start * SR), n = (int) (dur * SR);
-        float lp = 0;
-        for (int i = 0; i < n && s + i < b.length; i++) {
-            lp += .08f * ((rnd.nextFloat() * 2 - 1) - lp);
-            b[s + i] += lp * 6f * vol * env(i, n);
         }
     }
 }
