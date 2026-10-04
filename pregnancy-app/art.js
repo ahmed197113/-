@@ -105,6 +105,20 @@ const Art = (() => {
     </defs>`;
   }
 
+  // إضاءة ثلاثية الأبعاد لكل جزء من الجسم
+  function lightDef(id, rot, k) {
+    const az = 225 - rot;
+    return `<filter id="lt${id}" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="${k}" result="b"/>
+      <feDiffuseLighting in="b" surfaceScale="${k * 1.8}" diffuseConstant="1.15" lighting-color="#fff" result="d"><feDistantLight azimuth="${az}" elevation="46"/></feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="d" operator="arithmetic" k1=".8" k2=".34" k3="0" k4="0" result="sh"/>
+      <feSpecularLighting in="b" surfaceScale="${k * 1.8}" specularConstant=".35" specularExponent="30" lighting-color="#fff2ea" result="s"><feDistantLight azimuth="${az}" elevation="58"/></feSpecularLighting>
+      <feComposite in="s" in2="SourceAlpha" operator="in" result="s2"/>
+      <feComposite in="sh" in2="s2" operator="arithmetic" k1="0" k2="1" k3=".35" k4="0" result="o"/>
+      <feComposite in="o" in2="SourceAlpha" operator="in"/>
+    </filter>`;
+  }
+
   /* ---------- الرحم ---------- */
   const UC = V(120, 128);
   const UTERUS = [V(120, 10), V(176, 16), V(216, 52), V(228, 112), V(214, 172), V(178, 216), V(146, 240), V(134, 254), V(106, 254), V(94, 240), V(62, 216), V(26, 172), V(12, 112), V(24, 52), V(64, 16)];
@@ -196,8 +210,9 @@ const Art = (() => {
       .map(([x, y]) => V(x * r, y * r));
 
     const armW = (7 + 0.075 * L) * fat, legW = (9 + 0.1 * L) * fat;
-    const fill = `fill="url(#sk${id})" fill-opacity="${pal.op}" stroke="${pal.line}" stroke-width=".8" vector-effect="non-scaling-stroke"`;
-    const dark = `fill="url(#skd${id})" fill-opacity="${pal.op}" stroke="${pal.line}" stroke-width=".7" vector-effect="non-scaling-stroke"`;
+    const LT = sono ? '' : `filter="url(#lt${id})"`;
+    const fill = `fill="url(#sk${id})" fill-opacity="${pal.op}" stroke="${pal.line}" stroke-width=".6" stroke-opacity=".5" vector-effect="non-scaling-stroke" ${LT}`;
+    const dark = `fill="url(#skd${id})" fill-opacity="${pal.op}" stroke="${pal.line}" stroke-width=".6" stroke-opacity=".5" vector-effect="non-scaling-stroke" ${LT}`;
 
     // الأطراف البعيدة (خلف الجسم)
     const farArm = limb([P(0.12, 0.08), P(0.46, -0.38), P(0.66, -0.66)], armW * 1.05, armW * 0.7);
@@ -307,13 +322,13 @@ const Art = (() => {
       ${vernix}`;
 
     const box = [...torso, ...H, knee, toe, hc, farHand];
-    return { svg, box, navel };
+    return { svg, box, navel, pts: { head: V(0.15 * r, -0.5 * r), eye, ear: er, hand: hc, foot: toe, back: P(0.55, 0.6) } };
   }
 
   /* ---------- الجنين المبكر (الأسابيع 4–8) ---------- */
   function embryoFigure(week, id, sono) {
     const pal = skinPalette(0, sono);
-    const fill = `fill="url(#sk${id})" fill-opacity="${sono ? 1 : .88}" stroke="${pal.line}" stroke-width=".8" vector-effect="non-scaling-stroke"`;
+    const fill = `fill="url(#sk${id})" fill-opacity="${sono ? 1 : .9}" stroke="${pal.line}" stroke-width=".6" stroke-opacity=".5" vector-effect="non-scaling-stroke" ${sono ? '' : `filter="url(#lt${id})"`}`;
     const body = [[-30, -18], [-29, -36], [-13, -49], [6, -49], [22, -39], [32, -18], [36, 6], [30, 27], [17, 40], [4, 42], [-5, 36], [-6, 26], [-15, 18], [-24, 8], [-29, -4]].map(([x, y]) => V(x, y));
     const tailK = clamp((8.5 - week) / 4);
     const tail = tailK > 0 ? `<path d="${limb([V(14, 38), V(6, 50 * (0.85 + tailK * .15)), V(-6, 52 * (0.8 + tailK * .2)), V(-12, 44)].map((p, i) => i ? add(V(14, 38), mul(sub(p, V(14, 38)), 0.3 + tailK * 0.7)) : p), 8, 2)}" ${fill}/>` : '';
@@ -407,22 +422,33 @@ const Art = (() => {
   }
 
   /* ---------- التجميع ---------- */
+  const L_ = (n, p, d) => ({ n, p, d });
+  const WALL = V(16, 150), CERVIX = V(120, 250);
+
   function scene(week, sono) {
     const id = ++uid;
     const r = rng(week * 53 + (sono ? 5 : 0));
     const pal = skinPalette(clamp((week - 9) / 31), sono);
+    const wallL = [L_('جدار الرحم', WALL, 'عضلة قوية تتمدد مع نمو الجنين وتنقبض وقت الولادة.'), L_('عنق الرحم', CERVIX, 'مدخل الرحم، يبقى مغلقاً طوال الحمل ويتسع عند الولادة.')];
     if (week <= 3 && sono) {
-      return defs(id, pal, sono) + uterus(id, sono, r) + `<path d="${smooth(inner(0.55).map(p => V(UC.x + (p.x - UC.x) * 0.35, p.y)))}" fill="#bdbdbd" opacity=".75"/>`;
+      return { svg: defs(id, pal, sono) + uterus(id, sono, r) + `<path d="${smooth(inner(0.55).map(p => V(UC.x + (p.x - UC.x) * 0.35, p.y)))}" fill="#bdbdbd" opacity=".75"/>`,
+        labels: [L_('بطانة الرحم', V(120, 120), 'تتكاثف استعداداً لاستقبال البويضة المخصبة.'), ...wallL] };
     }
     if (week <= 3) {
-      return `${defs(id, pal, sono)}<clipPath id="mc${id}"><circle cx="120" cy="130" r="116"/></clipPath>
-        <g clip-path="url(#mc${id})" ${sono ? `filter="url(#tx${id})"` : ''}>${micro(week, id)}
+      const labels = {
+        1: [L_('المبيض', V(40, 60), 'يحتوي على آلاف البويضات غير الناضجة.'), L_('جريب ناضج', V(90, 110), 'كيس صغير تنضج بداخله بويضة واحدة كل شهر.'), L_('البويضة', V(108, 150), 'ستخرج من الجريب يوم الإباضة (منتصف الدورة).'), L_('جريبات صغيرة', V(185, 125), 'بويضات تنتظر دورها في الأشهر القادمة.')],
+        2: [L_('البويضة', V(120, 130), 'أكبر خلية في جسم المرأة، تعيش 12–24 ساعة.'), L_('النواة', V(106, 120), 'تحمل نصف الصفات الوراثية من الأم.'), L_('الغلاف الشفاف', V(176, 150), 'طبقة تحمي البويضة ويجب أن يخترقها حيوان منوي واحد.'), L_('خلايا الإكليل', V(60, 90), 'خلايا تحيط بالبويضة وتغذيها.'), L_('حيوان منوي', V(40, 200), 'يحمل نصف الصفات الوراثية من الأب ويحدد جنس الجنين.')],
+        3: [L_('الكيسة الأريمية', V(170, 100), 'البويضة المخصبة بعد انقسامها إلى عشرات الخلايا.'), L_('كتلة الخلايا الداخلية', V(120, 160), 'هذه الخلايا ستصبح الجنين نفسه.'), L_('التجويف', V(110, 110), 'تجويف مملوء بسائل داخل الكيسة.'), L_('بطانة الرحم', V(60, 225), 'تنغرس فيها الكيسة لتبدأ رحلة الحمل.')]
+      }[week];
+      return { svg: `${defs(id, pal, sono)}<clipPath id="mc${id}"><circle cx="120" cy="130" r="116"/></clipPath>
+        <g clip-path="url(#mc${id})">${micro(week, id)}
           <circle cx="120" cy="130" r="116" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="18" filter="url(#bl${id})"/></g>
-        <circle cx="120" cy="130" r="116" fill="none" stroke="${sono ? '#555' : '#b4889f'}" stroke-width="3"/>`;
+        <circle cx="120" cy="130" r="116" fill="none" stroke="#b4889f" stroke-width="3"/>`, labels };
     }
     const t = clamp((week - 9) / 31);
     let out = defs(id, pal, sono) + uterus(id, sono, r);
     const pl = week >= 7 ? placenta(id, t, sono, r) : null;
+    const plL = pl ? [L_('المشيمة', add(pl.insertion, V(30, -8)), week < 10 ? 'بدأت تتكوّن وستتولى تغذية الجنين قريباً.' : 'تلتصق بجدار الرحم، تنقل الغذاء والأكسجين للجنين وتخلّصه من الفضلات.')] : [];
 
     if (week <= 8) {
       const sacR = [0, 0, 0, 0, 22, 32, 44, 56, 66][week];
@@ -434,14 +460,26 @@ const Art = (() => {
       const fig = embryoFigure(week, id, sono);
       const es = [0, 0, 0, 0, 0.16, 0.28, 0.42, 0.56, 0.72][week];
       const ys = V(sc.x + sacR * 0.55, sc.y + sacR * 0.45);
+      const T = V(sc.x - sacR * .1, sc.y - sacR * .1), ra = -10 * Math.PI / 180;
+      const tE = p => add(T, mul(V(p.x * Math.cos(ra) - p.y * Math.sin(ra), p.x * Math.sin(ra) + p.y * Math.cos(ra)), es));
       out += `${pl ? pl.svg : ''}
         <circle cx="${sc.x}" cy="${sc.y}" r="${sacR}" fill="${sono ? '#050505' : '#fff6ef'}" stroke="${sono ? '#ddd' : '#eab0a6'}" stroke-width="2"/>
         ${villi}
         <circle cx="${sc.x - sacR * .1}" cy="${sc.y - sacR * .08}" r="${sacR * .72}" fill="none" stroke="${sono ? '#666' : '#f3c9c0'}" stroke-width="1" stroke-dasharray="3 2"/>
         <circle cx="${f2(ys.x)}" cy="${f2(ys.y)}" r="${f2(4 + week)}" fill="${sono ? '#111' : '#fde7b0'}" stroke="${sono ? '#eee' : '#e2b45a'}" stroke-width="1.6"/>
         ${week >= 5 ? `<path d="M${pt(ys)}Q${f2(sc.x + 6)} ${f2(sc.y + sacR * .3)} ${f2(sc.x)} ${f2(sc.y + 4)}" stroke="${sono ? '#888' : '#e9a8a0'}" stroke-width="2" fill="none"/>` : ''}
-        <g transform="translate(${sc.x - sacR * .1} ${sc.y - sacR * .1}) scale(${es}) rotate(-10)" filter="url(#ds${id})">${fig.svg}</g>`;
-      return out;
+        ${lightDef(id, -10, 3.2)}<g transform="translate(${f2(T.x)} ${f2(T.y)}) scale(${es}) rotate(-10)" filter="url(#ds${id})">${fig.svg}</g>`;
+      const labels = [
+        L_('الجنين', tE(V(-5, -38)), week === 4 ? 'مجموعة صغيرة من الخلايا بحجم بذرة الخشخاش.' : 'الرأس كبير مقارنة بالجسم لأن الدماغ ينمو بسرعة.'),
+        ...(week >= 5 ? [L_('القلب', tE(V(-16, 8)), week === 5 ? 'أنبوب بسيط يبدأ بالنبض في نهاية الأسبوع.' : 'ينبض بسرعة 100–160 نبضة في الدقيقة.')] : []),
+        ...(week >= 6 ? [L_('العين', tE(V(-17, -26)), 'تظهر كبقعة داكنة بسبب صبغة الشبكية.')] : []),
+        ...(week >= 5 ? [L_(week >= 8 ? 'اليد' : 'برعم اليد', tE(week >= 8 ? V(-14, 11) : V(4, 6)), week >= 8 ? 'ظهرت الأصابع الصغيرة.' : 'سيتحول تدريجياً إلى ذراع وكف وأصابع.')] : []),
+        ...(week >= 6 ? [L_(week >= 8 ? 'الرجل' : 'برعم الرجل', tE(V(16, 33)), 'ينمو بعد اليد بأيام قليلة.')] : []),
+        ...(week <= 7 && week >= 5 ? [L_('الذيل الجنيني', tE(V(0, 48)), 'مؤقت، ويختفي بنهاية الأسبوع 8.')] : []),
+        L_('كيس المُح', ys, 'يغذي الجنين في الأسابيع الأولى حتى تتكوّن المشيمة.'),
+        L_('كيس الحمل', V(sc.x - sacR, sc.y + 6), 'الكيس الذي يحيط بالجنين، وأول ما يظهر في السونار.'),
+        ...plL, ...wallL];
+      return { svg: out, labels };
     }
 
     // الأسبوع 9 فما فوق
@@ -459,37 +497,134 @@ const Art = (() => {
     const nav = tf(fig.navel), ins = pl.insertion;
     const cw = 3.2 + 4.5 * t;
     const mid = mul(add(nav, ins), .5);
-    out += pl.svg +
-      cord(nav, ins, add(mid, V(-40 + 20 * t, 30)), add(mid, V(30, -30 + 10 * t)), cw, sono) +
+    const c1 = add(mid, V(-40 + 20 * t, 30)), c2 = add(mid, V(30, -30 + 10 * t));
+    out += lightDef(id, rot, 4.5) + pl.svg + cord(nav, ins, c1, c2, cw, sono) +
       `<g transform="translate(${f2(C.x)} ${f2(C.y)}) rotate(${rot}) scale(${f2(s)}) translate(${f2(-bx)} ${f2(-by)})" filter="url(#ds${id})">
         <g filter="url(#tx${id})">${fig.svg}</g></g>`;
-    return out;
+    const cm = add(add(mul(nav, .125), mul(c1, .375)), add(mul(c2, .375), mul(ins, .125)));
+    const P = fig.pts;
+    const labels = [
+      L_('الرأس', tf(P.head), week < 20 ? 'كبير مقارنة بالجسم لأن الدماغ ينمو بسرعة.' : week >= 32 ? 'غالباً يتجه للأسفل استعداداً للولادة.' : 'يحتوي الدماغ الذي ينمو بسرعة كبيرة.'),
+      L_('العين', tf(P.eye), week < 26 ? 'الجفون مغلقة حتى الأسبوع 26 تقريباً.' : 'تنفتح وتستجيب للضوء.'),
+      ...(week >= 11 ? [L_('الأذن', tf(P.ear), week >= 18 ? 'يسمع صوتك ونبض قلبك.' : 'تتكوّن وتصعد تدريجياً لمكانها.')] : []),
+      L_('اليد', tf(P.hand), week < 11 ? 'الأصابع في طور التكوّن.' : 'يحرك يديه ويقربهما من فمه، وقد يمص إصبعه.'),
+      L_('القدم', tf(P.foot), 'الساقان مثنيتان في وضعية الجنين.'),
+      L_(week < 20 ? 'العمود الفقري' : 'الظهر', tf(P.back), week < 20 ? 'يظهر من خلال الجلد الرقيق الشفاف.' : 'العضلات والعظام تقوى يوماً بعد يوم.'),
+      L_('الحبل السري', cm, 'ينقل الغذاء والأكسجين من المشيمة إلى الجنين.'),
+      ...plL,
+      L_('السائل الأمنيوسي', V(week >= 32 ? 60 : 200, week >= 32 ? 205 : 200), 'يحمي الجنين من الصدمات ويحافظ على حرارته ويسمح له بالحركة.'),
+      ...wallL];
+    return { svg: out, labels };
   }
 
-  function baby(week, size = 200) {
-    return `<svg class="art-baby" viewBox="0 0 240 260" width="${size}" height="${Math.round(size * 260 / 240)}" role="img" aria-label="رسم توضيحي للجنين في الأسبوع ${week}">${scene(week, false)}</svg>`;
+  // طبقة الأسماء التوضيحية: خطوط من كل جزء إلى اسمه على الجانبين
+  const LX = 112, GAP = 25;
+  function labelLayer(labels, dark) {
+    const place = (arr, side) => {
+      arr.sort((a, b) => a.p.y - b.p.y);
+      const ys = []; arr.forEach((l, i) => ys.push(Math.max(l.p.y, i ? ys[i - 1] + GAP : 13)));
+      const over = ys.length ? ys[ys.length - 1] - 250 : 0;
+      if (over > 0) for (let i = ys.length - 1; i >= 0; i--) { ys[i] -= over; if (i && ys[i - 1] > ys[i] - GAP) ys[i - 1] = ys[i] - GAP; }
+      return arr.map((l, i) => {
+        const y = ys[i], cx = side < 0 ? -LX / 2 : 240 + LX / 2, ex = side < 0 ? -4 : 244;
+        const fs = Math.min(14, (LX - 16) / (l.n.length * 0.56)), w = Math.min(LX - 4, l.n.length * fs * 0.56 + 16);
+        return `<path d="M${pt(l.p)}L${f2(ex)} ${f2(y)}" stroke="${dark ? '#9fe' : '#7b3b5c'}" stroke-width=".8" fill="none" opacity=".85"/>
+          <circle cx="${f2(l.p.x)}" cy="${f2(l.p.y)}" r="3" fill="${dark ? '#9fe' : '#fff'}" stroke="${dark ? '#000' : '#7b3b5c'}" stroke-width="1.2"/>
+          <rect x="${f2(cx - w / 2)}" y="${f2(y - 11)}" width="${f2(w)}" height="22" rx="11" fill="${dark ? '#0d1a1a' : '#fff'}" stroke="${dark ? '#9fe' : '#d77a9f'}" stroke-width="1"/>
+          <text x="${f2(cx)}" y="${f2(y + fs * 0.36)}" text-anchor="middle" font-size="${f2(fs)}" font-weight="700" fill="${dark ? '#cff' : '#5a2a45'}" font-family="Tajawal, system-ui, sans-serif">${l.n}</text>`;
+      }).join('');
+    };
+    return place(labels.filter(l => l.p.x < 120), -1) + place(labels.filter(l => l.p.x >= 120), 1);
+  }
+  const box = (lab, size) => lab ? { vb: `${-LX} 0 ${240 + 2 * LX} 260`, w: size * (240 + 2 * LX) / 240 } : { vb: '0 0 240 260', w: size };
+
+  function baby(week, size = 200, opts = {}) {
+    const sc = scene(week, false), b = box(opts.labels, size);
+    return `<svg class="art-baby${opts.labels ? ' labeled' : ''}" viewBox="${b.vb}" width="${f2(b.w)}" height="${Math.round(size * 260 / 240)}" role="img" aria-label="رسم توضيحي للجنين في الأسبوع ${week}">${sc.svg}${opts.labels ? labelLayer(sc.labels, false) : ''}</svg>`;
+  }
+  const parts = week => scene(week, false).labels;
+
+  // عرض "الفقاعة": الجنين داخل كيس السائل بإضاءة ثلاثية الأبعاد
+  function bubble(week, size = 260) {
+    const id = ++uid, r = rng(week * 71 + 3);
+    const t = clamp((week - 9) / 31), pal = skinPalette(t, false);
+    const C0 = V(130, 130), R = 118;
+    let body = '';
+    if (week <= 3) {
+      body = `<clipPath id="bc${id}"><circle cx="130" cy="130" r="${R - 6}"/></clipPath>
+        <g clip-path="url(#bc${id})" opacity=".92"><g transform="translate(10 0)">${micro(week, id)}</g></g>`;
+    } else if (week <= 8) {
+      const fig = embryoFigure(week, id, false);
+      const es = [0, 0, 0, 0, 0.5, 0.85, 1.15, 1.4, 1.6][week];
+      const ys = V(190, 182), T = V(122, 122);
+      body = `<circle cx="${ys.x}" cy="${ys.y}" r="${6 + week * 1.6}" fill="#ffe7a8" stroke="#e7b75c" stroke-width="1.5" filter="url(#lt${id})"/>
+        ${week >= 5 ? `<path d="M${pt(ys)}Q160 190 ${f2(T.x + 2 * es)} ${f2(T.y + 22 * es)}" stroke="#eaa4ae" stroke-width="${f2(1.5 + es)}" fill="none"/>` : ''}
+        ${lightDef(id, -10, 3.2)}<g transform="translate(${T.x} ${T.y}) scale(${es}) rotate(-10)" filter="url(#ds${id})">${fig.svg}</g>`;
+    } else {
+      const fig = fetusFigure(week, id, false);
+      const xs = fig.box.map(p => p.x), ys = fig.box.map(p => p.y);
+      const bx = (Math.min(...xs) + Math.max(...xs)) / 2, by = (Math.min(...ys) + Math.max(...ys)) / 2;
+      const ext = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+      const table = [[9, 78], [12, 112], [16, 140], [20, 158], [28, 176], [36, 188], [42, 192]];
+      let E = 78;
+      for (let i = 0; i < table.length - 1; i++) if (week >= table[i][0] && week <= table[i + 1][0]) E = lerp(table[i][1], table[i + 1][1], (week - table[i][0]) / (table[i + 1][0] - table[i][0]));
+      const s = E / ext, rot = -8, C = V(140, 136);
+      const tf = p => { const q = mul(sub(p, V(bx, by)), s), a = rot * Math.PI / 180; return add(C, V(q.x * Math.cos(a) - q.y * Math.sin(a), q.x * Math.sin(a) + q.y * Math.cos(a))); };
+      // المشيمة على حافة الكيس
+      const pc = V(40, 104), ps = 14 + 12 * t;
+      const blob = Array.from({ length: 10 }, (_, i) => { const a = i / 10 * 6.283, k = 1 + (r() - .5) * .25; return add(pc, V(Math.cos(a) * ps * .75 * k, Math.sin(a) * ps * 1.5 * k)); });
+      const ins = add(pc, V(ps * .55, 0));
+      const veins = Array.from({ length: 7 }, (_, i) => { const a = -2.2 + i * .75, l = ps * (.8 + r() * .5); return `<path d="M${pt(ins)}Q${pt(add(ins, V(Math.cos(a) * l * .5 - 4, Math.sin(a) * l * .6)))} ${pt(add(ins, V(Math.cos(a) * l * .8 - 8, Math.sin(a) * l * 1.2)))}" stroke="#7a1834" stroke-width=".9" fill="none" opacity=".6"/>`; }).join('');
+      const nav = tf(fig.navel), cw = 3 + 3.5 * t;
+      body = `<path d="${smooth(blob)}" fill="url(#pl${id})" opacity=".92" filter="url(#tx${id})"/>${veins}
+        ${cord(nav, ins, add(nav, V(-50, 70)), add(ins, V(70, 90)), cw, false)}
+        ${lightDef(id, rot, 4.5)}
+        <g transform="translate(${f2(C.x)} ${f2(C.y)}) rotate(${rot}) scale(${f2(s)}) translate(${f2(-bx)} ${f2(-by)})" filter="url(#ds${id})">${fig.svg}</g>`;
+    }
+    const dots = Array.from({ length: 14 }, () => { const a = r() * 6.283, d = r() * 100; return `<circle cx="${f2(130 + Math.cos(a) * d)}" cy="${f2(130 + Math.sin(a) * d)}" r="${f2(1 + r() * 2.5)}" fill="none" stroke="#fff" stroke-opacity="${f2(.25 + r() * .3)}"/>`; }).join('');
+    return `<svg class="art-bubble" viewBox="0 0 260 260" width="${size}" height="${size}" role="img" aria-label="شكل الجنين في الأسبوع ${week}">
+      ${defs(id, pal, false)}
+      <defs>
+        <radialGradient id="bb${id}" cx=".42" cy=".36" r=".68">
+          <stop offset="0" stop-color="#fde9f2"/><stop offset=".5" stop-color="#f0c3df"/><stop offset=".82" stop-color="#c093d8"/><stop offset="1" stop-color="#7d55b5"/>
+        </radialGradient>
+        <radialGradient id="bg${id}" cx=".5" cy=".5" r=".5"><stop offset=".75" stop-color="#d7a6f0" stop-opacity=".45"/><stop offset="1" stop-color="#d7a6f0" stop-opacity="0"/></radialGradient>
+        <linearGradient id="gl${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      </defs>
+      <circle cx="130" cy="130" r="130" fill="url(#bg${id})"/>
+      <circle cx="${C0.x}" cy="${C0.y}" r="${R}" fill="url(#bb${id})"/>
+      <ellipse cx="112" cy="104" rx="70" ry="56" fill="#fff" opacity=".22" filter="url(#bl${id})"/>
+      ${dots}
+      ${body}
+      <path d="M48 92 A88 88 0 0 1 150 26 A96 96 0 0 0 56 100Z" fill="url(#gl${id})" opacity=".8"/>
+      <ellipse cx="200" cy="200" rx="16" ry="7" transform="rotate(-45 200 200)" fill="#fff" opacity=".18"/>
+      <circle cx="${C0.x}" cy="${C0.y}" r="${R}" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.6"/>
+      <circle cx="${C0.x}" cy="${C0.y}" r="${R - 3}" fill="none" stroke="#9b6fd0" stroke-opacity=".35" stroke-width="3"/>
+    </svg>`;
   }
 
   // عرض بأسلوب السونار
-  function sono(week, size = 240) {
+  function sono(week, size = 240, opts = {}) {
     const id = ++uid;
+    const sc = scene(week, true), b = box(opts.labels, size);
     const fan = `M120 -6 L${f2(120 + Math.sin(0.72) * 290)} ${f2(-6 + Math.cos(0.72) * 290)} A290 290 0 0 1 ${f2(120 - Math.sin(0.72) * 290)} ${f2(-6 + Math.cos(0.72) * 290)} Z`;
-    const ga = `${week}w`;
     const ticks = Array.from({ length: 10 }, (_, i) => `<line x1="232" x2="${i % 5 ? 236 : 240}" y1="${20 + i * 24}" y2="${20 + i * 24}" stroke="#8fd" stroke-width="1"/>`).join('');
-    return `<svg class="art-sono" viewBox="0 0 240 260" width="${size}" height="${Math.round(size * 260 / 240)}" role="img" aria-label="محاكاة سونار للأسبوع ${week}">
+    const lab = sc.labels.map(l => ({ ...l, p: add(mul(sub(l.p, V(120, 130)), 1.12), V(120, 140)) })).filter(l => l.p.y < 258 && l.p.x > 0 && l.p.x < 240);
+    return `<svg class="art-sono${opts.labels ? ' labeled' : ''}" viewBox="${b.vb}" width="${f2(b.w)}" height="${Math.round(size * 260 / 240)}" role="img" aria-label="محاكاة سونار للأسبوع ${week}">
       <defs><clipPath id="fan${id}"><path d="${fan}"/></clipPath>
         <filter id="sn${id}"><feGaussianBlur stdDeviation=".9"/></filter>
         <filter id="sp${id}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="${week}"/>
           <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 -.12"/></filter></defs>
+      ${opts.labels ? `<rect x="${-LX}" width="${240 + 2 * LX}" height="260" fill="#000" rx="12"/>` : ''}
       <rect width="240" height="260" fill="#000"/>
       <g clip-path="url(#fan${id})">
-        <g filter="url(#sn${id})" transform="translate(120 140) scale(1.12) translate(-120 -130)">${scene(week, true)}</g>
+        <g filter="url(#sn${id})" transform="translate(120 140) scale(1.12) translate(-120 -130)">${sc.svg}</g>
         <rect width="240" height="260" filter="url(#sp${id})" opacity=".55"/>
       </g>
       ${ticks}
-      <text direction="ltr" x="8" y="16" fill="#cfe" font-size="9" font-family="monospace">GA ${ga}</text>
+      <text direction="ltr" x="8" y="16" fill="#cfe" font-size="9" font-family="monospace">GA ${week}w</text>
       <text direction="ltr" x="8" y="28" fill="#8a9" font-size="7" font-family="monospace">OB · 3.5MHz</text>
-      <text direction="ltr" x="200" y="252" fill="#8a9" font-size="7" font-family="monospace">محاكاة</text>
+      ${opts.labels ? labelLayer(lab, true) : ''}
     </svg>`;
   }
 
@@ -527,5 +662,5 @@ const Art = (() => {
     </svg>`;
   }
 
-  return { baby, sono, mom, ring };
+  return { baby, bubble, sono, parts, mom, ring };
 })();

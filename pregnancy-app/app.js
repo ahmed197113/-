@@ -1,4 +1,4 @@
-/* رحلتي — منطق التطبيق */
+/* نبضٌ صغير — منطق التطبيق */
 'use strict';
 
 const KEY = 'rihlati_v1';
@@ -83,7 +83,7 @@ $('#backBtn').onclick = () => history.back();
 window.addEventListener('popstate', e => { route = e.state || { view: 'home' }; render(false); });
 
 function go(view, sub = null, week = null) {
-  route = { view, sub, week };
+  route = { view, sub, week, labels: route.labels, art: route.art };
   history.pushState(route, '');
   render();
 }
@@ -93,29 +93,30 @@ const TOOLS = [
   ['appts', '📆', 'مواعيدي'], ['journal', '📝', 'يومياتي'], ['bag', '🎒', 'حقيبة الولادة'],
   ['water', '💧', 'شرب الماء'], ['food', '🥗', 'التغذية'], ['exercise', '🧘‍♀️', 'التمارين'],
   ['warnings', '🚨', 'علامات الخطر'], ['names', '👶', 'أسماء المواليد'], ['calc', '🧮', 'حاسبة الولادة'],
-  ['postpartum', '🤱', 'بعد الولادة'], ['faq', '❓', 'أسئلة شائعة']
+  ['postpartum', '🤱', 'بعد الولادة'], ['faq', '❓', 'أسئلة شائعة'], ['tests', '🔬', 'الفحوصات والتحاليل']
 ];
+const APP_NAME = 'نبضٌ صغير';
 
 function render(scroll = true) {
   timers.forEach(clearInterval); timers = [];
   applyTheme();
   const tab = $('#tabbar');
   if (!S.profile) {
-    tab.hidden = true; $('#backBtn').hidden = true; $('#title').textContent = 'رحلتي 🤰';
+    tab.hidden = true; $('#backBtn').hidden = true; $('#title').textContent = `${APP_NAME} 💗`;
     app.innerHTML = viewSetup(true); bindSetup(); return;
   }
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
-  const titles = { home: 'رحلتي 🤰', weeks: 'دليل الأسابيع', roadmap: 'خارطة الطريق', tools: 'الأدوات', more: 'المزيد' };
+  const titles = { home: `${APP_NAME} 💗`, weeks: route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', track: 'متابعتي', guide: 'دليل الحامل', more: 'حسابي' };
   let html;
   if (route.sub) {
     const t = TOOLS.find(x => x[0] === route.sub);
-    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (route.sub === 'profile' ? 'بيانات الحمل' : 'رحلتي');
+    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (route.sub === 'profile' ? 'بيانات الحمل' : APP_NAME);
     html = route.sub === 'profile' ? viewSetup(false) : (SUBVIEWS[route.sub] || (() => ''))();
   } else {
     $('#title').textContent = titles[route.view];
-    html = { home: viewHome, weeks: viewWeeks, roadmap: viewRoadmap, tools: viewTools, more: viewMore }[route.view]();
+    html = { home: viewHome, weeks: viewWeeks, track: viewTrack, guide: viewGuide, more: viewMore }[route.view]();
   }
   app.innerHTML = html;
   bind();
@@ -128,7 +129,7 @@ function viewSetup(first) {
   const m = p.method;
   return `
   ${first ? `<div class="welcome">${Art.baby(22, 170)}
-    <h2>أهلاً بكِ في رحلتي 💕</h2>
+    <h2>أهلاً بكِ في ${APP_NAME} 💗</h2>
     <p class="muted">خارطة طريقك من بداية الحمل حتى لحظة الولادة — أسبوعاً بأسبوع.</p></div>` : ''}
   <div class="card">
     <h2>احسبي موعد ولادتك</h2>
@@ -269,8 +270,8 @@ function viewHome() {
   </div>
 
   <div class="card">
-    <h3>🧰 وصول سريع</h3>
-    <div class="tools-grid">${TOOLS.slice(0, 6).map(toolBtn).join('')}</div>
+    <h3>⚡ وصول سريع</h3>
+    <div class="tools-grid">${(st.week >= 28 ? ['kicks', 'contractions', 'bag', 'weight', 'appts', 'journal'] : ['weight', 'appts', 'journal', 'tests', 'food', 'water']).map(k => toolBtn(TOOLS.find(t => t[0] === k))).join('')}</div>
   </div>
   <div class="card warn-card" data-sub="warnings" style="cursor:pointer">
     <b>🚨 علامات تستدعي الطبيب فوراً</b><div class="muted">اضغطي لعرض القائمة</div>
@@ -280,48 +281,69 @@ function viewHome() {
 const toolBtn = ([k, ic, name]) => `<div class="tool" data-sub="${k}"><span>${ic}</span>${name}</div>`;
 
 /* ---------- الأسابيع ---------- */
+const SECS = [['baby', '👶', 'الجنين'], ['mom', '🤰', 'الأم'], ['symptoms', '🌡️', 'الأعراض'], ['tips', '💡', 'نصائح'], ['todo', '📋', 'مهام']];
+
 function viewWeeks() {
   const st = status();
+  const modeSeg = `<div class="seg big" id="modeSeg">
+    <button data-mode="week" class="${route.mode !== 'map' ? 'on' : ''}">📅 تفاصيل الأسبوع</button>
+    <button data-mode="map" class="${route.mode === 'map' ? 'on' : ''}">🗺️ خارطة الرحلة</button></div>`;
+  if (route.mode === 'map') return modeSeg + viewRoadmap();
+
   const sel = route.week || st.week;
   const w = WEEKS[sel - 1];
   const tri = TRIMESTERS[sel <= 13 ? 0 : sel <= 27 ? 1 : 2];
   const date = weekDate(st, sel);
-  const sec = (ic, title, items) => items && items.length && items[0] !== '—' ? `<div class="card">
-    <div class="sec-title"><span class="ic">${ic}</span><h3 style="margin:0">${title}</h3></div>
-    <ul class="list" style="margin-top:8px">${items.map(i => `<li>${i}</li>`).join('')}</ul></div>` : '';
-  return `
+  const labels = route.labels !== false;
+  const sono = route.art === 'sono';
+  const sec = SECS.some(x => x[0] === route.sec) ? route.sec : 'baby';
+  const items = sec === 'todo' ? w.todo : w[sec].filter(x => x !== '—');
+  const away = sel !== st.week;
+  return `${modeSeg}
   <div class="week-strip" id="strip">
     ${WEEKS.map(x => `<button data-wk="${x.w}" class="${x.w === sel ? 'sel' : ''} ${x.w === st.week ? 'cur' : ''}">
-      <small>أسبوع</small><b>${x.w}</b></button>`).join('')}
+      <small>${x.w === st.week ? '📍 أنتِ' : 'أسبوع'}</small><b>${x.w}</b></button>`).join('')}
   </div>
+  ${away ? `<button class="back-now" data-wk="${st.week}">📍 العودة لأسبوعي الحالي (${st.week})</button>` : ''}
   <div class="card hero">
     <div class="row" style="justify-content:center">
       <span class="badge">الأسبوع ${sel}</span><span class="badge alt">${tri.name}</span>
-      ${sel === st.week ? '<span class="badge soft">أنتِ هنا 📍</span>' : ''}
+      ${!away ? '<span class="badge soft">أنتِ هنا 📍</span>' : `<span class="badge soft">${sel < st.week ? 'أسبوع مضى' : 'أسبوع قادم'}</span>`}
     </div>
-    <div class="seg" id="artSeg" style="justify-content:center">
-      <button data-art="draw" class="${route.art !== 'sono' ? 'on' : ''}">🎨 رسم توضيحي</button>
-      <button data-art="sono" class="${route.art === 'sono' ? 'on' : ''}">🩻 محاكاة سونار</button></div>
-    <div class="big-art">${route.art === 'sono' ? Art.sono(sel, 250) : Art.baby(sel, 230)}${Art.mom(sel, 150)}</div>
-    <p class="muted" style="margin:0 0 8px;font-size:.8rem">${sel <= 3 ? 'منظر مجهري تقريبي لما يحدث في هذا الأسبوع' : 'رسم تقريبي يوضح شكل الجنين ونسبة حجمه داخل الرحم'}</p>
-    <div class="row" style="justify-content:center"><span class="fruit">${w.emoji}</span>
-      <div style="text-align:right"><div class="muted">حجم الجنين يعادل</div><b style="font-size:1.2rem">${w.size}</b></div></div>
+    <div class="row art-tools">
+      <div class="seg" id="artSeg">
+        <button data-art="draw" class="${!sono ? 'on' : ''}">🎨 رسم</button>
+        <button data-art="sono" class="${sono ? 'on' : ''}">🩻 سونار</button></div>
+      <button class="chip ${labels ? 'on' : ''}" id="lblToggle">🏷️ ${labels ? 'إخفاء الأسماء' : 'إظهار الأسماء'}</button>
+    </div>
+    <div class="art-frame">${sono ? Art.sono(sel, 250, { labels }) : Art.baby(sel, 250, { labels })}</div>
+    <p class="muted" style="margin:4px 0 10px;font-size:.8rem">${sel <= 3 ? 'منظر مجهري تقريبي لما يحدث داخل الجسم في هذا الأسبوع' : 'رسم تقريبي يوضح شكل الجنين ونسبة حجمه داخل الرحم'}</p>
+    <div class="size-row">
+      <span class="fruit">${w.emoji}</span>
+      <div><div class="muted">حجم الجنين يعادل</div><b style="font-size:1.15rem">${w.size}</b></div>
+      ${Art.mom(sel, 90)}
+    </div>
     <div class="grid3" style="margin-top:12px">
       <div class="stat"><b style="font-size:.95rem">${w.len}</b><small>الطول</small></div>
       <div class="stat"><b style="font-size:.95rem">${w.wt}</b><small>الوزن</small></div>
       <div class="stat"><b style="font-size:.95rem">${fmtShort.format(date)}</b><small>يبدأ في</small></div>
     </div>
   </div>
-  ${sec('👶', 'نمو الجنين', w.baby)}
-  ${sec('🤰', 'تغيرات جسم الأم', w.mom)}
-  ${sec('🌡️', 'الأعراض الشائعة', w.symptoms)}
-  ${sec('💡', 'نصائح هذا الأسبوع', w.tips)}
-  ${w.todo.length ? `<div class="card"><div class="sec-title"><span class="ic">📋</span><h3 style="margin:0">مهام وفحوصات</h3></div>
-    ${w.todo.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')}</div>` : ''}
+  ${labels ? `<details class="card legend" ${route.legend ? 'open' : ''} id="legend"><summary><b>🔎 ماذا تعني الأسماء في الرسم؟</b></summary>
+    ${Art.parts(sel).map(l => `<div class="item-row"><span class="pill-name">${l.n}</span><div class="muted grow">${l.d}</div></div>`).join('')}</details>` : ''}
+  <div class="sec-tabs" id="secTabs">
+    ${SECS.map(([k, ic, name]) => `<button data-sec="${k}" class="${sec === k ? 'on' : ''}"><span>${ic}</span>${name}${k === 'todo' && w.todo.length ? `<i>${w.todo.length}</i>` : ''}</button>`).join('')}
+  </div>
+  <div class="card">
+    ${!items.length ? '<p class="muted">لا توجد مهام خاصة لهذا الأسبوع.</p>' : sec === 'todo'
+      ? items.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')
+      : `<ul class="list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`}
+  </div>
   <div class="row">
-    <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ السابق</button>
-    <button class="btn grow" data-wk="${Math.min(42, sel + 1)}" ${sel === 42 ? 'disabled' : ''}>التالي ←</button>
-  </div>`;
+    <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
+    <button class="btn grow" data-wk="${Math.min(42, sel + 1)}" ${sel === 42 ? 'disabled' : ''}>الأسبوع ${Math.min(42, sel + 1)} ←</button>
+  </div>
+  ${away ? `<button class="btn ghost block" data-wk="${st.week}" style="margin-top:10px">📍 العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
 }
 
 /* ---------- خارطة الطريق ---------- */
@@ -360,17 +382,42 @@ function viewRoadmap() {
   return html + '</div>';
 }
 
-/* ---------- الأدوات والمزيد ---------- */
-function viewTools() {
-  return `<div class="tools-grid">${TOOLS.map(toolBtn).join('')}</div>`;
+/* ---------- متابعتي ودليلي وحسابي ---------- */
+const navRow = (k, sub) => { const [, ic, name] = TOOLS.find(t => t[0] === k); return `<div class="nav-row" data-sub="${k}"><span class="ic">${ic}</span><div class="grow"><b>${name}</b>${sub ? `<div class="muted">${sub}</div>` : ''}</div><span class="chev">‹</span></div>`; };
+const group = (title, rows) => `<div class="card group"><h3>${title}</h3>${rows.join('')}</div>`;
+
+function viewTrack() {
+  const st = status(), t = iso(today());
+  const ws = [...S.weights].sort((a, b) => a.date.localeCompare(b.date)), lw = ws[ws.length - 1];
+  const bagAll = Object.values(HOSPITAL_BAG).flat(), bagN = bagAll.filter(i => S.bag[i]).length;
+  const nextA = S.appts.filter(a => a.date >= t && !a.done).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const lastK = S.kicks[S.kicks.length - 1];
+  const late = [navRow('kicks', S._kick ? '⏳ جلسة عدّ جارية الآن' : lastK ? `آخر جلسة: ${lastK.count} حركات` : st.week >= 28 ? 'ابدئي العدّ اليومي' : 'يبدأ من الأسبوع 28'),
+    navRow('contractions', 'لحساب مدة الطلق والفاصل بينه'),
+    navRow('bag', `جاهز ${bagN} من ${bagAll.length}`)];
+  return `
+  ${group('📅 يومياً', [navRow('water', `اليوم: ${S.water[t] || 0} من 10 أكواب`), navRow('journal', S.journal.some(j => j.date === t) ? '✅ سجلتِ يوميات اليوم' : 'كيف حالك اليوم؟')])}
+  ${group('🩺 صحتي ومواعيدي', [navRow('weight', lw ? `آخر قياس: ${lw.kg} كغ` : 'أضيفي أول قياس'), navRow('appts', nextA ? `القادم: ${esc(nextA.title)} · ${fmtShort.format(parse(nextA.date))}` : 'لا توجد مواعيد قادمة')])}
+  ${group(st.week >= 28 ? '🏥 الاستعداد للولادة (مرحلتك الآن)' : '🏥 الاستعداد للولادة', late)}`;
 }
+
+function viewGuide() {
+  const st = status();
+  const nextT = APPOINTMENTS.find(a => a.to >= st.week);
+  return `
+  <div class="card warn-card nav-row" data-sub="warnings"><span class="ic">🚨</span><div class="grow"><b>علامات تستدعي الطبيب فوراً</b><div class="muted">اقرئيها مرة واحدة على الأقل</div></div><span class="chev">‹</span></div>
+  ${group('🔬 الفحوصات', [navRow('tests', nextT ? `القادم لك: ${nextT.title}` : 'جدول الفحوصات من البداية للنهاية')])}
+  ${group('🍎 الصحة والعافية', [navRow('food', 'المفيد والممنوع والعناصر المهمة'), navRow('exercise', 'تمارين آمنة لكل مرحلة')])}
+  ${group('👶 المولود وما بعد الولادة', [navRow('names', 'اختاري واحفظي الأسماء المفضلة'), navRow('postpartum', 'النفاس والرضاعة والصحة النفسية')])}
+  ${group('🧮 أدوات وأسئلة', [navRow('calc', 'احسبي موعد ولادة لأي تاريخ'), navRow('faq', 'إجابات لأكثر الأسئلة شيوعاً')])}`;
+}
+
 function viewMore() {
   const st = status();
   return `
   <div class="card"><h3>👤 بيانات الحمل</h3>
     <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
-  <div class="card"><h3>📚 المعرفة</h3><div class="tools-grid">${TOOLS.filter(t => ['food', 'exercise', 'warnings', 'faq', 'postpartum', 'names'].includes(t[0])).map(toolBtn).join('')}</div></div>
   <div class="card"><h3>💾 النسخ الاحتياطي</h3>
     <p class="muted">بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.</p>
     <div class="row"><button class="btn grow" id="exportBtn">⬇️ تصدير</button>
@@ -381,7 +428,7 @@ function viewMore() {
   <div class="card"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
   <div class="card"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
-  <p class="disclaimer">رحلتي · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً.</p>`;
+  <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً.</p>`;
 }
 
 /* ---------- الشاشات الفرعية ---------- */
@@ -466,8 +513,17 @@ const SUBVIEWS = {
         <div class="muted">${fmt.format(parse(a.date))} ${esc(a.time || '')} ${a.date < t && !a.done ? '· <span style="color:var(--warn)">فات</span>' : ''}</div>
         ${a.notes ? `<div style="font-size:.9rem">${esc(a.notes)}</div>` : ''}</div>
       <button class="btn sm ghost" data-apdel="${a.id}">✕</button></div>`).join('') : '<p class="muted">لا توجد مواعيد.</p>'}</div>
-    <div class="card"><h3>الفحوصات الموصى بها</h3>${APPOINTMENTS.map(a => `<div class="item-row"><div class="em">🔬</div><div><b>${a.title}</b>
-      <div class="muted">الأسبوع ${a.from}${a.to !== a.from ? '–' + a.to : ''}</div><div style="font-size:.9rem">${a.desc}</div></div></div>`).join('')}</div>`;
+    <button class="btn ghost block" data-sub="tests">🔬 عرض جدول الفحوصات الموصى بها</button>`;
+  },
+
+  tests() {
+    const st = status();
+    return `<div class="card">${APPOINTMENTS.map(a => {
+      const state = st.week > a.to ? 'past' : st.week >= a.from ? 'now' : 'next';
+      return `<div class="item-row ${state === 'past' ? 'faded' : ''}"><div class="em">${state === 'past' ? '✅' : state === 'now' ? '⏰' : '🔬'}</div><div class="grow"><b>${a.title}</b>
+        ${state === 'now' ? '<span class="badge">وقته الآن</span>' : ''}
+        <div class="muted">الأسبوع ${a.from}${a.to !== a.from ? '–' + a.to : ''} · ${fmtShort.format(weekDate(st, a.from))}</div><div style="font-size:.9rem">${a.desc}</div></div></div>`;
+    }).join('')}</div>`;
   },
 
   journal() {
@@ -591,9 +647,9 @@ function confirmTap(sel, fn) {
 
 /* ---------- ربط الأحداث ---------- */
 function bind() {
-  app.querySelectorAll('[data-week]').forEach(el => el.onclick = () => go('weeks', null, +el.dataset.week));
+  app.querySelectorAll('[data-week]').forEach(el => el.onclick = () => { go('weeks', null, +el.dataset.week); });
   app.querySelectorAll('[data-sub]').forEach(el => el.onclick = e => { e.preventDefault(); go(route.view, el.dataset.sub); });
-  app.querySelectorAll('[data-wk]').forEach(el => el.onclick = () => { route.week = +el.dataset.wk; history.replaceState(route, ''); render(); });
+  app.querySelectorAll('[data-wk]').forEach(el => el.onclick = () => { route.week = +el.dataset.wk; route.mode = 'week'; history.replaceState(route, ''); render(); });
   app.querySelectorAll('[data-done]').forEach(el => el.onchange = () => { S.done[el.dataset.done] = el.checked; save(); render(false); });
 
   const strip = $('#strip');
@@ -695,6 +751,10 @@ function bind() {
   app.querySelectorAll('[data-cup]').forEach(b => b.onclick = () => { const n = +b.dataset.cup; S.water[t] = S.water[t] === n ? n - 1 : n; save(); render(false); });
 
   // التغذية والأسماء
+  app.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { route.mode = b.dataset.mode; history.replaceState(route, ''); render(); });
+  app.querySelectorAll('[data-sec]').forEach(b => b.onclick = () => { route.sec = b.dataset.sec; history.replaceState(route, ''); render(false); });
+  on('#lblToggle', () => { route.labels = route.labels === false; history.replaceState(route, ''); render(false); });
+  const lg = $('#legend'); if (lg) lg.ontoggle = () => { route.legend = lg.open; history.replaceState(route, ''); };
   app.querySelectorAll('#artSeg button').forEach(b => b.onclick = () => { route.art = b.dataset.art; history.replaceState(route, ''); render(false); });
   app.querySelectorAll('#foodSeg button').forEach(b => b.onclick = () => { route.tab = b.dataset.ft; render(false); });
   app.querySelectorAll('#nameSeg button').forEach(b => b.onclick = () => { route.tab = b.dataset.g; render(false); });

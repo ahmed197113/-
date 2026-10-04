@@ -236,3 +236,39 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
   .baby-card .art-baby { width: 110px; height: auto; }
   .grid3 { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 }
+
+/* ---- تنظيم الواجهة ---- */
+.seg.big { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 5px; margin: 0 0 12px; }
+.seg.big button { border: 0; border-radius: 12px; padding: 9px 6px; font-weight: 700; }
+.back-now {
+  position: sticky; top: calc(66px + env(safe-area-inset-top, 0px)); z-index: 5; display: block; margin: 0 auto 10px;
+  border: 0; border-radius: 999px; padding: 9px 18px; font-weight: 800; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 6px 18px rgba(240, 98, 146, .4);
+}
+.back-now:focus-visible, .nav-row:focus-visible, .sec-tabs button:focus-visible { outline: 3px solid var(--primary-2); outline-offset: 2px; }
+.art-tools { justify-content: center; gap: 8px; margin-top: 8px; }
+.art-tools .seg { margin: 0; }
+.art-frame { overflow-x: auto; margin: 8px -14px 0; }
+.art-frame svg { display: block; margin: 0 auto; max-width: 100%; height: auto; border-radius: 14px; }
+.size-row { display: flex; align-items: center; justify-content: center; gap: 12px; text-align: right; }
+.size-row .art-mom { height: 80px; width: auto; }
+.legend summary { cursor: pointer; list-style: none; }
+.legend summary::after { content: ' ▾'; color: var(--muted); }
+.legend[open] summary { margin-bottom: 8px; }
+.pill-name { flex-shrink: 0; min-width: 96px; text-align: center; font-weight: 700; font-size: .85rem; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--primary); border: 1px solid var(--border); }
+.sec-tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
+.sec-tabs button {
+  position: relative; border: 1px solid var(--border); background: var(--card); border-radius: 14px; padding: 8px 2px; cursor: pointer;
+  font-size: .78rem; font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--muted);
+}
+.sec-tabs button span { font-size: 1.25rem; }
+.sec-tabs button.on { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; border-color: transparent; }
+.sec-tabs button i { position: absolute; top: 4px; left: 6px; font-style: normal; font-size: .65rem; background: var(--warn); color: #fff; border-radius: 999px; min-width: 16px; line-height: 16px; }
+.group h3 { margin-bottom: 4px; }
+.nav-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px dashed var(--border); cursor: pointer; }
+.nav-row:last-child { border-bottom: 0; }
+.card.nav-row { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.nav-row .ic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--soft); font-size: 1.4rem; flex-shrink: 0; }
+.nav-row .muted { font-size: .84rem; }
+.nav-row .chev { color: var(--muted); font-size: 1.5rem; }
+.item-row.faded { opacity: .55; }
