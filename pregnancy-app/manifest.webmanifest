@@ -1,0 +1,15 @@
+{
+  "name": "رحلتي — متابعة الحمل",
+  "short_name": "رحلتي",
+  "description": "متابعة الحمل أسبوعاً بأسبوع: نمو الجنين، تغيرات الأم، النصائح والأدوات",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff7fa",
+  "theme_color": "#f06292",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
