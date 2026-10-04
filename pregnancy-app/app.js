@@ -9,7 +9,7 @@ const defaults = () => ({
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
   bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark',
   labs: [], checks: [], med: {}, letters: [], baby: null, feeds: [], diapers: [], sleeps: [], growth: [],
-  vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: []
+  vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: [], voted: {}
 });
 
 let S = load();
@@ -99,7 +99,8 @@ const TOOLS = [
   ['checkin', '🩺', 'فحص اليوم'], ['labs', '🧪', 'افهمي تحاليلك'], ['file', '📄', 'ملفي الطبي'], ['medinfo', '🩺', 'بياناتي الطبية'],
   ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن ولا لأ؟'], ['album', '📸', 'ألبوم رحلتي'],
   ['born', '🎉', 'وُلد طفلي'], ['feeds', '🍼', 'الرضاعة'], ['diapers', '💧', 'الحفاضات'], ['sleep', '😴', 'نوم الطفل'], ['growth', '📈', 'نمو الطفل'],
-  ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل']
+  ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل'],
+  ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
 ];
 const APP_NAME = 'نبضٌ صغير';
 
@@ -114,7 +115,7 @@ function render(scroll = true) {
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
-  const titles = { home: fmtDayMonth.format(today()), weeks: S.baby ? 'طفلي' : route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', assist: 'اسألي نبض ✨', track: 'صحتي', more: 'المزيد' };
+  const titles = { home: fmtDayMonth.format(today()), weeks: S.baby ? 'طفلي' : route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', assist: route.as === 'cm' ? 'مجتمع الأمهات' : 'اسألي نبض ✨', track: 'صحتي', more: 'المزيد' };
   const wkBtn = tab.querySelector('[data-view=weeks] .lbl'); if (wkBtn) wkBtn.textContent = S.baby ? 'طفلي' : 'رحلتي';
   let html;
   if (route.sub) {

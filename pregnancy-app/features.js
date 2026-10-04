@@ -176,6 +176,7 @@ function homeExtras(st) {
     <div class="card mini tap" data-sub="partner"><span class="big-ic">💑</span><b style="font-size:1rem">شاركي زوجك</b><small>${pt.help[0]}</small></div>
     <div class="card mini tap" data-sub="album"><span class="big-ic">📸</span><b style="font-size:1rem">صورة بطنك</b><small>سجّلي الأسبوع ${st.week} في ألبوم رحلتك</small></div>
   </div>
+  ${communityTeaser()}
   ${st.week >= 36 ? `<button class="btn ghost block" data-sub="born" style="margin-bottom:14px">🎉 وُلد طفلي — ابدئي رحلة ما بعد الولادة</button>` : ''}`;
 }
 
@@ -187,8 +188,10 @@ function viewBabyHome() {
   const dWet = todayLog(S.diapers).filter(x => x.k === 'wet').length, dDirty = todayLog(S.diapers).filter(x => x.k === 'dirty').length;
   const sleeping = S.sleeps.length && !S.sleeps[S.sleeps.length - 1].end;
   const sleepMin = todayLog(S.sleeps).reduce((n, s) => n + ((s.end || Date.now()) - s.t) / 60000, 0);
-  const month = [...BABY_MONTHS].reverse().find(m => d / 30.44 >= m[0]) || BABY_MONTHS[0];
-  const nextM = MILESTONES.find(m => !S.miles[m[0]]);
+  const bm = Math.min(23, Math.floor(d / 30.44)), g = BABY_GUIDE[bm];
+  const tip = DAILY_TIPS[(diffDays(today(), new Date(2024, 0, 1)) % DAILY_TIPS.length + DAILY_TIPS.length) % DAILY_TIPS.length];
+  const mg = [...MOM_GUIDE].reverse().find(x => bm >= x[0]) || MOM_GUIDE[0];
+  const nextM = MILESTONES.find(m => !S.miles[m[0]] && m[0] >= Math.floor(d / 30.44)) || MILESTONES.find(m => !S.miles[m[0]]);
   return `
   <div class="card baby-hero">
     <div class="baby-photo" data-idb="baby-photo"><label class="cam">📷<input type="file" accept="image/*" id="babyPhoto" hidden></label></div>
@@ -206,10 +209,15 @@ function viewBabyHome() {
     <div class="card mini pattern"><small>حفاضات اليوم</small><b>${dWet + dDirty}</b></div>
   </div>
   ${nextV ? `<div class="card nav-row" data-sub="vaccines"><span class="ic">💉</span><div class="grow"><b>التطعيم القادم: ${nextV.at}</b><div class="muted">${nextV.n} · ${fmtShort.format(addDays(parse(b.date), nextV.d))}</div></div><span class="chev">‹</span></div>` : ''}
-  <div class="card"><h3>${month[1]}</h3><p style="margin:0 0 6px">${month[2]}</p><p class="muted" style="margin:0">💡 ${month[3]}</p></div>
+  <div class="card tip-card"><span class="big-ic">💡</span><div><small class="muted">نصيحة اليوم</small><div>${tip}</div></div></div>
+  <div class="card"><div class="sec-head" style="margin-top:0"><h3 style="margin:0">${g.t}</h3><button class="link" data-sub="bguide">الدليل كاملاً ‹</button></div>
+    <p style="margin:0 0 8px">${g.dev}</p>
+    <div class="mini-rows"><div><b>🍼</b> ${g.feed}</div><div><b>😴</b> ${g.sleep}</div></div></div>
+  <div class="card nav-row" data-sub="momguide"><span class="ic">🌷</span><div class="grow"><b>لكِ أنتِ: ${mg[1]}</b><div class="muted">${mg[2][0]}</div></div><span class="chev">‹</span></div>
   ${nextM ? `<div class="card nav-row" data-sub="miles"><span class="ic">⭐</span><div class="grow"><b>المرحلة القادمة (شهر ${nextM[0]})</b><div class="muted">${nextM[1]}</div></div><span class="chev">‹</span></div>` : ''}
   <div class="card ask-card"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>اسألي نبض عن طفلك</b><div class="muted">رضاعة، نوم، مغص، حرارة، تطعيمات…</div></div></div>
     <form class="ask-row" id="homeAsk"><input class="input" id="homeAskQ" placeholder="مثال: ابني عنده مغص بالليل أعمل إيه؟" autocomplete="off"><button class="btn" aria-label="اسألي">↖</button></form></div>
+  ${communityTeaser()}
   <div class="card nav-row" data-sub="momcare"><span class="ic">🤱</span><div class="grow"><b>صحتك أنتِ بعد الولادة</b><div class="muted">التعافي، والمزاج، والرضاعة</div></div><span class="chev">‹</span></div>
   <div class="card warn-card nav-row" data-sub="babywarn"><span class="ic">🚨</span><div class="grow"><b>متى أذهب بطفلي للطوارئ؟</b><div class="muted">علامات لا تنتظر</div></div><span class="chev">‹</span></div>`;
 }
@@ -440,6 +448,24 @@ Object.assign(SUBVIEWS, {
       <div class="card"><h3>🤱 الرضاعة الطبيعية</h3><ul class="list"><li>رضّعي عند الطلب 8–12 مرة يومياً.</li><li>الوضع الصحيح: فم الطفل يغطي الهالة، وليس الحلمة فقط.</li><li>اشربي ماءً كثيراً، وكُلي 500 سعرة إضافية.</li><li>ألم شديد أو احمرار وحرارة في الثدي = راجعي الطبيب (التهاب).</li></ul></div>`;
   },
 
+  bguide() {
+    const cur = Math.min(23, Math.floor(diffDays(today(), parse(S.baby.date)) / 30.44));
+    const m = route.bm != null ? route.bm : cur, g = BABY_GUIDE[m];
+    const row = (ic, t, v) => v ? `<div class="item-row"><div class="em">${ic}</div><div><b>${t}</b><div>${v}</div></div></div>` : '';
+    return `<div class="week-strip" id="strip">${BABY_GUIDE.map(x => `<button data-bm="${x.m}" class="${x.m === m ? 'sel' : ''} ${x.m === cur ? 'cur' : ''}"><span>${x.m === cur ? 'الآن' : 'شهر'}</span><b>${x.m + 1}</b></button>`).join('')}</div>
+      ${m !== cur ? `<button class="back-now" data-bm="${cur}">↩ العودة لشهره الحالي (${cur + 1})</button>` : ''}
+      <div class="card hero-soft"><h2 style="margin:0">${g.t}</h2><p style="margin:6px 0 0">${g.dev}</p></div>
+      <div class="card">${row('🍼', 'الأكل والرضاعة', g.feed)}${row('😴', 'النوم', g.sleep)}${row('🩺', 'الصحة والتطعيمات', g.health)}${row('🧸', 'العبي معه', g.play)}</div>
+      ${g.warn ? `<div class="card warn-card"><b>👩‍⚕️ استشيري الطبيب إذا:</b><div>${g.warn}</div></div>` : ''}
+      <div class="row"><button class="btn ghost grow" data-bm="${Math.max(0, m - 1)}" ${m === 0 ? 'disabled' : ''}>→ الشهر ${m}</button><button class="btn grow" data-bm="${Math.min(23, m + 1)}" ${m === 23 ? 'disabled' : ''}>الشهر ${m + 2} ←</button></div>`;
+  },
+
+  momguide() {
+    const cur = Math.floor(diffDays(today(), parse(S.baby.date)) / 30.44);
+    return MOM_GUIDE.map(([m, t, tips]) => { const now = cur >= m && !MOM_GUIDE.some(x => x[0] > m && cur >= x[0]);
+      return `<div class="card ${now ? 'now-card' : ''}"><div class="sec-head" style="margin-top:0"><h3 style="margin:0">${t}</h3><span class="badge ${now ? '' : 'soft'}">${now ? 'أنتِ هنا' : m === 0 ? 'من الولادة' : 'من الشهر ' + (m + 1)}</span></div><ul class="list">${tips.map(x => `<li>${x}</li>`).join('')}</ul></div>`; }).join('');
+  },
+
   babywarn() {
     return `<div class="card warn-card"><h2>🚨 اذهبي للطوارئ أو اتصلي بالطبيب فوراً عند:</h2>${BABY_WARNINGS.map(([e, t, d]) => `<div class="item-row"><div class="em">${e}</div><div><b>${t}</b><div class="muted">${d}</div></div></div>`).join('')}</div>`;
   }
@@ -467,6 +493,11 @@ ${lat || '—'}`;
 
 /* ---------- المساعد ---------- */
 function viewAssist() {
+  const seg = `<div class="seg big" id="asSeg"><button data-as="ai" class="${route.as !== 'cm' ? 'on' : ''}">✨ اسألي نبض</button><button data-as="cm" class="${route.as === 'cm' ? 'on' : ''}">👩‍👩‍👧 مجتمع الأمهات</button></div>`;
+  if (route.as === 'cm') return seg + viewCommunity();
+  return seg + viewAssistAI();
+}
+function viewAssistAI() {
   const chat = S.chat;
   const sug = S.baby ? ['ابني بيعيط كتير بالليل', 'إمتى أبدأ الأكل الصلب؟', 'حرارة 38 لطفل عمره شهرين', 'إزاي أعرف إن الرضاعة كفاية؟']
     : ['إيه معنى نتيجة تحاليلي؟', 'أقدر أصوم رمضان؟', 'هل الحلبة آمنة؟', 'إيه اللي يحصل لبيبي الأسبوع ده؟', 'عندي صداع وتورم في رجلي'];
@@ -516,8 +547,19 @@ async function readLabPhoto(file) {
 }
 
 /* ---------- ربط الأحداث ---------- */
+function communityTeaser() {
+  if (!CM.mode) return '';
+  CM.load();
+  const n = CM.qs.filter(q => Date.now() - q.t < 7 * 864e5).length, open = CM.qs.filter(q => !q.ac).length;
+  return `<div class="card nav-row" data-go-cm><span class="ic">👩‍👩‍👧</span><div class="grow"><b>مجتمع الأمهات</b><div class="muted">${CM.loaded ? `${n} سؤال هذا الأسبوع${open ? ` · ${open} تنتظر ردك` : ''}` : 'اسألي الأمهات وشاركي تجربتك'}</div></div><span class="chev">‹</span></div>`;
+}
+
 function featBind() {
   const on = (id, fn, ev = 'onclick') => { const el = $(id); if (el) el[ev] = fn; };
+  cmBind();
+  app.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { route.as = b.dataset.as; history.replaceState(route, ''); render(false); });
+  app.querySelectorAll('[data-go-cm]').forEach(b => b.onclick = () => { route = { view: 'assist', as: 'cm' }; history.pushState(route, ''); render(); });
+  app.querySelectorAll('[data-bm]').forEach(b => b.onclick = () => { route.bm = +b.dataset.bm; history.replaceState(route, ''); render(); });
   const t = iso(today());
   fillIdbImages();
 
