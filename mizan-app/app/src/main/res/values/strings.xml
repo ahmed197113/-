@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">ميزاني</string>
+    <string name="tile_label">سجّل مصروف</string>
+    <string name="widget_big">ميزاني — الميزانية اليومية</string>
+    <string name="widget_small">ميزاني — إضافة سريعة</string>
+    <string name="shortcut_add">مصروف جديد</string>
+    <string name="shortcut_add_long">سجّل مصروفاً جديداً</string>
+</resources>
