@@ -1,4 +1,4 @@
-name: Wafr UI screenshots
+name: Wafr UI screenshots & E2E test
 
 on:
   push:

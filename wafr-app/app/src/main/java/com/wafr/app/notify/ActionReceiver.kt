@@ -43,7 +43,8 @@ class ActionReceiver : BroadcastReceiver() {
             ACTION_ENTRY -> {
                 val need = intent.getBooleanExtra(EXTRA_NEED, true)
                 val origin = intent.getIntExtra(EXTRA_ORIGIN, Notifications.ID_CHECKIN)
-                val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(Notifications.KEY_ENTRY)?.toString().orEmpty()
+                val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(Notifications.KEY_ENTRY)?.toString()
+                    ?: (if (com.wafr.app.BuildConfig.DEBUG) intent.getStringExtra("debug_text") else null).orEmpty()
                 val parsed = Money.parseEntry(text)
                 if (parsed == null) {
                     Notifications.showParseError(context, origin, need)

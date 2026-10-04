@@ -95,11 +95,6 @@ class QuickAddActivity : ComponentActivity() {
                                         categories = categories, currency = s.currency, presetNeed = preset,
                                         categorySpent = snap?.byCategory?.associate { it.category.id to it.spent } ?: emptyMap(),
                                         suggestions = suggestions,
-                                        onWish = { amount, note ->
-                                            appScope.launch { repo.addWish(note, amount) }
-                                            Toast.makeText(this@QuickAddActivity, "🧊 سأذكّرك بعد 48 ساعة", Toast.LENGTH_SHORT).show()
-                                            finish()
-                                        },
                                         onSave = { amount, need, catId, note, ts ->
                                             appScope.launch { repo.addExpense(amount, need, note, source, catId, ts) }
                                             Toast.makeText(this@QuickAddActivity, "✓ سُجّل ${Money.format(amount, s.currency)}", Toast.LENGTH_SHORT).show()

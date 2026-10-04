@@ -77,7 +77,6 @@ fun ExpenseEditor(
     presetNeed: Boolean? = null,
     categorySpent: Map<Long, Long> = emptyMap(),
     suggestions: List<Suggestion> = emptyList(),
-    onWish: ((amount: Long, note: String) -> Unit)? = null,
     onSave: (amount: Long, isNeed: Boolean, categoryId: Long?, note: String, timestamp: Long) -> Unit,
     onDelete: (() -> Unit)? = null,
     onClose: () -> Unit,
@@ -227,11 +226,6 @@ fun ExpenseEditor(
             }
         }
         Spacer(Modifier.height(12.dp))
-        if (onWish != null && !effectiveNeed && amountMinor > 0) {
-            TextButton(onClick = { onWish(amountMinor, note.trim().ifEmpty { selectedCategory?.name ?: "رغبة" }) }, modifier = Modifier.fillMaxWidth()) {
-                Text("🧊 لم أشترِه بعد؟ فكّر 48 ساعة قبل الشراء", color = c.want, fontWeight = FontWeight.SemiBold)
-            }
-        }
         Button(
             onClick = {
                 val ts = when {

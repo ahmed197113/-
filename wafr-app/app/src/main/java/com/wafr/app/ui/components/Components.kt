@@ -355,18 +355,17 @@ fun OutlinedBox(modifier: Modifier = Modifier, selected: Boolean, color: Color, 
 }
 
 
-/** The Wafr mark: a coin with a growth arrow rising out of it, on a neon tile. */
+/** The Wafr mark: the launcher icon layers, clipped to a rounded tile. */
 @Composable
 fun WafrLogo(size: Dp = 96.dp) {
-    val c = Mz.colors
-    Box(Modifier.size(size).clip(RoundedCornerShape(size * 0.3f)).background(c.neon), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(size * 0.7f)) {
-            val w = this.size.width
-            val st = w * 0.08f
-            drawCircle(Color.White, radius = w * 0.26f, center = Offset(w * 0.5f, w * 0.62f), style = Stroke(st))
-            drawLine(Color.White, Offset(w * 0.5f, w * 0.72f), Offset(w * 0.5f, w * 0.16f), st, cap = StrokeCap.Round)
-            drawLine(Color.White, Offset(w * 0.34f, w * 0.31f), Offset(w * 0.5f, w * 0.15f), st, cap = StrokeCap.Round)
-            drawLine(Color.White, Offset(w * 0.66f, w * 0.31f), Offset(w * 0.5f, w * 0.15f), st, cap = StrokeCap.Round)
-        }
+    Box(Modifier.size(size).clip(RoundedCornerShape(size * 0.28f))) {
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(com.wafr.app.R.drawable.ic_launcher_background), null,
+            Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        )
+        androidx.compose.foundation.Image(
+            androidx.compose.ui.res.painterResource(com.wafr.app.R.drawable.ic_launcher_foreground), null,
+            Modifier.matchParentSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+        )
     }
 }

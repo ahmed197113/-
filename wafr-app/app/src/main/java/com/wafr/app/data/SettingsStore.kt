@@ -37,6 +37,8 @@ data class Settings(
     val lastSummaryDay: Long = 0,
     val gameBest: Int = 0,
     val gameState: String = "",
+    val quizBest: Int = 0,
+    val rushBest: Int = 0,
 )
 
 class SettingsStore(private val context: Context) {
@@ -59,6 +61,8 @@ class SettingsStore(private val context: Context) {
         val lastSummary = longPreferencesKey("last_summary_day")
         val gameBest = intPreferencesKey("game_best")
         val gameState = stringPreferencesKey("game_state")
+        val quizBest = intPreferencesKey("quiz_best")
+        val rushBest = intPreferencesKey("rush_best")
     }
 
     val flow: Flow<Settings> = context.dataStore.data.map { currentFrom(it) }
@@ -86,6 +90,8 @@ class SettingsStore(private val context: Context) {
             p[K.lastSummary] = s.lastSummaryDay
             p[K.gameBest] = s.gameBest
             p[K.gameState] = s.gameState
+            p[K.quizBest] = s.quizBest
+            p[K.rushBest] = s.rushBest
         }
     }
 
@@ -110,6 +116,8 @@ class SettingsStore(private val context: Context) {
             lastSummaryDay = p[K.lastSummary] ?: d.lastSummaryDay,
             gameBest = p[K.gameBest] ?: d.gameBest,
             gameState = p[K.gameState] ?: d.gameState,
+            quizBest = p[K.quizBest] ?: d.quizBest,
+            rushBest = p[K.rushBest] ?: d.rushBest,
         )
     }
 }

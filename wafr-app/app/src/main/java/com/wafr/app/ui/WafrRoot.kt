@@ -69,7 +69,7 @@ import com.wafr.app.data.Expense
 import com.wafr.app.domain.Money
 import com.wafr.app.ui.components.AuroraBackground
 import com.wafr.app.ui.components.ExpenseEditor
-import com.wafr.app.ui.screens.GameScreen
+import com.wafr.app.ui.screens.GamesHub
 import com.wafr.app.ui.screens.HistoryScreen
 import com.wafr.app.ui.screens.HomeScreen
 import com.wafr.app.ui.screens.InsightsScreen
@@ -149,7 +149,7 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
                     )
                     Tab.INSIGHTS -> InsightsScreen(sn, insights, achievements, padding)
                     Tab.PLAN -> PlanScreen(vm, s, sn, categories, goals, wishes, bills, padding, onPlanner = { overlay = Overlay.PLANNER })
-                    Tab.GAME -> GameScreen(game, s.gameBest, padding, onUpdate = { vm.saveGame(it) }, onReset = { vm.resetGame() })
+                    Tab.GAME -> GamesHub(vm, s, game, padding)
                 }
             }
         }
@@ -175,11 +175,6 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
                     categories = categories, currency = s.currency, initial = state.expense,
                     categorySpent = sn.byCategory.associate { it.category.id to it.spent },
                     suggestions = suggestions,
-                    onWish = { amount, note ->
-                        vm.addWish(note, amount)
-                        editor = null
-                        scope.launch { snackbar.showSnackbar("🧊 أُضيف إلى «فكّر قبل الشراء» — سأذكّرك بعد 48 ساعة") }
-                    },
                     onSave = { amount, need, catId, note, ts ->
                         val e = state.expense
                         if (e == null) vm.addExpense(amount, need, catId, note, ts, Expense.Source.APP)

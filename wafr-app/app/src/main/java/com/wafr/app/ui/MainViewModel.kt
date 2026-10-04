@@ -85,6 +85,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun saveBest(quiz: Int? = null, rush: Int? = null) = viewModelScope.launch {
+        repo.settingsStore.update { s ->
+            s.copy(
+                quizBest = maxOf(s.quizBest, quiz ?: 0),
+                rushBest = maxOf(s.rushBest, rush ?: 0),
+            )
+        }
+    }
+
     fun resetGame() = viewModelScope.launch { repo.settingsStore.update { it.copy(gameState = "") } }
 
     fun updateSettings(reschedule: Boolean = false, transform: (Settings) -> Settings) = viewModelScope.launch {

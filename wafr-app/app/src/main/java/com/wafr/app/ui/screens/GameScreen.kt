@@ -44,7 +44,7 @@ import com.wafr.app.ui.theme.Mz
 
 /** "سباق الحرية": learn the asset/liability mindset one month at a time. */
 @Composable
-fun GameScreen(state: Game.State, best: Int, contentPadding: PaddingValues, onUpdate: (Game.State) -> Unit, onReset: () -> Unit) {
+fun FreedomGame(state: Game.State, best: Int, contentPadding: PaddingValues, onBack: () -> Unit, onUpdate: (Game.State) -> Unit, onReset: () -> Unit) {
     val c = Mz.colors
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -52,7 +52,7 @@ fun GameScreen(state: Game.State, best: Int, contentPadding: PaddingValues, onUp
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            Text("سباق الحرية 🎲", style = MaterialTheme.typography.headlineSmall)
+            GameHeader("سباق الحرية 🎲", onBack)
             Text("لعبة بسيطة مستوحاة من أفكار كتاب «الأب الغني والأب الفقير»: اشترِ أصولاً، تجنّب الالتزامات، واخرج من سباق الفئران.", color = c.muted, style = MaterialTheme.typography.bodySmall)
             if (best > 0) Text("🏆 أفضل رقم لك: الحرية في $best شهراً", color = c.want, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
         }
