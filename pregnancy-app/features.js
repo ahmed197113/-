@@ -426,7 +426,7 @@ Object.assign(SUBVIEWS, {
         <polyline points="${line(g.med)}" fill="none" stroke="var(--primary-2)" stroke-dasharray="4 3" stroke-width="1.5"/>
         ${[0, 6, 12, 18, 24].map(m => `<text x="${X(m)}" y="${H - 4}" text-anchor="middle">${m}ش</text>`).join('')}${[4, 8, 12, 16].map(k => `<text x="22" y="${Y(k) + 3}" text-anchor="end">${k}</text>`).join('')}
         ${pts.length ? `<polyline points="${pts.map(p => `${X(p.m).toFixed(1)},${Y(p.kg).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--primary)" stroke-width="2.5"/>${pts.map(p => `<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.kg).toFixed(1)}" r="3.5" fill="var(--primary)"/>`).join('')}` : ''}</svg>
-        <p class="muted center" style="margin:0">المنطقة البنفسجية: النطاق الطبيعي تقريباً حسب منظمة الصحة العالمية</p></div>
+        <p class="muted center" style="margin:0">المنطقة الملوّنة: النطاق الطبيعي التقريبي</p></div>
       ${pts.length ? `<div class="card"><table class="t"><tr><th>التاريخ</th><th>الوزن</th><th>الطول</th><th></th></tr>${pts.slice().reverse().map(p => `<tr><td>${fmtShort.format(parse(p.date))}</td><td>${p.kg || '—'}</td><td>${p.cm || '—'}</td><td><button class="btn sm ghost" data-gdel="${p.date}">✕</button></td></tr>`).join('')}</table></div>` : ''}`;
   },
 
@@ -652,9 +652,9 @@ function featBind() {
     const d = $('#bDate').value; if (!d) return toast('أدخلي تاريخ الولادة');
     S.baby = { name: $('#bName').value.trim(), sex: app.querySelector('[data-sex].on').dataset.sex, date: d, type: $('#bType').value, weight: $('#bW').value, length: $('#bL').value };
     if (S.baby.weight) S.growth = S.growth.filter(g => g.date !== d).concat({ date: d, kg: +S.baby.weight, cm: +S.baby.length || null });
-    save(); route = { view: 'home' }; history.replaceState(route, ''); toast('مبروك 🎉'); render();
+    save(); route = { view: 'home' }; history.replaceState(route, ''); toast('مبروك 🎉'); render(); Notify.sync(true);
   });
-  on('#bUndo', confirmTap('#bUndo', () => { S.baby = null; save(); route = { view: 'home' }; render(); }));
+  on('#bUndo', confirmTap('#bUndo', () => { S.baby = null; save(); route = { view: 'home' }; render(); Notify.sync(false); }));
 
   // اختصارات الطفل
   app.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {

@@ -2,5 +2,13 @@
   "appId": "app.nabd.pregnancy",
   "appName": "نبضٌ صغير",
   "webDir": "www",
-  "android": { "allowMixedContent": false }
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_nabd",
+      "iconColor": "#FA1A7F"
+    }
+  }
 }

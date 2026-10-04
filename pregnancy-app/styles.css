@@ -7,17 +7,17 @@
   --card-2: #212a4a;
   --text: #f3eee9;
   --muted: #a9a6bd;
-  --primary: #e8a598;
-  --primary-2: #c9a46b;
-  --gold: #e3bf7a;
-  --rose: #e8a598;
-  --on-primary: #2a1418;
-  --soft: #3a2b36;
+  --primary: #ff4d9a;
+  --primary-2: #ff8fbf;
+  --gold: #ffb3cf;
+  --rose: #ff4d9a;
+  --on-primary: #ffffff;
+  --soft: #3a2340;
   --soft-2: #2a2d4a;
   --border: #2c3456;
   --track: #2b3352;
   --moon-dark: #0a0e1f;
-  --hero-1: #3b2d55;
+  --hero-1: #3d2350;
   --hero-2: #1d3157;
   --ok: #5fc49a;
   --warn: #ef6b6b;
@@ -29,17 +29,17 @@
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f5f6fa; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
-    --primary: #b9827b; --primary-2: #9c8a6e; --gold: #b0915e; --rose: #d8a7a0; --on-primary: #3a2a2a;
-    --soft: #f6ecea; --soft-2: #eceef6; --border: #e4e6ef; --track: #e7e9f1; --moon-dark: #dfe1ec;
-    --hero-1: #eceffa; --hero-2: #f7eef0; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
+    --bg: #fbf7f9; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
+    --primary: #fa1a7f; --primary-2: #e8609f; --gold: #ff9cc6; --rose: #fa1a7f; --on-primary: #ffffff;
+    --soft: #fff0f6; --soft-2: #f7eef4; --border: #efe3ea; --track: #f3e6ee; --moon-dark: #dfe1ec;
+    --hero-1: #ffe8f2; --hero-2: #f6eefb; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #f5f6fa; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
-  --primary: #b9827b; --primary-2: #9c8a6e; --gold: #b0915e; --rose: #d8a7a0; --on-primary: #3a2a2a;
-  --soft: #f6ecea; --soft-2: #eceef6; --border: #e4e6ef; --track: #e7e9f1; --moon-dark: #dfe1ec;
-  --hero-1: #eceffa; --hero-2: #f7eef0; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
+  --bg: #fbf7f9; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
+  --primary: #fa1a7f; --primary-2: #e8609f; --gold: #ff9cc6; --rose: #fa1a7f; --on-primary: #ffffff;
+  --soft: #fff0f6; --soft-2: #f7eef4; --border: #efe3ea; --track: #f3e6ee; --moon-dark: #dfe1ec;
+  --hero-1: #ffe8f2; --hero-2: #f6eefb; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -182,7 +182,7 @@ label.f input:focus, label.f select:focus, label.f textarea:focus, .input:focus 
 .back-now {
   position: sticky; top: calc(70px + env(safe-area-inset-top, 0px)); z-index: 15; display: block; margin: 0 auto 12px;
   border: 0; border-radius: 999px; padding: 10px 20px; font-weight: 700; cursor: pointer; color: #fff; background: var(--primary);
-  box-shadow: 0 8px 22px rgba(239, 79, 108, .45);
+  box-shadow: 0 8px 22px rgba(250, 26, 127, .45);
 }
 
 /* ---- بطاقة التقدم ---- */
@@ -256,8 +256,8 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 .water button.on { filter: none; }
 .counter-big {
   width: 180px; height: 180px; border-radius: 50%; border: 0; margin: 12px auto; display: grid; place-items: center;
-  background: radial-gradient(circle at 35% 30%, #ff8fa6, var(--primary) 60%, #b8304e); color: #fff; font-size: 3rem; font-weight: 700;
-  cursor: pointer; box-shadow: 0 12px 30px rgba(239, 79, 108, .4);
+  background: radial-gradient(circle at 35% 30%, #ff8fbf, var(--primary) 60%, #c40f63); color: #fff; font-size: 3rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 12px 30px rgba(250, 26, 127, .4);
 }
 .counter-big:active { transform: scale(.96); }
 .counter-big small { display: block; font-size: .9rem; font-weight: 500; }
@@ -271,7 +271,7 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 .tl-item { position: relative; margin-bottom: 12px; }
 .tl-item .dot { position: absolute; right: -22px; top: 16px; width: 16px; height: 16px; border-radius: 50%; background: var(--card); border: 3px solid var(--track); }
 .tl-item.done .dot { background: var(--primary); border-color: var(--primary); }
-.tl-item.now .dot { background: var(--bg); border-color: var(--primary); box-shadow: 0 0 0 6px rgba(239, 79, 108, .25); }
+.tl-item.now .dot { background: var(--bg); border-color: var(--primary); box-shadow: 0 0 0 6px rgba(250, 26, 127, .25); }
 .tl-item .card { margin-bottom: 0; cursor: pointer; }
 .tl-item.now .card { border: 2px solid var(--primary); }
 .tl-thumb { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }

@@ -39,6 +39,7 @@ jobs:
           cp ../dist/nabd.html www/index.html
           npx cap add android
           npx @capacitor/assets generate --android --assetPath assets || echo "icon generation skipped"
+          cp -r res/. android/app/src/main/res/
           npx cap sync android
 
       - name: Use a fixed signing key so updates install over older versions
