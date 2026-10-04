@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AutoGraph
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -81,6 +82,7 @@ import kotlinx.coroutines.launch
 
 enum class Tab(val label: String, val icon: ImageVector) {
     HOME("الرئيسية", Icons.Outlined.Home),
+    HISTORY("السجل", Icons.Outlined.ReceiptLong),
     INSIGHTS("التحليلات", Icons.Outlined.AutoGraph),
     PLAN("الخطة", Icons.Outlined.AccountBalanceWallet),
     GAME("العب وتعلّم", Icons.Outlined.SportsEsports),
@@ -114,7 +116,7 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
     var editor by remember { mutableStateOf(if (request.add) EditorState() else null) }
     LaunchedEffect(request.id) {
         request.tab?.let { tab = it; overlay = Overlay.NONE }
-        request.overlay?.let { overlay = it }
+        request.overlay?.let { if (it == Overlay.HISTORY) { tab = Tab.HISTORY; overlay = Overlay.NONE } else overlay = it }
         if (request.add) editor = EditorState()
     }
     val snackbar = remember { SnackbarHostState() }
@@ -138,16 +140,20 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
         ) { (ov, t) ->
             when (ov) {
                 Overlay.SETTINGS -> SettingsScreen(vm, s, padding, onBack = { overlay = Overlay.NONE })
-                Overlay.HISTORY -> HistoryScreen(expenses, categories, s.currency, padding, onBack = { overlay = Overlay.NONE }, onEdit = { editor = EditorState(it) })
+                Overlay.HISTORY -> {}
                 Overlay.PLANNER -> PlannerScreen(vm, s, bills, padding, onBack = { overlay = Overlay.NONE })
                 Overlay.NONE -> when (t) {
                     Tab.HOME -> HomeScreen(
                         s, sn, categories, insights, padding,
-                        onSettings = { overlay = Overlay.SETTINGS }, onSeeAll = { overlay = Overlay.HISTORY },
+                        onSettings = { overlay = Overlay.SETTINGS }, onSeeAll = { tab = Tab.HISTORY },
                         onEdit = { editor = EditorState(it) }, onInsights = { tab = Tab.INSIGHTS },
                         onPlanner = { overlay = Overlay.PLANNER }, onPayBill = { vm.payBill(it) },
                     )
-                    Tab.INSIGHTS -> InsightsScreen(sn, insights, achievements, padding)
+                    Tab.HISTORY -> HistoryScreen(
+                        expenses, categories, s.currency, padding, onEdit = { editor = EditorState(it) },
+                        header = { HistoryToggle(false) { tab = Tab.INSIGHTS } },
+                    )
+                    Tab.INSIGHTS -> InsightsScreen(sn, insights, achievements, padding, header = { HistoryToggle(true) { tab = Tab.HISTORY } })
                     Tab.PLAN -> PlanScreen(vm, s, sn, categories, goals, wishes, bills, padding, onPlanner = { overlay = Overlay.PLANNER })
                     Tab.GAME -> GamesHub(vm, s, game, padding)
                 }
@@ -216,7 +222,7 @@ private fun FloatingNav(tab: Tab, onTab: (Tab) -> Unit, onAdd: () -> Unit, modif
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             NavItem(Tab.HOME, tab, onTab)
-            NavItem(Tab.INSIGHTS, tab, onTab)
+            NavItem(Tab.HISTORY, tab, onTab)
             Spacer(Modifier.size(64.dp))
             NavItem(Tab.PLAN, tab, onTab)
             NavItem(Tab.GAME, tab, onTab)
@@ -235,7 +241,7 @@ private fun FloatingNav(tab: Tab, onTab: (Tab) -> Unit, onAdd: () -> Unit, modif
 @Composable
 private fun NavItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
     val c = Mz.colors
-    val selected = t == current
+    val selected = t == current || (t == Tab.HISTORY && current == Tab.INSIGHTS)
     val color = if (selected) c.glow1 else c.muted
     Column(
         Modifier.clip(RoundedCornerShape(16.dp))
@@ -246,5 +252,32 @@ private fun NavItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
         Icon(t.icon, t.label, tint = color, modifier = Modifier.size(24.dp))
         Text(t.label, color = color, fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
         Box(Modifier.padding(top = 2.dp).size(width = if (selected) 16.dp else 0.dp, height = 3.dp).clip(CircleShape).background(c.neonH))
+    }
+}
+
+/** Switches the السجل tab between the full log and the current-cycle analytics. */
+@Composable
+private fun HistoryToggle(insights: Boolean, onSwitch: () -> Unit) {
+    val c = Mz.colors
+    Column {
+        Text("السجل", style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(18.dp)).padding(4.dp),
+        ) {
+            listOf(false to "📋 كل العمليات", true to "📊 تحليلات الدورة").forEach { (isIns, label) ->
+                val sel = isIns == insights
+                Box(
+                    Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
+                        .background(if (sel) c.neon else androidx.compose.ui.graphics.SolidColor(Color.Transparent))
+                        .clickable(enabled = !sel, onClick = onSwitch)
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(label, fontWeight = FontWeight.Bold, color = if (sel) Color(0xFF02101A) else c.muted)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
     }
 }

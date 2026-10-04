@@ -19,7 +19,7 @@ class WafrApp : Application() {
         Notifications.createChannels(this)
         scope.launch {
             repository.ensureSeeded()
-            ReminderScheduler.apply(this@WafrApp, repository.settingsStore.current())
+            ReminderScheduler.ensure(this@WafrApp)
         }
     }
 }

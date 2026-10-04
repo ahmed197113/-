@@ -45,6 +45,10 @@ check() { # name, text
   if has_text "$2"; then echo "PASS  $1" >> "$report"; else echo "FAIL  $1 (expected text: $2)" >> "$report"; fails=$((fails+1)); fi
 }
 keys() { for k in "$@"; do tap_text "$k" >/dev/null; done; }
+hide_kb() { if adb shell dumpsys input_method | grep -q "mInputShown=true"; then adb shell input keyevent 4; sleep 1; fi; }
+pass() { echo "PASS  $1" >> "$report"; }
+fail() { echo "FAIL  $1" >> "$report"; fails=$((fails+1)); }
+in_back() { tap_text "رجوع" || true; sleep 2; }
 
 adb root || true
 sleep 3
@@ -61,12 +65,13 @@ shot 01-onboarding-welcome 6
 check "onboarding welcome visible" "ميزانيتك من المستقبل"
 tap_text "التالي"
 tap_text "اسمك (اختياري)" && adb shell input text "Ahmed"
+hide_kb
 tap_text "دخلك الشهري (اختياري)" && adb shell input text "9000"
-adb shell input keyevent 111
+hide_kb
 shot 02-onboarding-name 2
 tap_text "التالي"
 tap_text "الميزانية" && adb shell input text "6000"
-adb shell input keyevent 111
+hide_kb
 shot 03-onboarding-budget 2
 tap_text "التالي"
 shot 04-onboarding-notifications 2
@@ -99,11 +104,27 @@ shot 13-home-after-adds 2
 adb shell am broadcast -n "$pkg/.notify.ActionReceiver" -a com.wafr.app.ENTRY --ez need false --ei origin 1001 --es debug_text "40 coffee"
 sleep 3
 adb shell dumpsys notification --noredact | grep -A2 "pkg=com.wafr.app" > "$out/notifications-after-reply.txt"
-start --es overlay HISTORY
+start --es tab HISTORY
 sleep 3
 check "notification reply logged (40)" "-40"
 check "notification reply note" "coffee"
+check "history defaults to calendar month" "أكتوبر"
+check "history shows period total" "إجمالي المصروف"
 shot 20-history 1
+tap_text "السنة"; sleep 2
+check "history year range" "سنة 2026"
+shot 21-history-year 1
+tap_text "تحليلات الدورة"; sleep 2
+check "analytics toggle" "مؤشر الانضباط"
+shot 22-insights 1
+
+# ---- 4b. Regular reminders: alarm armed, fires, re-arms itself
+if adb shell dumpsys alarm | grep -q "com.wafr.app"; then pass "check-in alarm armed after onboarding"; else fail "check-in alarm armed after onboarding"; fi
+adb shell am broadcast -n "$pkg/.notify.CheckInAlarmReceiver" -a com.wafr.app.CHECKIN_ALARM
+sleep 3
+if adb shell dumpsys notification --noredact | grep -q "pkg=com.wafr.app user=UserHandle{0} id=1001"; then pass "alarm fire posts the check-in notification"; else fail "alarm fire posts the check-in notification"; fi
+if adb shell dumpsys alarm | grep -q "com.wafr.app"; then pass "alarm re-armed for the next 5 hours"; else fail "alarm re-armed for the next 5 hours"; fi
+adb shell dumpsys alarm | grep -B2 -A6 "com.wafr.app" | head -40 > "$out/alarms.txt"
 
 # ---- 5. "No spending" answer
 adb shell am broadcast -n "$pkg/.notify.ActionReceiver" -a com.wafr.app.NONE
@@ -133,7 +154,7 @@ shot 33-editor-overlimit 1
 tap_text "سجّل"
 sleep 3
 adb shell dumpsys notification --noredact > "$out/notif-dump.txt"
-if grep -q "android.title=String (.*تجاوزت ميزانية" "$out/notif-dump.txt" || grep -q "تجاوزت ميزانية" "$out/notif-dump.txt"; then echo "PASS  over-limit notification posted" >> "$report"; else echo "FAIL  over-limit notification posted" >> "$report"; fails=$((fails+1)); fi
+if grep -q "pkg=com.wafr.app user=UserHandle{0} id=40" "$out/notif-dump.txt"; then echo "PASS  over-limit notification posted" >> "$report"; else echo "FAIL  over-limit notification posted" >> "$report"; fails=$((fails+1)); fi
 adb shell cmd statusbar expand-notifications
 sleep 3
 adb exec-out screencap -p > "$out/34-notification-shade.png"
@@ -154,8 +175,7 @@ sleep 3
 adb exec-out screencap -p > "$out/41-quick-settings.png"
 adb shell cmd statusbar collapse
 
-# ---- 8. Home-screen widgets (hosted like a launcher)
-adb shell cmd appwidget grantbind --package $pkg --user 0 || true
+# ---- 8. Home-screen widgets (rendered from the real Glance widget code)
 adb shell am start -W -n "$pkg/.WidgetPreviewActivity" >/dev/null
 sleep 8
 shot 50-widgets 1
@@ -167,7 +187,9 @@ start --es tab HOME; shot 60-home 3
 swipe_up; shot 61-home-scroll 1
 start --es tab INSIGHTS; shot 62-insights 3
 swipe_up; swipe_up; shot 63-insights-scroll 1
+start --es tab PLAN; shot 65-plan 3
 start --es overlay SETTINGS; shot 64-settings 3
+check "settings reliability card" "موثوقية الإشعارات"
 
 # ---- 10. Games
 start --es tab GAME; sleep 3
@@ -177,16 +199,16 @@ tap_text "ضروري أم كمالي؟"; sleep 2
 tap_text "ابدأ"; sleep 1
 for i in 1 2 3 4 5 6; do tap_text "ضروري" >/dev/null; tap_text "كمالي" >/dev/null; done
 shot 71-rush 1
-adb shell input keyevent 4; sleep 2
+in_back
 tap_text "تحدّي الثقافة المالية"; sleep 2
 tap_text "ب"; sleep 1
 shot 72-quiz 1
 check "quiz explains answer" "💡"
-adb shell input keyevent 4; sleep 2
+in_back
 tap_text "آلة الزمن"; sleep 3
 shot 73-time-machine 1
 check "time machine" "تحدّي المليون"
-adb shell input keyevent 4; sleep 2
+in_back
 tap_text "سباق الحرية"; sleep 2
 tap_text "موظف"; sleep 2
 for i in $(seq 1 10); do

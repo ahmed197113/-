@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         appScope.launch {
             repo.changed()
-            ReminderScheduler.apply(this@MainActivity, repo.settingsStore.current())
+            ReminderScheduler.ensure(this@MainActivity)
         }
     }
 

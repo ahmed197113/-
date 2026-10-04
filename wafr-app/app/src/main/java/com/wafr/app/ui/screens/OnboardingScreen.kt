@@ -152,6 +152,11 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             Text("اكتب «25 قهوة» وسيفهم وَفْر المبلغ ويختار الفئة تلقائياً. لا إزعاج في أوقات النوم.", color = c.muted)
                             Spacer(Modifier.height(16.dp))
                             NeonButton("🔔 السماح بالإشعارات", Modifier.fillMaxWidth(), onClick = onAskNotifications)
+                            Spacer(Modifier.height(10.dp))
+                            val ctx = androidx.compose.ui.platform.LocalContext.current
+                            val r = com.wafr.app.ui.components.rememberReliability()
+                            if (!r.exact) TextButton(onClick = { com.wafr.app.ui.components.fixExact(ctx) }) { Text("⏰ اسمح بالمنبّهات الدقيقة (ليصل التذكير في موعده)") }
+                            if (!r.battery) TextButton(onClick = { com.wafr.app.ui.components.fixBattery(ctx) }) { Text("🔋 استثنِ وَفْر من توفير البطارية (حتى لا يتوقف)") }
                         }
                     }
                 }

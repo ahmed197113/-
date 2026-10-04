@@ -34,7 +34,7 @@ class BootReceiver : BroadcastReceiver() {
         app.appScope.launch {
             try {
                 val repo = app.repo
-                ReminderScheduler.apply(app, repo.settingsStore.current())
+                ReminderScheduler.ensure(app)
                 repo.changed()
             } finally {
                 pending.finish()

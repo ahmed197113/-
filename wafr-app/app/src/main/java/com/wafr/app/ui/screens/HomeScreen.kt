@@ -49,6 +49,7 @@ import com.wafr.app.ui.components.ExpenseRow
 import com.wafr.app.ui.components.GlassCard
 import com.wafr.app.ui.components.LegendDot
 import com.wafr.app.ui.components.ProgressRing
+import com.wafr.app.ui.components.rememberReliability
 import com.wafr.app.ui.components.SectionTitle
 import com.wafr.app.ui.components.SplitBar
 import com.wafr.app.ui.components.StatTile
@@ -105,6 +106,15 @@ fun HomeScreen(
                 }
                 Box(Modifier.clip(CircleShape).background(c.card).border(1.dp, c.border, CircleShape)) {
                     IconButton(onClick = onSettings) { Icon(Icons.Outlined.Settings, "الإعدادات", tint = c.text) }
+                }
+            }
+        }
+        item {
+            val r = rememberReliability()
+            if (settings.remindersEnabled && !r.allGood) {
+                GlassCard(Modifier.fillMaxWidth(), onClick = onSettings) {
+                    Text("⚠️ التذكير كل ${settings.reminderHours} ساعات قد يتوقف", color = c.want, fontWeight = FontWeight.Bold)
+                    Text("اضغط هنا وفعّل الإعدادات الناقصة (منبّهات دقيقة / استثناء البطارية) ليبقى منتظماً دائماً.", style = MaterialTheme.typography.bodySmall, color = c.muted)
                 }
             }
         }

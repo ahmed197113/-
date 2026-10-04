@@ -1,51 +1,37 @@
 package com.wafr.app
 
 import android.app.Activity
-import android.appwidget.AppWidgetHost
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
-import android.content.Intent
 import android.os.Bundle
 import android.widget.LinearLayout
-import android.widget.TextView
-import com.wafr.app.widget.BudgetWidgetReceiver
-import com.wafr.app.widget.CompactWidgetReceiver
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
+import androidx.glance.appwidget.GlanceRemoteViews
+import com.wafr.app.widget.BudgetWidgetContent
+import com.wafr.app.widget.CompactWidgetContent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-/** Debug-only: binds and shows both widgets like a launcher would. */
+/** Debug-only: renders the real Glance widgets into RemoteViews so CI can screenshot them. */
+@OptIn(ExperimentalGlanceRemoteViewsApi::class)
 class WidgetPreviewActivity : Activity() {
-    private lateinit var host: AppWidgetHost
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        host = AppWidgetHost(this, 4242)
-        val mgr = AppWidgetManager.getInstance(this)
         val density = resources.displayMetrics.density
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(0xFF2B3A55.toInt())
             setPadding((24 * density).toInt(), (80 * density).toInt(), (24 * density).toInt(), 0)
         }
-        for ((cls, size) in listOf(BudgetWidgetReceiver::class.java to (320 to 210), CompactWidgetReceiver::class.java to (250 to 80))) {
-            val id = host.allocateAppWidgetId()
-            val cn = ComponentName(this, cls)
-            if (mgr.bindAppWidgetIdIfAllowed(id, cn)) {
-                val opts = Bundle().apply {
-                    putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, size.first)
-                    putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, size.first)
-                    putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, size.second)
-                    putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, size.second)
-                }
-                mgr.updateAppWidgetOptions(id, opts)
-                val view = host.createView(this, id, mgr.getAppWidgetInfo(id))
-                root.addView(view, LinearLayout.LayoutParams((size.first * density).toInt(), (size.second * density).toInt()).apply { bottomMargin = (24 * density).toInt() })
-                sendBroadcast(Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE).setComponent(cn).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(id)))
-            } else {
-                root.addView(TextView(this).apply { text = "bind not allowed: ${cls.simpleName}"; setTextColor(0xFFFFFFFF.toInt()) })
-            }
-        }
         setContentView(root)
+        CoroutineScope(Dispatchers.Main).launch {
+            val snap = repo.snapshotOnce()
+            val glance = GlanceRemoteViews()
+            val big = glance.compose(this@WidgetPreviewActivity, DpSize(320.dp, 210.dp)) { BudgetWidgetContent(snap) }
+            root.addView(big.remoteViews.apply(this@WidgetPreviewActivity, root), LinearLayout.LayoutParams((320 * density).toInt(), (210 * density).toInt()).apply { bottomMargin = (24 * density).toInt() })
+            val small = glance.compose(this@WidgetPreviewActivity, DpSize(250.dp, 80.dp)) { CompactWidgetContent(snap) }
+            root.addView(small.remoteViews.apply(this@WidgetPreviewActivity, root), LinearLayout.LayoutParams((250 * density).toInt(), (80 * density).toInt()))
+        }
     }
-
-    override fun onStart() { super.onStart(); host.startListening() }
-    override fun onStop() { super.onStop(); host.stopListening() }
 }

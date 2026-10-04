@@ -59,6 +59,7 @@ import com.wafr.app.tile.QuickAddTileService
 import com.wafr.app.ui.MainViewModel
 import com.wafr.app.ui.components.GlassCard
 import com.wafr.app.ui.components.Hairline
+import com.wafr.app.ui.components.ReliabilityCard
 import com.wafr.app.ui.components.SectionTitle
 import com.wafr.app.ui.theme.Mz
 import com.wafr.app.widget.BudgetWidgetReceiver
@@ -149,6 +150,8 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
             }
         }
 
+        item { SectionTitle("موثوقية الإشعارات 🛡️") }
+        item { ReliabilityCard(settings) }
         item { SectionTitle("التذكير الدوري 🔁") }
         item {
             GlassCard(Modifier.fillMaxWidth()) {
@@ -166,7 +169,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
                     Text("أوقات الهدوء (بدون تذكير): من ${settings.quietStart}:00 إلى ${settings.quietEnd}:00", style = MaterialTheme.typography.bodySmall, color = c.muted)
                     HourPicker("بداية الهدوء", settings.quietStart) { h -> vm.updateSettings { it.copy(quietStart = h) } }
                     HourPicker("نهاية الهدوء", settings.quietEnd) { h -> vm.updateSettings { it.copy(quietEnd = h) } }
-                    Text("💡 تذكير ذكي: لا يزعجك إن كنت سجّلت مصروفاً خلال آخر ساعة ونصف.", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                    Text("💡 التذكير منتظم كل ${settings.reminderHours} ساعات، ويُؤجَّل فقط إلى نهاية أوقات الهدوء.", style = MaterialTheme.typography.bodySmall, color = c.muted)
                 }
                 Hairline()
                 SwitchRow("🌙", "ملخص المساء", "الساعة 9 مساءً: كم صرفت اليوم وكم مسموح لك غداً", settings.eveningSummary) { on ->

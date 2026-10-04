@@ -42,7 +42,7 @@ import com.wafr.app.ui.components.SectionTitle
 import com.wafr.app.ui.theme.Mz
 
 @Composable
-fun InsightsScreen(snap: Snapshot, insights: List<Insight>, achievements: List<Achievement>, contentPadding: PaddingValues) {
+fun InsightsScreen(snap: Snapshot, insights: List<Insight>, achievements: List<Achievement>, contentPadding: PaddingValues, header: @Composable () -> Unit = {}) {
     val c = Mz.colors
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -50,7 +50,8 @@ fun InsightsScreen(snap: Snapshot, insights: List<Insight>, achievements: List<A
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            Text("التحليلات", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            header()
+            Text("تحليلات الدورة الحالية", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(
                 "الدورة: ${snap.period.start.dayOfMonth}/${snap.period.start.monthValue} — ${snap.period.end.minusDays(1).dayOfMonth}/${snap.period.end.minusDays(1).monthValue}",
                 color = c.muted, style = MaterialTheme.typography.bodySmall,

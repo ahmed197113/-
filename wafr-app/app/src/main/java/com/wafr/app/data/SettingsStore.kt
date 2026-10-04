@@ -38,6 +38,8 @@ data class Settings(
     val gameBest: Int = 0,
     val gameState: String = "",
     val quizBest: Int = 0,
+    /** When the next "did you spend?" alarm is due (epoch millis). */
+    val nextCheckInAt: Long = 0,
     val rushBest: Int = 0,
 )
 
@@ -62,6 +64,7 @@ class SettingsStore(private val context: Context) {
         val gameBest = intPreferencesKey("game_best")
         val gameState = stringPreferencesKey("game_state")
         val quizBest = intPreferencesKey("quiz_best")
+        val nextCheckIn = longPreferencesKey("next_checkin")
         val rushBest = intPreferencesKey("rush_best")
     }
 
@@ -91,6 +94,7 @@ class SettingsStore(private val context: Context) {
             p[K.gameBest] = s.gameBest
             p[K.gameState] = s.gameState
             p[K.quizBest] = s.quizBest
+            p[K.nextCheckIn] = s.nextCheckInAt
             p[K.rushBest] = s.rushBest
         }
     }
@@ -117,6 +121,7 @@ class SettingsStore(private val context: Context) {
             gameBest = p[K.gameBest] ?: d.gameBest,
             gameState = p[K.gameState] ?: d.gameState,
             quizBest = p[K.quizBest] ?: d.quizBest,
+            nextCheckInAt = p[K.nextCheckIn] ?: d.nextCheckInAt,
             rushBest = p[K.rushBest] ?: d.rushBest,
         )
     }

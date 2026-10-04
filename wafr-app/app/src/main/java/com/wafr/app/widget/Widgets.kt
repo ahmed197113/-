@@ -89,12 +89,13 @@ class BudgetWidget : GlanceAppWidget() {
         val initial = context.repo.snapshotOnce()
         provideContent {
             val snap by context.repo.snapshot.collectAsState(initial = initial)
-            Content(snap)
+            BudgetWidgetContent(snap)
         }
     }
+}
 
-    @Composable
-    private fun Content(s: Snapshot) {
+@Composable
+fun BudgetWidgetContent(s: Snapshot) {
         val context = LocalContext.current
         val size = LocalSize.current
         val tall = size.height >= 180.dp
@@ -153,7 +154,6 @@ class BudgetWidget : GlanceAppWidget() {
                 AddButton("+ كمالي", false, R.drawable.widget_btn_want, GlanceModifier.defaultWeight())
             }
         }
-    }
 }
 
 /** A tiny 2×1 widget: just today's number and a "+" button. */
@@ -162,12 +162,13 @@ class CompactWidget : GlanceAppWidget() {
         val initial = context.repo.snapshotOnce()
         provideContent {
             val snap by context.repo.snapshot.collectAsState(initial = initial)
-            Content(snap)
+            CompactWidgetContent(snap)
         }
     }
+}
 
-    @Composable
-    private fun Content(s: Snapshot) {
+@Composable
+fun CompactWidgetContent(s: Snapshot) {
         val context = LocalContext.current
         val (amount, color) = headline(s)
         Row(
@@ -194,7 +195,6 @@ class CompactWidget : GlanceAppWidget() {
                 Text("+", style = TextStyle(color = White, fontSize = 22.sp, fontWeight = FontWeight.Bold))
             }
         }
-    }
 }
 
 class BudgetWidgetReceiver : GlanceAppWidgetReceiver() {
