@@ -7,7 +7,9 @@ const DAY = 86400000;
 const defaults = () => ({
   profile: null, // {name, babyName, method, lmp, cycle, conception, ivf, ivfDay, due, height, preWeight}
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
-  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark'
+  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark',
+  labs: [], checks: [], med: {}, letters: [], baby: null, feeds: [], diapers: [], sleeps: [], growth: [],
+  vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: []
 });
 
 let S = load();
@@ -93,7 +95,11 @@ const TOOLS = [
   ['appts', '📆', 'مواعيدي'], ['journal', '📝', 'يومياتي'], ['bag', '🎒', 'حقيبة الولادة'],
   ['water', '💧', 'شرب الماء'], ['food', '🥗', 'التغذية'], ['exercise', '🧘‍♀️', 'التمارين'],
   ['warnings', '🚨', 'علامات الخطر'], ['names', '👶', 'أسماء المواليد'], ['calc', '🧮', 'حاسبة الولادة'],
-  ['postpartum', '🤱', 'بعد الولادة'], ['faq', '❓', 'أسئلة شائعة'], ['tests', '🔬', 'الفحوصات والتحاليل']
+  ['postpartum', '🤱', 'بعد الولادة'], ['faq', '❓', 'أسئلة شائعة'], ['tests', '🔬', 'الفحوصات والتحاليل'],
+  ['checkin', '🩺', 'فحص اليوم'], ['labs', '🧪', 'افهمي تحاليلك'], ['file', '📄', 'ملفي الطبي'], ['medinfo', '🩺', 'بياناتي الطبية'],
+  ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن ولا لأ؟'], ['album', '📸', 'ألبوم رحلتي'],
+  ['born', '🎉', 'وُلد طفلي'], ['feeds', '🍼', 'الرضاعة'], ['diapers', '💧', 'الحفاضات'], ['sleep', '😴', 'نوم الطفل'], ['growth', '📈', 'نمو الطفل'],
+  ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل']
 ];
 const APP_NAME = 'نبضٌ صغير';
 
@@ -108,7 +114,8 @@ function render(scroll = true) {
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
-  const titles = { home: fmtDayMonth.format(today()), weeks: route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', track: 'متابعتي', guide: 'دليل الحامل', more: 'حسابي' };
+  const titles = { home: fmtDayMonth.format(today()), weeks: S.baby ? 'طفلي' : route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', assist: 'اسألي نبض ✨', track: 'صحتي', more: 'المزيد' };
+  const wkBtn = tab.querySelector('[data-view=weeks] .lbl'); if (wkBtn) wkBtn.textContent = S.baby ? 'طفلي' : 'رحلتي';
   let html;
   if (route.sub) {
     const t = TOOLS.find(x => x[0] === route.sub);
@@ -116,7 +123,7 @@ function render(scroll = true) {
     html = route.sub === 'profile' ? viewSetup(false) : (SUBVIEWS[route.sub] || (() => ''))();
   } else {
     $('#title').textContent = titles[route.view];
-    html = { home: viewHome, weeks: viewWeeks, track: viewTrack, guide: viewGuide, more: viewMore }[route.view]();
+    html = ({ home: viewHome, weeks: S.baby ? viewBabyHub : viewWeeks, assist: viewAssist, track: viewTrack, guide: viewMore, more: viewMore }[route.view] || viewHome)();
   }
   app.innerHTML = html;
   bind();
@@ -249,6 +256,7 @@ function progressCard(st) {
 }
 
 function viewHome() {
+  if (S.baby) return viewBabyHome();
   const st = status(), p = S.profile;
   const sel = route.week || st.week, w = WEEKS[sel - 1];
   const tKey = iso(today());
@@ -260,6 +268,7 @@ function viewHome() {
   <div class="sec-head"><h2>تقدم حملك بالأسابيع</h2><button class="link" data-week="${sel}">عرض التفاصيل ‹</button></div>
   ${weekStrip(sel, st)}
   ${progressCard(st)}
+  ${homeExtras(st)}
 
   <div class="card">
     <div class="sec-head" style="margin-top:0"><h2>${p.babyName ? esc(p.babyName) : 'طفلك'} في الأسبوع ${sel}</h2><span class="fruit" style="font-size:2rem">${w.emoji}</span></div>
@@ -399,10 +408,20 @@ function viewTrack() {
   const late = [navRow('kicks', S._kick ? '⏳ جلسة عدّ جارية الآن' : lastK ? `آخر جلسة: ${lastK.count} حركات` : st.week >= 28 ? 'ابدئي العدّ اليومي' : 'يبدأ من الأسبوع 28'),
     navRow('contractions', 'لحساب مدة الطلق والفاصل بينه'),
     navRow('bag', `جاهز ${bagN} من ${bagAll.length}`)];
+  const lat = Object.values(latestLabs()), bad = lat.filter(l => labEval(l, S.baby ? 3 : st.tri).s !== 'ok').length;
+  const tc = S.checks.find(x => x.date === t), tr = tc && !S.baby ? triage(tc, st.week) : null;
+  const med = group('🩺 صحتي الطبية', [
+    ...(S.baby ? [navRow('momcare', 'التعافي والمزاج والرضاعة')] : [navRow('checkin', tr ? `اليوم: ${tr.ic} ${tr.title}` : 'لم تفحصي اليوم بعد')]),
+    navRow('labs', lat.length ? `${lat.length} تحاليل${bad ? ` · ${bad} تحتاج انتباه` : ' · كلها طبيعية'}` : 'أضيفي نتيجة واعرفي معناها'),
+    navRow('file', 'ملخص طبي جاهز لطبيبك'), navRow('medinfo', S.med.blood ? `فصيلة ${S.med.blood}${S.med.rh || ''}` : 'فصيلة الدم والأدوية والحساسية')]);
+  const mem = group('💗 العائلة والذكريات', [...(S.baby ? [] : [navRow('partner', 'رسالة الأسبوع لزوجك')]), navRow('album', 'صور بطنك ورسائل لطفلك')]);
+  if (S.baby) return med + mem + group('📅 يومياً', [navRow('water', `اليوم: ${S.water[t] || 0} من 10 أكواب`), navRow('journal', 'كيف حالك اليوم؟'), navRow('weight', lw ? `آخر قياس: ${lw.kg} كغ` : 'تابعي وزنك بعد الولادة')]);
   return `
+  ${med}
   ${group('📅 يومياً', [navRow('water', `اليوم: ${S.water[t] || 0} من 10 أكواب`), navRow('journal', S.journal.some(j => j.date === t) ? '✅ سجلتِ يوميات اليوم' : 'كيف حالك اليوم؟')])}
   ${group('🩺 صحتي ومواعيدي', [navRow('weight', lw ? `آخر قياس: ${lw.kg} كغ` : 'أضيفي أول قياس'), navRow('appts', nextA ? `القادم: ${esc(nextA.title)} · ${fmtShort.format(parse(nextA.date))}` : 'لا توجد مواعيد قادمة')])}
-  ${group(st.week >= 28 ? '🏥 الاستعداد للولادة (مرحلتك الآن)' : '🏥 الاستعداد للولادة', late)}`;
+  ${group(st.week >= 28 ? '🏥 الاستعداد للولادة (مرحلتك الآن)' : '🏥 الاستعداد للولادة', late)}
+  ${mem}`;
 }
 
 function viewGuide() {
@@ -411,14 +430,14 @@ function viewGuide() {
   return `
   <div class="card warn-card nav-row" data-sub="warnings"><span class="ic">🚨</span><div class="grow"><b>علامات تستدعي الطبيب فوراً</b><div class="muted">اقرئيها مرة واحدة على الأقل</div></div><span class="chev">‹</span></div>
   ${group('🔬 الفحوصات', [navRow('tests', nextT ? `القادم لك: ${nextT.title}` : 'جدول الفحوصات من البداية للنهاية')])}
-  ${group('🍎 الصحة والعافية', [navRow('food', 'المفيد والممنوع والعناصر المهمة'), navRow('exercise', 'تمارين آمنة لكل مرحلة')])}
-  ${group('👶 المولود وما بعد الولادة', [navRow('names', 'اختاري واحفظي الأسماء المفضلة'), navRow('postpartum', 'النفاس والرضاعة والصحة النفسية')])}
+  ${group('🍎 الأكل والعافية', [navRow('localfood', 'فول، فسيخ، حلبة، كركديه… آمن ولا لأ؟'), navRow('food', 'المفيد والممنوع والعناصر المهمة'), navRow('ramadan', 'هل أصوم؟ وخطة يوم الصيام'), navRow('exercise', 'تمارين آمنة لكل مرحلة')])}
+  ${group('👶 المولود وما بعد الولادة', [navRow('born', S.baby ? 'تعديل بيانات الولادة' : 'سجّلي ولادة طفلك وابدئي رحلته'), navRow('names', 'اختاري واحفظي الأسماء المفضلة'), navRow('postpartum', 'النفاس والرضاعة والصحة النفسية')])}
   ${group('🧮 أدوات وأسئلة', [navRow('calc', 'احسبي موعد ولادة لأي تاريخ'), navRow('faq', 'إجابات لأكثر الأسئلة شيوعاً')])}`;
 }
 
 function viewMore() {
   const st = status();
-  return `
+  return `${viewGuide()}
   <div class="card"><h3>👤 بيانات الحمل</h3>
     <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
@@ -783,11 +802,11 @@ function bind() {
       ${days >= 0 && days <= 300 ? `<span class="badge">عمر الحمل اليوم: ${Math.floor(days / 7)} أسبوع و${days % 7} يوم</span>` : ''}</div>`;
   };
   on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
+  featBind();
 }
 
-/* ---------- تشغيل ---------- */
-history.replaceState(route, '');
-render();
+/* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
+window.addEventListener('DOMContentLoaded', () => { history.replaceState(route, ''); render(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
