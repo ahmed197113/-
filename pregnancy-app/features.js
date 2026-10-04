@@ -457,8 +457,7 @@ Object.assign(SUBVIEWS, {
     const cur = Math.min(23, Math.floor(diffDays(today(), parse(S.baby.date)) / 30.44));
     const m = route.bm != null ? route.bm : cur, g = BABY_GUIDE[m];
     const row = (ic, t, v) => v ? `<div class="item-row"><div class="em">${ic}</div><div><b>${t}</b><div>${v}</div></div></div>` : '';
-    return `<div class="ruler-wrap"><div class="ruler-head"><span class="kicker">مسطرة الشهور</span><span class="muted">من الشهر 1 إلى 24</span></div>
-      ${ruler(BABY_GUIDE.map(x => x.m + 1), m + 1, cur + 1, 'data-bmn', 'الشهر')}</div>
+    return `${tiles(BABY_GUIDE.map(x => x.m + 1), m + 1, cur + 1, 'data-bmn', 'شهر', n => n % 12 === 0 ? '🎂' : '🌙')}
       ${m !== cur ? `<button class="back-now" data-bm="${cur}">↩ العودة لشهره الحالي (${cur + 1})</button>` : ''}
       <div class="card hero-soft"><h2 style="margin:0">${g.t}</h2><p style="margin:6px 0 0">${g.dev}</p></div>
       <div class="card">${row('🍼', 'الأكل والرضاعة', g.feed)}${row('😴', 'النوم', g.sleep)}${row('🩺', 'الصحة والتطعيمات', g.health)}${row('🧸', 'العبي معه', g.play)}</div>

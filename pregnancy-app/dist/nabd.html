@@ -3,57 +3,56 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1f7a72">
+  <meta name="theme-color" content="#0f1428">
   <meta name="description" content="نبضٌ صغير — تطبيق شامل لمتابعة الحمل أسبوعاً بأسبوع">
   <title>نبضٌ صغير</title>
   <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzEyMzAyZiIvPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMzAiPgogICAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxNjAiIHN0cm9rZT0iIzFmN2E3MiIvPgogICAgPHBhdGggZD0iTTI1NiA5NmExNjAgMTYwIDAgMCAwLTE1MCAxMDQiIHN0cm9rZT0iI2M4Mzg0ZiIvPgogICAgPHBhdGggZD0iTTEwNiAyMDBhMTYwIDE2MCAwIDAgMCAxMCAxMjAiIHN0cm9rZT0iI2Q5OTgyYiIvPgogIDwvZz4KICA8cGF0aCBkPSJNMTUwIDI2OGg1MmwxOC0zNCAyNiA3MCAyNC05MiAyMiA1Nmg3MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjJmNmY0IiBzdHJva2Utd2lkdGg9IjE4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==" type="image/svg+xml">
   <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzEyMzAyZiIvPgogIDxnIGZpbGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iMzAiPgogICAgPGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxNjAiIHN0cm9rZT0iIzFmN2E3MiIvPgogICAgPHBhdGggZD0iTTI1NiA5NmExNjAgMTYwIDAgMCAwLTE1MCAxMDQiIHN0cm9rZT0iI2M4Mzg0ZiIvPgogICAgPHBhdGggZD0iTTEwNiAyMDBhMTYwIDE2MCAwIDAgMCAxMCAxMjAiIHN0cm9rZT0iI2Q5OTgyYiIvPgogIDwvZz4KICA8cGF0aCBkPSJNMTUwIDI2OGg1MmwxOC0zNCAyNiA3MCAyNC05MiAyMiA1Nmg3MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjJmNmY0IiBzdHJva2Utd2lkdGg9IjE4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@600;700&display=swap" rel="stylesheet">
   <style>
 /* نبضٌ صغير — تصميم داكن بتدرج بنفسجي وبطاقات مستديرة
    الطبقات: هيدر متدرج → عارض الصور → أزرار الأسابيع → بطاقات المحتوى → شريط تنقل عائم */
-/* هوية «نبض»: حبر أخضر مزرق، رمّان، وذهب الأقمار — دائرة الرحلة ومسطرة القياس */
+/* نبضٌ صغير — ليل كحلي وذهب وردي: صورة الجنين في هالة مضيئة، وأقمار الشهور التسعة */
 :root {
-  --paper: #f2f6f4;
-  --bg: #f2f6f4;
-  --card: #ffffff;
-  --card-2: #e8f0ed;
-  --text: #12302f;
-  --muted: #5d7472;
-  --teal: #1f7a72;
-  --gold: #d9982b;
-  --pom: #c8384f;
-  --primary: #c8384f;
-  --primary-2: #1f7a72;
-  --soft: #f8e3e6;
-  --soft-2: #dcebe7;
-  --border: #d6e2de;
-  --track: #dbe5e2;
-  --moon-dark: #2a4645;
-  --hero-1: #d4ebe5;
-  --hero-2: #f6e7cf;
-  --ok: #2e9b6b;
-  --warn: #d64545;
-  --shadow: 0 1px 0 rgba(18, 48, 47, .06), 0 8px 24px rgba(18, 48, 47, .07);
-  --radius: 14px;
-  --font: 'Readex Pro', 'IBM Plex Sans Arabic', system-ui, 'Segoe UI', Tahoma, sans-serif;
-  --display: 'Reem Kufi', 'Readex Pro', system-ui, sans-serif;
-  color-scheme: light;
+  --bg: #0f1428;
+  --card: #181f3a;
+  --card-2: #212a4a;
+  --text: #f3eee9;
+  --muted: #a9a6bd;
+  --primary: #e8a598;
+  --primary-2: #c9a46b;
+  --gold: #e3bf7a;
+  --rose: #e8a598;
+  --on-primary: #2a1418;
+  --soft: #3a2b36;
+  --soft-2: #2a2d4a;
+  --border: #2c3456;
+  --track: #2b3352;
+  --moon-dark: #0a0e1f;
+  --hero-1: #3b2d55;
+  --hero-2: #1d3157;
+  --ok: #5fc49a;
+  --warn: #ef6b6b;
+  --shadow: 0 12px 32px rgba(0, 0, 0, .35);
+  --radius: 22px;
+  --font: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, 'Segoe UI', Tahoma, sans-serif;
+  --display: 'Reem Kufi', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #0d2122; --bg: #0d2122; --card: #132d2e; --card-2: #1a3a3a; --text: #e6f1ee; --muted: #94aeaa;
-    --teal: #3fb5a8; --gold: #f0b54a; --pom: #ff6f86; --primary: #ff6f86; --primary-2: #3fb5a8;
-    --soft: #3a2230; --soft-2: #1d3d3b; --border: #24474a; --track: #234243; --moon-dark: #0a1819;
-    --hero-1: #134240; --hero-2: #3a3020; --shadow: 0 10px 28px rgba(0, 0, 0, .35); color-scheme: dark;
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f7f3ef; --card: #ffffff; --card-2: #f1ebe5; --text: #1d2140; --muted: #6f6c82;
+    --primary: #c7705f; --primary-2: #a27b3e; --gold: #b98a37; --rose: #c7705f; --on-primary: #fff;
+    --soft: #f8e4de; --soft-2: #ece6f4; --border: #e8e0d8; --track: #ebe4dd; --moon-dark: #d9d4e4;
+    --hero-1: #f1d9d0; --hero-2: #dcd9f0; --shadow: 0 10px 26px rgba(29, 33, 64, .1); color-scheme: light;
   }
 }
-:root[data-theme="dark"] {
-  --paper: #0d2122; --bg: #0d2122; --card: #132d2e; --card-2: #1a3a3a; --text: #e6f1ee; --muted: #94aeaa;
-  --teal: #3fb5a8; --gold: #f0b54a; --pom: #ff6f86; --primary: #ff6f86; --primary-2: #3fb5a8;
-  --soft: #3a2230; --soft-2: #1d3d3b; --border: #24474a; --track: #234243; --moon-dark: #0a1819;
-  --hero-1: #134240; --hero-2: #3a3020; --shadow: 0 10px 28px rgba(0, 0, 0, .35); color-scheme: dark;
+:root[data-theme="light"] {
+  --bg: #f7f3ef; --card: #ffffff; --card-2: #f1ebe5; --text: #1d2140; --muted: #6f6c82;
+  --primary: #c7705f; --primary-2: #a27b3e; --gold: #b98a37; --rose: #c7705f; --on-primary: #fff;
+  --soft: #f8e4de; --soft-2: #ece6f4; --border: #e8e0d8; --track: #ebe4dd; --moon-dark: #d9d4e4;
+  --hero-1: #f1d9d0; --hero-2: #dcd9f0; --shadow: 0 10px 26px rgba(29, 33, 64, .1); color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -390,107 +389,68 @@ a.btn { text-decoration: none; display: inline-block; }
 .tabbar[hidden] { display: none; }
 
 
-/* ================= الهوية الجديدة ================= */
-body::before {
-  height: 420px; opacity: 1;
-  background:
-    radial-gradient(70% 60% at 85% 0%, var(--hero-1), transparent 70%),
-    radial-gradient(60% 50% at 10% 5%, var(--hero-2), transparent 70%);
-}
-h1, h2, h3, .kicker, .dial-tag, .dial-meta b { font-family: var(--display); font-weight: 600; letter-spacing: 0; }
-.card { box-shadow: var(--shadow); }
-.kicker { display: inline-block; font-size: .78rem; color: var(--teal); border-bottom: 2px solid var(--gold); padding-bottom: 2px; margin-bottom: 6px; }
+/* ================= لمسات الهوية ================= */
+h1, h2, h3 { font-family: var(--display); font-weight: 700; }
+.btn { color: var(--on-primary); background: linear-gradient(135deg, var(--rose), var(--gold)); }
+.btn.ghost { color: var(--text); background: var(--card-2); }
+.btn.danger { background: var(--warn); color: #fff; }
+.badge { color: var(--on-primary); }
+.badge.alt { background: var(--primary-2); }
+.seg button.on, .seg.big button.on, .sec-tabs button.on { background: linear-gradient(135deg, var(--rose), var(--gold)); color: var(--on-primary); border-color: transparent; }
+.chip.on { color: var(--gold); border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+ul.list li::before { background: var(--gold); transform: rotate(45deg); border-radius: 2px; }
+.topbar h1 { font-family: var(--display); }
 
-/* الهيدر بخط النبض */
-.topbar { background: color-mix(in srgb, var(--bg) 70%, transparent); border-bottom: 1px solid var(--border); }
-.topbar::after {
-  content: ''; position: absolute; inset-inline: 0; bottom: -1px; height: 18px; pointer-events: none; opacity: .55;
-  background: no-repeat center / 220px 18px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 18'%3E%3Cpath d='M0 12h80l6-8 6 14 7-18 6 12h115' fill='none' stroke='%23c8384f' stroke-width='1.6'/%3E%3C/svg%3E");
-}
-.icon-btn { border-radius: 12px; }
+/* هالة مضيئة حول صورة الجنين */
+.halo { position: relative; border-radius: 50%; }
+.halo::before { content: ''; position: absolute; inset: -6%; border-radius: 50%; z-index: -1;
+  background: conic-gradient(from 200deg, transparent 0 40%, color-mix(in srgb, var(--gold) 55%, transparent) 55%, color-mix(in srgb, var(--rose) 60%, transparent) 70%, transparent 85%);
+  filter: blur(18px); opacity: .8; }
+.halo .photo { border: 2px solid color-mix(in srgb, var(--gold) 45%, transparent); border-radius: 50%; }
+.photo.round { -webkit-mask-image: none; mask-image: none; overflow: hidden; }
+.size-tag { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: .85rem; font-weight: 600;
+  padding: 4px 14px; border-radius: 999px; background: color-mix(in srgb, var(--card) 80%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); backdrop-filter: blur(8px); }
+.float-chip { border-color: color-mix(in srgb, var(--gold) 30%, var(--border)); }
+.float-chip .ic { background: color-mix(in srgb, var(--gold) 22%, var(--card)); color: var(--gold); }
+.float-chip .ic.pink { background: color-mix(in srgb, var(--rose) 22%, var(--card)); color: var(--rose); }
+.dots i.on { background: var(--gold); }
 
-/* شريط التنقل: مثبت بالأسفل مع زر «نبض» البارز */
-.tabbar {
-  inset-inline: 0; bottom: 0; max-width: none; border-radius: 0; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-  border: 0; border-top: 1px solid var(--border); background: var(--card); box-shadow: 0 -6px 20px rgba(0, 0, 0, .06);
-}
-.tabbar button { border-radius: 12px; }
-.tabbar button.active { background: transparent; color: var(--primary); }
-.tabbar button.active svg { stroke-width: 2.4; }
-.tabbar button.mid { color: var(--text); margin-top: -26px; }
-.tabbar button.mid svg { width: 30px; height: 30px; padding: 14px; box-sizing: content-box; border-radius: 50%; color: #fff;
-  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--pom) 70%, #fff), var(--pom)); box-shadow: 0 6px 18px color-mix(in srgb, var(--pom) 45%, transparent); border: 4px solid var(--card); }
-.tabbar button.mid.active { color: var(--primary); }
-body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
-.sticky-ask { bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
-.toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
-
-/* دائرة الرحلة */
-.journey { text-align: center; margin: 4px 0 14px; }
-.dial { position: relative; width: min(360px, 92vw); aspect-ratio: 1; margin: 0 auto; max-width: 100%; }
-.dial-ring { position: absolute; inset: 0; width: 100%; height: 100%; }
-.dial-ring .seg { cursor: pointer; stroke-linecap: butt; transition: stroke-width .2s; }
-.dial-ring .seg:hover { stroke-opacity: 1; }
-.dial-ring text { font-size: 11px; fill: var(--muted); font-family: var(--font); }
-.dial-ring .pulse { fill: var(--pom); animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes pulse { 0% { opacity: .9; transform: scale(.8); } 70% { opacity: 0; transform: scale(2.2); } 100% { opacity: 0; } }
-.dial-photo { position: absolute; inset: 17%; border-radius: 50%; overflow: hidden; }
-.dial-photo .photo { width: 100%; }
-.dial-tag { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); background: var(--gold); color: #2b1c05; padding: 3px 14px; border-radius: 8px; font-size: .9rem; box-shadow: var(--shadow); }
-.lab-view { display: flex; justify-content: center; }
-.lab-view .photo { width: min(360px, 92vw); }
-.dial-meta { display: flex; justify-content: center; gap: 0; margin: 12px auto 8px; max-width: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); overflow: hidden; }
-.dial-meta > div { flex: 1; padding: 8px 6px; border-inline-start: 1px dashed var(--border); }
-.dial-meta > div:first-child { border-inline-start: 0; }
-.dial-meta small { display: block; color: var(--muted); font-size: .75rem; }
-.dial-meta b { font-size: .98rem; font-variant-numeric: tabular-nums; }
-.toggle-lbl { border: 1px solid var(--teal); color: var(--teal); background: transparent; border-radius: 999px; padding: 6px 16px; cursor: pointer; font-size: .85rem; }
-
-/* مسطرة القياس */
-.ruler-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 0 0; margin-bottom: 10px; box-shadow: var(--shadow); }
-.ruler-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 14px; }
-.ruler-head .muted { font-size: .78rem; }
-.ruler { display: flex; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 18px 40% 8px;
-  background: repeating-linear-gradient(to left, transparent 0 43px, var(--border) 43px 44px) top / 100% 8px no-repeat; }
-.ruler::-webkit-scrollbar { display: none; }
-.ruler .tick { flex: 0 0 44px; scroll-snap-align: center; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; color: var(--muted); position: relative; }
-.ruler .tick i { width: 2px; height: 16px; background: var(--muted); opacity: .5; border-radius: 2px; }
-.ruler .tick.major i { height: 26px; opacity: .8; }
-.ruler .tick span { font-size: .8rem; font-variant-numeric: tabular-nums; }
-.ruler .tick.cur::before { content: ''; position: absolute; top: -12px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); }
-.ruler .tick.sel i { background: var(--pom); width: 4px; height: 34px; opacity: 1; }
-.ruler .tick.sel span { color: #fff; background: var(--pom); border-radius: 8px; padding: 0 8px; font-weight: 700; font-size: .95rem; }
-.more-link { display: block; margin: 0 auto 12px; color: var(--teal); }
-.back-now { background: var(--teal); box-shadow: 0 6px 16px color-mix(in srgb, var(--teal) 40%, transparent); border-radius: 12px; }
+/* بطاقات الأسابيع */
+.week-strip.tiles button { width: 62px; padding: 8px 0 6px; border-radius: 18px; gap: 2px; background: var(--card); border: 1px solid var(--border); }
+.week-strip.tiles .em { font-size: 1.35rem; line-height: 1.3; }
+.week-strip.tiles b { width: auto; height: auto; background: none; font-size: 1.05rem; color: var(--text); }
+.week-strip.tiles small { font-size: .68rem; color: var(--muted); }
+.week-strip.tiles button.cur { border-color: color-mix(in srgb, var(--gold) 60%, var(--border)); }
+.week-strip.tiles button.cur small { color: var(--gold); font-weight: 700; }
+.week-strip.tiles button.sel { background: linear-gradient(160deg, color-mix(in srgb, var(--rose) 30%, var(--card)), color-mix(in srgb, var(--gold) 22%, var(--card))); border: 1.5px solid var(--gold); transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,.25); }
+.back-now { background: linear-gradient(135deg, var(--rose), var(--gold)); color: var(--on-primary); }
 
 /* الأقمار التسعة */
-.moons-card h2 { font-size: 1.12rem; margin: 2px 0 12px; }
+.kicker { display: inline-block; font-size: .78rem; color: var(--gold); letter-spacing: .02em; margin-bottom: 4px; }
+.moons-card { background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--hero-1) 70%, var(--card)), var(--card)); }
+.moons-card h2 { font-size: 1.12rem; margin: 2px 0 14px; }
 .moons { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
 .moon { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.moon svg { width: 100%; max-width: 36px; height: auto; }
-.moon.now span { color: var(--pom); font-weight: 700; }
-.moon.now svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 70%, transparent)); }
-.ticket { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px dashed var(--border); border-radius: 12px; overflow: hidden; }
-.ticket > div { padding: 8px 6px; text-align: center; border-inline-start: 1px dashed var(--border); }
+.moon svg { width: 100%; max-width: 34px; height: auto; }
+.moon.now span { color: var(--gold); font-weight: 700; }
+.moon.now svg { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gold) 80%, transparent)); }
+.ticket { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px dashed color-mix(in srgb, var(--gold) 35%, var(--border)); border-radius: 14px; overflow: hidden; }
+.ticket > div { padding: 8px 6px; text-align: center; border-inline-start: 1px dashed color-mix(in srgb, var(--gold) 35%, var(--border)); }
 .ticket > div:first-child { border-inline-start: 0; }
 .ticket small { display: block; color: var(--muted); font-size: .74rem; }
 .ticket b { font-size: .9rem; font-variant-numeric: tabular-nums; }
 
-/* عناصر عامة بلمسة الهوية */
-.btn { border-radius: 12px; }
-.badge { border-radius: 8px; }
-.badge.alt { background: var(--teal); }
-.seg button.on, .sec-tabs button.on, .seg.big button.on { background: var(--teal); border-color: var(--teal); color: #fff; }
-.chip.on { background: var(--soft-2); border-color: var(--teal); color: var(--teal); }
-ul.list li::before { background: var(--gold); border-radius: 2px; transform: rotate(45deg); }
-.nav-row .ic, .tool { border-radius: 12px; }
-.hero-soft { background: linear-gradient(135deg, var(--soft-2), var(--card)); }
-.tl-tri { border-radius: var(--radius); }
-.photo.round { -webkit-mask-image: none; mask-image: none; }
-.welcome .photo { border-radius: 50%; overflow: hidden; border: 6px solid var(--card); box-shadow: var(--shadow); }
-.baby-photo { border-color: var(--gold); }
-.quick4 button, .sec-tabs button { border-radius: 12px; }
-.bubble.user { background: var(--teal); }
+/* شريط التنقل العائم مع زر القلب */
+.tabbar button.active { background: transparent; color: var(--gold); }
+.tabbar button.mid { color: var(--text); margin-top: -24px; }
+.tabbar button.mid svg { width: 28px; height: 28px; padding: 13px; box-sizing: content-box; border-radius: 50%; color: var(--on-primary);
+  background: linear-gradient(135deg, var(--rose), var(--gold)); box-shadow: 0 8px 20px color-mix(in srgb, var(--rose) 45%, transparent); border: 4px solid var(--bg); }
+.tabbar button.mid.active { color: var(--gold); }
+.tabbar[hidden] { display: none; }
+.bubble.user { background: linear-gradient(135deg, var(--rose), var(--gold)); color: var(--on-primary); }
+.welcome .photo { border-radius: 50%; overflow: hidden; }
+.week-strip.tiles button.sel b { background: none; color: var(--text); }
+.week-strip.tiles button.sel small { color: var(--gold); }
 
 </style>
 </head>
@@ -1378,7 +1338,7 @@ const DAY = 86400000;
 const defaults = () => ({
   profile: null, // {name, babyName, method, lmp, cycle, conception, ivf, ivfDay, due, height, preWeight}
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
-  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'auto',
+  bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark',
   labs: [], checks: [], med: {}, letters: [], baby: null, feeds: [], diapers: [], sleeps: [], growth: [],
   vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: [], voted: {}
 });
@@ -1456,7 +1416,7 @@ $('#backBtn').onclick = () => history.back();
 window.addEventListener('popstate', e => { route = e.state || { view: 'home' }; render(false); });
 
 function go(view, sub = null, week = null) {
-  route = { view, sub, week, labels: route.labels };
+  route = { view, sub, week, slide: route.slide };
   history.pushState(route, '');
   render();
 }
@@ -1602,51 +1562,27 @@ const fmtDayMonth = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', mo
 const fmtDate = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
 const wd = (n) => `${Math.floor(n / 7)} أسبوعاً و ${n % 7} ${n % 7 === 1 ? 'يوم' : 'أيام'}`;
 
-// ألوان الأثلاث الثلاثة في دائرة الرحلة
-const TRI_COL = ['var(--teal)', 'var(--gold)', 'var(--pom)'];
-const triOf = w => w <= 13 ? 0 : w <= 27 ? 1 : 2;
-
-// دائرة الرحلة: 40 قطعة حول صورة الجنين، تُقرأ من اليمين عكس عقارب الساعة
-function dial(sel, st) {
-  const C = 190, R = 160, step = 9;
-  const pt = (a, r) => [C + r * Math.cos(a * Math.PI / 180), C + r * Math.sin(a * Math.PI / 180)];
-  const seg = w => {
-    const a0 = -90 - (w - 1) * step - .9, a1 = -90 - w * step + .9;
-    const [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
-    const past = w <= st.week, on = w === sel;
-    return `<path data-wk="${w}" d="M${x0.toFixed(1)} ${y0.toFixed(1)}A${R} ${R} 0 0 0 ${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${TRI_COL[triOf(w)]}"
-      stroke-width="${on ? 22 : 13}" stroke-opacity="${on ? 1 : past ? .9 : .22}" fill="none" class="seg${on ? ' on' : ''}"><title>الأسبوع ${w}</title></path>`;
-  };
-  const cur = Math.min(40, st.week), [cx, cy] = pt(-90 - (cur - .5) * step, R);
-  const marks = [10, 20, 30, 40].map(w => { const [x, y] = pt(-90 - (w - .5) * step, R + 21); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle">${w}</text>`; }).join('');
-  return `<div class="dial">
-    <svg viewBox="0 0 380 380" class="dial-ring" role="img" aria-label="دائرة الرحلة: الأسبوع ${st.week} من 40">
-      ${Array.from({ length: 40 }, (_, i) => seg(i + 1)).join('')}
-      ${marks}
-      ${st.week <= 40 ? `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="9" class="pulse"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" fill="var(--paper)"/>` : ''}
-    </svg>
-    <div class="dial-photo">${Photos.figure(sel, { cls: 'round' })}</div>
-    <span class="dial-tag">الأسبوع ${sel}</span>
+function hero(sel) {
+  const w = WEEKS[sel - 1];
+  const chips = w.wt === '—'
+    ? `<div class="float-chip chip-bl"><span class="ic pink">${ICON.seed}</span><div><small>المرحلة</small><b>${w.size}</b></div></div>`
+    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${w.wt}</b></div></div>
+       <div class="float-chip chip-bl"><span class="ic pink">${ICON.ruler}</span><div><small>الطول</small><b>${w.len}</b></div></div>`;
+  return `<div class="hero-stage">
+    <div class="carousel" id="car">
+      <div class="slide"><div class="halo">${Photos.figure(sel, { cls: 'round' })}</div>${chips}<span class="size-tag">${w.emoji} بحجم ${w.size}</span></div>
+      <div class="slide">${Photos.figure(sel, { labels: true, cls: 'square' })}<span class="slide-cap">الأسبوع ${sel} · أسماء الأجزاء</span></div>
+    </div>
+    <div class="dots" id="dots"><i class="${route.slide ? '' : 'on'}"></i><i class="${route.slide ? 'on' : ''}"></i></div>
   </div>`;
 }
-function hero(sel) {
-  const st = status(), w = WEEKS[sel - 1], lab = !!route.labels;
-  return `<section class="journey">
-    ${lab ? `<div class="lab-view">${Photos.figure(sel, { labels: true, cls: 'square' })}</div>` : dial(sel, st)}
-    <div class="dial-meta">
-      <div><small>بحجم</small><b>${w.emoji} ${w.size}</b></div>
-      ${w.wt !== '—' ? `<div><small>الطول</small><b>${w.len}</b></div><div><small>الوزن</small><b>${w.wt}</b></div>` : ''}
-    </div>
-    <button class="toggle-lbl" id="lblToggle">${lab ? '⭕ عرض دائرة الرحلة' : '🏷️ أسماء أجزاء الجنين'}</button>
-  </section>`;
-}
-// مسطرة القياس لاختيار الأسبوع
-function ruler(items, sel, cur, attr, unit) {
-  return `<div class="ruler" id="strip" role="listbox" aria-label="اختاري ${unit}">${items.map(n => `<button ${attr}="${n}" class="tick ${n % 4 === 0 ? 'major' : ''} ${n === sel ? 'sel' : ''} ${n === cur ? 'cur' : ''}" role="option" aria-selected="${n === sel}" aria-label="${unit} ${n}"><i></i><span>${n}</span></button>`).join('')}</div>`;
+// بطاقات الأسابيع: رقم الأسبوع ورمز حجم الجنين
+function tiles(items, sel, cur, attr, unit, icon) {
+  return `<div class="week-strip tiles" id="strip">${items.map(n => `<button ${attr}="${n}" class="${n === sel ? 'sel' : ''} ${n === cur ? 'cur' : ''}" aria-label="${unit} ${n}">
+    <span class="em">${icon(n)}</span><b>${n}</b><small>${n === cur ? 'الآن' : unit}</small></button>`).join('')}</div>`;
 }
 function weekStrip(sel, st) {
-  return `<div class="ruler-wrap"><div class="ruler-head"><span class="kicker">مسطرة الأسابيع</span><span class="muted">اسحبي واختاري أسبوعاً</span></div>
-    ${ruler(WEEKS.map(x => x.w), sel, st.week, 'data-wk', 'الأسبوع')}</div>
+  return `${tiles(WEEKS.map(x => x.w), sel, st.week, 'data-wk', 'أسبوع', n => WEEKS[n - 1].emoji)}
   ${sel !== st.week ? `<button class="back-now" data-wk="${st.week}">↩ العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
 }
 // قمر بنسبة إضاءة f (يمتلئ من اليمين)
@@ -1681,8 +1617,8 @@ function viewHome() {
   const upcoming = APPOINTMENTS.filter(a => a.to >= st.week).slice(0, 2);
   return `
   ${hero(sel)}
+  <div class="sec-head"><h2>رحلتك أسبوعاً بأسبوع</h2><button class="link" data-week="${sel}">التفاصيل ‹</button></div>
   ${weekStrip(sel, st)}
-  <button class="link more-link" data-week="${sel}">كل تفاصيل الأسبوع ${sel} ‹</button>
   ${progressCard(st)}
   ${homeExtras(st)}
 
@@ -2690,8 +2626,7 @@ Object.assign(SUBVIEWS, {
     const cur = Math.min(23, Math.floor(diffDays(today(), parse(S.baby.date)) / 30.44));
     const m = route.bm != null ? route.bm : cur, g = BABY_GUIDE[m];
     const row = (ic, t, v) => v ? `<div class="item-row"><div class="em">${ic}</div><div><b>${t}</b><div>${v}</div></div></div>` : '';
-    return `<div class="ruler-wrap"><div class="ruler-head"><span class="kicker">مسطرة الشهور</span><span class="muted">من الشهر 1 إلى 24</span></div>
-      ${ruler(BABY_GUIDE.map(x => x.m + 1), m + 1, cur + 1, 'data-bmn', 'الشهر')}</div>
+    return `${tiles(BABY_GUIDE.map(x => x.m + 1), m + 1, cur + 1, 'data-bmn', 'شهر', n => n % 12 === 0 ? '🎂' : '🌙')}
       ${m !== cur ? `<button class="back-now" data-bm="${cur}">↩ العودة لشهره الحالي (${cur + 1})</button>` : ''}
       <div class="card hero-soft"><h2 style="margin:0">${g.t}</h2><p style="margin:6px 0 0">${g.dev}</p></div>
       <div class="card">${row('🍼', 'الأكل والرضاعة', g.feed)}${row('😴', 'النوم', g.sleep)}${row('🩺', 'الصحة والتطعيمات', g.health)}${row('🧸', 'العبي معه', g.play)}</div>
