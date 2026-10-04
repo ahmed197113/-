@@ -41,6 +41,11 @@ jobs:
           npx @capacitor/assets generate --android --assetPath assets || echo "icon generation skipped"
           npx cap sync android
 
+      - name: Use a fixed signing key so updates install over older versions
+        run: |
+          mkdir -p ~/.android
+          cp nabd-debug.keystore ~/.android/debug.keystore
+
       - name: Build the APK
         working-directory: pregnancy-app/android-app/android
         run: ./gradlew assembleDebug --no-daemon
@@ -56,6 +61,6 @@ jobs:
           gh release delete nabd-latest --yes --cleanup-tag || true
           gh release create nabd-latest nabd.apk --target "$GITHUB_SHA" --prerelease \
             --title "نبضٌ صغير — أحدث نسخة أندرويد" \
-            --notes "ملف APK للتجربة. على الجوال: نزّلي الملف ثم افتحيه، واسمحي بالتثبيت من مصادر غير معروفة إذا طُلب."
+            --notes "ملف APK للتجربة. على الجوال: نزّلي الملف ثم افتحيه، واسمحي بالتثبيت من مصادر غير معروفة إذا طُلب. إن ظهر تحذير Play Protect اضغطي: التثبيت على أي حال."
         env:
           GH_TOKEN: ${{ github.token }}
