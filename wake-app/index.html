@@ -134,6 +134,19 @@ body.flash .sky{background:rgba(239,90,74,.25)}
 .habit textarea{grid-column:1/-1;min-height:64px}
 .breath{width:140px;height:140px;margin:0 auto;border-radius:50%;background:radial-gradient(circle,var(--dawn) 0%,var(--dawn-deep) 70%);transform:scale(.55);transition:transform 4s ease-in-out;display:grid;place-items:center;color:var(--night);font-weight:700}
 
+/* proof spots + camera */
+.spot{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center}
+.thumb{width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--night);border:1px dashed var(--line);display:grid;place-items:center;color:var(--mist);font-size:.7rem;text-align:center}
+.cam{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;border-radius:14px;padding:12px 16px;font-weight:700;background:var(--dawn);color:var(--night);text-align:center}
+.cam.ghost{background:transparent;color:var(--paper);border:1px solid var(--line);font-weight:500}
+.cam input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.cam:focus-within{outline:2px solid var(--dawn);outline-offset:2px}
+.proof{display:inline-block;font-size:.72rem;color:var(--dawn);border:1px solid rgba(255,169,77,.4);border-radius:999px;padding:1px 8px;margin-top:4px}
+.ref{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center}
+.ref img{width:96px;height:96px;border-radius:12px;object-fit:cover}
+.count{font-family:var(--f-num);font-size:1.1rem}
+.voice{font-size:.8rem;color:var(--mist)}
+
 /* overlays */
 .overlay{position:fixed;inset:0;z-index:20;background:rgba(14,20,36,.94);display:flex;align-items:center;justify-content:center;padding-inline:16px;padding-block:calc(20px + env(safe-area-inset-top,0px)) calc(20px + env(safe-area-inset-bottom,0px))}
 .overlay .panel{max-width:420px;width:100%;text-align:center}
@@ -177,7 +190,7 @@ body.flash .sky{background:rgba(239,90,74,.25)}
   </div>
 
   <div class="panel">
-    <div><h2>عقد الليلة</h2><p class="small muted">اتفاق بينك الآن وبينك في الصباح. ستكتبه بيدك، وسيجبرك المنبه على كتابته مرة أخرى قبل أن يسكت.</p></div>
+    <div><h2>عقد الليلة</h2><p class="small muted">اتفاق بينك الآن وبينك في الصباح. ستكتب الرسالة بيدك، وسيجبرك المنبه على كتابتها مرة أخرى قبل أن يسكت.</p></div>
     <label class="field"><span class="label">موعد الاستيقاظ</span><input type="time" id="inTime" value="06:30"></label>
     <label class="field"><span class="label">رسالة إلى نفسك في الصباح (ستكتبها حرفياً لإيقاف المنبه)</span>
       <textarea id="inNote" maxlength="120" placeholder="مثال: قم الآن، عندك مقابلة الساعة التاسعة وأنت مستعد لها"></textarea></label>
@@ -186,9 +199,14 @@ body.flash .sky{background:rgba(239,90,74,.25)}
   </div>
 
   <div class="panel">
-    <div><h2>عاداتك السيئة بعد الاستيقاظ</h2><p class="small muted">اختر ما تقع فيه عادة. كل عادة تختارها تتحول صباحاً إلى مهمة بديلة لا تستطيع تخطيها.</p></div>
+    <div><h2>عاداتك السيئة بعد الاستيقاظ</h2><p class="small muted">اختر ما تقع فيه عادة. كل عادة تتحول صباحاً إلى مهمة بديلة تُثبت أنك فعلتها بصورة أو حركة، لا بضغطة زر.</p></div>
     <div class="chips" id="badChips"></div>
     <div class="swap" id="swapTable"></div>
+  </div>
+
+  <div class="panel">
+    <div><h2>أماكن الإثبات</h2><p class="small muted">صوّر هذه الأماكن الآن والضوء مُشعل. في الصباح لن يسكت المنبه إلا إذا وقفت في مكان الصحوة وصوّرته من الزاوية نفسها، فلا يمكن إيقافه من السرير. الصور تبقى على جوالك فقط.</p></div>
+    <div id="spotList" style="display:flex;flex-direction:column;gap:12px"></div>
   </div>
 
   <div class="panel">
@@ -198,6 +216,7 @@ body.flash .sky{background:rgba(239,90,74,.25)}
       <label class="field"><span class="label">عدد المسائل لإيقاف المنبه</span><input type="number" id="inMath" min="1" max="8" value="3" class="num"></label>
       <label class="field"><span class="label">مدة حارس الصباح (دقيقة)</span><input type="number" id="inGuard" min="10" max="60" value="20" class="num"></label>
     </div>
+    <p class="small"><b>نغمة لا تعتاد عليها</b><br><span class="muted">التطبيق يختار النغمة بنفسه من 8 أصوات مزعجة: صفارة إنذار، نقر حاد، طرق على الباب، نغمات متنافرة… كل صباح يبدأ بصوت غير صوت الأمس، ويتبدل الصوت كل 25 ثانية، ويصل لأعلى درجة خلال 30 ثانية.</span></p>
     <div class="panel flat cost">
       <span><b>قانون الغفوة:</b> كل غفوة أقصر من التي قبلها (5 ثم 3 ثم 1 دقيقة، وبعدها لا غفوة).</span>
       <span>كل غفوة تضيف: مسألتين للمنبه، و15 قرفصاء دَيناً عليك في الصباح، وتذبل النبتة.</span>
@@ -213,8 +232,9 @@ body.flash .sky{background:rgba(239,90,74,.25)}
   <div class="panel flat small muted" id="howBox" hidden>
     <p><b>1. الليلة:</b> تكتب رسالة لنفسك، تختار عاداتك السيئة، وتترك الجوال على الشاحن والصفحة مفتوحة.</p>
     <p><b>2. الشروق:</b> قبل الموعد تتوهج الشاشة وتعلو أصوات خفيفة تدريجياً.</p>
-    <p><b>3. المنبه:</b> صوت يتصاعد واهتزاز لا يتوقف إلا بحل مسائل حسابية وكتابة رسالتك حرفياً (اللصق ممنوع).</p>
-    <p><b>4. حارس الصباح:</b> يبقى معك مدة تحددها. ينفذ معك العادات البديلة بمؤقتات لا يمكن تخطيها، ويسألك فجأة "هل أنت صاحٍ؟". إن لم ترد خلال 30 ثانية عاد المنبه. وإن خرجت من التطبيق لتتصفح، يُحسب هروباً ويعود المنبه عند رجوعك وتزيد مدة الحراسة.</p>
+    <p><b>3. المنبه:</b> أصوات مزعجة متبدلة تتصاعد مع اهتزاز. لا يوجد زر إيقاف. يسكت فقط بعد حل مسائل، ثم تصوير مكان الصحوة خارج غرفتك (يُقارن بصورة الليلة)، ثم كتابة رسالتك حرفياً.</p>
+    <p><b>4. حارس الصباح:</b> كل عادة سيئة تتحول إلى مهمة تُثبتها: صورة مكان الماء، صورة نافذة مضيئة، خطوات وقرفصاء يعدّها حساس الحركة، بقاء داخل التطبيق. لا يكفي أن تضغط "تم". ويسألك فجأة "هل أنت صاحٍ؟"؛ إن لم ترد خلال 30 ثانية عاد المنبه وعليك تصوير مكان الصحوة من جديد.</p>
+    <p><b>إن أغلقت التطبيق:</b> عند فتحه يرن المنبه فوراً مع عقوبة (−20 نقطة و+5 دقائق حراسة). وإن لم تعد خلال 3 ساعات من الموعد، يُسجَّل الصباح ضائعاً وتذبل النبتة بقوة.</p>
     <p><b>5. الحكم:</b> تحصل على نتيجة الصباح، وتنمو نبتتك أو تذبل.</p>
     <p>ملاحظة: هذا تطبيق ويب، لذلك يجب أن تبقى الصفحة مفتوحة والجوال على الشاحن وصوته مرتفعاً. التطبيق يطلب إبقاء الشاشة مضاءة.</p>
   </div>
@@ -231,7 +251,8 @@ body.flash .sky{background:rgba(239,90,74,.25)}
   </div>
   <div class="panel flat small">
     <h3>قبل أن تنام</h3>
-    <p class="muted">• اترك هذه الصفحة مفتوحة والجوال على الشاحن بعيداً عن يدك، ويُفضّل خارج متناول السرير.</p>
+    <p class="muted">• اترك هذه الصفحة مفتوحة والجوال على الشاحن بعيداً عن السرير. الأفضل أن تشحنه في مكان الصحوة نفسه.</p>
+    <p class="muted">• إغلاق التطبيق لن يعفيك: عند فتحه يرن فوراً بعقوبة، وإن لم تعد يُسجَّل الصباح ضائعاً.</p>
     <p class="muted">• ارفع صوت الجوال وألغِ وضع الصامت.</p>
     <p class="muted">• يمكنك إلغاء المنبه الآن، لكن الإلغاء يُقفل قبل الموعد بـ 30 دقيقة حتى لا تلغيه وأنت نصف نائم.</p>
   </div>
@@ -254,6 +275,7 @@ body.flash .sky{background:rgba(239,90,74,.25)}
     <div class="pulse" aria-hidden="true">⏰</div>
     <div class="clock" id="ringClock" style="font-size:3rem">--:--</div>
     <p id="ringReason" class="muted"></p>
+    <p class="voice" id="ringVoice"></p>
   </div>
   <div class="steps" id="ringSteps"></div>
   <div class="panel" id="missionBox"></div>
@@ -331,31 +353,43 @@ const store = {
   set(k, v){ try{ localStorage.setItem("sahwa."+k, JSON.stringify(v)); }catch(e){} }
 };
 
-/* ---------- catalog: bad habit → enforced replacement ---------- */
+/* ---------- proof places (photographed at night, matched in the morning) ---------- */
+const SPOTS = {
+  wake:   {name:"مكان الصحوة", hint:"خارج غرفة النوم: حوض الحمام أو باب المطبخ. اشحن الجوال هناك."},
+  water:  {name:"مكان الماء",  hint:"الثلاجة أو فلتر الماء. جهّز كوب ماء هناك قبل النوم."},
+  prayer: {name:"مكان الصلاة", hint:"سجادة الصلاة في مكانها."},
+};
+
+/* ---------- catalog: bad habit → replacement that must be proven ---------- */
 const BAD = [
-  {id:"scroll", bad:"أمسك الجوال وأتصفح فوراً", swap:{t:"صفر تصفح: الجوال يبقى هنا", d:"3 دقائق دون مغادرة التطبيق. كل خروج يُحسب هروباً.", sec:180}},
-  {id:"bed",    bad:"أبقى في السرير",          swap:{t:"اخرج من غرفة النوم الآن", d:"قف، واترك السرير، وامشِ إلى غرفة أخرى.", sec:60}},
-  {id:"dark",   bad:"أبقى في الغرفة المظلمة",   swap:{t:"افتح الستائر وواجه الضوء", d:"دقيقتان من ضوء النهار تضبطان ساعتك البيولوجية.", sec:120}},
-  {id:"coffee", bad:"قهوة على معدة فارغة",      swap:{t:"كوب ماء كامل أولاً", d:"جسمك فقد الماء طوال الليل. القهوة بعد الماء.", sec:45}},
-  {id:"news",   bad:"أفتح الرسائل والأخبار",     swap:{t:"اكتب أهم 3 مهام لليوم", d:"يومك يبدأ بأولوياتك أنت، لا بأولويات الآخرين.", text:true}},
-  {id:"lazy",   bad:"خمول وكسل",                swap:{t:"تمرين تنشيط: 20 قرفصاء وتمدد", d:"دقيقتان من الحركة ترفعان النبض وتطردان النعاس.", sec:120}},
-  {id:"rush",   bad:"أستعجل وأتوتر",            swap:{t:"تنفّس 4-4-6", d:"دقيقة تنفس موجّه قبل أن تبدأ يومك.", sec:60, breath:true}},
-  {id:"prayer", bad:"أؤجل الصلاة",              swap:{t:"توضأ وصلِّ", d:"أول إنجاز في يومك.", sec:300}},
-  {id:"meal",   bad:"أهمل الإفطار",             swap:{t:"جهّز إفطاراً خفيفاً", d:"بيضة، تمر، فاكهة، أي شيء أفضل من لا شيء.", sec:180}},
+  {id:"scroll", bad:"أمسك الجوال وأتصفح فوراً", swap:{t:"صفر تصفح: 3 دقائق داخل التطبيق", d:"أي خروج من التطبيق يُكتشف ويُعيد المنبه.", proof:"stay", sec:180}},
+  {id:"bed",    bad:"أبقى في السرير",          swap:{t:"ابتعد عن السرير: 40 خطوة", d:"امشِ في البيت والجوال في يدك.", proof:"steps", n:40}},
+  {id:"dark",   bad:"أبقى في الغرفة المظلمة",   swap:{t:"افتح الستائر وصوّر النافذة", d:"لا تُقبل الصورة إلا إذا كانت مضيئة.", proof:"light"}},
+  {id:"coffee", bad:"قهوة على معدة فارغة",      swap:{t:"كوب ماء قبل أي شيء", d:"صوّر مكان الماء ثم اشرب. القهوة بعد الماء.", proof:"spot", spot:"water"}},
+  {id:"news",   bad:"أفتح الرسائل والأخبار",     swap:{t:"اكتب أهم 3 مهام لليوم", d:"يومك يبدأ بأولوياتك أنت.", proof:"text"}},
+  {id:"lazy",   bad:"خمول وكسل",                swap:{t:"20 قرفصاء", d:"امسك الجوال على صدرك وانزل واصعد.", proof:"squats", n:20}},
+  {id:"rush",   bad:"أستعجل وأتوتر",            swap:{t:"تنفّس 4-4-6 لمدة دقيقة", d:"اتبع الدائرة دون مغادرة التطبيق.", proof:"stay", sec:60, breath:true}},
+  {id:"prayer", bad:"أؤجل الصلاة",              swap:{t:"توضأ وصلِّ", d:"صوّر مكان الصلاة، ثم 5 دقائق دون مغادرة التطبيق.", proof:"spot", spot:"prayer", sec:300}},
+  {id:"meal",   bad:"أهمل الإفطار",             swap:{t:"صوّر إفطارك", d:"صورة ملتقطة الآن، تظهر في نتيجة الصباح.", proof:"fresh"}},
 ];
+const PROOF = {stay:"إثبات: يكشف خروجك من التطبيق", steps:"إثبات: حساس الحركة يعدّ خطواتك", light:"إثبات: قياس إضاءة الصورة",
+  spot:"إثبات: مطابقة صورة المكان", text:"إثبات: ما تكتبه بيدك", squats:"إثبات: حساس الحركة يعدّ", fresh:"إثبات: صورة ملتقطة الآن"};
 const SNOOZE_MIN = [5,3,1];
 const DEBT_SQUATS = 15;
+const MATCH_MIN = 0.55;
 
 /* ---------- state ---------- */
 const S = Object.assign({time:"06:30", note:"", reason:"", bad:["scroll","bed","coffee","news"], sunrise:true, math:3, guard:20}, store.get("settings", {}));
-const D = Object.assign({history:[], growth:0}, store.get("data", {}));
-let R = store.get("run", null); // runtime of an active morning
+const SP = store.get("spots", {});           // spot fingerprints + thumbnails
+const D = Object.assign({history:[], growth:0, lastVoice:-1}, store.get("data", {}));
+let R = store.get("run", null);               // runtime of an active morning
 const saveS = () => store.set("settings", S);
 const saveD = () => store.set("data", D);
-const saveR = () => store.set("run", R);
+const saveR = () => { if(R){ R.beat = Date.now(); } store.set("run", R); };
 
-/* ---------- audio ---------- */
-let ac = null, keep = null, alarmGain = null, alarmTimer = null, vibTimer = null, chimeTimer = null;
+/* ---------- audio: harsh voices that rotate so the brain never tunes them out ---------- */
+let ac = null, keep = null, alarmGain = null, alarmTimer = null, vibTimer = null, chimeTimer = null, noiseBuf = null;
+let ringStartLocal = 0;
 function audioInit(){
   if(!ac){ const C = window.AudioContext || window.webkitAudioContext; if(!C) return; ac = new C(); }
   if(ac.state === "suspended") ac.resume();
@@ -364,26 +398,62 @@ function audioInit(){
     g.gain.value = 0.0008; o.frequency.value = 40; o.connect(g).connect(ac.destination); o.start(); keep = o;
   }
 }
+const out = () => alarmGain || ac.destination;
+function env(g, t, vol, dur){ g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(vol,0.0002), t+0.015); g.gain.exponentialRampToValueAtTime(0.0001, t+dur); }
 function tone(freq, dur, vol, type="sine", when=0){
   if(!ac) return;
   const t = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(vol,0.0002), t+0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
-  o.connect(g).connect(alarmGain || ac.destination); o.start(t); o.stop(t+dur+0.05);
+  o.type = type; o.frequency.value = freq; env(g, t, vol, dur);
+  o.connect(g).connect(out()); o.start(t); o.stop(t+dur+0.05);
+}
+function sweep(f1, f2, dur, vol, type, when=0){
+  if(!ac) return;
+  const t = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f1, t); o.frequency.linearRampToValueAtTime(f2, t+dur); env(g, t, vol, dur);
+  o.connect(g).connect(out()); o.start(t); o.stop(t+dur+0.05);
+}
+function noise(dur, vol, when, freq){
+  if(!ac) return;
+  if(!noiseBuf){ noiseBuf = ac.createBuffer(1, ac.sampleRate*0.5, ac.sampleRate); const ch = noiseBuf.getChannelData(0); for(let i=0;i<ch.length;i++) ch[i] = Math.random()*2-1; }
+  const t = ac.currentTime + when, s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; f.type = "bandpass"; f.frequency.value = freq; f.Q.value = 1.4; env(g, t, vol, dur);
+  s.connect(f).connect(g).connect(out()); s.start(t); s.stop(t+dur+0.02);
+}
+const VOICES = [
+  {name:"صفارة إنذار",       play:p => { sweep(600*p,1500*p,.45,.9,"sawtooth"); sweep(1500*p,600*p,.45,.9,"sawtooth",.5); }},
+  {name:"نقر سريع حاد",      play:p => { for(let i=0;i<10;i++) tone(1250*p,.045,1,"square",i*.075); }},
+  {name:"زقزقة ثاقبة",       play:p => { for(let i=0;i<4;i++) sweep((2000+i*300)*p,(3400+i*200)*p,.08,.7,"sine",i*.2); }},
+  {name:"نغمتان متنافرتان",  play:p => { tone(440*p,.85,.7,"square"); tone(466*p,.85,.7,"square"); }},
+  {name:"سُلّم صاعد",        play:p => { [1,1.25,1.5,2,2.5,3].forEach((m,i) => tone(440*p*m,.12,.9,"sawtooth",i*.12)); }},
+  {name:"طرق على الباب",     play:p => { [0,.16,.32,.62,.78].forEach(w => noise(.11,1,w,280*p)); }},
+  {name:"نبض وصفير",         play:p => { tone(110*p,.5,1,"sawtooth"); tone(3000*p,.06,.6,"square",.55); tone(3000*p,.06,.6,"square",.75); }},
+  {name:"شفرة مورس",         play:p => { let w = 0; for(let i=0;i<6;i++){ const d = Math.random()<.5 ? .06 : .2; tone(950*p,d,.9,"square",w); w += d+.06; } }},
+];
+const VOICE_SWITCH = 25000;
+function pickVoices(){ // fresh order each morning; never open with yesterday's opener
+  const idx = VOICES.map((_,i) => i).sort(() => Math.random()-.5);
+  if(idx[0] === D.lastVoice) idx.push(idx.shift());
+  D.lastVoice = idx[0]; saveD();
+  return {order:idx, pitch:+(0.85 + Math.random()*0.35).toFixed(2)};
+}
+function currentVoice(){
+  if(!R || !R.voices) return null;
+  const k = Math.floor((Date.now() - ringStartLocal) / VOICE_SWITCH) % R.voices.order.length;
+  return VOICES[R.voices.order[k]];
 }
 function startAlarm(){
   audioInit(); stopChime();
   if(!ac) return;
+  if(!R.voices){ R.voices = pickVoices(); saveR(); }
   if(!alarmGain){ alarmGain = ac.createGain(); alarmGain.connect(ac.destination); }
-  const started = Date.now();
-  alarmGain.gain.value = 0.25;
+  ringStartLocal = Date.now();
+  alarmGain.gain.value = 0.35;
   clearInterval(alarmTimer);
   const beat = () => {
-    const ramp = Math.min(1, 0.25 + (Date.now()-started)/60000 * 0.75); // reaches full volume in 1 min
+    const ramp = Math.min(1, 0.35 + (Date.now()-ringStartLocal)/30000 * 0.65); // full volume in 30 s
     alarmGain.gain.setTargetAtTime(ramp, ac.currentTime, 0.3);
-    [0,0.18,0.36].forEach(w => tone(880, 0.14, 0.9, "square", w));
-    tone(1320, 0.3, 0.6, "sawtooth", 0.6);
+    const v = currentVoice(); v.play(R.voices.pitch);
+    $("ringVoice").textContent = `النغمة الآن: ${v.name} · تتبدل كل 25 ثانية`;
     document.body.classList.toggle("flash");
   };
   beat(); alarmTimer = setInterval(beat, 1100);
@@ -396,39 +466,112 @@ function stopAlarm(){
 }
 function startChime(){
   audioInit(); clearInterval(chimeTimer);
-  const ring = () => {
-    const p = sunProgress();
-    const v = 0.05 + p*0.35;
-    [523.25,659.25,783.99].forEach((f,i) => tone(f, 2.2, v, "sine", i*0.35));
-  };
+  const ring = () => { const v = 0.05 + sunProgress()*0.35; [523.25,659.25,783.99].forEach((f,i) => tone(f, 2.2, v, "sine", i*0.35)); };
   ring(); chimeTimer = setInterval(ring, 20000);
 }
 function stopChime(){ clearInterval(chimeTimer); chimeTimer = null; }
 function softDing(ok=true){ audioInit(); ok ? tone(1046,0.25,0.25) : tone(180,0.35,0.4,"square"); }
 
 /* ---------- wake lock ---------- */
-let lock = null;
 async function holdScreen(){
-  try{ if("wakeLock" in navigator && document.visibilityState === "visible"){ lock = await navigator.wakeLock.request("screen"); } }catch(e){}
+  try{ if("wakeLock" in navigator && document.visibilityState === "visible") await navigator.wakeLock.request("screen"); }catch(e){}
+}
+
+/* ---------- camera proof: fingerprint + compare ---------- */
+function loadImg(file){
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(file), i = new Image();
+    i.onload = () => { res(i); setTimeout(() => URL.revokeObjectURL(u), 1000); };
+    i.onerror = () => { URL.revokeObjectURL(u); rej(new Error("img")); };
+    i.src = u;
+  });
+}
+async function analyze(file){
+  const img = await loadImg(file), N = 24;
+  const c = document.createElement("canvas"); c.width = c.height = N;
+  const x = c.getContext("2d", {willReadFrequently:true}); x.drawImage(img, 0, 0, N, N);
+  const d = x.getImageData(0, 0, N, N).data, g = [], col = new Array(27).fill(0);
+  let sum = 0;
+  for(let i=0;i<N*N;i++){
+    const r = d[i*4], gg = d[i*4+1], b = d[i*4+2], L = 0.299*r + 0.587*gg + 0.114*b;
+    g.push(Math.round(L)); sum += L;
+    const k = (Math.floor(Math.floor(i/N)/8)*3 + Math.floor((i%N)/8))*3;
+    col[k] += r; col[k+1] += gg; col[k+2] += b;
+  }
+  const chroma = [];
+  for(let k=0;k<27;k+=3){ const t = col[k]+col[k+1]+col[k+2]+1; chroma.push(+(col[k]/t).toFixed(3), +(col[k+1]/t).toFixed(3)); }
+  const t = document.createElement("canvas"); t.width = 160; t.height = Math.min(240, Math.round(160*img.height/img.width));
+  t.getContext("2d").drawImage(img, 0, 0, t.width, t.height);
+  return {g, chroma, bright: sum/(N*N), thumb: t.toDataURL("image/jpeg", 0.6),
+          fresh: !file.lastModified || Math.abs(Date.now() - file.lastModified) < 5*60000};
+}
+function similarity(a, b){
+  const n = a.g.length; let ma = 0, mb = 0;
+  for(let i=0;i<n;i++){ ma += a.g[i]; mb += b.g[i]; } ma /= n; mb /= n;
+  let num = 0, da = 0, db = 0;
+  for(let i=0;i<n;i++){ const p = a.g[i]-ma, q = b.g[i]-mb; num += p*q; da += p*p; db += q*q; }
+  const corr = num / (Math.sqrt(da*db) || 1);
+  let cd = 0; for(let i=0;i<a.chroma.length;i++) cd += Math.abs(a.chroma[i]-b.chroma[i]); cd /= a.chroma.length;
+  return {corr, cd, score: 0.75*corr + 0.25*Math.max(0, 1 - cd*8)};
+}
+async function verifySpot(file, id){
+  const a = await analyze(file), ref = SP[id];
+  if(!a.fresh) return {ok:false, msg:"التقط الصورة الآن بالكاميرا. صور المعرض القديمة لا تُقبل."};
+  if(a.bright < 28) return {ok:false, msg:"الصورة مظلمة جداً. أشعل الضوء وصوّر مرة أخرى."};
+  if(!ref) return {ok:true, a, pct:100};
+  const s = similarity(a, ref);
+  if(s.corr > 0.995 && s.cd < 0.003) return {ok:false, msg:"هذه صورة الليلة نفسها. صوّر المكان الآن."};
+  const pct = Math.round(Math.max(0, s.score)*100);
+  if(s.score < MATCH_MIN) return {ok:false, msg:`لا تطابق ${SPOTS[id].name} (${pct}%). قف في المكان نفسه وصوّر من الزاوية نفسها.`};
+  return {ok:true, a, pct};
+}
+const camBtn = (attr, label, ghost) => `<label class="cam ${ghost?"ghost":""}"><input type="file" accept="image/*" capture="environment" ${attr}>${label}</label>`;
+
+/* ---------- motion counting (steps / squats) ---------- */
+async function motionReady(){
+  if(typeof DeviceMotionEvent === "undefined") return false;
+  if(typeof DeviceMotionEvent.requestPermission === "function"){
+    try{ if(await DeviceMotionEvent.requestPermission() !== "granted") return false; }catch(e){ return false; }
+  }
+  return new Promise(res => {
+    let got = false;
+    const h = e => { const a = e.accelerationIncludingGravity; if(a && a.x != null) got = true; };
+    window.addEventListener("devicemotion", h);
+    setTimeout(() => { window.removeEventListener("devicemotion", h); res(got); }, 1200);
+  });
+}
+function countMotion(kind, onCount){
+  let avg = 9.8, last = 0, count = 0, above = false;
+  const gap = kind === "squats" ? 900 : 300, thr = kind === "squats" ? 2.2 : 1.3;
+  const h = e => {
+    const a = e.accelerationIncludingGravity; if(!a) return;
+    const m = Math.hypot(a.x||0, a.y||0, a.z||0); avg = avg*0.95 + m*0.05;
+    const dv = m - avg, now = performance.now();
+    if(!above && dv > thr && now - last > gap){ above = true; last = now; onCount(++count); }
+    else if(above && dv < thr*0.3) above = false;
+  };
+  window.addEventListener("devicemotion", h);
+  return () => window.removeEventListener("devicemotion", h);
 }
 
 /* ---------- helpers ---------- */
 const pad = n => String(n).padStart(2,"0");
-const toAr = s => String(s); // keep Western digits, matching the clock
 const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const fmtLeft = ms => { const m = Math.max(0, Math.ceil(ms/60000)); const h = Math.floor(m/60); return h ? `${h}س ${m%60}د` : `${m} د`; };
 const fmtMS = ms => { const s = Math.max(0, Math.ceil(ms/1000)); return `${Math.floor(s/60)}:${pad(s%60)}`; };
 const norm = s => s.replace(/[ً-ْـ]/g,"").replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/ة/g,"ه").replace(/[^\p{L}\p{N}]+/gu," ").trim();
 const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const todayKey = (d=new Date()) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 3200); }
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 3600); }
 function show(id){ document.querySelectorAll(".screen").forEach(s => s.hidden = s.id !== id); window.scrollTo(0,0); }
 function nextAlarm(time){
   const [h,m] = time.split(":").map(Number); const d = new Date(); d.setSeconds(0,0); d.setHours(h,m);
   if(d.getTime() <= Date.now()) d.setDate(d.getDate()+1);
   return d.getTime();
 }
-function sunProgress(){ if(!R) return 0; const span = 10*60000; return Math.min(1, Math.max(0, 1 - (R.alarmAt - Date.now())/span)); }
+function sunProgress(){ if(!R) return 0; return Math.min(1, Math.max(0, 1 - (R.alarmAt - Date.now())/(10*60000))); }
+const neededSpots = () => ["wake","water"].concat(S.bad.includes("prayer") ? ["prayer"] : []);
 
 /* ---------- plant ---------- */
 const STAGES = [
@@ -438,7 +581,7 @@ const STAGES = [
   {min:260, name:"نبتة مزهرة", msg:"أزهرت. عادتك الجديدة بدأت تثبت."},
   {min:450, name:"شجرة الفجر", msg:"عادة راسخة. حافظ عليها."},
 ];
-function stageOf(g){ let s = STAGES[0]; STAGES.forEach(x => { if(g >= x.min) s = x; }); return STAGES.indexOf(s); }
+function stageOf(g){ let s = 0; STAGES.forEach((x,i) => { if(g >= x.min) s = i; }); return s; }
 function drawPlant(svg, growth, wilt=false){
   const st = stageOf(growth), leaf = wilt ? "#b59a5a" : "#86c98a", stem = wilt ? "#8b7a4a" : "#5fa864";
   const h = [6, 26, 46, 62, 76][st];
@@ -462,30 +605,46 @@ function drawPlant(svg, growth, wilt=false){
   svg.innerHTML = g;
 }
 
-/* ---------- home render ---------- */
+/* ---------- home ---------- */
 function renderHome(){
   $("inTime").value = S.time; $("inNote").value = S.note; $("inReason").value = S.reason;
   $("inSunrise").checked = S.sunrise; $("inMath").value = S.math; $("inGuard").value = S.guard;
   $("badChips").innerHTML = BAD.map(b => `<label class="chip"><input type="checkbox" value="${b.id}" ${S.bad.includes(b.id)?"checked":""}>${b.bad}</label>`).join("");
-  renderSwap();
+  renderSwap(); renderSpots();
   const h = D.history;
   let streak = 0; for(let i=h.length-1;i>=0 && h[i].score>=60;i--) streak++;
   const last7 = h.slice(-7);
-  $("stStreak").textContent = toAr(streak);
-  $("stSnooze").textContent = toAr(last7.reduce((a,x)=>a+x.snoozes,0));
-  $("stAvg").textContent = last7.length ? toAr(Math.round(last7.reduce((a,x)=>a+x.score,0)/last7.length)) : "–";
+  $("stStreak").textContent = streak;
+  $("stSnooze").textContent = last7.reduce((a,x)=>a+x.snoozes,0);
+  $("stAvg").textContent = last7.length ? Math.round(last7.reduce((a,x)=>a+x.score,0)/last7.length) : "–";
   const days = []; for(let i=6;i>=0;i--){ const d = new Date(); d.setDate(d.getDate()-i); const k = todayKey(d); days.push(h.find(x=>x.date===k)); }
   $("week").innerHTML = days.map(x => x ? `<i class="${x.score>=75?"good":x.score>=50?"mid":"bad"}" style="height:${Math.max(10,x.score)}%" title="${x.score}"></i>` : `<i></i>`).join("");
-  const lastBad = h.length && h[h.length-1].snoozes > 0;
-  drawPlant($("plant"), D.growth, lastBad);
+  const last = h[h.length-1], wilt = !!last && (last.snoozes > 0 || last.closed);
+  drawPlant($("plant"), D.growth, wilt);
   const st = STAGES[stageOf(D.growth)];
-  $("plantName").textContent = st.name + (lastBad ? " (ذابلة)" : "");
-  $("plantMsg").textContent = lastBad ? "ذبلت بسبب غفوة الأمس. صباح نظيف يعيدها." : st.msg;
+  $("plantName").textContent = st.name + (wilt ? " (ذابلة)" : "");
+  $("plantMsg").textContent = wilt ? (last.closed ? "ذبلت لأنك أغلقت المنبه وتركت صباحك. صباح نظيف يعيدها." : "ذبلت بسبب غفوة الأمس. صباح نظيف يعيدها.") : st.msg;
 }
 function renderSwap(){
   const sel = BAD.filter(b => S.bad.includes(b.id));
   $("swapTable").innerHTML = sel.length ? sel.map(b => `<span class="from">${b.bad}</span><span class="arrow">←</span><span class="to">${b.swap.t}</span>`).join("")
-    : `<span class="muted small" style="grid-column:1/-1">لم تختر شيئاً. سيكتفي الحارس بالماء والضوء وهدف اليوم.</span>`;
+    : `<span class="muted small" style="grid-column:1/-1">لم تختر شيئاً. سيكتفي الحارس بالماء وهدف اليوم.</span>`;
+}
+function renderSpots(){
+  $("spotList").innerHTML = neededSpots().map(id => `<div class="spot">
+      ${SP[id] ? `<img class="thumb" src="${SP[id].thumb}" alt="${SPOTS[id].name}">` : `<span class="thumb">بلا صورة</span>`}
+      <div style="min-width:0"><h3>${SPOTS[id].name}</h3><p class="small muted">${SPOTS[id].hint}</p></div>
+      ${camBtn(`data-spot="${id}"`, SP[id] ? "أعد التصوير" : "صوّر", !!SP[id])}
+    </div>`).join("");
+  $("spotList").querySelectorAll("input[data-spot]").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{
+      const a = await analyze(f);
+      if(a.bright < 35){ toast("الصورة مظلمة. أشعل الضوء وصوّر مرة أخرى، وإلا لن تطابقها صورة الصباح."); return; }
+      SP[inp.dataset.spot] = {g:a.g, chroma:a.chroma, thumb:a.thumb}; store.set("spots", SP);
+      renderSpots(); toast(`حُفظ ${SPOTS[inp.dataset.spot].name}.`);
+    }catch(e){ toast("تعذر قراءة الصورة. جرّب مرة أخرى."); }
+  });
 }
 function readForm(){
   S.time = $("inTime").value || "06:30"; S.note = $("inNote").value.trim(); S.reason = $("inReason").value.trim();
@@ -501,7 +660,8 @@ function arm(testSeconds){
   readForm(); audioInit(); holdScreen();
   const alarmAt = testSeconds ? Date.now() + testSeconds*1000 : nextAlarm(S.time);
   R = {phase:"armed", alarmAt, test:!!testSeconds, sunrise:S.sunrise && !testSeconds, early:false,
-       snoozes:0, escapes:0, missed:0, step:0, solved:0, guardStart:0, guardEnd:0, done:{}, texts:{}, nextCheck:0, rangAt:0};
+       snoozes:0, escapes:0, missed:0, closed:0, unverified:0, step:0, solved:0, fails:0, alt:-1,
+       guardStart:0, guardEnd:0, done:{}, texts:{}, fb:{}, nextCheck:0, rangAt:0, mini:null, matches:[]};
   saveR(); enter("armed");
 }
 function enter(phase){
@@ -509,7 +669,11 @@ function enter(phase){
   document.documentElement.style.setProperty("--sun", phase==="sunrise" ? sunProgress() : phase==="guard" ? .35 : phase==="done" ? .6 : 0);
   if(phase === "armed"){ stopAlarm(); stopChime(); show("s-armed"); renderArmed(); }
   if(phase === "sunrise"){ show("s-sunrise"); startChime(); }
-  if(phase === "ring"){ show("s-ring"); R.rangAt = R.rangAt || Date.now(); saveR(); if(!R.early || R.mini || Date.now() >= R.alarmAt) startAlarm(); renderMission(); }
+  if(phase === "ring"){
+    show("s-ring"); R.rangAt = R.rangAt || Date.now(); saveR();
+    if(!R.early || R.mini || Date.now() >= R.alarmAt) startAlarm();
+    renderMission();
+  }
   if(phase === "guard"){ stopAlarm(); show("s-guard"); renderGuard(); }
   if(phase === "done"){ stopAlarm(); stopChime(); show("s-done"); }
 }
@@ -523,112 +687,205 @@ function renderArmed(){
 let curProblem = null;
 function makeProblem(){ const a = rnd(12,29), b = rnd(3,9), c = rnd(11,59); return {txt:`${a} × ${b} + ${c}`, ans:a*b+c}; }
 function missionPlan(){
-  if(R.mini) return [{k:"math", n:1}];
-  return [{k:"math", n:S.math + R.snoozes*2}, {k:"type"}];
+  const plan = R.mini ? R.mini.plan.slice() : [{k:"math", n:S.math + R.snoozes*2}].concat(SP.wake ? [{k:"photo", spot:"wake"}] : [], [{k:"type"}]);
+  if(R.alt === R.step) plan[R.step] = {k:"math", n:12};
+  return plan;
+}
+function advance(){
+  R.step++; R.solved = 0; R.fails = 0; R.alt = -1; saveR(); softDing(true);
+  if(R.step < missionPlan().length) return renderMission();
+  R.step = 0;
+  if(R.mini){
+    R.mini = null; R.nextCheck = Date.now() + rnd(150,300)*1000; saveR();
+    enter("guard"); toast("عدت للحراسة. لا تكررها."); return;
+  }
+  const now = Date.now();
+  R.guardStart = now; R.guardEnd = now + (S.guard + R.closed*5)*60000; R.nextCheck = now + rnd(120,240)*1000;
+  R.wokeAt = now; saveR(); enter("guard");
 }
 function renderMission(){
-  const plan = missionPlan();
+  const plan = missionPlan(), m = plan[R.step], box = $("missionBox");
   $("ringClock").textContent = hm(new Date());
-  $("ringReason").textContent = R.mini ? R.mini : (S.reason ? `سبب قيامك: ${S.reason}` : "قم الآن.");
+  $("ringReason").textContent = R.mini ? R.mini.why : (S.reason ? `سبب قيامك: ${S.reason}` : "قم الآن.");
   $("ringSteps").innerHTML = plan.map((_,i) => `<i class="${i<=R.step?"on":""}"></i>`).join("");
-  const box = $("missionBox"), m = plan[R.step];
   if(m.k === "math"){
     curProblem = makeProblem();
-    box.innerHTML = `<div class="row between"><span class="label">أيقظ عقلك</span><span class="num muted">${toAr(R.solved+1)} / ${toAr(m.n)}</span></div>
+    box.innerHTML = `<div class="row between"><span class="label">${R.alt === R.step ? "بديل الطوارئ" : "أيقظ عقلك"}</span><span class="num muted">${R.solved+1} / ${m.n}</span></div>
       <div class="problem">${curProblem.txt} = ?</div>
       <input class="answer" id="ans" inputmode="numeric" autocomplete="off" aria-label="الإجابة">
       <div class="err" id="err"></div><button class="big" id="btnAns">تحقق</button>`;
     const go = () => {
       if(+$("ans").value === curProblem.ans){
-        R.solved++; softDing(true);
-        if(R.solved >= m.n){ R.step++; R.solved = 0; }
-        saveR(); nextMissionOrGuard();
+        R.solved++; saveR();
+        if(R.solved >= m.n) return advance();
+        softDing(true); renderMission();
       } else { softDing(false); $("err").textContent = "خطأ. مسألة جديدة، والصوت يرتفع."; curProblem = makeProblem(); box.querySelector(".problem").textContent = curProblem.txt + " = ?"; $("ans").value = ""; }
     };
     $("btnAns").onclick = go; $("ans").onkeydown = e => { if(e.key === "Enter") go(); };
     setTimeout(() => $("ans") && $("ans").focus(), 50);
+  } else if(m.k === "photo"){
+    const sp = SPOTS[m.spot];
+    box.innerHTML = `<span class="label">قم من السرير</span>
+      <div class="ref"><img src="${SP[m.spot].thumb}" alt="${sp.name}"><div style="min-width:0"><h3>اذهب إلى ${sp.name}</h3><p class="small muted">صوّره الآن من الزاوية نفسها. المنبه لن يسكت وأنت في السرير.</p></div></div>
+      ${camBtn('id="camIn"', "افتح الكاميرا وصوّر")}
+      <div class="err" id="err"></div>
+      ${R.fails >= 4 ? `<button class="ghost" id="btnAlt">الصورة لا تطابق رغم أنك في المكان؟ بديل: 12 مسألة</button>` : ""}`;
+    $("camIn").onchange = async () => {
+      const f = $("camIn").files[0]; if(!f) return;
+      $("err").textContent = "جارٍ المطابقة…";
+      try{
+        const v = await verifySpot(f, m.spot);
+        if(v.ok){ R.matches.push(v.pct); advance(); }
+        else { R.fails++; saveR(); softDing(false); renderMission(); $("err").textContent = v.msg; }
+      }catch(e){ $("err").textContent = "تعذر قراءة الصورة. صوّر مرة أخرى."; }
+    };
+    const alt = $("btnAlt"); if(alt) alt.onclick = () => { R.alt = R.step; R.solved = 0; saveR(); renderMission(); };
   } else {
     const q = S.note || "أنا صاحٍ الآن وسأبدأ يومي بنشاط";
     box.innerHTML = `<span class="label">${S.note ? "اكتب رسالتك التي كتبتها لنفسك ليلة أمس" : "اكتب هذه الجملة حرفياً"}</span>
-      <div class="quote">${q.replace(/</g,"&lt;")}</div>
+      <div class="quote">${esc(q)}</div>
       <textarea id="typeIn" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="اكتب هنا… (اللصق ممنوع)"></textarea>
       <div class="err" id="err"></div><button class="big" id="btnType">أنا صاحٍ</button>`;
     $("typeIn").addEventListener("paste", e => { e.preventDefault(); $("err").textContent = "اللصق ممنوع. اكتبها بنفسك."; });
     $("typeIn").addEventListener("drop", e => e.preventDefault());
     $("btnType").onclick = () => {
-      if(norm($("typeIn").value) === norm(q)){ R.step++; saveR(); softDing(true); nextMissionOrGuard(); }
+      if(norm($("typeIn").value) === norm(q)) advance();
       else { softDing(false); $("err").textContent = "غير مطابقة. اقرأها بتركيز واكتبها كاملة."; }
     };
   }
   renderSnooze();
 }
-function nextMissionOrGuard(){
-  if(R.step < missionPlan().length) return renderMission();
-  R.step = 0; R.solved = 0;
-  if(R.mini){ R.mini = null; R.nextCheck = Date.now() + rnd(150,300)*1000; saveR(); enter("guard"); toast("عدت للحراسة. لا تكررها."); return; }
-  const now = Date.now();
-  R.guardStart = now; R.guardEnd = now + S.guard*60000; R.nextCheck = now + rnd(120,240)*1000;
-  R.wokeAt = now; saveR(); enter("guard");
-}
 function renderSnooze(){
   const box = $("snoozeBox");
-  box.hidden = !!R.mini || R.early;
+  box.hidden = !!R.mini || R.early || R.closed > 0;
   if(box.hidden) return;
   if(R.snoozes >= SNOOZE_MIN.length){
     $("btnSnooze").disabled = true; $("btnSnooze").textContent = "انتهت الغفوات";
     $("snoozeCost").innerHTML = `<span>استنفدت غفواتك الثلاث. الطريق الوحيد هو القيام.</span>`;
     return;
   }
-  box.hidden = false;
   const mins = SNOOZE_MIN[R.snoozes];
   $("btnSnooze").disabled = false;
-  $("btnSnooze").textContent = `غفوة ${toAr(mins)} ${mins===1?"دقيقة":"دقائق"} (المتبقي ${toAr(SNOOZE_MIN.length - R.snoozes)})`;
-  $("snoozeCost").innerHTML = `<span>ثمن هذه الغفوة: <b>+${toAr(DEBT_SQUATS)} قرفصاء</b> دَين، و<b>+2 مسألة</b> في المرة القادمة، و<b>−15 نقطة</b>، ونبتتك تذبل.</span>
+  $("btnSnooze").textContent = `غفوة ${mins} ${mins===1?"دقيقة":"دقائق"} (المتبقي ${SNOOZE_MIN.length - R.snoozes})`;
+  $("snoozeCost").innerHTML = `<span>ثمن هذه الغفوة: <b>+${DEBT_SQUATS} قرفصاء</b> دَين، و<b>+2 مسألة</b> في المرة القادمة، و<b>−15 نقطة</b>، ونبتتك تذبل.</span>
     <span>دقائق الغفوة نوم متقطع لا يريحك، وتزيد ثقل الرأس عند القيام.</span>`;
 }
 $("btnSnooze").onclick = () => {
   if(R.snoozes >= SNOOZE_MIN.length) return;
   const mins = SNOOZE_MIN[R.snoozes];
-  R.snoozes++; R.step = 0; R.solved = 0; R.alarmAt = Date.now() + mins*60000; R.sunrise = false;
+  R.snoozes++; R.step = 0; R.solved = 0; R.fails = 0; R.alt = -1; R.alarmAt = Date.now() + mins*60000; R.sunrise = false;
   saveR(); enter("armed"); toast(`غفوة ${mins} د. الدَّين الآن ${R.snoozes*DEBT_SQUATS} قرفصاء.`);
 };
+function punish(why){ // back to the alarm; out of bed again if a wake spot exists
+  R.mini = {why, plan: SP.wake ? [{k:"photo", spot:"wake"}] : [{k:"math", n:2}]};
+  R.step = 0; R.solved = 0; R.fails = 0; R.alt = -1;
+  stopRunning(); saveR(); enter("ring");
+}
 
 /* ---------- morning guard ---------- */
 function guardTasks(){
-  const t = [];
-  t.push({id:"water", t:"كوب ماء", d:"قبل أي شيء آخر.", sec:30, base:true});
-  BAD.filter(b => S.bad.includes(b.id)).forEach(b => { if(b.id !== "coffee") t.push(Object.assign({id:b.id, from:b.bad}, b.swap)); else t[0] = Object.assign({id:"water", from:b.bad}, b.swap); });
-  if(!S.bad.includes("news")) t.push({id:"goal", t:"اكتب هدف اليوم", d:"جملة واحدة تحدد يومك.", text:true});
-  if(R.snoozes) t.push({id:"debt", t:`سداد دَين الغفوة: ${R.snoozes*DEBT_SQUATS} قرفصاء`, d:"هذا ثمن الدقائق الإضافية في السرير.", sec:R.snoozes*40, debt:true});
+  const t = [{id:"water", t:"كوب ماء قبل أي شيء", d:"صوّر مكان الماء ثم اشرب.", proof:"spot", spot:"water"}];
+  BAD.filter(b => S.bad.includes(b.id)).forEach(b => {
+    if(b.id === "coffee") t[0] = Object.assign({id:"water", from:b.bad}, b.swap);
+    else t.push(Object.assign({id:b.id, from:b.bad}, b.swap));
+  });
+  if(!S.bad.includes("news")) t.push({id:"goal", t:"اكتب هدف اليوم", d:"جملة واحدة تحدد يومك.", proof:"text"});
+  if(R.snoozes) t.push({id:"debt", t:`سداد دَين الغفوة: ${R.snoozes*DEBT_SQUATS} قرفصاء`, d:"ثمن الدقائق الإضافية في السرير.", proof:"squats", n:R.snoozes*DEBT_SQUATS, debt:true});
   return t;
 }
-let running = null; // {id, end}
+let running = null; // {id, kind:"stay"|"count", end?, count?, n?, stop?}
+function stopRunning(){ if(running && running.stop) running.stop(); running = null; }
+function taskAction(h){
+  if(R.done[h.id]) return `<span class="small muted">تم</span>`;
+  const busy = running && running.id !== h.id ? "disabled" : "";
+  if(running && running.id === h.id){
+    return running.kind === "count" ? `<span class="count" data-live="${h.id}">${running.count} / ${running.n}</span>`
+      : `<button class="ghost num" disabled data-live="${h.id}">${fmtMS(running.end - Date.now())}</button>`;
+  }
+  const fb = R.fb[h.id];
+  if(h.proof === "text") return `<button data-save="${h.id}">حفظ</button>`;
+  if(h.proof === "stay" || (fb === "timer") || (h.proof === "spot" && R.done[h.id+":photo"] && h.sec))
+    return `<button data-stay="${h.id}" ${busy}>ابدأ ${fmtMS((fb === "timer" ? h.n*3 : h.sec)*1000)}</button>`;
+  if(h.proof === "steps" && fb === "photo") return camBtn(`data-photo="${h.id}" data-spot="wake"`, "صوّر مكان الصحوة");
+  if(h.proof === "steps" || h.proof === "squats") return `<button data-count="${h.id}" ${busy}>ابدأ العدّ</button>`;
+  if(h.proof === "spot") return camBtn(`data-photo="${h.id}" data-spot="${h.spot}"`, "صوّر");
+  if(h.proof === "light") return camBtn(`data-light="${h.id}"`, "صوّر النافذة");
+  if(h.proof === "fresh") return camBtn(`data-fresh="${h.id}"`, "صوّر");
+  return "";
+}
 function renderGuard(){
   const list = guardTasks();
   $("habitList").innerHTML = list.map(h => {
-    const done = R.done[h.id];
+    const done = R.done[h.id], fb = R.fb[h.id];
     const why = h.from ? `<s>${h.from}</s> ← ${h.d}` : h.d;
-    let act;
-    if(done) act = `<span class="small muted">تم</span>`;
-    else if(h.text) act = `<button data-save="${h.id}">حفظ</button>`;
-    else if(running && running.id === h.id) act = `<button class="ghost num" disabled data-run="${h.id}">${fmtMS(running.end - Date.now())}</button>`;
-    else act = `<button data-start="${h.id}" ${running?"disabled":""}>ابدأ ${h.sec>=60?toAr(Math.round(h.sec/60))+" د":toAr(h.sec)+" ث"}</button>`;
+    let proof = PROOF[h.proof];
+    if(fb === "photo") proof = "حساس الحركة غير متاح هنا، فالإثبات صورة مكان الصحوة";
+    if(fb === "timer") proof = "حساس الحركة غير متاح هنا: مؤقت فقط، بلا إثبات";
     return `<div class="habit ${done?"done":""} ${h.debt?"debt":""}">
       <span class="tick">${done?"✓":""}</span>
-      <div style="min-width:0"><h3>${h.t}</h3><p class="why">${why}</p></div>${act}
-      ${h.text && !done ? `<textarea id="tx-${h.id}" placeholder="${h.id==="news"?"١. …\n٢. …\n٣. …":"اكتب هدفك…"}">${R.texts[h.id]||""}</textarea>` : ""}
+      <div style="min-width:0"><h3>${h.t}</h3><p class="why">${why}</p><span class="proof">${proof}</span></div>${taskAction(h)}
+      ${h.proof === "text" && !done ? `<textarea id="tx-${h.id}" placeholder="${h.id==="news"?"1. …\n2. …\n3. …":"اكتب هدفك…"}">${esc(R.texts[h.id]||"")}</textarea>` : ""}
       ${h.breath && running && running.id===h.id ? `<div class="breath" id="breathBall" style="grid-column:1/-1">تنفّس</div>` : ""}
+      ${h.proof === "fresh" && done && R.mealThumb ? `<img src="${R.mealThumb}" alt="إفطارك" style="grid-column:1/-1;border-radius:12px;max-height:160px;object-fit:cover;width:100%">` : ""}
     </div>`;
   }).join("");
-  $("habitList").querySelectorAll("[data-start]").forEach(b => b.onclick = () => {
-    const h = list.find(x => x.id === b.dataset.start); running = {id:h.id, end:Date.now() + h.sec*1000, breath:h.breath}; softDing(true); renderGuard();
+  const L = $("habitList"), find = id => list.find(x => x.id === id);
+  const finish = id => { R.done[id] = true; stopRunning(); saveR(); tone(784,0.3,0.4); tone(1046,0.4,0.4,"sine",0.25); renderGuard(); };
+  L.querySelectorAll("[data-stay]").forEach(b => b.onclick = () => {
+    const h = find(b.dataset.stay), secs = R.fb[h.id] === "timer" ? h.n*3 : h.sec;
+    running = {id:h.id, kind:"stay", end:Date.now() + secs*1000, breath:h.breath}; softDing(true); renderGuard();
   });
-  $("habitList").querySelectorAll("[data-save]").forEach(b => b.onclick = () => {
+  L.querySelectorAll("[data-count]").forEach(b => b.onclick = async () => {
+    const h = find(b.dataset.count); b.disabled = true; b.textContent = "…";
+    if(await motionReady()){
+      running = {id:h.id, kind:"count", count:0, n:h.n};
+      running.stop = countMotion(h.proof, c => {
+        if(!running || running.id !== h.id) return;
+        running.count = c; tone(660,0.06,0.2);
+        const el = document.querySelector(`[data-live="${h.id}"]`); if(el) el.textContent = `${c} / ${h.n}`;
+        if(c >= h.n) finish(h.id);
+      });
+      renderGuard();
+    } else {
+      if(h.proof === "steps" && SP.wake) R.fb[h.id] = "photo";
+      else { R.fb[h.id] = "timer"; R.unverified++; }
+      saveR(); renderGuard();
+    }
+  });
+  L.querySelectorAll("input[data-photo]").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return; const id = inp.dataset.photo, h = find(id);
+    try{
+      const v = await verifySpot(f, inp.dataset.spot);
+      if(!v.ok){ softDing(false); toast(v.msg); return; }
+      R.matches.push(v.pct);
+      if(h.proof === "spot" && h.sec){ R.done[id+":photo"] = true; saveR(); softDing(true); renderGuard(); }
+      else finish(id);
+    }catch(e){ toast("تعذر قراءة الصورة. صوّر مرة أخرى."); }
+  });
+  L.querySelectorAll("input[data-light]").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{
+      const a = await analyze(f);
+      if(!a.fresh){ toast("التقط الصورة الآن بالكاميرا."); return; }
+      if(a.bright < 105){ softDing(false); toast(`الصورة معتمة (${Math.round(a.bright/2.55)}% إضاءة). افتح الستائر أو أشعل الضوء كاملاً وصوّر النافذة.`); return; }
+      finish(inp.dataset.light);
+    }catch(e){ toast("تعذر قراءة الصورة."); }
+  });
+  L.querySelectorAll("input[data-fresh]").forEach(inp => inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{
+      const a = await analyze(f);
+      if(!a.fresh){ toast("التقط الصورة الآن بالكاميرا، لا من المعرض."); return; }
+      if(a.bright < 25){ toast("الصورة مظلمة جداً."); return; }
+      R.mealThumb = a.thumb; finish(inp.dataset.fresh);
+    }catch(e){ toast("تعذر قراءة الصورة."); }
+  });
+  L.querySelectorAll("[data-save]").forEach(b => b.onclick = () => {
     const id = b.dataset.save, v = $("tx-"+id).value.trim();
     if(v.length < (id==="news"?12:6)){ toast("اكتب أكثر قليلاً، هذا أول قرار في يومك."); return; }
-    R.texts[id] = v; R.done[id] = true; saveR(); softDing(true); renderGuard();
+    R.texts[id] = v; finish(id);
   });
-  $("habitList").querySelectorAll("textarea").forEach(t => t.oninput = () => { R.texts[t.id.slice(3)] = t.value; saveR(); });
+  L.querySelectorAll("textarea").forEach(t => t.oninput = () => { R.texts[t.id.slice(3)] = t.value; saveR(); });
   updateGuardMeter();
 }
 function updateGuardMeter(){
@@ -637,13 +894,13 @@ function updateGuardMeter(){
   const p = 0.5*(done/total) + 0.5*Math.min(1, 1 - tLeft/tSpan);
   $("meterArc").setAttribute("stroke-dashoffset", String(264*(1-p)));
   $("meterTxt").textContent = tLeft > 0 ? fmtMS(tLeft) : "✓";
-  $("gEsc").textContent = toAr(R.escapes); $("gMiss").textContent = toAr(R.missed); $("gSnz").textContent = toAr(R.snoozes);
+  $("gEsc").textContent = R.escapes + R.closed; $("gMiss").textContent = R.missed; $("gSnz").textContent = R.snoozes;
   $("guardClock").textContent = hm(new Date());
   const ok = done === total && tLeft <= 0;
   $("btnRelease").disabled = !ok;
-  $("btnRelease").textContent = ok ? "أطلق سراحي" : done < total ? `باقي ${toAr(total-done)} مهام` : `باقي ${fmtMS(tLeft)} من الحراسة`;
+  $("btnRelease").textContent = ok ? "أطلق سراحي" : done < total ? `باقي ${total-done} مهام` : `باقي ${fmtMS(tLeft)} من الحراسة`;
 }
-$("btnRelease").onclick = finish;
+$("btnRelease").onclick = () => finish();
 
 /* awake check-ins */
 let checkTimer = null;
@@ -656,7 +913,7 @@ function openCheck(){
   clearInterval(checkTimer);
   checkTimer = setInterval(() => {
     const left = end - Date.now(); $("checkBar").style.width = Math.max(0, left/300) + "%";
-    if(left <= 0){ clearInterval(checkTimer); ov.hidden = true; R.missed++; R.mini = "لم ترد على سؤال اليقظة. حلّ مسألة للعودة."; R.step = 0; R.solved = 0; saveR(); enter("ring"); }
+    if(left <= 0){ clearInterval(checkTimer); ov.hidden = true; R.missed++; punish("لم ترد على سؤال اليقظة. عُد إلى مكان الصحوة وصوّره."); }
   }, 250);
   btn.onclick = () => { clearInterval(checkTimer); ov.hidden = true; softDing(true); R.nextCheck = Date.now() + rnd(180,330)*1000; saveR(); };
 }
@@ -665,51 +922,64 @@ function openCheck(){
 document.addEventListener("visibilitychange", () => {
   if(!R) return;
   if(document.visibilityState === "hidden"){
-    if(R.phase === "guard"){ R.leftAt = Date.now(); saveR(); }
+    if(["ring","guard"].includes(R.phase)){ R.leftAt = Date.now(); saveR(); }
   } else {
     holdScreen();
     if(R.phase === "guard" && R.leftAt && Date.now() - R.leftAt > 4000){
-      R.escapes++; R.guardEnd += 2*60000; R.leftAt = 0; running = null;
-      R.mini = "خرجت من التطبيق أثناء الحراسة. +2 دقيقة حراسة، وحلّ مسألة للعودة.";
-      R.step = 0; R.solved = 0; saveR(); enter("ring");
-    } else if(R.phase === "guard"){ R.leftAt = 0; saveR(); }
+      R.escapes++; R.guardEnd += 2*60000; R.leftAt = 0;
+      punish("خرجت من التطبيق أثناء الحراسة. +2 دقيقة حراسة، وعُد إلى مكان الصحوة.");
+    } else { R.leftAt = 0; saveR(); }
   }
 });
 
 /* ---------- verdict ---------- */
+function scoreOf(r){ return Math.max(0, Math.min(100, 100 - r.snoozes*15 - r.escapes*10 - r.missed*5 - r.closed*20 + (r.early ? 15 : 0))); }
 function finish(){
-  let score = 100 - R.snoozes*15 - R.escapes*10 - R.missed*5 + (R.early ? 15 : 0);
-  score = Math.max(0, Math.min(100, score));
+  stopRunning();
+  const score = scoreOf(R);
   const wakeMin = R.wokeAt && R.rangAt ? Math.round((R.wokeAt - R.rangAt)/60000) : 0;
   if(!R.test){
-    const entry = {date:todayKey(), score, snoozes:R.snoozes, escapes:R.escapes, missed:R.missed, early:R.early};
+    const entry = {date:todayKey(), score, snoozes:R.snoozes, escapes:R.escapes, missed:R.missed, closed:R.closed > 0, early:R.early};
     D.history = D.history.filter(x => x.date !== entry.date).concat(entry).slice(-60);
-    D.growth = Math.max(0, D.growth + (R.snoozes ? -10*R.snoozes : Math.round(score/4)));
+    D.growth = Math.max(0, D.growth + (R.snoozes || R.closed ? -10*(R.snoozes + 2*R.closed) : Math.round(score/4)));
     saveD();
   }
-  $("vScore").textContent = toAr(score);
+  $("vScore").textContent = score;
   $("vTitle").textContent = score >= 90 ? "صباح نظيف تماماً" : score >= 70 ? "صباح جيد" : score >= 50 ? "قمت، لكن بثمن" : "الغفوة انتصرت هذه المرة";
   const lines = [
     R.early ? "قمت مع الشروق قبل المنبه: +15" : null,
-    `غفوات: ${toAr(R.snoozes)}${R.snoozes?` (−${toAr(R.snoozes*15)})`:""}`,
-    `هروب للتصفح: ${toAr(R.escapes)}${R.escapes?` (−${toAr(R.escapes*10)})`:""}`,
-    `أسئلة يقظة فائتة: ${toAr(R.missed)}${R.missed?` (−${toAr(R.missed*5)})`:""}`,
-    R.rangAt ? `من الرنين إلى القيام: ${toAr(wakeMin)} د` : null,
+    `غفوات: ${R.snoozes}${R.snoozes?` (−${R.snoozes*15})`:""}`,
+    R.closed ? `أغلقت التطبيق وهربت: ${R.closed} (−${R.closed*20})` : null,
+    `خروج من التطبيق أثناء الحراسة: ${R.escapes}${R.escapes?` (−${R.escapes*10})`:""}`,
+    `أسئلة يقظة فائتة: ${R.missed}${R.missed?` (−${R.missed*5})`:""}`,
+    R.matches.length ? `مطابقة صور الأماكن: ${R.matches.map(x => x+"%").join("، ")}` : null,
+    R.unverified ? `مهام بلا إثبات (لا حساس حركة): ${R.unverified}` : null,
+    R.rangAt ? `من الرنين إلى القيام: ${wakeMin} د` : null,
     R.test ? "تجربة: لا تُحسب في السجل." : null,
   ].filter(Boolean);
   $("vLines").innerHTML = lines.map(l => `<span>${l}</span>`).join("");
   $("vGoal").textContent = R.texts.news || R.texts.goal || S.reason || "—";
-  drawPlant($("plant2"), D.growth, R.snoozes > 0);
-  R.phase = "done"; enter("done");
+  drawPlant($("plant2"), D.growth, R.snoozes > 0 || R.closed > 0);
+  enter("done");
+  R = null; store.set("run", null);
+}
+function recordLost(){ // closed the alarm and never came back
+  if(!R.test){
+    D.history = D.history.filter(x => x.date !== todayKey(new Date(R.alarmAt)))
+      .concat({date:todayKey(new Date(R.alarmAt)), score:0, snoozes:R.snoozes, escapes:R.escapes, missed:R.missed, closed:true, early:false}).slice(-60);
+    D.growth = Math.max(0, D.growth - 30); saveD();
+  }
   R = null; store.set("run", null);
 }
 $("btnHome").onclick = () => { show("s-home"); document.documentElement.style.setProperty("--sun",0); renderHome(); };
 
 /* ---------- main tick ---------- */
+let beatAt = 0;
 function tick(){
   const now = new Date(), t = hm(now);
   $("homeClock").textContent = t; $("armedClock").textContent = t; $("sunClock").textContent = t; $("ringClock").textContent = t;
-  if(!R) return;
+  if(!R || !$("ovResume").hidden) return;
+  if(Date.now() - beatAt > 5000){ beatAt = Date.now(); saveR(); }
   if(R.phase === "armed"){
     const left = R.alarmAt - Date.now();
     $("armedLeft").textContent = left < 60000 ? `${Math.max(0,Math.ceil(left/1000))} ث` : fmtLeft(left);
@@ -726,12 +996,11 @@ function tick(){
   } else if(R.phase === "ring"){
     if(!alarmTimer && Date.now() >= R.alarmAt) startAlarm();
   } else if(R.phase === "guard"){
-    if(running){
+    if(running && running.kind === "stay"){
       const left = running.end - Date.now();
-      const btn = document.querySelector(`[data-run="${running.id}"]`);
-      if(btn) btn.textContent = fmtMS(left);
+      const el = document.querySelector(`[data-live="${running.id}"]`); if(el) el.textContent = fmtMS(left);
       const ball = $("breathBall");
-      if(ball){ const ph = Math.floor((Date.now()/1000) % 14); ball.style.transform = ph < 4 ? "scale(1)" : ph < 8 ? "scale(1)" : "scale(.55)"; ball.textContent = ph < 4 ? "شهيق" : ph < 8 ? "احبس" : "زفير"; }
+      if(ball){ const ph = Math.floor((Date.now()/1000) % 14); ball.style.transform = ph < 8 ? "scale(1)" : "scale(.55)"; ball.textContent = ph < 4 ? "شهيق" : ph < 8 ? "احبس" : "زفير"; }
       if(left <= 0){ R.done[running.id] = true; running = null; saveR(); tone(784,0.3,0.4); tone(1046,0.4,0.4,"sine",0.25); renderGuard(); }
     }
     if($("ovCheck").hidden && Date.now() >= R.nextCheck) openCheck();
@@ -743,20 +1012,45 @@ setInterval(tick, 1000);
 /* ---------- wire up ---------- */
 $("btnArm").onclick = () => {
   readForm();
-  if(!S.note) { toast("اكتب رسالة لنفسك أولاً، ستحتاجها لإيقاف المنبه."); $("inNote").focus(); return; }
+  if(!S.note){ toast("اكتب رسالة لنفسك أولاً، ستحتاجها لإيقاف المنبه."); $("inNote").focus(); return; }
+  const missing = neededSpots().filter(id => !SP[id]);
+  if(missing.length){ toast(`صوّر ${missing.map(id => SPOTS[id].name).join(" و")} أولاً. بدونها يمكنك إيقاف المنبه من السرير.`); $("spotList").scrollIntoView({behavior:"smooth", block:"center"}); return; }
   arm(0);
 };
 $("btnTest").onclick = () => { readForm(); arm(10); toast("سيرن المنبه بعد 10 ثوانٍ. هذه تجربة لا تُحسب."); };
 $("btnHow").onclick = () => { $("howBox").hidden = !$("howBox").hidden; };
 $("btnDisarm").onclick = () => { stopChime(); R = null; store.set("run", null); show("s-home"); renderHome(); toast("أُلغي المنبه."); };
 $("btnEarly").onclick = () => { audioInit(); stopChime(); R.early = true; R.rangAt = Date.now(); saveR(); enter("ring"); toast("أحسنت. أكمل المهام لتثبت أنك صاحٍ."); };
-$("badChips").addEventListener("change", () => { S.bad = [...document.querySelectorAll("#badChips input:checked")].map(i => i.value); saveS(); renderSwap(); });
+$("badChips").addEventListener("change", () => { S.bad = [...document.querySelectorAll("#badChips input:checked")].map(i => i.value); saveS(); renderSwap(); renderSpots(); });
 $("btnResume").onclick = () => { $("ovResume").hidden = true; audioInit(); holdScreen(); enter(R.phase); };
 
+/* ---------- boot: did the user close the alarm to escape? ---------- */
 renderHome();
 tick();
-if(R && R.phase && R.phase !== "done"){ $("ovResume").hidden = false; }
-else show("s-home");
+if(R && R.phase && R.phase !== "done"){
+  const now = Date.now(), active = ["sunrise","ring","guard"].includes(R.phase);
+  const missedAlarm = R.phase === "armed" && now > R.alarmAt + 60000;
+  const closedMidMorning = active && (now - (R.beat || 0) > 60000 || (R.leftAt && now - R.leftAt > 4000));
+  let msg = "أُعيد تحميل الصفحة. اضغط ليعود الصوت والحراسة كما كانت.", title = "أكمل الحراسة";
+  if((active || missedAlarm) && now - R.alarmAt > 3*3600000 && !R.test){
+    recordLost();
+    title = "صباح ضائع"; msg = "أغلقت المنبه ولم تعد. سُجّل هذا الصباح بنتيجة 0 وذبلت نبتتك. الليلة عقد جديد.";
+    $("btnResume").textContent = "فهمت";
+    $("btnResume").onclick = () => { $("ovResume").hidden = true; renderHome(); show("s-home"); };
+  } else if(missedAlarm || closedMidMorning){
+    R.closed++;
+    R.leftAt = 0;
+    if(R.phase === "guard"){ R.guardEnd += 5*60000; R.mini = {why:"أغلقت التطبيق لتهرب. عُد إلى مكان الصحوة وصوّره.", plan: SP.wake ? [{k:"photo", spot:"wake"}] : [{k:"math", n:3}]}; R.step = 0; }
+    R.phase = "ring"; R.alarmAt = Math.min(R.alarmAt, now); saveR();
+    title = "أغلقت المنبه؟";
+    msg = "إغلاق التطبيق لا يوقف المنبه. العقوبة: −20 نقطة و+5 دقائق حراسة، والمنبه سيرن الآن حتى تُكمل المهام.";
+    $("btnResume").textContent = "ابدأ";
+  }
+  $("ovResume").querySelector("h2").textContent = title;
+  $("ovResume").querySelector("p").textContent = msg;
+  $("ovResume").hidden = false;
+  show("s-home");
+} else show("s-home");
 if("serviceWorker" in navigator && location.protocol === "https:" && !location.hostname.endsWith("claude.ai") && !location.hostname.includes("claudeusercontent")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
