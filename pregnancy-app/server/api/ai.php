@@ -1,5 +1,5 @@
 <?php
-/* نبضٌ صغير — المساعد الذكي وقراءة صور التحاليل عبر Claude API
+/* نبضٌ صغير — المساعد الذكي وقراءة صور التحاليل عبر Gemini
    المفتاح يبقى على السيرفر فقط، ولكل جهاز حد يومي. */
 declare(strict_types=1);
 require __DIR__ . '/lib.php';
@@ -29,7 +29,6 @@ if ($mode === 'chat') {
   }
   while ($messages && $messages[0]['role'] !== 'user') array_shift($messages);
   if (!$messages || end($messages)['role'] !== 'user') out(['error' => 'empty'], 400);
-  $effort = 'low';
   $maxTokens = 3000;
 } else {
   $prompt = clean((string)($in['prompt'] ?? ''), 4000, true);
@@ -45,9 +44,8 @@ if ($mode === 'chat') {
   }
   $content[] = ['type' => 'text', 'text' => $prompt];
   $messages = [['role' => 'user', 'content' => $content]];
-  $effort = $mode === 'labs' ? 'medium' : 'low';
   $maxTokens = 3000;
 }
 
-$r = claude($system, $messages, $effort, $maxTokens);
+$r = llm($system, $messages, $maxTokens);
 out(['text' => $r]);

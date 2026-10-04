@@ -69,7 +69,7 @@ switch ($act) {
     $s->execute([$q['id']]);
     if ($s->fetchColumn()) out(['ok' => true]); // رد واحد لنبض لكل سؤال
     if (!bump("ai:$dev", (int)$CFG['ai_daily_chat']) || !bump('ip:' . client_ip(), (int)$CFG['ai_daily_ip'])) out(['error' => 'rate_limited'], 429);
-    $text = claude(RULES, [['role' => 'user', 'content' => "هذا سؤال نشرته أم في مجتمع التطبيق ({$q['stage']}):\nالعنوان: {$q['title']}\nالتفاصيل: {$q['body']}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط."]], 'low', 2000);
+    $text = llm(RULES, [['role' => 'user', 'content' => "هذا سؤال نشرته أم في مجتمع التطبيق ({$q['stage']}):\nالعنوان: {$q['title']}\nالتفاصيل: {$q['body']}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط."]], 2000);
     if ($text === '') out(['error' => 'empty'], 502);
     $pdo->prepare('INSERT INTO answers (qid, dev, nick, anon, ai, body, stage, t, ip) VALUES (?,?,?,0,1,?,?,?,?)')
       ->execute([$q['id'], 'ai', 'نبض', $text, '', now_ms(), '']);

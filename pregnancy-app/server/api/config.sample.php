@@ -7,9 +7,9 @@ return [
   'db_user' => 'DB_USER',
   'db_pass' => 'DB_PASSWORD',
 
-  // مفتاح Claude من console.anthropic.com ← API Keys
-  'anthropic_key' => 'sk-ant-...',
-  'model'         => 'claude-opus-5-5',
+  // مفتاح Gemini المجاني من aistudio.google.com ← Get API key
+  'gemini_key' => 'AIza...',
+  'model'      => 'gemini-flash-latest',
 
   // حدود الاستخدام اليومية لكل جهاز (لحماية الرصيد)
   'ai_daily_chat' => 30,

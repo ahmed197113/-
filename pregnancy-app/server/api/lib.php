@@ -76,28 +76,32 @@ function clean(string $s, int $max, bool $multiline = false): string {
   return mb_substr(trim($s ?? ''), 0, $max);
 }
 
-/* استدعاء Claude API (Messages) — يرجع النص أو ينهي الطلب برسالة خطأ مناسبة */
-function claude(string $system, array $messages, string $effort, int $maxTokens): string {
+/* استدعاء نموذج Google Gemini (الخطة المجانية) — يرجع النص أو ينهي الطلب برسالة خطأ مناسبة.
+   $messages: [['role' => 'user'|'assistant', 'content' => نص أو [['type'=>'text'|'image', ...]]]] */
+function llm(string $system, array $messages, int $maxTokens): string {
   global $CFG;
+  $contents = [];
+  foreach ($messages as $m) {
+    $parts = [];
+    foreach (is_array($m['content']) ? $m['content'] : [['type' => 'text', 'text' => $m['content']]] as $c) {
+      if ($c['type'] === 'image') $parts[] = ['inline_data' => ['mime_type' => $c['media_type'], 'data' => $c['data']]];
+      else $parts[] = ['text' => $c['text']];
+    }
+    $contents[] = ['role' => $m['role'] === 'assistant' ? 'model' : 'user', 'parts' => $parts];
+  }
   $body = [
-    'model' => $CFG['model'] ?? 'claude-opus-5-5',
-    'max_tokens' => $maxTokens,
-    'system' => $system,
-    'messages' => $messages,
-    'output_config' => ['effort' => $effort],
-    'fallbacks' => 'default',
+    'system_instruction' => ['parts' => [['text' => $system]]],
+    'contents' => $contents,
+    'generationConfig' => ['maxOutputTokens' => $maxTokens],
   ];
-  $ch = curl_init($CFG['api_url'] ?? 'https://api.anthropic.com/v1/messages');
+  $model = $CFG['model'] ?? 'gemini-flash-latest';
+  $base = $CFG['api_base'] ?? 'https://generativelanguage.googleapis.com/v1beta/models/';
+  $ch = curl_init($base . rawurlencode($model) . ':generateContent');
   curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 120,
-    CURLOPT_HTTPHEADER => [
-      'Content-Type: application/json',
-      'x-api-key: ' . $CFG['anthropic_key'],
-      'anthropic-version: 2023-06-01',
-      'anthropic-beta: server-side-fallback-2026-07-01',
-    ],
+    CURLOPT_TIMEOUT => 90,
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'x-goog-api-key: ' . $CFG['gemini_key']],
     CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_UNICODE),
   ]);
   $raw = curl_exec($ch);
@@ -106,13 +110,14 @@ function claude(string $system, array $messages, string $effort, int $maxTokens)
   $res = is_string($raw) ? json_decode($raw, true) : null;
   if ($code !== 200 || !is_array($res)) {
     error_log('nabd ai error ' . $code . ' ' . substr((string)$raw, 0, 500));
-    $busy = in_array($code, [429, 503, 529], true);
+    $busy = in_array($code, [429, 503], true);
     out(['error' => $busy ? 'busy' : 'upstream', 'text' => $busy ? 'المساعد مشغول الآن، جرّبي بعد دقيقة.' : 'تعذّر الوصول للمساعد الآن.'], 502);
   }
-  if (($res['stop_reason'] ?? '') === 'refusal') return 'لا أستطيع الإجابة عن هذا السؤال، لكن طبيبك يقدر يساعدك فيه 💗';
   $text = '';
-  foreach ($res['content'] ?? [] as $block) {
-    if (($block['type'] ?? '') === 'text') $text .= $block['text'];
+  foreach ($res['candidates'][0]['content']['parts'] ?? [] as $part) {
+    if (isset($part['text']) && empty($part['thought'])) $text .= $part['text'];
   }
-  return trim($text);
+  $text = trim($text);
+  if ($text === '') return 'لا أستطيع الإجابة عن هذا السؤال، لكن طبيبك يقدر يساعدك فيه 💗';
+  return $text;
 }
