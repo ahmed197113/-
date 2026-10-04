@@ -51,7 +51,7 @@ function status() {
   const start = addDays(due, -280);
   const days = Math.max(0, diffDays(today(), start));
   const weeksDone = Math.floor(days / 7), extra = days % 7;
-  const week = Math.min(42, Math.max(1, weeksDone + 1));
+  const week = Math.min(40, Math.max(1, weeksDone + 1));
   const left = diffDays(due, today());
   const tri = week <= 13 ? 1 : week <= 27 ? 2 : 3;
   const month = Math.min(9, Math.floor(days / 30.4) + 1);
@@ -374,7 +374,7 @@ function viewWeeks() {
   <p class="sources">📚 المصادر: ${SOURCES.map(s => s[0]).join(' · ')} — <a href="${nhsWeekUrl(sel)}" target="_blank" rel="noopener">اقرئي المزيد</a><br><span>المعلومات للتثقيف العام؛ طبيبك هو المرجع لحالتك.</span></p>
   <div class="row">
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
-    <button class="btn grow" data-wk="${Math.min(42, sel + 1)}" ${sel === 42 ? 'disabled' : ''}>الأسبوع ${Math.min(42, sel + 1)} ←</button>
+    <button class="btn grow" data-wk="${Math.min(40, sel + 1)}" ${sel === 40 ? 'disabled' : ''}>الأسبوع ${Math.min(40, sel + 1)} ←</button>
   </div>
   ${away ? `<button class="btn ghost block" data-wk="${st.week}" style="margin-top:10px">↩ العودة لأسبوعي الحالي (${st.week})</button>` : ''}`;
 }
@@ -392,7 +392,7 @@ function viewRoadmap() {
     html += `<div class="tl-tri" style="background:${t.color}"><h3>${t.name} · ${t.range}</h3>
       <div style="font-size:.9rem;opacity:.95">${t.summary}</div>
       <div class="chips" style="margin-top:8px">${t.focus.map(f => `<span class="chip" style="background:rgba(255,255,255,.25);border:0;color:#fff">${f}</span>`).join('')}</div></div>`;
-    const range = t.n === 1 ? [1, 13] : t.n === 2 ? [14, 27] : [28, 42];
+    const range = t.n === 1 ? [1, 13] : t.n === 2 ? [14, 27] : [28, 40];
     for (let i = range[0]; i <= range[1]; i++) {
       const w = WEEKS[i - 1];
       const ap = APPOINTMENTS.filter(a => a.from === i);
