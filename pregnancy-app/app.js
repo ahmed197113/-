@@ -171,6 +171,7 @@ function viewSetup(first) {
   const m = p.method;
   return `
   ${first ? `<div class="welcome">${Photos.figure(24, { cls: 'round' })}
+    <img class="app-logo" src="icons/icon.svg" alt="${APP_NAME}">
     <h2>أهلاً بكِ في ${APP_NAME} 💗</h2>
     <p class="muted">خارطة طريقك من بداية الحمل حتى لحظة الولادة — أسبوعاً بأسبوع.</p></div>` : ''}
   <div class="card">

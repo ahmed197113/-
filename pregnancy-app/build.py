@@ -15,7 +15,7 @@ fc = re.sub(r'url\(fonts/([^)]+)\)', lambda m: 'url(data:font/woff2;base64,' + b
 h = h.replace('<link rel="stylesheet" href="fonts.css">', '<style>\n' + fc + '</style>')
 h = h.replace('<link rel="stylesheet" href="styles.css">', '<style>\n' + open(d + 'styles.css', encoding='utf-8').read() + '\n</style>')
 icon = 'data:image/svg+xml;base64,' + base64.b64encode(open(d + 'icons/icon.svg', 'rb').read()).decode()
-h = h.replace('href="icons/icon.svg"', f'href="{icon}"')
+h = h.replace('icons/icon.svg', icon)
 h = re.sub(r'\s*<link rel="manifest"[^>]*>', '', h)
 os.makedirs(d + 'dist', exist_ok=True)
 open(d + 'dist/nabd.html', 'w', encoding='utf-8').write(h)
