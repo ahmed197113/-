@@ -29,17 +29,17 @@
   --card-2: #212a4a;
   --text: #f3eee9;
   --muted: #a9a6bd;
-  --primary: #e8a598;
-  --primary-2: #c9a46b;
-  --gold: #e3bf7a;
-  --rose: #e8a598;
-  --on-primary: #2a1418;
-  --soft: #3a2b36;
+  --primary: #ff4d9a;
+  --primary-2: #ff8fbf;
+  --gold: #ffb3cf;
+  --rose: #ff4d9a;
+  --on-primary: #ffffff;
+  --soft: #3a2340;
   --soft-2: #2a2d4a;
   --border: #2c3456;
   --track: #2b3352;
   --moon-dark: #0a0e1f;
-  --hero-1: #3b2d55;
+  --hero-1: #3d2350;
   --hero-2: #1d3157;
   --ok: #5fc49a;
   --warn: #ef6b6b;
@@ -51,17 +51,17 @@
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f5f6fa; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
-    --primary: #b9827b; --primary-2: #9c8a6e; --gold: #b0915e; --rose: #d8a7a0; --on-primary: #3a2a2a;
-    --soft: #f6ecea; --soft-2: #eceef6; --border: #e4e6ef; --track: #e7e9f1; --moon-dark: #dfe1ec;
-    --hero-1: #eceffa; --hero-2: #f7eef0; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
+    --bg: #fbf7f9; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
+    --primary: #fa1a7f; --primary-2: #e8609f; --gold: #ff9cc6; --rose: #fa1a7f; --on-primary: #ffffff;
+    --soft: #fff0f6; --soft-2: #f7eef4; --border: #efe3ea; --track: #f3e6ee; --moon-dark: #dfe1ec;
+    --hero-1: #ffe8f2; --hero-2: #f6eefb; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #f5f6fa; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
-  --primary: #b9827b; --primary-2: #9c8a6e; --gold: #b0915e; --rose: #d8a7a0; --on-primary: #3a2a2a;
-  --soft: #f6ecea; --soft-2: #eceef6; --border: #e4e6ef; --track: #e7e9f1; --moon-dark: #dfe1ec;
-  --hero-1: #eceffa; --hero-2: #f7eef0; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
+  --bg: #fbf7f9; --card: #ffffff; --card-2: #f0f1f7; --text: #2c3048; --muted: #7c8098;
+  --primary: #fa1a7f; --primary-2: #e8609f; --gold: #ff9cc6; --rose: #fa1a7f; --on-primary: #ffffff;
+  --soft: #fff0f6; --soft-2: #f7eef4; --border: #efe3ea; --track: #f3e6ee; --moon-dark: #dfe1ec;
+  --hero-1: #ffe8f2; --hero-2: #f6eefb; --shadow: 0 6px 18px rgba(44, 48, 72, .06); color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -204,7 +204,7 @@ label.f input:focus, label.f select:focus, label.f textarea:focus, .input:focus 
 .back-now {
   position: sticky; top: calc(70px + env(safe-area-inset-top, 0px)); z-index: 15; display: block; margin: 0 auto 12px;
   border: 0; border-radius: 999px; padding: 10px 20px; font-weight: 700; cursor: pointer; color: #fff; background: var(--primary);
-  box-shadow: 0 8px 22px rgba(239, 79, 108, .45);
+  box-shadow: 0 8px 22px rgba(250, 26, 127, .45);
 }
 
 /* ---- بطاقة التقدم ---- */
@@ -278,8 +278,8 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 .water button.on { filter: none; }
 .counter-big {
   width: 180px; height: 180px; border-radius: 50%; border: 0; margin: 12px auto; display: grid; place-items: center;
-  background: radial-gradient(circle at 35% 30%, #ff8fa6, var(--primary) 60%, #b8304e); color: #fff; font-size: 3rem; font-weight: 700;
-  cursor: pointer; box-shadow: 0 12px 30px rgba(239, 79, 108, .4);
+  background: radial-gradient(circle at 35% 30%, #ff8fbf, var(--primary) 60%, #c40f63); color: #fff; font-size: 3rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 12px 30px rgba(250, 26, 127, .4);
 }
 .counter-big:active { transform: scale(.96); }
 .counter-big small { display: block; font-size: .9rem; font-weight: 500; }
@@ -293,7 +293,7 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 .tl-item { position: relative; margin-bottom: 12px; }
 .tl-item .dot { position: absolute; right: -22px; top: 16px; width: 16px; height: 16px; border-radius: 50%; background: var(--card); border: 3px solid var(--track); }
 .tl-item.done .dot { background: var(--primary); border-color: var(--primary); }
-.tl-item.now .dot { background: var(--bg); border-color: var(--primary); box-shadow: 0 0 0 6px rgba(239, 79, 108, .25); }
+.tl-item.now .dot { background: var(--bg); border-color: var(--primary); box-shadow: 0 0 0 6px rgba(250, 26, 127, .25); }
 .tl-item .card { margin-bottom: 0; cursor: pointer; }
 .tl-item.now .card { border: 2px solid var(--primary); }
 .tl-thumb { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
@@ -1336,7 +1336,7 @@ const DAILY_TIPS = [
 const WEEK_MORE = {
   1: { baby: ['الحمل يُحسب من أول يوم في آخر دورة لأن يوم الإخصاب نادراً ما يُعرف بدقة؛ لذلك أول أسبوعين هما فعلياً قبل الحمل.'],
        mom: ['تتساقط بطانة الرحم القديمة (الدورة)، ويبدأ الجسم في إنضاج بويضات جديدة داخل الجريبات.'],
-       tips: ['منظمة الصحة العالمية توصي بـ400 ميكروغرام حمض الفوليك يومياً منذ التخطيط للحمل وحتى الأسبوع 12 للوقاية من عيوب الأنبوب العصبي.', 'إن كان لديكِ سكري أو صرع أو حمل سابق بعيب في الأنبوب العصبي فالطبيب قد يصف جرعة أعلى (5 ملغ).'] },
+       tips: ['يُنصح بـ400 ميكروغرام حمض الفوليك يومياً منذ التخطيط للحمل وحتى الأسبوع 12 للوقاية من عيوب الأنبوب العصبي.', 'إن كان لديكِ سكري أو صرع أو حمل سابق بعيب في الأنبوب العصبي فالطبيب قد يصف جرعة أعلى (5 ملغ).'] },
   2: { baby: ['البويضة بعد خروجها تعيش 12–24 ساعة، والحيوانات المنوية حتى 5 أيام داخل الجسم.'],
        mom: ['أيام الخصوبة الأعلى: الأيام الخمسة قبل الإباضة ويومها.', 'قد تلاحظين إفرازات شفافة مطاطية مثل بياض البيض حول الإباضة.'],
        tips: ['حافظي على وزن صحي، وأوقفي التدخين، وراجعي أدويتك مع الطبيب قبل الحمل.'] },
@@ -1448,7 +1448,7 @@ const WEEK_MORE = {
   38: { baby: ['طوله نحو 49.8 سم ووزنه نحو 3.1 كغ.', 'كل أعضائه جاهزة، ويتجمع العقي في أمعائه.'],
         mom: ['قد تشعرين برغبة قوية في التنظيف والترتيب (غريزة التعشيش).'],
         tips: ['القيصرية المخطط لها تُحدد عادة بعد 39 أسبوعاً لتكتمل رئتا الجنين.'] },
-  39: { baby: ['طوله نحو 50.7 سم ووزنه نحو 3.3 كغ.', 'يُعتبر "مكتمل المدة" (Full term) من 39 حتى 40 أسبوعاً و6 أيام حسب ACOG.', 'الدماغ ما زال ينمو بسرعة وسيستمر بعد الولادة.'],
+  39: { baby: ['طوله نحو 50.7 سم ووزنه نحو 3.3 كغ.', 'يُعتبر "مكتمل المدة" (Full term) من 39 حتى 40 أسبوعاً و6 أيام.', 'الدماغ ما زال ينمو بسرعة وسيستمر بعد الولادة.'],
         mom: ['قد يبدأ عنق الرحم بالليونة والاتساع.'],
         tips: ['إن نزل الماء: لاحظي الوقت واللون والرائحة واتصلي بالمستشفى.'] },
   40: { baby: ['طوله نحو 51.2 سم ووزنه نحو 3.5 كغ في المتوسط.', 'نسبة قليلة فقط من الأطفال يولدون في موعدهم المتوقع بالضبط.'],
@@ -1839,7 +1839,7 @@ function bindSetup() {
     if (!p) return toast('أدخلي التاريخ أولاً');
     const old = S.profile; S.profile = p; const st = status();
     if (st.left < -21 || st.left > 300) { S.profile = old; return toast('التاريخ غير صحيح'); }
-    save(); toast('تم الحفظ ✅');
+    save(); toast('تم الحفظ ✅'); Notify.sync(true);
     if (!old) { route = { view: 'home' }; history.replaceState(route, ''); render(); } else history.back();
   };
 }
@@ -1960,7 +1960,6 @@ function viewWeeks() {
       ? items.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')
       : `<ul class="list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`}
   </div>
-  <p class="sources">📚 ${SOURCES.map(s => s[0]).join(' · ')} — <a href="${nhsWeekUrl(sel)}" target="_blank" rel="noopener">المصدر</a></p>
   <div class="row">
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
     <button class="btn grow" data-wk="${Math.min(40, sel + 1)}" ${sel === 40 ? 'disabled' : ''}>الأسبوع ${Math.min(40, sel + 1)} ←</button>
@@ -2051,6 +2050,9 @@ function viewMore() {
     <textarea id="backupBox" class="input" rows="4" placeholder="أو الصقي هنا نص النسخة الاحتياطية" dir="ltr" style="margin-top:10px"></textarea>
     <button class="btn ghost sm" id="pasteImport" style="margin-top:6px">استيراد من النص الملصق</button>
   </div>
+  <div class="set-block"><h3>🔔 الإشعارات</h3>
+    <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
+    ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
   <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
   <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
@@ -2311,6 +2313,7 @@ function bind() {
       .catch(() => toast('ملف غير صالح'));
   }, 'onchange');
   on('#resetBtn', confirmTap('#resetBtn', () => { S = defaults(); save(); route = { view: 'home' }; render(); }));
+  on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
 
   if (route.sub === 'profile') bindSetup();
@@ -2411,7 +2414,7 @@ function bind() {
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); });
+window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -2847,7 +2850,7 @@ Object.assign(SUBVIEWS, {
         <polyline points="${line(g.med)}" fill="none" stroke="var(--primary-2)" stroke-dasharray="4 3" stroke-width="1.5"/>
         ${[0, 6, 12, 18, 24].map(m => `<text x="${X(m)}" y="${H - 4}" text-anchor="middle">${m}ش</text>`).join('')}${[4, 8, 12, 16].map(k => `<text x="22" y="${Y(k) + 3}" text-anchor="end">${k}</text>`).join('')}
         ${pts.length ? `<polyline points="${pts.map(p => `${X(p.m).toFixed(1)},${Y(p.kg).toFixed(1)}`).join(' ')}" fill="none" stroke="var(--primary)" stroke-width="2.5"/>${pts.map(p => `<circle cx="${X(p.m).toFixed(1)}" cy="${Y(p.kg).toFixed(1)}" r="3.5" fill="var(--primary)"/>`).join('')}` : ''}</svg>
-        <p class="muted center" style="margin:0">المنطقة البنفسجية: النطاق الطبيعي تقريباً حسب منظمة الصحة العالمية</p></div>
+        <p class="muted center" style="margin:0">المنطقة الملوّنة: النطاق الطبيعي التقريبي</p></div>
       ${pts.length ? `<div class="card"><table class="t"><tr><th>التاريخ</th><th>الوزن</th><th>الطول</th><th></th></tr>${pts.slice().reverse().map(p => `<tr><td>${fmtShort.format(parse(p.date))}</td><td>${p.kg || '—'}</td><td>${p.cm || '—'}</td><td><button class="btn sm ghost" data-gdel="${p.date}">✕</button></td></tr>`).join('')}</table></div>` : ''}`;
   },
 
@@ -3073,9 +3076,9 @@ function featBind() {
     const d = $('#bDate').value; if (!d) return toast('أدخلي تاريخ الولادة');
     S.baby = { name: $('#bName').value.trim(), sex: app.querySelector('[data-sex].on').dataset.sex, date: d, type: $('#bType').value, weight: $('#bW').value, length: $('#bL').value };
     if (S.baby.weight) S.growth = S.growth.filter(g => g.date !== d).concat({ date: d, kg: +S.baby.weight, cm: +S.baby.length || null });
-    save(); route = { view: 'home' }; history.replaceState(route, ''); toast('مبروك 🎉'); render();
+    save(); route = { view: 'home' }; history.replaceState(route, ''); toast('مبروك 🎉'); render(); Notify.sync(true);
   });
-  on('#bUndo', confirmTap('#bUndo', () => { S.baby = null; save(); route = { view: 'home' }; render(); }));
+  on('#bUndo', confirmTap('#bUndo', () => { S.baby = null; save(); route = { view: 'home' }; render(); Notify.sync(false); }));
 
   // اختصارات الطفل
   app.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
@@ -3337,6 +3340,81 @@ function cmBind() {
   }));
   on('#aiAns', () => { const x = CM.qs.find(q => q.id === route.qid); if (x) aiAnswer(x); });
 }
+
+</script>
+  <script>
+/* نبضٌ صغير — إشعار مع بداية كل أسبوع حمل (وكل شهر من عمر الطفل)
+   في تطبيق الأندرويد: إشعارات محلية مجدولة على الجهاز نفسه (بدون إنترنت وبدون خادم).
+   في المتصفح: رسالة ترحيب داخل التطبيق عند فتحه في أسبوع جديد. */
+'use strict';
+
+const Notify = (() => {
+  const plugin = () => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.LocalNotifications;
+  const HOUR = 10; // العاشرة صباحاً
+  const short = (t, n = 110) => (t || '').length > n ? t.slice(0, n - 1).trim() + '…' : (t || '');
+  const at = d => { const x = new Date(d); x.setHours(HOUR, 0, 0, 0); return x; };
+  const months = m => m === 1 ? 'شهراً واحداً' : m === 2 ? 'شهرين' : m <= 10 ? `${m} أشهر` : `${m} شهراً`;
+
+  function plan() {
+    const list = [], now = Date.now() + 60e3;
+    if (S.baby && S.baby.date) {
+      const b = new Date(S.baby.date), name = S.baby.name || 'طفلك';
+      for (let m = 1; m <= 24; m++) {
+        const d = at(new Date(b.getFullYear(), b.getMonth() + m, b.getDate()));
+        if (d.getTime() <= now) continue;
+        const g = BABY_GUIDE.find(x => x.m === m) || BABY_GUIDE[BABY_GUIDE.length - 1];
+        list.push({ id: 2000 + m, at: d, title: m % 12 === 0 ? `🎂 كل سنة و${name} بخير!` : `🌙 ${name} أتمّ اليوم ${months(m)}`,
+          body: short(`${g.t.split('—').pop().trim()}: ${g.dev}`), extra: { view: 'weeks', bm: Math.min(m, BABY_GUIDE.length - 1) } });
+      }
+    } else if (S.profile) {
+      const st = status(), name = S.profile.babyName || 'طفلك';
+      for (let w = st.week + 1; w <= 40; w++) {
+        const d = at(weekDate(st, w));
+        if (d.getTime() <= now) continue;
+        const x = WEEKS[w - 1], hasSize = x.size && !/لم|—/.test(x.size);
+        list.push({ id: 1000 + w, at: d,
+          title: w === 40 ? '💗 الأسبوع 40 — موعد اللقاء اقترب!' : `${x.emoji} أهلاً بالأسبوع ${w}`,
+          body: short((hasSize ? `${name} الآن بحجم ${x.size}. ` : '') + (x.baby.find(t => !/طوله|وزنه/.test(t)) || x.baby[0]), 150), extra: { view: 'weeks', week: w } });
+      }
+    }
+    return list;
+  }
+
+  async function sync(ask = false) {
+    const LN = plugin(); if (!LN) return false;
+    try {
+      const pending = (await LN.getPending()).notifications || [];
+      if (pending.length) await LN.cancel({ notifications: pending.map(n => ({ id: n.id })) });
+      if (S.notify === false) return false;
+      let perm = (await LN.checkPermissions()).display;
+      if (perm !== 'granted' && ask) perm = (await LN.requestPermissions()).display;
+      if (perm !== 'granted') return false;
+      const list = plan();
+      if (list.length) await LN.schedule({ notifications: list.map(n => ({ id: n.id, title: n.title, body: n.body, extra: n.extra,
+        schedule: { at: n.at, allowWhileIdle: true }, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
+      return true;
+    } catch (e) { console.warn('notify', e); return false; }
+  }
+
+  function listen() {
+    const LN = plugin(); if (!LN) return;
+    LN.addListener('localNotificationActionPerformed', a => {
+      const x = (a.notification && a.notification.extra) || {};
+      route = { view: x.view || 'home' }; if (x.week) route.week = x.week; if (x.bm != null) { route.sub = 'bguide'; route.bm = x.bm; }
+      history.replaceState(route, ''); render();
+    });
+  }
+
+  // في المتصفح: ترحيب بالأسبوع الجديد عند أول فتح فيه
+  function greet() {
+    if (!S.profile || S.baby) return;
+    const w = status().week;
+    if (S.seenWeek && w > S.seenWeek) setTimeout(() => toast(`${WEEKS[w - 1].emoji} أهلاً بالأسبوع ${w}! شوفي الجديد عن طفلك`), 900);
+    if (S.seenWeek !== w) { S.seenWeek = w; save(); }
+  }
+
+  return { native: () => !!plugin(), sync, listen, greet, start() { listen(); greet(); sync(false); } };
+})();
 
 </script>
 </body>
