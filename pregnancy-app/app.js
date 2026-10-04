@@ -126,10 +126,40 @@ function render(scroll = true) {
     $('#title').textContent = titles[route.view];
     html = ({ home: viewHome, weeks: S.baby ? viewBabyHub : viewWeeks, assist: viewAssist, track: viewTrack, guide: viewMore, more: viewMore }[route.view] || viewHome)();
   }
-  app.innerHTML = html;
-  bind();
-  if (scroll) window.scrollTo(0, 0);
+  // انتقال ناعم عند تغيير الصفحة، وتبديل هادئ لصورة الأسبوع
+  const key = [route.view, route.sub, route.mode || 'week', route.as || 'ai', route.qid].join('|');
+  const pageChanged = lastKey && key !== lastKey, weekChanged = !pageChanged && !!lastKey && route.week !== lastWeek;
+  const inner = [route.sec, route.tab, route.ft, route.labels].join('|'), innerChanged = !pageChanged && !weekChanged && lastInner !== undefined && inner !== lastInner;
+  // اتجاه الحركة: للأمام عند الدخول لصفحة فرعية أو تبويب تالٍ، وللخلف عند الرجوع
+  if (pageChanged) {
+    const order = ['home', 'weeks', 'assist', 'track', 'more'], depth = (route.sub ? 1 : 0) + (route.qid ? 1 : 0);
+    const dir = depth !== lastDepth ? (depth > lastDepth ? 'fwd' : 'back') : order.indexOf(route.view) >= order.indexOf(lastView) ? 'fwd' : 'back';
+    document.documentElement.dataset.nav = dir;
+    lastDepth = depth; lastView = route.view;
+  }
+  const prevStrip = $('#strip') ? $('#strip').scrollLeft : null, prevY = window.scrollY;
+  const swap = () => {
+    app.innerHTML = html; bind();
+    if (weekChanged && !REDUCED) {
+      app.querySelector('.hero-stage')?.classList.add('swap');
+      const strip = $('#strip'), s = strip && strip.querySelector('.sel');
+      if (s && prevStrip !== null) { strip.scrollLeft = prevStrip; requestAnimationFrame(() => s.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })); }
+      // تبقى القارئة في مكانها وتتغير المعلومات بهدوء
+      window.scrollTo({ top: prevY, behavior: 'instant' });
+      app.querySelectorAll('.week-meta, #secTabs + .card, .baby-card').forEach(c => c.classList.add('soft'));
+    } else if (innerChanged && !REDUCED) {
+      const c = app.querySelector('#secTabs + .card') || app; c.classList.remove('soft'); void c.offsetWidth; c.classList.add('soft');
+    } else if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+  if (pageChanged && !REDUCED && document.startViewTransition) document.startViewTransition(swap);
+  else {
+    swap();
+    if (pageChanged && !REDUCED) { app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter'); }
+  }
+  lastKey = key; lastWeek = route.week; lastInner = inner;
 }
+let lastKey = '', lastWeek, lastInner, lastDepth = 0, lastView = 'home';
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- الإعداد ---------- */
 // تخمين البلد من لغة الجهاز (مثل ar-SA)
@@ -261,17 +291,23 @@ function moon(f, label, now) {
     : `<path d="M${c} ${c - r}A${r} ${r} 0 0 1 ${c} ${c + r}A${rx} ${r} 0 0 ${f < .5 ? 0 : 1} ${c} ${c - r}Z" fill="var(--gold)"/>`;
   return `<div class="moon ${now ? 'now' : ''}"><svg viewBox="0 0 36 36" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="var(--moon-dark)"/>${lit}<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--gold)" stroke-opacity=".5"/></svg><span>${label}</span></div>`;
 }
+// حلقة اللقاء: تمتلئ مع تقدم الحمل، وفي وسطها الأيام الباقية
 function progressCard(st) {
-  const L = 280 / 9;
-  return `<div class="card moons-card">
-    <span class="kicker">رحلتك بالأقمار</span>
-    <h2>أنتِ في الأسبوع ${st.week} — اليوم ${ORD[st.extra]}</h2>
-    <div class="moons">${Array.from({ length: 9 }, (_, i) => moon(Math.max(0, Math.min(1, (st.days - i * L) / L)), `${i + 1}`, i + 1 === st.month)).join('')}</div>
-    <div style="height:12px"></div>
-    <div class="ticket">
-      <div><small>مضى</small><b>${wd(st.days)}</b></div>
-      <div><small>بقي</small><b>${st.left >= 0 ? wd(st.left) : 'تجاوزتِ الموعد'}</b></div>
-      <div><small>موعد اللقاء</small><b>${fmtShort.format(st.due)}</b></div>
+  const r = 52, C = 2 * Math.PI * r, off = C * (1 - Math.min(1, st.pct));
+  const months = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع'];
+  return `<div class="card meet-card">
+    <svg class="meet-ring" viewBox="0 0 128 128" role="img" aria-label="أتممتِ ${Math.round(st.pct * 100)}% من الحمل">
+      <defs><linearGradient id="mr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--rose)"/><stop offset="1" stop-color="var(--gold)"/></linearGradient></defs>
+      <circle cx="64" cy="64" r="${r}" fill="none" stroke="var(--track)" stroke-width="9"/>
+      <circle cx="64" cy="64" r="${r}" fill="none" stroke="url(#mr)" stroke-width="9" stroke-linecap="round"
+        stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 64 64)" style="--c:${C.toFixed(1)}" class="meet-arc"/>
+      <text x="64" y="62" text-anchor="middle" class="meet-num">${Math.max(0, st.left)}</text>
+      <text x="64" y="82" text-anchor="middle" class="meet-sub">يوماً على اللقاء</text>
+    </svg>
+    <div class="meet-info">
+      <span class="kicker">الأسبوع ${st.week} · اليوم ${ORD[st.extra]}</span>
+      <b class="meet-big">${TRIMESTERS[st.tri - 1].name}</b>
+      <span class="muted">موعد اللقاء ${fmtShort.format(st.due)}</span>
     </div>
   </div>`;
 }
@@ -292,26 +328,9 @@ function viewHome() {
   ${hero(sel)}
   ${weekStrip(sel, st)}
   ${progressCard(st)}
-
-  <div class="card today">
-    <div class="sec-head" style="margin-top:0"><h3 style="margin:0">يومك</h3><span class="muted">${fmtDayMonth.format(today())}</span></div>
-    <div class="today-grid">
-      <button class="t-act ${tr ? 'lv-' + tr.cls : ''}" data-sub="checkin"><span>${tr ? tr.ic : '🩺'}</span><b>فحص اليوم</b><small>${tr ? tr.title : 'دقيقة واحدة'}</small></button>
-      <button class="t-act ${vit ? 'done' : ''}" id="vitToday"><span>💊</span><b>الفيتامين</b><small>${vit ? 'تم ✓' : 'لم يُؤخذ'}</small></button>
-      <button class="t-act" id="waterPlus"><span>💧</span><b>الماء</b><small>${water} من 10 · اضغطي +1</small></button>
-      ${st.week >= 28 ? `<button class="t-act" data-sub="kicks"><span>👣</span><b>الحركة</b><small>عدّ الركلات</small></button>` : `<button class="t-act" data-sub="journal"><span>📝</span><b>يومياتي</b><small>كيف حالك؟</small></button>`}
-    </div>
-    ${badLabs ? `<button class="alert-line" data-sub="labs">🧪 ${badLabs} تحليل يحتاج انتباهك ‹</button>` : ''}
-  </div>
-
-  <div class="card">
-    <div class="sec-head" style="margin-top:0"><h3 style="margin:0">${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</h3><span class="fruit" style="font-size:1.8rem">${w.emoji}</span></div>
-    <p style="margin:0">${w.baby[0]}</p>
-    <button class="link" data-week="${sel}" style="color:var(--gold)">اقرئي كل تفاصيل الأسبوع ${sel} ‹</button>
-  </div>
-
-  ${next ? `<div class="card nav-row" data-sub="${next.sub}"><span class="ic">${next.ic}</span><div class="grow"><small class="muted">القادم</small><div><b>${esc(next.t)}</b></div><div class="muted">${next.d}</div></div><span class="chev">‹</span></div>` : ''}
-  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:0 auto 10px;color:var(--gold)">🎉 وُلد طفلي؟ ابدئي رحلة ما بعد الولادة</button>` : ''}
+  <div class="card nav-row" data-week="${sel}"><span class="ic">${w.emoji}</span><div class="grow"><b>${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</b><div class="muted">${w.baby[0]}</div></div><span class="chev">‹</span></div>
+  ${badLabs || (tr && tr.lvl >= 2) ? `<button class="alert-line" data-sub="${badLabs ? 'labs' : 'checkin'}">${badLabs ? `🧪 ${badLabs} تحليل يحتاج انتباهك` : `${tr.ic} ${tr.title}`} ‹</button>` : ''}
+  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:6px auto;color:var(--gold)">🎉 وُلد طفلي؟</button>` : ''}
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
 const toolBtn = ([k, ic, name]) => `<div class="tool" data-sub="${k}"><span>${ic}</span>${name}</div>`;
@@ -396,56 +415,51 @@ const group = (title, rows) => `<div class="card group"><h3>${title}</h3>${rows.
 
 function viewTrack() {
   const st = status(), t = iso(today());
-  const ws = [...S.weights].sort((a, b) => a.date.localeCompare(b.date)), lw = ws[ws.length - 1];
-  const bagAll = Object.values(HOSPITAL_BAG).flat(), bagN = bagAll.filter(i => S.bag[i]).length;
-  const nextA = S.appts.filter(a => a.date >= t && !a.done).sort((a, b) => a.date.localeCompare(b.date))[0];
-  const lastK = S.kicks[S.kicks.length - 1];
-  const late = [navRow('kicks', S._kick ? '⏳ جلسة عدّ جارية الآن' : lastK ? `آخر جلسة: ${lastK.count} حركات` : st.week >= 28 ? 'ابدئي العدّ اليومي' : 'يبدأ من الأسبوع 28'),
-    navRow('contractions', 'لحساب مدة الطلق والفاصل بينه'),
-    navRow('bag', `جاهز ${bagN} من ${bagAll.length}`)];
-  const lat = Object.values(latestLabs()), bad = lat.filter(l => labEval(l, S.baby ? 3 : st.tri).s !== 'ok').length;
+  const water = S.water[t] || 0, vit = !!S.vitamins[t];
   const tc = S.checks.find(x => x.date === t), tr = tc && !S.baby ? triage(tc, st.week) : null;
-  const med = group('🩺 صحتي الطبية', [
-    ...(S.baby ? [navRow('momcare', 'التعافي والمزاج والرضاعة')] : [navRow('checkin', tr ? `اليوم: ${tr.ic} ${tr.title}` : 'لم تفحصي اليوم بعد')]),
-    navRow('labs', lat.length ? `${lat.length} تحاليل${bad ? ` · ${bad} تحتاج انتباه` : ' · كلها طبيعية'}` : 'أضيفي نتيجة واعرفي معناها'),
-    navRow('file', 'ملخص طبي جاهز لطبيبك'), navRow('medinfo', S.med.blood ? `فصيلة ${S.med.blood}${S.med.rh || ''}` : 'فصيلة الدم والأدوية والحساسية')]);
-  const mem = group('💗 العائلة والذكريات', [...(S.baby ? [] : [navRow('partner', 'رسالة الأسبوع لزوجك')]), navRow('album', 'صور بطنك ورسائل لطفلك')]);
-  if (S.baby) return med + mem + group('📅 يومياً', [navRow('water', `اليوم: ${S.water[t] || 0} من 10 أكواب`), navRow('journal', 'كيف حالك اليوم؟'), navRow('weight', lw ? `آخر قياس: ${lw.kg} كغ` : 'تابعي وزنك بعد الولادة')]);
-  return `
-  ${med}
-  ${group('📅 يومياً', [navRow('water', `اليوم: ${S.water[t] || 0} من 10 أكواب`), navRow('journal', S.journal.some(j => j.date === t) ? '✅ سجلتِ يوميات اليوم' : 'كيف حالك اليوم؟')])}
-  ${group('🩺 صحتي ومواعيدي', [navRow('weight', lw ? `آخر قياس: ${lw.kg} كغ` : 'أضيفي أول قياس'), navRow('appts', nextA ? `القادم: ${esc(nextA.title)} · ${fmtShort.format(parse(nextA.date))}` : 'لا توجد مواعيد قادمة')])}
-  ${group(st.week >= 28 ? '🏥 الاستعداد للولادة (مرحلتك الآن)' : '🏥 الاستعداد للولادة', late)}
-  ${mem}`;
+  const lat = Object.values(latestLabs()), bad = lat.filter(l => labEval(l, S.baby ? 3 : st.tri).s !== 'ok').length;
+  const nextA = S.appts.filter(a => a.date >= t && !a.done).sort((a, b) => a.date.localeCompare(b.date))[0];
+  const ws = [...S.weights].sort((a, b) => a.date.localeCompare(b.date)), lw = ws[ws.length - 1];
+  const todayCard = S.baby ? '' : `<div class="card today">
+    <div class="today-grid three">
+      <button class="t-act ${tr ? 'lv-' + tr.cls : ''}" data-sub="checkin"><span>${tr ? tr.ic : '🩺'}</span><b>فحص اليوم</b><small>${tr ? tr.title : 'دقيقة واحدة'}</small></button>
+      <button class="t-act ${vit ? 'done' : ''}" id="vitToday"><span>💊</span><b>الفيتامين</b><small>${vit ? 'تم ✓' : 'اضغطي عند أخذه'}</small></button>
+      <button class="t-act" id="waterPlus"><span>💧</span><b>الماء</b><small>${water} من 10</small></button>
+    </div></div>`;
+  const main = S.baby ? [navRow('momcare', 'التعافي والمزاج والرضاعة')] : [];
+  main.push(navRow('labs', lat.length ? `${lat.length} تحاليل${bad ? ` · ${bad} تحتاج انتباه` : ' · كلها طبيعية'}` : 'أضيفي نتيجة واعرفي معناها'));
+  main.push(navRow('appts', nextA ? `القادم: ${esc(nextA.title)} · ${fmtShort.format(parse(nextA.date))}` : 'لا توجد مواعيد قادمة'));
+  if (!S.baby && st.week >= 28) main.push(navRow('kicks', 'عدّ حركات الجنين'), navRow('contractions', 'حساب الطلق'));
+  const extra = ['weight', 'journal', 'file', 'medinfo', ...(S.baby ? [] : ['partner', 'bag', ...(st.week < 28 ? ['kicks', 'contractions'] : [])]), 'album', 'water']
+    .map(k => navRow(k, k === 'weight' && lw ? `آخر قياس: ${lw.kg} كغ` : ''));
+  return `${todayCard}
+  <div class="card group">${main.join('')}</div>
+  <details class="card group more-tools"><summary><b>أدوات أخرى</b><span class="muted">${extra.length}</span></summary>${extra.join('')}</details>`;
 }
 
 function viewGuide() {
-  const st = status();
-  const nextT = APPOINTMENTS.find(a => a.to >= st.week);
-  return `
-  <div class="card warn-card nav-row" data-sub="warnings"><span class="ic">🚨</span><div class="grow"><b>علامات تستدعي الطبيب فوراً</b><div class="muted">اقرئيها مرة واحدة على الأقل</div></div><span class="chev">‹</span></div>
-  ${group('🔬 الفحوصات', [navRow('tests', nextT ? `القادم لك: ${nextT.title}` : 'جدول الفحوصات من البداية للنهاية')])}
-  ${group('🍎 الأكل والعافية', [navRow('localfood', 'كبسة، فول، كسكس، حلبة… آمن أم لا؟'), navRow('food', 'المفيد والممنوع والعناصر المهمة'), navRow('ramadan', 'هل أصوم؟ وخطة يوم الصيام'), navRow('exercise', 'تمارين آمنة لكل مرحلة')])}
-  ${group('👶 المولود وما بعد الولادة', [navRow('born', S.baby ? 'تعديل بيانات الولادة' : 'سجّلي ولادة طفلك وابدئي رحلته'), navRow('names', 'اختاري واحفظي الأسماء المفضلة'), navRow('postpartum', 'النفاس والرضاعة والصحة النفسية')])}
-  ${group('🧮 أدوات وأسئلة', [navRow('calc', 'احسبي موعد ولادة لأي تاريخ'), navRow('faq', 'إجابات لأكثر الأسئلة شيوعاً')])}`;
+  const rows = ['warnings', 'tests', 'localfood', 'food', 'ramadan', 'exercise', 'names', 'postpartum', 'faq', 'calc', 'born'];
+  return `<div class="card group">${rows.map(k => navRow(k, '')).join('')}</div>`;
 }
 
 function viewMore() {
   const st = status();
   return `${viewGuide()}
-  <div class="card"><h3>👤 بيانات الحمل</h3>
+  <details class="card group more-tools"><summary><b>⚙️ الإعدادات والنسخ الاحتياطي</b></summary>
+  <div class="set-block"><h3>👤 بيانات الحمل</h3>
     <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
-  <div class="card"><h3>💾 النسخ الاحتياطي</h3>
+  <div class="set-block"><h3>💾 النسخ الاحتياطي</h3>
     <p class="muted">بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.</p>
     <div class="row"><button class="btn grow" id="exportBtn">⬇️ تصدير</button>
       <label class="btn ghost grow center" style="cursor:pointer">⬆️ استيراد ملف<input type="file" id="importFile" accept=".json" hidden></label></div>
     <textarea id="backupBox" class="input" rows="4" placeholder="أو الصقي هنا نص النسخة الاحتياطية" dir="ltr" style="margin-top:10px"></textarea>
     <button class="btn ghost sm" id="pasteImport" style="margin-top:6px">استيراد من النص الملصق</button>
   </div>
-  <div class="card"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
+  <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
-  <div class="card"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
+  <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
+  </details>
   <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
 }
 
@@ -671,7 +685,7 @@ function bind() {
   app.querySelectorAll('[data-done]').forEach(el => el.onchange = () => { S.done[el.dataset.done] = el.checked; save(); render(false); });
 
   const strip = $('#strip');
-  if (strip) { const s = strip.querySelector('.sel'); if (s) s.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+  if (strip) { const s = strip.querySelector('.sel'); if (s) s.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'instant' }); }
 
   const on = (id, fn, ev = 'onclick') => { const el = $(id); if (el) el[ev] = fn; };
   const t = iso(today());
