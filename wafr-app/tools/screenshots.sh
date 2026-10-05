@@ -47,12 +47,16 @@ visible_on_screen() {
   dump | python3 -c '
 import re,sys
 x=sys.stdin.read(); t=sys.argv[1]; H=int(sys.argv[2])
+nodes=[]
 for m in re.finditer(r"<node [^>]*>", x):
     n=m.group(0); tx=re.search(r"text=\"([^\"]*)\"", n)
-    if tx and t in tx.group(1):
-        a=list(map(int,re.search(r"bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"", n).groups()))
-        sys.exit(0 if a[3] <= H and a[1] < a[3] else 1)
-sys.exit(1)
+    if tx: nodes.append((tx.group(1), n))
+hits=[n for v,n in nodes if v==t] or [n for v,n in nodes if t in v]
+ok=bool(hits)
+for n in hits:
+    a=list(map(int,re.search(r"bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"", n).groups()))
+    ok = ok and a[3] <= H and a[1] < a[3]
+sys.exit(0 if ok else 1)
 ' "$1" "$H"
 }
 check() { # name, text
