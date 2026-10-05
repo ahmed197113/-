@@ -3,3 +3,4 @@ __pycache__/
 erp/db.sqlite3
 erp/staticfiles/
 .venv/
+erp/deploy/*.zip
