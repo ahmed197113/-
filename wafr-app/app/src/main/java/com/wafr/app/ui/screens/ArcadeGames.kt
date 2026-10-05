@@ -1,6 +1,6 @@
 package com.wafr.app.ui.screens
 
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -307,7 +308,8 @@ fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit,
     var happy by remember { mutableIntStateOf(60) }
     var log by remember { mutableStateOf(listOf<String>()) }
     var started by remember { mutableStateOf(false) }
-    val drag = remember { Animatable(0f) }
+    // Updated synchronously from the gesture so a fast flick is measured correctly.
+    var dragX by remember { mutableFloatStateOf(0f) }
     val finished = started && (i >= deck.size || cash < 0 || happy <= 0)
 
     fun restart() { deck = newDeck(); i = 0; cash = salary - rent; happy = 60; log = emptyList(); started = true }
@@ -326,7 +328,7 @@ fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit,
         }
         happy = happy.coerceIn(0, 100)
         i++
-        scope.launch { drag.snapTo(0f) }
+        dragX = 0f
     }
 
     Column(Modifier.fillMaxSize().padding(start = 18.dp, end = 18.dp, top = contentPadding.calculateTopPadding() + 8.dp, bottom = contentPadding.calculateBottomPadding() + 8.dp)) {
@@ -405,20 +407,27 @@ fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit,
             val color = if (card.need) c.need else if (card.gift) c.good else c.want
             Column(
                 Modifier.fillMaxWidth().height(330.dp)
-                    .offset { IntOffset(drag.value.roundToInt(), 0) }
-                    .graphicsLayer { rotationZ = drag.value / 40f }
+                    .offset { IntOffset(dragX.roundToInt(), 0) }
+                    .graphicsLayer { rotationZ = dragX / 40f }
                     .clip(RoundedCornerShape(30.dp))
                     .background(Brush.linearGradient(listOf(color.copy(alpha = 0.30f), c.card)))
                     .border(2.dp, color.copy(alpha = 0.8f), RoundedCornerShape(30.dp))
                     .pointerInput(i) {
                         detectDragGestures(
                             onDragEnd = {
-                                val v = drag.value
-                                if (abs(v) > size.width * 0.28f) {
-                                    scope.launch { drag.animateTo(if (v > 0) size.width * 1.5f else -size.width * 1.5f, tween(180)); decide(v > 0) }
-                                } else scope.launch { drag.animateTo(0f, tween(200)) }
+                                val v = dragX
+                                val w = size.width.toFloat()
+                                scope.launch {
+                                    if (abs(v) > w * 0.25f) {
+                                        animate(v, if (v > 0) w * 1.5f else -w * 1.5f, animationSpec = tween(160)) { x, _ -> dragX = x }
+                                        decide(v > 0)
+                                    } else {
+                                        animate(v, 0f, animationSpec = tween(180)) { x, _ -> dragX = x }
+                                    }
+                                }
                             },
-                        ) { change, amount -> change.consume(); scope.launch { drag.snapTo(drag.value + amount.x) } }
+                            onDragCancel = { dragX = 0f },
+                        ) { change, amount -> change.consume(); dragX += amount.x }
                     }
                     .padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -430,7 +439,7 @@ fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit,
                 Text(card.desc, color = c.muted, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(8.dp))
                 Text(if (card.gift) "+${-card.cost}" else "التكلفة ${card.cost}", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = color)
-                val hint = drag.value
+                val hint = dragX
                 if (abs(hint) > 30) {
                     Text(if (hint > 0) "✅ ادفع" else "❌ ارفض", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = if (hint > 0) c.good else c.danger)
                 }

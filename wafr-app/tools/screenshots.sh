@@ -281,9 +281,10 @@ in_back
 tap_text "شهر في حياتك"; sleep 2
 tap_text "ابدأ الشهر"; sleep 2
 shot 76-month 0
-adb shell input swipe 300 1100 950 1100 250; sleep 1
-tap_text "ارفض"; sleep 1
-tap_text "ادفع"; sleep 1
+for n in 1 2 3; do
+  if has_text "رائع"; then tap_text "رائع"; else adb shell input swipe 300 1100 950 1100 200; fi
+  sleep 1
+done
 shot 77-month-after 0
 check "month game advances" "الموقف 4"
 
