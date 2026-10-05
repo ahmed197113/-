@@ -1,5 +1,9 @@
 package com.sahwa.app.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sahwa.app.data.AppData
 import com.sahwa.app.data.Store
-import com.sahwa.app.data.TARGET_BUDGET
+import com.sahwa.app.data.Pace
 import com.sahwa.app.guard.ShortsDetector
 
 @Composable
@@ -77,29 +81,52 @@ fun SettingsScreen(d: AppData, now: Long) {
         item { StrictCard(d) }
         item {
             GlowCard(accent = C.Cyan) {
-                SectionTitle("⚡ ميزانية البداية: ${d.startBudget} تمريرة/يوم")
+                SectionTitle("🪜 سرعة التعافي")
                 Text(
-                    "تنخفض تلقائيًا خلال 30 يومًا حتى $TARGET_BUDGET. ميزانية اليوم: ${d.baseBudget}",
+                    "كم يومًا تقضي في كل مرحلة قبل أن تصعد. الصعود يحتاج نجاحك في 60٪ من أيام المرحلة.",
                     color = C.Muted, fontSize = 12.sp,
                 )
-                Slider(
-                    value = d.startBudget.toFloat(),
-                    onValueChange = { v -> if (!d.strictActive || v.toInt() <= d.startBudget) Store.setStartBudget(v.toInt()) },
-                    valueRange = 15f..200f,
-                    colors = sliderColors(C.Cyan),
-                )
+                Pace.entries.forEach { p ->
+                    val selected = d.pace == p
+                    val locked = d.strictActive && p.days > d.pace.days
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(if (selected) C.Cyan.copy(alpha = 0.15f) else C.Panel2)
+                            .clickable(enabled = !locked) { Store.setPace(p) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(p.label, color = if (selected) C.Cyan else C.Text, fontWeight = FontWeight.Bold)
+                            Text(p.desc, color = C.Muted, fontSize = 12.sp)
+                        }
+                        if (selected) Text("✓", color = C.Cyan, fontSize = 18.sp)
+                    }
+                }
             }
         }
         item {
             GlowCard(accent = C.Violet) {
-                SectionTitle("🧠 بوابة الوعي: ${d.gateSeconds} ثوانٍ")
-                Text("مدة التنفس قبل كل جلسة. تزيد 3 ثوانٍ مع كل جلسة إضافية في اليوم (حتى 30 ثانية).", color = C.Muted, fontSize = 12.sp)
-                Slider(
-                    value = d.gateSeconds.toFloat(),
-                    onValueChange = { v -> if (!d.strictActive || v.toInt() >= d.gateSeconds) Store.setGateSeconds(v.toInt()) },
-                    valueRange = 3f..30f,
-                    colors = sliderColors(C.Violet),
+                SectionTitle("${d.stageInfo.emoji} مرحلتك: ${d.stageInfo.name}")
+                Text(
+                    "إذا شعرت أن المرحلة صعبة جدًا، انزل درجة. هذا ليس فشلًا — التقدم الثابت أفضل من القفز ثم السقوط.",
+                    color = C.Muted, fontSize = 12.sp,
                 )
+                Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { Store.stepDown() },
+                        enabled = !d.strictActive && d.stage > 1,
+                        modifier = Modifier.weight(1f),
+                    ) { Text("⬇️ انزل درجة") }
+                    OutlinedButton(
+                        onClick = { confirmRestart = true },
+                        enabled = !d.strictActive,
+                        modifier = Modifier.weight(1f),
+                    ) { Text("🔁 من البداية") }
+                }
             }
         }
         item {
@@ -117,7 +144,7 @@ fun SettingsScreen(d: AppData, now: Long) {
         }
         item {
             GlowCard(accent = C.Pink) {
-                ToggleRow("🧟 كاشف وضع الزومبي", "تنبيه عند التمرير القهري السريع (12 تمريرة في دقيقة)", d.zombieCheck, locked = d.strictActive && d.zombieCheck) {
+                ToggleRow("🧟 كاشف وضع الزومبي", "تنبيه عند التمرير القهري السريع (12 مقطعًا في دقيقة) — من مرحلة النيّة", d.zombieCheck, locked = d.strictActive && d.zombieCheck) {
                     Store.setZombieCheck(it)
                 }
             }
@@ -138,15 +165,6 @@ fun SettingsScreen(d: AppData, now: Long) {
             }
         }
         item {
-            GlowCard(accent = C.Green) {
-                SectionTitle("🌱 برنامج التعافي")
-                Text("اليوم ${d.programDay}. إعادة البدء ترجع الميزانية لقيمة البداية.", color = C.Muted, fontSize = 12.sp)
-                OutlinedButton(onClick = { confirmRestart = true }, enabled = !d.strictActive, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Text("إعادة بدء البرنامج")
-                }
-            }
-        }
-        item {
             Text(
                 "🔒 الخصوصية: «صحوة» يعمل بالكامل على هاتفك. لا إنترنت، لا حسابات، لا إعلانات، ولا يقرأ محتوى رسائلك.",
                 color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(8.dp),
@@ -158,11 +176,11 @@ fun SettingsScreen(d: AppData, now: Long) {
         AlertDialog(
             onDismissRequest = { confirmRestart = false },
             containerColor = C.Panel2,
-            title = { Text("إعادة بدء البرنامج؟") },
-            text = { Text("سيعود العدّاد لليوم 1. سجلاتك وعاداتك تبقى كما هي.", color = C.Muted) },
+            title = { Text("البدء من مرحلة المراقبة؟") },
+            text = { Text("سنعيد قياس متوسطك 3 أيام ثم نبني أهدافًا جديدة. سجلاتك وعاداتك تبقى كما هي.", color = C.Muted) },
             confirmButton = {
                 TextButton(onClick = {
-                    Store.restartProgram()
+                    Store.restartLadder()
                     confirmRestart = false
                 }) { Text("إعادة البدء") }
             },

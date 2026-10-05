@@ -47,6 +47,8 @@ object ShortsDetector {
         "com.snapchat.android" to listOf(
             "spotlight",
         ),
+        // X (Twitter): no stable ids — relies on the generic pager signature below.
+        "com.twitter.android" to emptyList(),
     )
 
     val NAMES: Map<String, String> = mapOf(
@@ -54,6 +56,7 @@ object ShortsDetector {
         "com.instagram.android" to "Instagram Reels",
         "com.facebook.katana" to "Facebook Reels",
         "com.snapchat.android" to "Snapchat Spotlight",
+        "com.twitter.android" to "X (Twitter) Videos",
         "com.zhiliaoapp.musically" to "TikTok",
         "com.ss.android.ugc.trill" to "TikTok",
         "com.zhiliaoapp.musically.go" to "TikTok Lite",
@@ -91,10 +94,36 @@ object ShortsDetector {
                 node.getBoundsInScreen(rect)
                 if (rect.height() >= minHeight) return true
             }
+            if (isVideoPager(node, rect, screenHeight)) return true
             for (i in 0 until node.childCount) {
                 node.getChild(i)?.let { queue.addLast(it) }
             }
         }
         return false
+    }
+
+    /**
+     * Generic signature of a short-video feed, independent of view ids (Facebook obfuscates
+     * them, X has none): a scrollable *vertical* list that fills the screen and shows one
+     * item at a time, each item filling the list. Normal feeds show several smaller posts;
+     * horizontal pagers (stories, photo galleries) report a single row and are skipped.
+     */
+    private fun isVideoPager(node: AccessibilityNodeInfo, rect: Rect, screenHeight: Int): Boolean {
+        if (!node.isScrollable) return false
+        node.getBoundsInScreen(rect)
+        val pagerHeight = rect.height()
+        if (pagerHeight < screenHeight * 0.75f) return false
+        val info = node.collectionInfo ?: return false
+        if (info.columnCount > 1 || info.rowCount == 1) return false
+        var visible = 0
+        var tallest = 0
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            if (!child.isVisibleToUser) continue
+            visible++
+            child.getBoundsInScreen(rect)
+            if (rect.height() > tallest) tallest = rect.height()
+        }
+        return visible in 1..2 && tallest >= pagerHeight * 0.85f
     }
 }

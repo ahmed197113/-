@@ -8,11 +8,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
-/** Minimum daily swipe budget the recovery program converges to. */
-const val TARGET_BUDGET = 15
+/** Lowest daily budget the ladder ever asks for. */
+const val MIN_BUDGET = 15
 
 /** Maximum swipes that can be earned back per day by doing rescue activities. */
 const val MAX_EARN_PER_DAY = 30
@@ -20,8 +19,52 @@ const val MAX_EARN_PER_DAY = 30
 /** Cooling-off period before an emergency exit from strict mode takes effect. */
 const val UNLOCK_DELAY_MS = 24L * 60 * 60 * 1000
 
-/** Length of the recovery program in days. */
-const val PROGRAM_DAYS = 30
+/** Days the first (observation) stage lasts to measure the user's own baseline. */
+const val OBSERVE_DAYS = 3
+
+/** Budget used when the observation stage recorded nothing (e.g. the shield was off). */
+const val DEFAULT_BASELINE = 60
+
+/** How the shield reacts once today's budget is spent. */
+enum class Wall { NONE, NUDGE, SOFT, HARD }
+
+/**
+ * One rung of the recovery ladder. Restrictions grow only after the user succeeds at the
+ * current rung (graded exposure / shaping), never by the calendar alone.
+ */
+data class Stage(
+    val emoji: String,
+    val name: String,
+    val desc: String,
+    /** Share of the personal baseline allowed per day. */
+    val factor: Float,
+    /** Breathing wait before a session; 0 = no gate at all. */
+    val gateSec: Int,
+    val wall: Wall,
+    /** For a SOFT wall: wait before "continue" unlocks. */
+    val wallSec: Int,
+    /** Swipes between repeated nudges/soft walls once over budget. */
+    val nudgeEvery: Int,
+    val zombie: Boolean,
+    /** Session lengths offered at the gate, in minutes. */
+    val sessions: List<Int>,
+)
+
+val STAGES = listOf(
+    Stage("🔍", "المراقبة", "نقيس عادتك الحقيقية لأيام قليلة دون أي منع. مجرد رؤية العدّاد تقلل التمرير.", 1f, 0, Wall.NONE, 0, 0, false, listOf(10)),
+    Stage("🌱", "الوعي", "لحظة تنفّس قصيرة قبل الدخول. هدفك = متوسطك نفسه، وعند تجاوزه تذكير لطيف فقط.", 1f, 3, Wall.NUDGE, 0, 15, false, listOf(5, 10)),
+    Stage("🎯", "النيّة", "تختار مدة جلستك قبل الدخول. الهدف ينخفض 15٪، وتجاوزه يطلب منك 10 ثوانٍ تفكير.", 0.85f, 5, Wall.SOFT, 10, 10, true, listOf(3, 5)),
+    Stage("🧱", "الاحتكاك", "الهدف ينخفض إلى 70٪ من متوسطك. التجاوز ممكن لكنه أصعب قليلًا.", 0.7f, 8, Wall.SOFT, 20, 5, true, listOf(2, 5)),
+    Stage("🤝", "الالتزام", "وصلت هنا لأنك نجحت. الهدف 55٪، وعند انتهائه تكسب المزيد بنشاط حقيقي.", 0.55f, 10, Wall.HARD, 0, 0, true, listOf(2, 5)),
+    Stage("👑", "التحكّم", "أنت من يقود الآن. 40٪ من عادتك القديمة — حافظ عليها، فهذه هي الحرية.", 0.4f, 10, Wall.HARD, 0, 0, true, listOf(2, 5)),
+)
+
+/** Recovery pace: days spent on each rung before it can be passed. */
+enum class Pace(val days: Int, val label: String, val desc: String) {
+    GENTLE(7, "هادئ", "أسبوع لكل مرحلة — الأنسب لمن جرّب وانتكس من قبل"),
+    BALANCED(5, "متوازن", "5 أيام لكل مرحلة — موصى به"),
+    FAST(3, "سريع", "3 أيام لكل مرحلة — لمن لديه دافع قوي الآن"),
+}
 
 data class Habit(
     val id: String,
@@ -50,22 +93,30 @@ data class DayStat(
     val earned: Int = 0,
     val focusMin: Int = 0,
     val sessions: Int = 0,
-)
+    /** Budget that applied on that day (0 = no budget, observation stage). */
+    val budget: Int = 0,
+) {
+    val overBudget: Boolean get() = budget > 0 && swipes > budget + earned
+}
 
 data class AppData(
     val brain: Float = 60f,
     val habits: List<Habit> = defaultHabits(),
     val days: Map<String, DayStat> = emptyMap(),
-    val startBudget: Int = 60,
-    val programStart: String = LocalDate.now().toString(),
+    val stage: Int = 0,
+    val stageDays: Int = 0,
+    val stageGoodDays: Int = 0,
+    val baseline: Int = 0,
+    val pace: Pace = Pace.BALANCED,
+    /** Set when the user just climbed a rung, cleared once celebrated in the UI. */
+    val justLeveledUp: Boolean = false,
     val focusUntil: Long = 0L,
     val focusMinutes: Int = 0,
     val focusRewarded: Boolean = true,
-    val nightShield: Boolean = true,
+    val nightShield: Boolean = false,
     val nightStart: Int = 23,
     val nightEnd: Int = 6,
     val zombieCheck: Boolean = true,
-    val gateSeconds: Int = 6,
     val futureMsg: String = "أنا أقوى من خوارزمية صُمّمت لتسرق وقتي.",
     val lastDay: String = LocalDate.now().toString(),
     val onboarded: Boolean = false,
@@ -84,21 +135,24 @@ data class AppData(
 
     fun day(key: String): DayStat = days[key] ?: DayStat()
 
-    val programDay: Int
-        get() {
-            val start = runCatching { LocalDate.parse(programStart) }.getOrDefault(LocalDate.now())
-            return ChronoUnit.DAYS.between(start, LocalDate.now()).toInt().coerceAtLeast(0) + 1
-        }
+    val stageInfo: Stage get() = STAGES[stage.coerceIn(0, STAGES.lastIndex)]
 
-    /** Daily swipe allowance: shrinks linearly from [startBudget] to [TARGET_BUDGET] over the program. */
+    val observing: Boolean get() = stage == 0
+
+    /** Today's swipe budget from the personal baseline; 0 while observing (no limit). */
     val baseBudget: Int
         get() {
-            val floor = minOf(startBudget, TARGET_BUDGET)
-            val d = (programDay - 1).coerceIn(0, PROGRAM_DAYS)
-            return (startBudget - (startBudget - floor) * d / PROGRAM_DAYS).coerceAtLeast(floor)
+            if (observing) return 0
+            val base = if (baseline > 0) baseline else DEFAULT_BASELINE
+            val floor = minOf(MIN_BUDGET, base)
+            return (base * stageInfo.factor).toInt().coerceAtLeast(floor)
         }
 
-    val remaining: Int get() = (baseBudget + today.earned - today.swipes).coerceAtLeast(0)
+    val totalBudget: Int get() = if (observing) 0 else baseBudget + today.earned
+
+    val remaining: Int get() = if (observing) Int.MAX_VALUE else (totalBudget - today.swipes).coerceAtLeast(0)
+
+    val overBudget: Boolean get() = !observing && today.swipes >= totalBudget
 
     val focusActive: Boolean get() = focusUntil > System.currentTimeMillis()
 
@@ -107,13 +161,16 @@ data class AppData(
         val h = LocalTime.now().hour
         return if (nightStart > nightEnd) h >= nightStart || h < nightEnd else h in nightStart until nightEnd
     }
+
+    /** Good days needed on the current rung to climb. */
+    val goodDaysNeeded: Int get() = (pace.days * 0.6f).let { kotlin.math.ceil(it).toInt() }
 }
 
 enum class BrainLevel(val label: String, val desc: String) {
     RADIANT("متوهّج", "وصلاتك العصبية في أقوى حالاتها. تركيز حاد وذهن صافٍ."),
     CLEAR("صافٍ", "عقل متوازن. استمر وستصل للتوهّج."),
     FOGGY("ضبابي", "بدأ الضباب الذهني. عادة واحدة أو نشاط بديل سيعيد الصفاء."),
-    ROTTING("يتعفّن", "التمرير اللانهائي يستنزف دماغك. حان وقت الصحوة."),
+    ROTTING("يتعفّن", "التمرير اللانهائي يستنزف دماغك. لا بأس — كل خطوة صغيرة تعيده."),
 }
 
 fun brainLevel(score: Float): BrainLevel = when {
@@ -162,25 +219,17 @@ object Store {
         if (::prefs.isInitialized) prefs.edit().putString(KEY, toJson(next)).apply()
     }
 
-    private fun AppData.withToday(f: (DayStat) -> DayStat) = copy(days = days + (todayKey to f(today)))
+    private fun AppData.withToday(f: (DayStat) -> DayStat) =
+        copy(days = days + (todayKey to f(today).copy(budget = baseBudget)))
 
     private fun AppData.brainBy(delta: Float) = copy(brain = (brain + delta).coerceIn(0f, 100f))
 
-    /** Day rollover and focus rewards. Safe to call often. */
+    /** Day rollover, ladder progress and focus rewards. Safe to call often. */
     fun tick() {
         val d = _state.value
-        val todayKey = LocalDate.now().toString()
-        if (d.lastDay != todayKey) {
-            update {
-                val y = it.day(it.lastDay)
-                val bonus = when {
-                    y.swipes <= it.baseBudget / 2 -> 5f
-                    y.swipes > it.baseBudget -> -3f
-                    else -> 1f
-                }
-                val cutoff = LocalDate.now().minusDays(90).toString()
-                it.brainBy(bonus).copy(lastDay = todayKey, days = it.days.filterKeys { k -> k >= cutoff })
-            }
+        val todayDate = LocalDate.now()
+        if (d.lastDay != todayDate.toString()) {
+            update { closeDays(it, todayDate) }
         }
         val now = System.currentTimeMillis()
         if (d.unlockRequestAt > 0 && (now >= d.unlockRequestAt + UNLOCK_DELAY_MS || d.strictUntil <= now)) {
@@ -195,7 +244,53 @@ object Store {
         }
     }
 
-    fun recordSwipe() = update { it.brainBy(-0.3f).withToday { s -> s.copy(swipes = s.swipes + 1) } }
+    /**
+     * Closes every finished day since [AppData.lastDay]. Each day either counts as "good"
+     * (within budget) or not; a rung is climbed after enough good days. Bad days never push
+     * the user back down — a slip is information, not failure.
+     */
+    private fun closeDays(start: AppData, today: LocalDate): AppData {
+        var a = start
+        var day = runCatching { LocalDate.parse(a.lastDay) }.getOrDefault(today)
+        var guard = 0
+        while (day.isBefore(today) && guard < 60) {
+            guard++
+            val s = a.day(day.toString())
+            if (a.observing) {
+                a = a.copy(stageDays = a.stageDays + 1)
+                if (a.stageDays >= OBSERVE_DAYS) {
+                    a = a.copy(baseline = computeBaseline(a, day), stage = 1, stageDays = 0, stageGoodDays = 0, justLeveledUp = true)
+                }
+            } else {
+                val good = !s.overBudget
+                a = a.brainBy(if (good) 3f else 0f)
+                    .copy(stageDays = a.stageDays + 1, stageGoodDays = a.stageGoodDays + if (good) 1 else 0)
+                if (a.stageDays >= a.pace.days) {
+                    a = if (a.stageGoodDays >= a.goodDaysNeeded && a.stage < STAGES.lastIndex) {
+                        a.copy(stage = a.stage + 1, stageDays = 0, stageGoodDays = 0, justLeveledUp = true)
+                    } else {
+                        // Repeat the rung (or stay at the top) — no punishment.
+                        a.copy(stageDays = 0, stageGoodDays = 0)
+                    }
+                }
+            }
+            day = day.plusDays(1)
+        }
+        val cutoff = today.minusDays(90).toString()
+        return a.copy(lastDay = today.toString(), days = a.days.filterKeys { k -> k >= cutoff })
+    }
+
+    private fun computeBaseline(a: AppData, lastObserved: LocalDate): Int {
+        val counts = (0 until OBSERVE_DAYS).map { a.day(lastObserved.minusDays(it.toLong()).toString()).swipes }
+        val avg = counts.sum() / OBSERVE_DAYS
+        return if (avg <= 0) DEFAULT_BASELINE else avg.coerceIn(MIN_BUDGET, 400)
+    }
+
+    /** Swipes within budget cost nothing — the budget is permission, not temptation. */
+    fun recordSwipe() = update {
+        val over = !it.observing && it.today.swipes >= it.totalBudget
+        it.brainBy(if (over) -0.5f else 0f).withToday { s -> s.copy(swipes = s.swipes + 1) }
+    }
 
     fun addShortsTime(sec: Int) = update { it.withToday { s -> s.copy(shortsSec = s.shortsSec + sec) } }
 
@@ -243,10 +338,21 @@ object Store {
         )
     }
 
-    fun cancelFocus() = update { it.copy(focusUntil = 0L, focusRewarded = true).brainBy(-1f) }
+    fun cancelFocus() = update { if (it.strictActive) it else it.copy(focusUntil = 0L, focusRewarded = true) }
 
-    fun setStartBudget(v: Int) = update { it.copy(startBudget = v) }
-    fun setGateSeconds(v: Int) = update { it.copy(gateSeconds = v) }
+    fun clearLevelUp() = update { it.copy(justLeveledUp = false) }
+
+    fun setPace(p: Pace) = update { if (it.strictActive && p.days > it.pace.days) it else it.copy(pace = p) }
+
+    /** Step down one rung when the current one feels too hard (self-compassion, not failure). */
+    fun stepDown() = update {
+        if (it.strictActive || it.stage <= 1) it else it.copy(stage = it.stage - 1, stageDays = 0, stageGoodDays = 0)
+    }
+
+    fun restartLadder() = update {
+        if (it.strictActive) it else it.copy(stage = 0, stageDays = 0, stageGoodDays = 0, baseline = 0)
+    }
+
     fun setNightShield(v: Boolean) = update { it.copy(nightShield = v) }
     fun setNightHours(start: Int, end: Int) = update { it.copy(nightStart = start, nightEnd = end) }
     fun setZombieCheck(v: Boolean) = update { it.copy(zombieCheck = v) }
@@ -258,20 +364,18 @@ object Store {
     fun requestUnlock() = update { if (it.strictActive) it.copy(unlockRequestAt = System.currentTimeMillis()) else it }
     fun cancelUnlock() = update { it.copy(unlockRequestAt = 0L) }
 
-    fun finishOnboarding(budget: Int, gate: Int, msg: String, strictDays: Int) = update {
-        val base = it.copy(
+    fun finishOnboarding(pace: Pace, msg: String, nightShield: Boolean) = update {
+        it.copy(
             onboarded = true,
-            startBudget = budget,
-            gateSeconds = gate,
+            pace = pace,
+            nightShield = nightShield,
             futureMsg = msg.ifBlank { it.futureMsg },
-            programStart = LocalDate.now().toString(),
+            stage = 0,
+            stageDays = 0,
+            stageGoodDays = 0,
+            baseline = 0,
         )
-        if (strictDays > 0) {
-            base.copy(strictUntil = System.currentTimeMillis() + strictDays * 24L * 60 * 60 * 1000, unlockRequestAt = 0L)
-        } else base
     }
-
-    fun restartProgram() = update { it.copy(programStart = LocalDate.now().toString()) }
 
     // ---------- JSON ----------
 
@@ -298,11 +402,16 @@ object Store {
                     put("earn", v.earned)
                     put("focus", v.focusMin)
                     put("ses", v.sessions)
+                    put("bud", v.budget)
                 })
             }
         })
-        o.put("startBudget", d.startBudget)
-        o.put("programStart", d.programStart)
+        o.put("stage", d.stage)
+        o.put("stageDays", d.stageDays)
+        o.put("stageGoodDays", d.stageGoodDays)
+        o.put("baseline", d.baseline)
+        o.put("pace", d.pace.name)
+        o.put("justLeveledUp", d.justLeveledUp)
         o.put("focusUntil", d.focusUntil)
         o.put("focusMinutes", d.focusMinutes)
         o.put("focusRewarded", d.focusRewarded)
@@ -310,7 +419,6 @@ object Store {
         o.put("nightStart", d.nightStart)
         o.put("nightEnd", d.nightEnd)
         o.put("zombieCheck", d.zombieCheck)
-        o.put("gateSeconds", d.gateSeconds)
         o.put("futureMsg", d.futureMsg)
         o.put("lastDay", d.lastDay)
         o.put("onboarded", d.onboarded)
@@ -346,6 +454,7 @@ object Store {
                     earned = v.optInt("earn"),
                     focusMin = v.optInt("focus"),
                     sessions = v.optInt("ses"),
+                    budget = v.optInt("bud"),
                 )
             }
         }
@@ -353,8 +462,12 @@ object Store {
             brain = o.optDouble("brain", def.brain.toDouble()).toFloat(),
             habits = habits,
             days = days,
-            startBudget = o.optInt("startBudget", def.startBudget),
-            programStart = o.optString("programStart", def.programStart),
+            stage = o.optInt("stage", 0).coerceIn(0, STAGES.lastIndex),
+            stageDays = o.optInt("stageDays", 0),
+            stageGoodDays = o.optInt("stageGoodDays", 0),
+            baseline = o.optInt("baseline", 0),
+            pace = runCatching { Pace.valueOf(o.optString("pace", def.pace.name)) }.getOrDefault(def.pace),
+            justLeveledUp = o.optBoolean("justLeveledUp", false),
             focusUntil = o.optLong("focusUntil", 0L),
             focusMinutes = o.optInt("focusMinutes", 0),
             focusRewarded = o.optBoolean("focusRewarded", true),
@@ -362,7 +475,6 @@ object Store {
             nightStart = o.optInt("nightStart", def.nightStart),
             nightEnd = o.optInt("nightEnd", def.nightEnd),
             zombieCheck = o.optBoolean("zombieCheck", def.zombieCheck),
-            gateSeconds = o.optInt("gateSeconds", def.gateSeconds),
             futureMsg = o.optString("futureMsg", def.futureMsg),
             lastDay = o.optString("lastDay", def.lastDay),
             onboarded = o.optBoolean("onboarded", false),

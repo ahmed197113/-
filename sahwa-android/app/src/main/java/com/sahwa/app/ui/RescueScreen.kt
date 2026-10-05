@@ -54,7 +54,7 @@ import com.sahwa.app.data.MAX_EARN_PER_DAY
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
-enum class RescueKind { BREATH, PUSHUPS, GRATITUDE, EYES, MEMORY, READ, WALK, TIDY }
+enum class RescueKind { URGE, BREATH, PUSHUPS, GRATITUDE, EYES, MEMORY, READ, WALK, TIDY }
 
 data class Rescue(
     val kind: RescueKind,
@@ -67,6 +67,7 @@ data class Rescue(
 )
 
 val RESCUES = listOf(
+    Rescue(RescueKind.URGE, "🌊", "اركب موجة الرغبة", "90 ثانية تراقب الرغبة حتى تهدأ", C.Cyan, points = 5f, credits = 5),
     Rescue(RescueKind.BREATH, "🌬️", "تنفّس 4-7-8", "دقيقة تهدّئ الجهاز العصبي", C.Cyan),
     Rescue(RescueKind.MEMORY, "🧩", "تحدّي الذاكرة", "درّب ذاكرتك العاملة", C.Violet, points = 5f),
     Rescue(RescueKind.PUSHUPS, "💪", "10 تمارين ضغط", "دوبامين حقيقي من الحركة", C.Pink, points = 5f),
@@ -136,6 +137,7 @@ fun RescueRunner(rescue: Rescue, onDone: () -> Unit, onClose: () -> Unit) {
             }
             Spacer(Modifier.height(24.dp))
             when (rescue.kind) {
+                RescueKind.URGE -> UrgeSurf(onDone)
                 RescueKind.BREATH -> Breathing(onDone)
                 RescueKind.PUSHUPS -> Counter(10, "اضغط الدائرة بعد كل تمرين", rescue.color, onDone)
                 RescueKind.GRATITUDE -> Gratitude(onDone)
@@ -317,5 +319,95 @@ private fun MemoryGame(onDone: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = C.Violet, contentColor = Color.Black),
         ) { Text("تحقّق", fontWeight = FontWeight.Bold) }
         if (msg.isNotEmpty()) Text(msg, color = C.Muted, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+private val URGE_PROMPTS = listOf(
+    "لاحظ الرغبة دون أن تطيعها. أين تشعر بها في جسمك؟",
+    "تنفّس ببطء. الرغبة موجة — ارتفعت، وستنخفض وحدها.",
+    "سمِّها: «هذه رغبة في الهروب من الملل» — التسمية تضعفها.",
+    "لاحظ أنها تتغير. هل هي أقوى أم أضعف من البداية؟",
+    "أنت الشاطئ، والرغبة موجة تمر. لا تحتاج أن تفعل شيئًا.",
+    "ابقَ هنا قليلًا. الدماغ يتعلّم الآن أن الرغبة تمر دون استجابة.",
+)
+
+/** Urge surfing (mindfulness-based relapse prevention): rate, observe for 90s, rate again. */
+@Composable
+private fun UrgeSurf(onDone: () -> Unit) {
+    var before by remember { mutableIntStateOf(0) }
+    var after by remember { mutableIntStateOf(0) }
+    var phase by remember { mutableIntStateOf(0) } // 0 rate, 1 surf, 2 rate again, 3 result
+    var left by remember { mutableIntStateOf(90) }
+
+    LaunchedEffect(phase) {
+        if (phase == 1) {
+            left = 90
+            while (left > 0) {
+                delay(1000)
+                left--
+            }
+            phase = 2
+        }
+    }
+
+    when (phase) {
+        0, 2 -> {
+            Text(
+                if (phase == 0) "كم قوة رغبتك في فتح المقاطع الآن؟" else "والآن، كم قوتها؟",
+                color = C.Text, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(16.dp))
+            (1..10).chunked(5).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+                    row.forEach { n ->
+                        Box(
+                            Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .background(C.Cyan.copy(alpha = 0.08f + n * 0.06f))
+                                .clickable {
+                                    if (phase == 0) {
+                                        before = n
+                                        phase = 1
+                                    } else {
+                                        after = n
+                                        phase = 3
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) { Text("$n", color = C.Text, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
+            Text("1 = ضعيفة جدًا • 10 = لا تقاوَم", color = C.Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        }
+        1 -> {
+            val prompt = URGE_PROMPTS[((90 - left) / 15).coerceIn(0, URGE_PROMPTS.lastIndex)]
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    progress = { 1f - left / 90f },
+                    modifier = Modifier.size(220.dp),
+                    color = C.Cyan,
+                    strokeWidth = 10.dp,
+                    trackColor = C.Panel2,
+                )
+                Text("🌊 $left", color = C.Text, fontSize = 40.sp, fontWeight = FontWeight.Black)
+            }
+            Spacer(Modifier.height(24.dp))
+            Text(prompt, color = C.Text, fontSize = 17.sp, textAlign = TextAlign.Center)
+        }
+        else -> {
+            val drop = before - after
+            Text(
+                if (drop > 0) "انخفضت رغبتك من $before إلى $after 🎉" else "رغبتك $before ← $after",
+                color = C.Green, fontSize = 22.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
+            )
+            Text(
+                if (drop > 0) "هذا هو الدليل: الرغبة تمر وحدها. كل مرة تركبها، تصبح الموجة القادمة أضعف."
+                else "لا بأس — أحيانًا تحتاج الموجة وقتًا أطول. مجرد ملاحظتها تمرين يقوّي دماغك.",
+                color = C.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 16.dp),
+            )
+            DoneButton(true, C.Cyan, onDone)
+        }
     }
 }

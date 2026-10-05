@@ -24,6 +24,7 @@ import android.widget.TextView
 import com.sahwa.app.MainActivity
 import com.sahwa.app.data.AppData
 import com.sahwa.app.data.Store
+import com.sahwa.app.data.Wall
 
 /**
  * The "Sahwa shield". Watches only for short-video feeds and interrupts the autopilot:
@@ -49,6 +50,8 @@ class GuardService : AccessibilityService() {
     private val swipeTimes = ArrayDeque<Long>()
     private var allowedUntil = 0L
     private var zombieSnoozeUntil = 0L
+    private var wallSkipDay = ""
+    private var wallSkipUntil = 0
 
     private var overlay: View? = null
     private var hud: TextView? = null
@@ -135,9 +138,17 @@ class GuardService : AccessibilityService() {
         val reason = blockReason(d)
         when {
             reason != null -> showBlock(reason.first, reason.second)
+            d.overBudget && wallDue(d) -> showWall()
+            d.stageInfo.gateSec == 0 -> showHud() // observation stage: just the mirror
             System.currentTimeMillis() < allowedUntil -> showHud()
             else -> showGate()
         }
+    }
+
+    /** Whether the (soft) over-budget wall should appear now; continuing postpones it a few swipes. */
+    private fun wallDue(d: AppData): Boolean {
+        if (d.stageInfo.wall == Wall.NONE || d.stageInfo.wall == Wall.HARD) return false
+        return wallSkipDay != d.todayKey || d.today.swipes >= wallSkipUntil
     }
 
     private fun leaveShorts() {
@@ -187,11 +198,17 @@ class GuardService : AccessibilityService() {
         while (swipeTimes.isNotEmpty() && now - swipeTimes.first() > 60_000) swipeTimes.removeFirst()
 
         val d = Store.state.value
-        if (d.remaining <= 0) {
-            showBlock("نفد رصيد التمرير اليوم", "استهلكت ميزانيتك (${d.baseBudget + d.today.earned} تمريرة). يمكنك كسب رصيد إضافي بنشاط بديل حقيقي.")
-            return
+        if (d.overBudget) {
+            if (d.stageInfo.wall == Wall.HARD) {
+                showBlock("وصلت لهدف اليوم 🎯", "استخدمت ${d.totalBudget} مقطعًا — هدف مرحلة «${d.stageInfo.name}». اكسب المزيد بنشاط حقيقي أو عُد غدًا.")
+                return
+            }
+            if (wallDue(d)) {
+                showWall()
+                return
+            }
         }
-        if (d.zombieCheck && swipeTimes.size >= 12 && now > zombieSnoozeUntil) {
+        if (d.zombieCheck && d.stageInfo.zombie && swipeTimes.size >= 12 && now > zombieSnoozeUntil) {
             showZombie(swipeTimes.size)
             return
         }
@@ -214,6 +231,8 @@ class GuardService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (reason != null) {
             showBlock(reason.first, reason.second)
+        } else if (d.stageInfo.gateSec == 0) {
+            if (hud == null) showHud() else updateHud()
         } else if (allowedUntil in 1..now) {
             allowedUntil = 0L
             showSessionEnd()
@@ -227,7 +246,8 @@ class GuardService : AccessibilityService() {
     private fun blockReason(d: AppData): Pair<String, String>? = when {
         d.focusActive -> "وضع التركيز مفعّل" to "أنت في جلسة تركيز عميق. المقاطع القصيرة مغلقة حتى تنتهي. عقلك يبني شيئًا الآن."
         d.nightActive() -> "درع الليل 🌙" to "المقاطع القصيرة مغلقة من ${d.nightStart}:00 حتى ${d.nightEnd}:00. نومك أثمن من أي فيديو."
-        d.remaining <= 0 -> "نفد رصيد التمرير اليوم" to "استهلكت ميزانيتك اليومية. يمكنك كسب رصيد إضافي بنشاط بديل حقيقي."
+        d.overBudget && d.stageInfo.wall == Wall.HARD ->
+            "وصلت لهدف اليوم 🎯" to "استخدمت ${d.totalBudget} مقطعًا — هدف مرحلة «${d.stageInfo.name}». اكسب المزيد بنشاط حقيقي أو عُد غدًا."
         else -> null
     }
 
@@ -262,7 +282,9 @@ class GuardService : AccessibilityService() {
     private fun showGate() {
         removeOverlay()
         val d = Store.state.value
-        val wait = (d.gateSeconds + d.today.sessions * 3).coerceAtMost(30)
+        val st = d.stageInfo
+        // Escalating wait only from the friction stage on; earlier stages stay light.
+        val wait = if (d.stage >= 3) (st.gateSec + d.today.sessions * 2).coerceAtMost(20) else st.gateSec
         val p = panel()
         p.addView(text("🧠 لحظة وعي", 28f, WHITE, bold = true))
         p.addView(text("أنت على وشك دخول المقاطع القصيرة. توقّف وتنفّس.", 15f, MUTED))
@@ -304,17 +326,18 @@ class GuardService : AccessibilityService() {
         p.addView(text("— رسالة من نفسك المستقبلية", 12f, MUTED))
         p.addView(
             text(
-                "تمريرات اليوم: ${d.today.swipes}   •   رصيدك: ${d.remaining}\n" +
-                    "هذه جلستك رقم ${d.today.sessions + 1} اليوم — الانتظار يطول مع كل جلسة",
+                "مقاطع اليوم: ${d.today.swipes} من هدف ${d.totalBudget}   •   مرحلة ${st.emoji} ${st.name}\n" +
+                    "هذه جلستك رقم ${d.today.sessions + 1} اليوم",
                 13f, MUTED,
             ).apply { setPadding(0, dp(16), 0, dp(4)) }
         )
         val counter = text("انتظر $wait ث…", 14f, AMBER, bold = true)
         p.addView(counter)
 
-        val b2 = button("🎯 دقيقتان بنيّة واضحة", primary = true) { startSession(2) }
-        val b5 = button("⏳ 5 دقائق", primary = false) { startSession(5) }
-        listOf(b2, b5).forEach {
+        val sessionButtons = st.sessions.mapIndexed { i, m ->
+            button(if (i == 0) "🎯 $m دقائق بنيّة واضحة" else "⏳ $m دقائق", primary = i == 0) { startSession(m) }
+        }
+        sessionButtons.forEach {
             it.isEnabled = false
             it.alpha = 0.3f
             p.addView(it)
@@ -334,7 +357,7 @@ class GuardService : AccessibilityService() {
                 left--
                 if (left <= 0) {
                     counter.text = "اختر بوعي، لا بعادة."
-                    listOf(b2, b5).forEach { it.isEnabled = true; it.alpha = 1f }
+                    sessionButtons.forEach { it.isEnabled = true; it.alpha = 1f }
                 } else {
                     counter.text = "انتظر $left ث…"
                     handler.postDelayed(this, 1000)
@@ -421,6 +444,62 @@ class GuardService : AccessibilityService() {
             goHome()
         })
         p.addView(button("⚡ نشاط بديل", primary = false) { goToRescue() })
+        p.addView(button("🔁 جلسة أخرى", primary = false) { showGate() })
+        showOverlay(p)
+    }
+
+    /**
+     * Over-budget wall for the gentle stages: a nudge (continue right away) or a soft wall
+     * (continue after a short pause). Never a lock — autonomy keeps people in the program.
+     */
+    private fun showWall() {
+        removeOverlay()
+        hideHud()
+        val d = Store.state.value
+        val st = d.stageInfo
+        val p = panel()
+        p.addView(text("🌊", 60f, WHITE))
+        p.addView(text("تجاوزت هدف اليوم", 26f, WHITE, bold = true))
+        p.addView(
+            text(
+                "هدفك ${d.totalBudget} مقطعًا وأنت الآن عند ${d.today.swipes}.\n" +
+                    "لا بأس — الملاحظة نفسها تقدّم. الرغبة موجة تعلو ثم تهدأ خلال دقائق.",
+                16f, MUTED,
+            ).apply { setPadding(0, dp(10), 0, dp(10)) }
+        )
+        p.addView(text("🔁 القاعدة الذهبية: لا تتجاوز الهدف يومين متتاليين.", 14f, AMBER, bold = true))
+        p.addView(button("🌊 اركب الموجة — نشاط 90 ثانية", primary = true) { goToRescue() })
+        p.addView(button("🏠 أكتفي اليوم (+2 🧠)", primary = false) {
+            Store.recordResisted()
+            goHome()
+        })
+        val cont = button("متابعة بوعي", primary = false) {
+            wallSkipDay = d.todayKey
+            wallSkipUntil = Store.state.value.today.swipes + st.nudgeEvery.coerceAtLeast(1)
+            removeOverlay()
+            if (st.gateSec > 0 && System.currentTimeMillis() >= allowedUntil) showGate() else showHud()
+        }
+        p.addView(cont)
+        if (st.wall == Wall.SOFT && st.wallSec > 0) {
+            cont.isEnabled = false
+            cont.alpha = 0.3f
+            var left = st.wallSec
+            val r = object : Runnable {
+                override fun run() {
+                    if (left <= 0) {
+                        cont.text = "متابعة بوعي"
+                        cont.isEnabled = true
+                        cont.alpha = 1f
+                    } else {
+                        cont.text = "متابعة بعد $left ث"
+                        left--
+                        handler.postDelayed(this, 1000)
+                    }
+                }
+            }
+            overlayRunnables += r
+            handler.post(r)
+        }
         showOverlay(p)
     }
 
@@ -499,10 +578,16 @@ class GuardService : AccessibilityService() {
     private fun updateHud() {
         val tv = hud ?: return
         val d = Store.state.value
+        if (d.observing) {
+            // Observation stage: a neutral mirror, no limits.
+            tv.text = "🔍 ${d.today.swipes} مقطع اليوم   ⏱ ${d.today.shortsSec / 60} د"
+            return
+        }
         val leftMs = (allowedUntil - System.currentTimeMillis()).coerceAtLeast(0)
         val m = leftMs / 60_000
         val s = (leftMs / 1000) % 60
-        tv.text = "🧠 ${d.brain.toInt()}   ⚡ ${d.remaining}   ⏱ $m:${s.toString().padStart(2, '0')}"
+        val goal = "${d.today.swipes}/${d.totalBudget}"
+        tv.text = "🧠 ${d.brain.toInt()}   🎯 $goal   ⏱ $m:${s.toString().padStart(2, '0')}"
     }
 
     private fun hideHud() {

@@ -9,6 +9,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,7 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sahwa.app.data.AppData
 import com.sahwa.app.data.BrainLevel
-import com.sahwa.app.data.PROGRAM_DAYS
+import com.sahwa.app.data.OBSERVE_DAYS
+import com.sahwa.app.data.STAGES
 import com.sahwa.app.data.Store
 import com.sahwa.app.data.brainLevel
 import kotlin.math.PI
@@ -76,11 +79,13 @@ fun HomeScreen(d: AppData, now: Long, onOpenTab: (Tab) -> Unit) {
         item { BrainCard(d) }
         if (!guardOn) item { GuardCta() }
         if (stalled) item { GuardStalledCard() }
+        if (d.justLeveledUp) item { LevelUpCard(d) }
+        item { LadderCard(d) }
+        item { BudgetCard(d, onOpenTab) }
         item { RulesStrip(d, now) }
-        item { BudgetCard(d) }
         item { FocusCard(d, now) }
         item { TodayRow(d) }
-        item { ProgramCard(d, onOpenTab) }
+        item { ScienceCard() }
     }
 }
 
@@ -219,7 +224,10 @@ private fun RulesStrip(d: AppData, now: Long) {
         } else if (d.nightShield) {
             add("🌙 درع الليل يبدأ الساعة %02d:00".format(d.nightStart) to C.Muted)
         }
-        if (d.remaining <= 0) add("⚡ نفد رصيد اليوم — اكسب المزيد من «بدائل»" to C.Red)
+        val yesterday = d.day(java.time.LocalDate.now().minusDays(1).toString())
+        if (yesterday.overBudget && !d.overBudget) {
+            add("🔁 أمس تجاوزت هدفك — لا بأس. القاعدة: لا تتجاوزه يومين متتاليين" to C.Amber)
+        }
         if (d.strictActive) add("🔒 الوضع الصارم مفعّل" to C.Red)
     }
     if (rules.isEmpty()) return
@@ -254,21 +262,33 @@ private fun GuardStalledCard() {
 }
 
 @Composable
-private fun BudgetCard(d: AppData) {
-    val total = d.baseBudget + d.today.earned
-    val frac = if (total == 0) 0f else d.remaining / total.toFloat()
+private fun BudgetCard(d: AppData, onOpenTab: (Tab) -> Unit) {
+    if (d.observing) {
+        GlowCard(accent = C.Cyan) {
+            SectionTitle("🔍 مرآة اليوم")
+            Text(
+                "${d.today.swipes} مقطعًا • ${formatDuration(d.today.shortsSec.toLong())}",
+                color = C.Cyan, fontSize = 28.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 6.dp),
+            )
+            Text("لا حدود الآن — فقط لاحظ. سنبني هدفك على أرقامك الحقيقية.", color = C.Muted, fontSize = 12.sp)
+        }
+        return
+    }
+    val total = d.totalBudget
+    val used = d.today.swipes
+    val frac = if (total == 0) 0f else (used / total.toFloat()).coerceIn(0f, 1f)
     val color = when {
-        frac > 0.5f -> C.Cyan
-        frac > 0.2f -> C.Amber
+        frac < 0.6f -> C.Cyan
+        frac < 1f -> C.Amber
         else -> C.Red
     }
     GlowCard(accent = color) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                SectionTitle("⚡ محفظة الدوبامين")
-                Text("رصيد التمرير في المقاطع القصيرة اليوم", color = C.Muted, fontSize = 13.sp)
+                SectionTitle("🎯 هدف اليوم")
+                Text("مقاطع قصيرة — مبني على متوسطك (${d.baseline})", color = C.Muted, fontSize = 13.sp)
             }
-            Text("${d.remaining}", color = color, fontSize = 36.sp, fontWeight = FontWeight.Black)
+            Text("$used", color = color, fontSize = 36.sp, fontWeight = FontWeight.Black)
             Text(" / $total", color = C.Muted, fontSize = 16.sp)
         }
         Spacer(Modifier.height(10.dp))
@@ -280,11 +300,101 @@ private fun BudgetCard(d: AppData) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "استهلكت ${d.today.swipes} تمريرة • كسبت +${d.today.earned} من الأنشطة البديلة",
+            if (d.overBudget) "تجاوزت الهدف — لا بأس. نشاط بديل واحد يعيد لك التوازن (+5)."
+            else "متبقٍ ${d.remaining} • كسبت +${d.today.earned} من الأنشطة البديلة",
             color = C.Muted, fontSize = 12.sp,
         )
+        if (d.overBudget) {
+            OutlinedButton(onClick = { onOpenTab(Tab.RESCUE) }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                Text("⚡ نشاط بديل")
+            }
+        }
     }
 }
+
+/** The recovery ladder: where the user is and what it takes to climb. */
+@Composable
+private fun LadderCard(d: AppData) {
+    val st = d.stageInfo
+    GlowCard(accent = C.Green) {
+        SectionTitle("🪜 سلّم التعافي")
+        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            STAGES.forEachIndexed { i, s ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when {
+                                    i < d.stage -> C.Green
+                                    i == d.stage -> C.Green.copy(alpha = 0.3f)
+                                    else -> C.Panel2
+                                },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(if (i < d.stage) "✓" else s.emoji, fontSize = 15.sp, color = Color.Black) }
+                    Text(s.name, color = if (i == d.stage) C.Green else C.Muted, fontSize = 10.sp, maxLines = 1)
+                }
+            }
+        }
+        Text("${st.emoji} مرحلة ${st.name}", color = C.Text, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(st.desc, color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+        val progress = if (d.observing) {
+            "يوم ${(d.stageDays + 1).coerceAtMost(OBSERVE_DAYS)} من $OBSERVE_DAYS"
+        } else if (d.stage == STAGES.lastIndex) {
+            "القمة 👑 — حافظ على هدفك. أيام ناجحة هذه الدورة: ${d.stageGoodDays}"
+        } else {
+            "أيام ناجحة: ${d.stageGoodDays} من ${d.goodDaysNeeded} مطلوبة • اليوم ${d.stageDays + 1} من ${d.pace.days}"
+        }
+        Text(progress, color = C.Green, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+@Composable
+private fun LevelUpCard(d: AppData) {
+    val st = d.stageInfo
+    GlowCard(accent = C.Amber) {
+        Text("🎉 صعدت درجة!", color = C.Amber, fontSize = 22.sp, fontWeight = FontWeight.Black)
+        Text(
+            if (d.stage == 1) "انتهت المراقبة. متوسطك ${d.baseline} مقطعًا يوميًا — ومن هنا نبدأ معًا، خطوة خطوة."
+            else "نجحت في المرحلة السابقة، فانتقلت إلى «${st.name}». دماغك يتعلم أنه يستطيع.",
+            color = C.Muted, fontSize = 14.sp, modifier = Modifier.padding(vertical = 8.dp),
+        )
+        Button(
+            onClick = { Store.clearLevelUp() },
+            colors = ButtonDefaults.buttonColors(containerColor = C.Amber, contentColor = Color.Black),
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("هيا بنا ${st.emoji}", fontWeight = FontWeight.Bold) }
+    }
+}
+
+/** Short, honest explanation of the principles behind the design. */
+@Composable
+private fun ScienceCard() {
+    var open by remember { mutableStateOf(false) }
+    GlowCard(accent = C.Indigo, modifier = Modifier.clip(RoundedCornerShape(24.dp)).clickable { open = !open }) {
+        SectionTitle("🔬 لماذا يعمل صحوة؟ ${if (open) "▲" else "▼"}")
+        if (open) {
+            SCIENCE.forEach { (title, body) ->
+                Text(title, color = C.Indigo, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 10.dp))
+                Text(body, color = C.Muted, fontSize = 13.sp)
+            }
+        } else {
+            Text("المبادئ النفسية وراء التصميم", color = C.Muted, fontSize = 12.sp)
+        }
+    }
+}
+
+private val SCIENCE = listOf(
+    "التدرّج بدل الحرمان" to "المنع المفاجئ يولّد «مقاومة نفسية» (Reactance) فيترك الناس التطبيق. لذلك نبدأ بالمراقبة ثم نشدد فقط بعد نجاحك — مثل بناء العضلة.",
+    "الاحتكاك لا المنع" to "«العادات الذرية» لجيمس كلير: اجعل العادة السيئة صعبة. ثوانٍ قليلة من التوقف تكسر الطيار الآلي دون أن تحرمك.",
+    "النيّة قبل الفعل" to "أبحاث «نوايا التنفيذ» (Gollwitzer): من يحدد مسبقًا متى وكم، يلتزم أكثر بكثير. لذلك تختار مدة جلستك قبل الدخول.",
+    "ركوب الموجة" to "الرغبة تعلو ثم تهدأ خلال دقائق إذا راقبتها دون أن تطيعها (Urge Surfing — برامج منع الانتكاس، وكتاب «Indistractable» لنير إيال).",
+    "استبدال لا حذف" to "«أمة الدوبامين» لآنا ليمبكي: الدماغ يحتاج مصادر متعة صحية. الأنشطة البديلة تكسبك رصيدًا وتعيد التوازن.",
+    "الرحمة بالنفس" to "الانتكاسة الصغيرة لا تُعاقب. جلد الذات يقود لانتكاسة أكبر (أثر «خرق الامتناع»). القاعدة فقط: لا تتجاوز يومين متتاليين.",
+    "ابدأ صغيرًا واحتفل" to "«العادات الصغيرة» لـ BJ Fogg: النجاح الصغير المتكرر والاحتفال به هو ما يرسّخ العادة.",
+)
 
 @Composable
 private fun FocusCard(d: AppData, now: Long) {
@@ -303,7 +413,7 @@ private fun FocusCard(d: AppData, now: Long) {
             )
             if (!d.strictActive) {
                 OutlinedButton(onClick = { Store.cancelFocus() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    Text("إنهاء مبكر (-1 🧠)", color = C.Muted)
+                    Text("إنهاء مبكر", color = C.Muted)
                 }
             }
         } else {
@@ -336,35 +446,5 @@ fun MiniStat(icon: String, value: String, label: String, color: Color, modifier:
         Text(icon, fontSize = 20.sp)
         Text(value, color = color, fontSize = 20.sp, fontWeight = FontWeight.Black)
         Text(label, color = C.Muted, fontSize = 11.sp)
-    }
-}
-
-@Composable
-private fun ProgramCard(d: AppData, onOpenTab: (Tab) -> Unit) {
-    val day = d.programDay.coerceAtMost(PROGRAM_DAYS)
-    GlowCard(accent = C.Green) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                SectionTitle("🌱 برنامج التعافي")
-                Text("اليوم $day من $PROGRAM_DAYS — ميزانيتك تنخفض تدريجيًا حتى يعتاد دماغك", color = C.Muted, fontSize = 13.sp)
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            repeat(PROGRAM_DAYS) { i ->
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(if (i < day) C.Green else C.Panel2),
-                )
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { onOpenTab(Tab.HABITS) }, modifier = Modifier.weight(1f)) { Text("🌱 عاداتي") }
-            OutlinedButton(onClick = { onOpenTab(Tab.RESCUE) }, modifier = Modifier.weight(1f)) { Text("⚡ نشاط بديل") }
-        }
     }
 }

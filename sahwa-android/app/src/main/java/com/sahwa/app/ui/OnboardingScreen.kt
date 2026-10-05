@@ -38,29 +38,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sahwa.app.data.Pace
 import com.sahwa.app.data.Store
 
-private data class Plan(
-    val emoji: String,
-    val name: String,
-    val desc: String,
-    val budget: Int,
-    val gate: Int,
-    val strictDays: Int,
-    val color: Color,
-)
+private data class PlanStyle(val emoji: String, val color: Color)
 
-private val PLANS = listOf(
-    Plan("🌤️", "خفيف", "100 تمريرة يوميًا تقل تدريجيًا • بوابة 5 ثوانٍ", 100, 5, 0, C.Green),
-    Plan("⚖️", "متوازن", "60 تمريرة يوميًا تقل حتى 15 • بوابة 8 ثوانٍ", 60, 8, 0, C.Cyan),
-    Plan("🔥", "جذري", "30 تمريرة فقط • بوابة 15 ثانية • وضع صارم 7 أيام لا يمكن تخفيفه", 30, 15, 7, C.Red),
+private val PACE_STYLE = mapOf(
+    Pace.GENTLE to PlanStyle("🌤️", C.Green),
+    Pace.BALANCED to PlanStyle("⚖️", C.Cyan),
+    Pace.FAST to PlanStyle("🚀", C.Amber),
 )
 
 @Composable
 fun OnboardingScreen(now: Long) {
     val ctx = LocalContext.current
     var step by remember { mutableIntStateOf(0) }
-    var plan by remember { mutableIntStateOf(1) }
+    var plan by remember { mutableStateOf(Pace.BALANCED) }
+    var night by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf("أنا أقوى من خوارزمية صُمّمت لتسرق وقتي.") }
     val guardOn = remember(now / 2000) { isGuardEnabled(ctx) }
 
@@ -92,37 +86,53 @@ fun OnboardingScreen(now: Long) {
                         color = C.Muted, fontSize = 16.sp, textAlign = TextAlign.Center,
                         modifier = Modifier.padding(vertical = 16.dp),
                     )
-                    Bullet("🌬️", "قبل كل دخول للمقاطع: لحظة تنفّس ونيّة واضحة")
-                    Bullet("⚡", "رصيد يومي للتمرير يقل تدريجيًا خلال 30 يومًا")
+                    Bullet("🔍", "أول 3 أيام: نراقب فقط، بلا أي منع")
+                    Bullet("🪜", "ثم سلّم من 5 مراحل — لا تصعد إلا بعد أن تنجح")
+                    Bullet("🌬️", "لحظة تنفّس ونيّة قبل الدخول بدل المنع المفاجئ")
                     Bullet("💪", "أنشطة حقيقية بدل التمرير تكسبك رصيدًا")
-                    Bullet("🧠", "دماغ حيّ يتوهج أو يتعفّن حسب اختياراتك")
                     Spacer(Modifier.height(24.dp))
                     PrimaryButton("ابدأ رحلة الصحوة") { step = 1 }
                 }
                 1 -> {
-                    StepTitle("اختر قوة العلاج", "يمكنك تشديده لاحقًا في أي وقت")
-                    PLANS.forEachIndexed { i, p ->
-                        val selected = plan == i
+                    StepTitle("اختر سرعتك", "لا يوجد منع مفاجئ. كل مرحلة تشدد قليلًا — وفقط بعد نجاحك فيما قبلها")
+                    Pace.entries.forEach { p ->
+                        val selected = plan == p
+                        val style = PACE_STYLE.getValue(p)
                         Column(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp)
                                 .clip(RoundedCornerShape(22.dp))
-                                .background(if (selected) p.color.copy(alpha = 0.14f) else C.Panel)
-                                .border(if (selected) 2.dp else 1.dp, if (selected) p.color else C.Panel2, RoundedCornerShape(22.dp))
-                                .clickable { plan = i }
+                                .background(if (selected) style.color.copy(alpha = 0.14f) else C.Panel)
+                                .border(if (selected) 2.dp else 1.dp, if (selected) style.color else C.Panel2, RoundedCornerShape(22.dp))
+                                .clickable { plan = p }
                                 .padding(18.dp),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(p.emoji, fontSize = 28.sp)
+                                Text(style.emoji, fontSize = 28.sp)
                                 Text(
-                                    "  ${p.name}", color = if (selected) p.color else C.Text,
+                                    "  ${p.label}", color = if (selected) style.color else C.Text,
                                     fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
                                 )
-                                if (i == 1) Text("موصى به", color = C.Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                             Text(p.desc, color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
                         }
+                    }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(C.Panel)
+                            .clickable { night = !night }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("🌙 درع الليل (اختياري)", color = C.Text, fontWeight = FontWeight.Bold)
+                            Text("إغلاق المقاطع من 11 مساءً حتى 6 صباحًا لحماية نومك", color = C.Muted, fontSize = 12.sp)
+                        }
+                        Text(if (night) "✅" else "⬜", fontSize = 22.sp)
                     }
                     Spacer(Modifier.height(20.dp))
                     PrimaryButton("التالي") { step = 2 }
@@ -162,8 +172,7 @@ fun OnboardingScreen(now: Long) {
                     }
                     Spacer(Modifier.height(12.dp))
                     PrimaryButton(if (guardOn) "انطلق 🚀" else "إنهاء (سأفعّله لاحقًا)", if (guardOn) C.Cyan else C.Panel2) {
-                        val p = PLANS[plan]
-                        Store.finishOnboarding(p.budget, p.gate, msg, p.strictDays)
+                        Store.finishOnboarding(plan, msg, night)
                     }
                 }
             }
