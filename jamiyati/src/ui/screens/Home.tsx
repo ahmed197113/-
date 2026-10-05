@@ -4,10 +4,12 @@ import { diffDays, todayISO } from '../../domain/dates';
 import { L } from '../../lib/i18n';
 import { date, money, relDays, num, freqLabel } from '../../lib/format';
 import { useDB } from '../../store/db';
-import { myCircles, type MyCircleCard } from '../../store/selectors';
+import { canConfirm, cycleSummary, myCircles, roleIn, type MyCircleCard } from '../../store/selectors';
+import * as A from '../../store/actions';
+import { focusCycle } from './CircleNow';
 import { Icon } from '../components/Icon';
 import { PaySheet } from '../components/sheets';
-import { Empty, Progress, StatusChip } from '../components/ui';
+import { attempt, Empty, Progress, StatusChip, toast, toastError } from '../components/ui';
 import { go } from '../router';
 import { Logo } from './Auth';
 
@@ -31,7 +33,16 @@ export function Home() {
 
   // مهام المنظم
   const staffCircles = new Set(cards.filter((c) => c.role !== 'member').map((c) => c.view.circle.id));
-  const pendingProofs = db.payments.filter((p) => staffCircles.has(p.circleId) && p.status === 'pending');
+  const tasks = cards
+    .filter((c) => staffCircles.has(c.view.circle.id) && c.view.circle.status === 'active')
+    .map((c) => {
+      const f = focusCycle(c.view, today);
+      const s = cycleSummary(c.view, f);
+      const late = c.view.rows.filter((r) => r.cells.some((x, i) => i < f && x.status === 'late')).length;
+      const payoutDue = s.share && today >= c.view.schedule[f].dueDate && !db.payouts.some((p) => p.circleId === c.view.circle.id && p.cycleIndex === f);
+      return { c, f, unpaid: c.view.rows.length - s.paid.length - s.pending.length, pending: s.pending.length, late, payoutDue };
+    })
+    .filter((t) => t.unpaid || t.pending || t.late || t.payoutDue);
   const swapsForMe = db.swaps.filter((s) => {
     if (s.status !== 'open') return false;
     const isOrg = cards.find((c) => c.view.circle.id === s.circleId)?.role === 'organizer';
@@ -40,6 +51,19 @@ export function Home() {
     return (isOrg && !s.approvals.organizer) || (isTo && !s.approvals.to);
   });
   const unconfirmedPayouts = db.payouts.filter((p) => !p.recipientConfirmedAt && db.members.find((m) => m.id === p.memberId)?.userId === me.id);
+
+  // "دفعت": ضغطة واحدة حين أملك صلاحية التسجيل (منظِّم أو متابعة شخصية)، وإلا نموذج رفع الإثبات
+  const payNext = (c: MyCircleCard) => {
+    const n = c.next!;
+    if (canConfirm(roleIn(db, c.view.circle.id, me.id))) {
+      try {
+        const id = A.quickPay(c.view.circle.id, c.member.id, n.cycle.index, n.remaining);
+        toast(L('✓ سُجّل قسطك', '✓ Recorded'), [{ label: L('تراجع', 'Undo'), run: () => attempt(() => A.undoPayment(id), L('تم التراجع', 'Undone')) }]);
+      } catch (e) {
+        toastError(e);
+      }
+    } else setPay({ circleId: c.view.circle.id, memberId: c.member.id, cycle: n.cycle.index });
+  };
 
   // الملخص المالي (يُجمع حسب العملة)
   const byCur = new Map<string, { paid: number; toReceive: number; monthly: number; remaining: number }>();
@@ -70,14 +94,14 @@ export function Home() {
             <Empty
               icon="users"
               title={L('لا توجد جمعيات بعد', 'No circles yet')}
-              text={L('أنشئ جمعيتك الأولى في أقل من دقيقة، أو انضم بكود دعوة من المنظِّم.', 'Create your first circle in under a minute, or join with an invite code.')}
+              text={L('اختر دورك لنبدأ — أقل من دقيقة.', 'Pick your role to start — under a minute.')}
               action={
                 <div className="stack" style={{ width: '100%' }}>
-                  <button className="btn block" onClick={() => go('/new')}>
-                    <Icon name="plus" /> {L('إنشاء جمعية', 'Create a circle')}
+                  <button className="btn block" onClick={() => go('/new?type=organized')}>
+                    👑 {L('أنا المنظِّم — إنشاء جمعية', "I'm the organizer — create")}
                   </button>
-                  <button className="btn soft block" onClick={() => go('/join')}>
-                    <Icon name="qr" /> {L('الانضمام بكود', 'Join with a code')}
+                  <button className="btn soft block" onClick={() => go('/new?type=personal')}>
+                    🙋 {L('أنا عضو — أتابع أقساطي ودوري', "I'm a member — track my turn")}
                   </button>
                   <button className="btn ghost block" onClick={() => go('/tools')}>
                     <Icon name="book" /> {L('تعرّف على الجمعية وآدابها', 'Learn about circles')}
@@ -108,9 +132,9 @@ export function Home() {
                     <button
                       className="btn block"
                       style={{ background: '#fff', color: 'var(--brand-strong)' }}
-                      onClick={() => setPay({ circleId: next.view.circle.id, memberId: next.member.id, cycle: next.next!.cycle.index })}
+                      onClick={() => payNext(next)}
                     >
-                      <Icon name="check" /> {L('دفعت — ارفع الإثبات', 'I paid — upload proof')}
+                      <Icon name="check" /> {L('دفعت', 'I paid')}
                     </button>
                   )}
                 </>
@@ -155,20 +179,34 @@ export function Home() {
               </button>
             ))}
 
-            {(pendingProofs.length > 0 || swapsForMe.length > 0 || unconfirmedPayouts.length > 0) && (
+            {(tasks.length > 0 || swapsForMe.length > 0 || unconfirmedPayouts.length > 0) && (
               <section className="card stack" style={{ gap: 4 }}>
-                <h2>{L('بانتظارك', 'Waiting for you')}</h2>
-                {pendingProofs.length > 0 && (
-                  <button className="item" onClick={() => go(`/c/${pendingProofs[0].circleId}?tab=overview`)}>
-                    <span className="avatar sm s-pending">
-                      <Icon name="receipt" size={18} />
+                <h2>{L('مهامك الآن', 'To do now')}</h2>
+                {tasks.map((t) => (
+                  <button key={t.c.view.circle.id} className="item" onClick={() => go(`/c/${t.c.view.circle.id}`)}>
+                    <span className={`avatar sm ${t.late ? 's-late' : t.pending ? 's-pending' : 's-due'}`}>
+                      <Icon name="check" size={18} />
                     </span>
-                    <span className="grow">{L(`${num(pendingProofs.length)} إثباتات دفع تنتظر تأكيدك`, `${pendingProofs.length} payment proofs to review`)}</span>
-                    <Icon name="next" className="flip" size={18} />
+                    <span className="grow">
+                      <b className="small">
+                        {t.c.view.circle.name} — {L('الدورة', 'cycle')} {num(t.f + 1)}
+                      </b>
+                      <div className="tiny muted">
+                        {[
+                          t.unpaid && L(`${num(t.unpaid)} لم يدفعوا`, `${t.unpaid} unpaid`),
+                          t.pending && L(`${num(t.pending)} إثبات للتأكيد`, `${t.pending} to confirm`),
+                          t.late && L(`${num(t.late)} متأخر من قبل`, `${t.late} overdue`),
+                          t.payoutDue && L('سلّم المبلغ لصاحب الدور', 'deliver the payout'),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </div>
+                    </span>
+                    <span className="chip s-brand">{L('افتح', 'Open')}</span>
                   </button>
-                )}
+                ))}
                 {swapsForMe.map((s) => (
-                  <button key={s.id} className="item" onClick={() => go(`/c/${s.circleId}?tab=order`)}>
+                  <button key={s.id} className="item" onClick={() => go(`/c/${s.circleId}?tab=members`)}>
                     <span className="avatar sm s-due">
                       <Icon name="swap" size={18} />
                     </span>
@@ -177,7 +215,7 @@ export function Home() {
                   </button>
                 ))}
                 {unconfirmedPayouts.map((p) => (
-                  <button key={p.id} className="item" onClick={() => go(`/c/${p.circleId}?tab=order`)}>
+                  <button key={p.id} className="item" onClick={() => go(`/c/${p.circleId}`)}>
                     <span className="avatar sm s-paid">
                       <Icon name="wallet" size={18} />
                     </span>
@@ -190,8 +228,8 @@ export function Home() {
 
             <div className="section-title">
               <h2>{L('جمعياتي', 'My circles')}</h2>
-              <button className="btn sm ghost" onClick={() => go('/join')}>
-                <Icon name="qr" size={18} /> {L('انضمام بكود', 'Join')}
+              <button className="btn sm ghost" onClick={() => go('/new')}>
+                <Icon name="plus" size={18} /> {L('جمعية', 'Circle')}
               </button>
             </div>
             {cards.map((c) => (
@@ -249,7 +287,7 @@ function CircleCard({ c }: { c: MyCircleCard }) {
           {circle.name}
         </b>
         <div className="row" style={{ gap: 6 }}>
-          <span className="chip s-brand">{roleLabel(c.role)}</span>
+          <span className="chip s-brand">{circle.mode === 'personal' ? L('عضو · متابعة', 'Member · tracking') : roleLabel(c.role)}</span>
           {circle.status !== 'active' && <span className="chip">{statusLabel(circle.status)}</span>}
         </div>
       </div>

@@ -169,3 +169,46 @@ describe('الإنشاء والقرعة', () => {
     expect(() => A.createCircle({ name: 'ثالثة', installment: 100, currency: 'SAR', frequency: 'monthly', startDate: today, graceDays: 0, sharesCount: 2, rules: '', organizerUnits: 1, members: [] })).toThrow(/الخطة المجانية/);
   });
 });
+
+describe('المتابعة الشخصية (أنا عضو)', () => {
+  it('يتتبع قسطي ودوري بنصف سهم، ويسجل الدفع والاستلام', () => {
+    const id = A.createPersonalCircle({ name: 'جمعية العمل', installment: 2000, currency: 'SAR', frequency: 'monthly', startDate: addDays(today, -20), sharesCount: 5, myTurn: 2, units: 0.5, organizerName: 'أبو سعد', organizerPhone: '966500000077' });
+    const card = myCircles(getDB(), getDB().currentUserId!, today).find((c) => c.view.circle.id === id)!;
+    expect(card.role).toBe('member');
+    expect(card.duePerCycle).toBe(1000);
+    expect(card.myTurns).toEqual([expect.objectContaining({ cycleIndex: 1, amount: 5000 })]);
+    expect(card.arrears).toBe(1000); // الدورة الأولى فات موعدها
+    const v = circleView(getDB(), id, today)!;
+    const mine = v.rows.find((r) => r.member.id === card.member.id)!;
+    A.quickPay(id, card.member.id, 0, mine.cells[0].remaining);
+    A.markReceivedPersonal(id, 1);
+    const after = myCircles(getDB(), getDB().currentUserId!, today).find((c) => c.view.circle.id === id)!;
+    expect(after.arrears).toBe(0);
+    expect(after.myTurns[0].received).toBe(true);
+    expect(after.ledger.received).toBe(5000);
+  });
+});
+
+describe('ضغطة واحدة', () => {
+  it('تؤكد الإثبات المعلّق أو تسجل المتبقي، والتراجع يُلغي ويبقى في السجل', () => {
+    const v = circleView(getDB(), friends().id, today)!;
+    const maryam = member('مريم العتيبي');
+    const pendingId = A.quickPay(friends().id, maryam.id, 3, 0);
+    expect(getDB().payments.find((p) => p.id === pendingId)!.status).toBe('confirmed');
+    const k = member('خالد المطيري');
+    const row = v.rows.find((r) => r.member.id === k.id)!;
+    const id = A.quickPay(friends().id, k.id, 2, row.cells[2].remaining);
+    expect(getDB().payments.find((p) => p.id === id)!.amount).toBe(700);
+    A.undoPayment(id);
+    expect(getDB().payments.find((p) => p.id === id)!.status).toBe('voided');
+    expect(circleView(getDB(), friends().id, today)!.rows.find((r) => r.member.id === k.id)!.cells[2].status).toBe('late');
+  });
+
+  it('المستلم بلا تطبيق يُعتبر تسليمه مؤكداً', () => {
+    const v = circleView(getDB(), friends().id, today)!;
+    // الدورة 4 دور أحمد (المنظم نفسه)
+    const me = v.rows.find((r) => r.positions.includes(4))!.member;
+    A.recordPayout(friends().id, 3, me.id, 10000, 'bank');
+    expect(getDB().payouts.find((p) => p.cycleIndex === 3 && p.circleId === friends().id)!.recipientConfirmedAt).toBeTruthy();
+  });
+});

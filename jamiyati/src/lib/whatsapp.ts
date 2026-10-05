@@ -2,7 +2,7 @@
 import { L } from './i18n';
 import { date, money } from './format';
 
-export type TemplateKind = 'before3' | 'dueDay' | 'late' | 'turn' | 'invite' | 'thanks' | 'lottery' | 'statement';
+export type TemplateKind = 'before3' | 'dueDay' | 'late' | 'turn' | 'invite' | 'thanks' | 'lottery' | 'statement' | 'groupReminder' | 'groupBoard';
 
 export interface TemplateVars {
   name: string;
@@ -18,6 +18,10 @@ export interface TemplateVars {
   organizer?: string;
   order?: string;
   statement?: string;
+  paidNames?: string[];
+  remainingCount?: number;
+  rules?: string;
+  turnText?: string;
 }
 
 export function template(kind: TemplateKind, v: TemplateVars): string {
@@ -46,13 +50,23 @@ export function template(kind: TemplateKind, v: TemplateVars): string {
       );
     case 'invite':
       return L(
-        `السلام عليكم 🌿\nأدعوك للانضمام إلى جمعية "${v.circle}" على تطبيق جمعيتي.\nالقسط: ${amt}\nكود الدعوة: ${v.code}\n${v.link ?? ''}`,
-        `Hi 🌿\nYou're invited to join "${v.circle}" on Jamiyati.\nInstallment: ${amt}\nInvite code: ${v.code}\n${v.link ?? ''}`,
+        `السلام عليكم 🌿\nأدعوك للمشاركة في جمعية "${v.circle}":\n\n💰 القسط: ${amt} ${v.turnText ?? ''}\n🎁 مبلغ الاستلام: ${money(v.pot ?? 0, v.currency)}\n👥 عدد الأسهم: ${v.remainingCount ?? ''}\n📅 أول قسط: ${d}\n${v.rules ? `\n📜 القواعد:\n${v.rules}\n` : ''}\nإذا وافقت ردّ بكلمة "موافق" وأخبرني إن كنت تريد سهماً كاملاً أو نصف سهم 🤍`,
+        `Hi 🌿\nYou're invited to join "${v.circle}":\n\n💰 Installment: ${amt} ${v.turnText ?? ''}\n🎁 Payout: ${money(v.pot ?? 0, v.currency)}\n👥 Shares: ${v.remainingCount ?? ''}\n📅 First due: ${d}\n${v.rules ? `\n📜 Rules:\n${v.rules}\n` : ''}\nReply "OK" to accept, and tell me if you want a full or half share 🤍`,
       );
     case 'lottery':
       return L(
         `🎲 نتيجة قرعة "${v.circle}"\n(البذرة: ${v.code} — يمكن لأي عضو التحقق منها في التطبيق)\n\n${v.order}\n\nبالتوفيق للجميع 🤍`,
         `🎲 "${v.circle}" lottery result\n(seed: ${v.code} — verifiable in the app)\n\n${v.order}`,
+      );
+    case 'groupReminder':
+      return L(
+        `السلام عليكم جميعاً 🌿\nتذكير لطيف: قسط الدورة ${v.cycle} من "${v.circle}" (${amt}) موعده ${d}.\nمن حوّل جزاه الله خيراً 🤍 ومن لم يحوّل بعد نرجو التحويل وإرسال الإثبات.\nالدور هذه المرة على ${v.recipient}.`,
+        `Hi everyone 🌿\nFriendly reminder: cycle ${v.cycle} of "${v.circle}" (${amt}) is due ${d}.\nThanks to those who paid 🤍 Others, please transfer and share the proof.\nThis turn goes to ${v.recipient}.`,
+      );
+    case 'groupBoard':
+      return L(
+        `📊 "${v.circle}" — الدورة ${v.cycle}\n\n✅ وصلت الدفعات من:\n${(v.paidNames ?? []).map((n) => `• ${n}`).join('\n') || '—'}\n\n⏳ باقي ${v.remainingCount ?? 0} ${(v.remainingCount ?? 0) <= 10 ? 'أعضاء' : 'عضواً'}\n🎯 الدور على ${v.recipient} — ${money(v.pot ?? 0, v.currency)}\n\nجزاكم الله خيراً على الالتزام 🤍`,
+        `📊 "${v.circle}" — cycle ${v.cycle}\n\n✅ Received from:\n${(v.paidNames ?? []).map((n) => `• ${n}`).join('\n') || '—'}\n\n⏳ ${v.remainingCount ?? 0} remaining\n🎯 Turn: ${v.recipient} — ${money(v.pot ?? 0, v.currency)}`,
       );
     case 'statement':
       return L(

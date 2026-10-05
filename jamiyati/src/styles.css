@@ -268,6 +268,9 @@ button.item { background: none; border-inline: 0; border-block-start: 0; width: 
 .toast { position: fixed; inset-inline: 16px; inset-block-end: calc(96px + env(safe-area-inset-bottom)); z-index: 70; display: flex; justify-content: center; pointer-events: none; }
 .toast div { background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 14px; font-weight: 600; box-shadow: var(--shadow); max-width: 520px; pointer-events: auto; animation: up 0.2s; }
 .toast div.err { background: var(--late); color: #fff; }
+.toast div.has-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 8px 8px 14px; }
+.toast div.has-actions > span { flex: 1 1 140px; }
+.toast-act { border: 0; background: color-mix(in srgb, currentColor 16%, transparent); color: inherit; font-weight: 800; border-radius: 10px; min-height: 40px; padding: 0 12px; cursor: pointer; }
 
 .empty { text-align: center; padding: 28px 12px; color: var(--ink-2); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .empty .ic { width: 72px; height: 72px; border-radius: 22px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; }
@@ -340,3 +343,10 @@ button.item { background: none; border-inline: 0; border-block-start: 0; width: 
   .cell { width: 36px; height: 36px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ───── بطاقات الاختيار الكبيرة ───── */
+.choice { display: flex; align-items: center; gap: 14px; text-align: start; cursor: pointer; width: 100%; font: inherit; color: inherit; }
+.choice > .grow { display: flex; flex-direction: column; gap: 2px; }
+.choice b { font-size: 1.1rem; }
+.choice-ic { width: 56px; height: 56px; border-radius: 18px; background: var(--brand-soft); display: grid; place-items: center; font-size: 1.7rem; flex: none; }
+.choice:active { transform: scale(0.99); }

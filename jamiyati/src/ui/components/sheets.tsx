@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import QRCode from 'qrcode';
 import { todayISO } from '../../domain/dates';
 import type { Payment, PaymentMethod } from '../../domain/types';
 import { L } from '../../lib/i18n';
-import { date, dateTime, methodLabel, money, num } from '../../lib/format';
+import { date, dateTime, freqLabel, methodLabel, money, num } from '../../lib/format';
 import { compressImage } from '../../lib/image';
 import { template, waLink, type TemplateKind, type TemplateVars } from '../../lib/whatsapp';
 import * as A from '../../store/actions';
@@ -14,6 +13,8 @@ import { Icon } from './Icon';
 import { attempt, Field, ReasonSheet, Seg, Sheet, StatusChip, toast } from './ui';
 import { go } from '../router';
 import { copyText } from '../../lib/native';
+import { countryOf, toIntl } from '../../lib/people';
+import { QuickPeople } from './QuickPeople';
 import { storeProof, useProof } from '../../lib/proofs';
 
 function ProofImg({ refId }: { refId: string }) {
@@ -72,7 +73,7 @@ export function PaySheet({ open, onClose, circleId, memberId, cycleIndex }: { op
   return (
     <Sheet open={open} onClose={onClose} title={direct && !isSelf ? L('تسجيل دفعة', 'Record payment') : L('دفعت القسط', 'I paid')}>
       <div className="stack">
-        {staff && (
+        {staff && v.circle.mode !== 'personal' && (
           <Field label={L('العضو', 'Member')}>
             <select className="input" value={mid} onChange={(e) => setMid(e.target.value)}>
               {v.rows.map((r) => (
@@ -240,6 +241,8 @@ export function WhatsAppSheet({ open, onClose, phone, kinds, vars }: { open: boo
     thanks: L('شكر', 'Thanks'),
     lottery: L('نتيجة القرعة', 'Lottery result'),
     statement: L('كشف حساب', 'Statement'),
+    groupReminder: L('تذكير عام', 'General reminder'),
+    groupBoard: L('لوحة الدفعات', 'Status board'),
   };
   return (
     <Sheet open={open} onClose={onClose} title={L('رسالة واتساب', 'WhatsApp message')}>
@@ -260,39 +263,25 @@ export function WhatsAppSheet({ open, onClose, phone, kinds, vars }: { open: boo
 
 // ───────── الدعوة: كود + رابط + QR + إضافة يدوية ─────────
 
+/** دعوة عبر واتساب برسالة كاملة (القسط، المبلغ، الموعد، القواعد) — العضو يرد "موافق" ويضيفه المنظم */
 export function InviteSheet({ open, onClose, circleId }: { open: boolean; onClose: () => void; circleId: string }) {
   const db = useDB();
   const c = db.circles.find((x) => x.id === circleId)!;
-  const link = `${location.origin}${location.pathname}#/join/${c.inviteCode}`;
-  const [qr, setQr] = useState('');
-  const [wa, setWa] = useState(false);
-  useEffect(() => {
-    if (open) QRCode.toDataURL(link, { margin: 1, width: 220, color: { dark: '#0b3b36', light: '#ffffff' } }).then(setQr);
-  }, [open, link]);
-  const vars = useMemo(() => ({ name: '', circle: c.name, amount: c.installment, currency: c.currency, code: c.inviteCode, link }), [c, link]);
-  return (
-    <Sheet open={open} onClose={onClose} title={L('دعوة أعضاء', 'Invite members')}>
-      <div className="stack" style={{ alignItems: 'center', textAlign: 'center' }}>
-        <div className="muted small">{L('كود الدعوة', 'Invite code')}</div>
-        <div className="code">{c.inviteCode}</div>
-        {qr && (
-          <div className="qr">
-            <img src={qr} width={200} height={200} alt={L('رمز QR للانضمام', 'Join QR code')} />
-          </div>
-        )}
-        <div className="btns" style={{ width: '100%' }}>
-          <button className="btn soft" onClick={() => copyText(link).then(() => toast(L('نُسخ الرابط', 'Link copied')))}>
-            <Icon name="copy" /> {L('نسخ الرابط', 'Copy link')}
-          </button>
-          <button className="btn whatsapp" onClick={() => setWa(true)}>
-            <Icon name="whatsapp" /> {L('واتساب', 'WhatsApp')}
-          </button>
-        </div>
-        {c.status !== 'draft' && <div className="warn small">{L('الجمعية بدأت؛ الانضمام بالكود متوقف. للاستبدال استخدم "انسحاب عضو".', 'Circle started; joining is closed.')}</div>}
-      </div>
-      <WhatsAppSheet open={wa} onClose={() => setWa(false)} kinds={['invite']} vars={vars} />
-    </Sheet>
+  const vars = useMemo(
+    () => ({
+      name: '',
+      circle: c.name,
+      amount: c.installment,
+      currency: c.currency,
+      dueDate: c.startDate,
+      pot: c.installment * c.sharesCount,
+      remainingCount: c.sharesCount,
+      turnText: `(${freqLabel(c.frequency)})`,
+      rules: c.rules,
+    }),
+    [c],
   );
+  return <WhatsAppSheet open={open} onClose={onClose} kinds={['invite']} vars={vars} />;
 }
 
 export function AddMemberSheet({ open, onClose, circleId }: { open: boolean; onClose: () => void; circleId: string }) {
@@ -304,13 +293,21 @@ export function AddMemberSheet({ open, onClose, circleId }: { open: boolean; onC
   const existing = p.length >= 8 ? db.users.find((u) => u.phone === p || u.phone.endsWith(p.replace(/^0+/, ''))) : undefined;
   const rel = existing?.shareReputation ? userReliability(db, existing.id, todayISO()) : undefined;
   return (
-    <Sheet open={open} onClose={onClose} title={L('إضافة عضو يدوياً', 'Add member manually')}>
+    <Sheet open={open} onClose={onClose} title={L('إضافة أعضاء', 'Add members')}>
       <div className="stack">
-        <div className="note small">{L('لمن لا يملك التطبيق: يُضاف برقم جواله ويصله التذكير عبر واتساب. إن ثبّت التطبيق لاحقاً بنفس الرقم يرتبط تلقائياً.', 'For people without the app: reminders go via WhatsApp. If they sign up later with the same number, it links automatically.')}</div>
+        <QuickPeople
+          country={countryOf(db.users.find((u) => u.id === db.currentUserId)?.phone ?? '')}
+          onAdd={(people) => {
+            let added = 0;
+            for (const x of people) if (attempt(() => A.addMember(circleId, x.name, x.phone, x.units))) added++;
+            if (added) toast(L(`أُضيف ${num(added)} أعضاء ✓`, `${added} added ✓`));
+          }}
+        />
+        <div className="small muted" style={{ textAlign: 'center' }}>{L('— أو عضو واحد يدوياً —', '— or one by one —')}</div>
         <Field label={L('الاسم', 'Name')}>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
         </Field>
-        <Field label={L('رقم الجوال (دولي)', 'Phone (international)')} hint={L('مثال: 9665xxxxxxxx أو 201xxxxxxxxx', 'e.g. 9665xxxxxxxx')}>
+        <Field label={L('رقم الجوال', 'Phone')} hint={L('بأي صيغة: 05xxxxxxxx أو +966…', 'Any format')}>
           <input className="input ltr num" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
         </Field>
         {existing && (
@@ -330,7 +327,7 @@ export function AddMemberSheet({ open, onClose, circleId }: { open: boolean; onC
           disabled={!name.trim()}
           onClick={() =>
             attempt(() => {
-              A.addMember(circleId, name, p, units);
+              A.addMember(circleId, name, toIntl(phone, countryOf(db.users.find((u) => u.id === db.currentUserId)?.phone ?? '')), units);
               setName('');
               setPhone('');
               setUnits(1);

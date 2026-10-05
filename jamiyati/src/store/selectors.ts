@@ -154,7 +154,8 @@ export function myCircles(db: DB, userId: string, today: string): MyCircleCard[]
     const v = circleView(db, id, today);
     if (!v) continue;
     const member = myMember(db, id, userId);
-    const role = roleIn(db, id, userId) ?? 'member';
+    // في المتابعة الشخصية المستخدم عضو فعلياً (وإن كان يملك صلاحية التسجيل على جهازه)
+    const role = v.circle.mode === 'personal' ? 'member' : (roleIn(db, id, userId) ?? 'member');
     if (!member) continue;
     const row = v.rows.find((r) => r.member.id === member.id);
     const duePerCycle = row?.due ?? 0;

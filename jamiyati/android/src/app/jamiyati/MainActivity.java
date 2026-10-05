@@ -55,6 +55,8 @@ public class MainActivity extends Activity {
     static final String START_URL = "https://" + HOST + "/index.html";
     static final int REQ_FILE = 11;
     static final int REQ_NOTIF = 12;
+    static final int REQ_CONTACT = 13;
+    private String contactRequestId;
 
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
@@ -179,6 +181,32 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQ_CONTACT) {
+            String id = contactRequestId;
+            contactRequestId = null;
+            String name = "", phone = "";
+            if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                android.database.Cursor c = null;
+                try {
+                    c = getContentResolver().query(data.getData(), new String[] {
+                            android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                            android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER}, null, null, null);
+                    if (c != null && c.moveToFirst()) {
+                        name = c.getString(0);
+                        phone = c.getString(1);
+                    }
+                } catch (Exception ignored) {
+                } finally {
+                    if (c != null) c.close();
+                }
+            }
+            if (id != null) {
+                String js = "window.__jamiyatiContact && window.__jamiyatiContact(" + org.json.JSONObject.quote(id) + ","
+                        + org.json.JSONObject.quote(name == null ? "" : name) + "," + org.json.JSONObject.quote(phone == null ? "" : phone) + ")";
+                web.evaluateJavascript(js, null);
+            }
+            return;
+        }
         if (requestCode == REQ_FILE) {
             if (fileCallback != null) {
                 fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
@@ -371,6 +399,23 @@ public class MainActivity extends Activity {
                         });
                     } catch (Exception e) {
                         bioResult(requestId, false);
+                    }
+                }
+            });
+        }
+
+        /** منتقي جهات الاتصال في النظام — لا يحتاج إذن قراءة كل الجهات */
+        @JavascriptInterface
+        public void pickContact(final String requestId) {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    contactRequestId = requestId;
+                    Intent i = new Intent(Intent.ACTION_PICK, android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
+                    try {
+                        startActivityForResult(i, REQ_CONTACT);
+                    } catch (ActivityNotFoundException e) {
+                        contactRequestId = null;
+                        toast("لا يوجد تطبيق جهات اتصال");
                     }
                 }
             });

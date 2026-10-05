@@ -12,6 +12,7 @@ interface NativeBridge {
   authenticate(requestId: string, title: string): void;
   copy(text: string): void;
   openExternal(url: string): void;
+  pickContact?(requestId: string): void;
   appVersion(): string;
 }
 
@@ -19,6 +20,7 @@ declare global {
   interface Window {
     JamiyatiNative?: NativeBridge;
     __jamiyatiBio?: (id: string, ok: boolean) => void;
+    __jamiyatiContact?: (id: string, name: string, phone: string) => void;
   }
 }
 
@@ -120,3 +122,42 @@ export function nativeAuthenticate(title: string): Promise<boolean> {
 
 /** معرّف رمزي يُحفظ في الإعدادات عند تفعيل البصمة في التطبيق الأصلي */
 export const NATIVE_BIO_ID = 'native-biometric';
+
+/** يفتح رابطاً خارجياً (واتساب مثلاً) — في التطبيق عبر أندرويد مباشرة */
+export function openLink(url: string) {
+  const n = native();
+  if (n) n.openExternal(url);
+  else window.open(url, '_blank', 'noopener');
+}
+
+export interface PickedContact {
+  name: string;
+  phone: string; // كما في جهات الاتصال (يُطبَّع لاحقاً)
+}
+
+const contactWaiters = new Map<string, (c: PickedContact | null) => void>();
+if (typeof window !== 'undefined') {
+  window.__jamiyatiContact = (id, name, phone) => {
+    contactWaiters.get(id)?.(name || phone ? { name, phone } : null);
+    contactWaiters.delete(id);
+  };
+}
+
+export const canPickContacts = () => !!native()?.pickContact || (typeof navigator !== 'undefined' && 'contacts' in navigator);
+
+/** اختيار من جهات الاتصال: منتقي أندرويد في التطبيق، أو Contact Picker API في كروم أندرويد (عدة جهات) */
+export async function pickContacts(): Promise<PickedContact[]> {
+  const n = native();
+  if (n?.pickContact) {
+    const id = `c${Date.now()}`;
+    const c = await new Promise<PickedContact | null>((res) => {
+      contactWaiters.set(id, res);
+      n.pickContact!(id);
+    });
+    return c ? [c] : [];
+  }
+  const nav = navigator as Navigator & { contacts?: { select(props: string[], opts: { multiple: boolean }): Promise<{ name?: string[]; tel?: string[] }[]> } };
+  if (!nav.contacts) return [];
+  const list = await nav.contacts.select(['name', 'tel'], { multiple: true });
+  return list.map((c) => ({ name: c.name?.[0] ?? '', phone: c.tel?.[0] ?? '' })).filter((c) => c.name || c.phone);
+}

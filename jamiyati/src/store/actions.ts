@@ -275,6 +275,83 @@ export function updateCircle(circleId: string, patch: Partial<Pick<Circle, 'name
   });
 }
 
+// ───────── متابعة شخصية: أنا عضو في جمعية يديرها غيري ─────────
+
+export interface PersonalCircleInput {
+  name: string;
+  installment: number; // قسط السهم الكامل
+  currency: string;
+  frequency: Frequency;
+  startDate: string;
+  sharesCount: number;
+  myTurn: number; // 1..N
+  units: 1 | 0.5;
+  organizerName?: string;
+  organizerPhone?: string;
+}
+
+export function createPersonalCircle(input: PersonalCircleInput): string {
+  let id = '';
+  mutate((db) => {
+    const u = me(db);
+    if (!input.name.trim()) fail('اكتب اسم الجمعية', 'Enter a name');
+    if (!(input.installment > 0)) fail('قيمة القسط يجب أن تكون أكبر من صفر', 'Installment must be positive');
+    if (!(input.sharesCount >= 2)) fail('عدد الأعضاء يجب أن يكون 2 على الأقل', 'At least 2 shares');
+    if (!(input.myTurn >= 1 && input.myTurn <= input.sharesCount)) fail(`دورك يجب أن يكون بين 1 و${input.sharesCount}`, `Your turn must be 1..${input.sharesCount}`);
+    id = uid('c_');
+    db.circles.push({
+      id,
+      name: input.name.trim(),
+      installment: input.installment,
+      currency: input.currency,
+      frequency: input.frequency,
+      startDate: input.startDate,
+      graceDays: 3,
+      sharesCount: input.sharesCount,
+      rules: '',
+      organizerId: u.id,
+      status: 'active',
+      orderMethod: 'manual',
+      orderLocked: true,
+      inviteCode: genCode(),
+      postponements: [],
+      createdAt: nowISO(),
+      mode: 'personal',
+      organizerName: input.organizerName?.trim() || undefined,
+      organizerPhone: input.organizerPhone?.replace(/\D/g, '') || undefined,
+    });
+    const mine: Member = { id: uid('m_'), circleId: id, userId: u.id, name: u.name, phone: u.phone, role: 'organizer', status: 'active', joinedAt: nowISO(), acceptedRulesAt: nowISO() };
+    // بقية الأعضاء لا نعرفهم: عضو رمزي يحمل باقي الأسهم ليبقى الحساب صحيحاً
+    const others: Member = { id: uid('m_'), circleId: id, name: L('بقية الأعضاء', 'Other members'), phone: '', role: 'member', status: 'active', joinedAt: nowISO() };
+    db.members.push(mine, others);
+    for (let pos = 1; pos <= input.sharesCount; pos++) {
+      const holders =
+        pos === input.myTurn
+          ? input.units === 1
+            ? [{ memberId: mine.id, fraction: 1 }]
+            : [
+                { memberId: mine.id, fraction: 0.5 },
+                { memberId: others.id, fraction: 0.5 },
+              ]
+          : [{ memberId: others.id, fraction: 1 }];
+      db.shares.push({ id: uid('s_'), circleId: id, position: pos, holders });
+    }
+    appendLog(db, id, u.id, 'circle.create', `بدأ متابعة جمعية "${input.name.trim()}" كعضو: قسطه ${input.installment * input.units} ${input.currency}، ودوره رقم ${input.myTurn} من ${input.sharesCount}`);
+  });
+  return id;
+}
+
+/** في المتابعة الشخصية: أسجّل أني استلمت دوري */
+export function markReceivedPersonal(circleId: string, cycleIndex: number) {
+  const db = getDB();
+  const c = db.circles.find((x) => x.id === circleId);
+  if (c?.mode !== 'personal') fail('متاح للمتابعة الشخصية فقط', 'Personal circles only');
+  const mine = db.members.find((m) => m.circleId === circleId && m.userId === db.currentUserId)!;
+  const share = db.shares.find((s) => s.circleId === circleId && s.position === cycleIndex + 1)!;
+  const frac = share.holders.find((h) => h.memberId === mine.id)?.fraction ?? 0;
+  recordPayout(circleId, cycleIndex, mine.id, c!.installment * c!.sharesCount * frac, 'bank');
+}
+
 // ───────── الترتيب والقرعة ─────────
 
 export function setManualOrder(circleId: string, orderedShareIds: string[]) {
@@ -535,6 +612,34 @@ export function voidPayment(paymentId: string, reason: string) {
   });
 }
 
+/**
+ * ضغطة واحدة: إن وُجدت دفعة بانتظار التأكيد تُؤكَّد، وإلا يُسجَّل المتبقي كاملاً بوسيلة العضو المفضلة.
+ * تعيد معرّف الدفعة المؤكدة (للتراجع أو إرسال الإيصال).
+ */
+export function quickPay(circleId: string, memberId: string, cycleIndex: number, remaining: number): string {
+  const db = getDB();
+  const pending = db.payments.filter((p) => p.circleId === circleId && p.memberId === memberId && p.cycleIndex === cycleIndex && p.status === 'pending');
+  if (pending.length) {
+    for (const p of pending) reviewPayment(p.id, true);
+    return pending[pending.length - 1].id;
+  }
+  if (!(remaining > 0)) fail('لا يوجد مبلغ مستحق', 'Nothing due');
+  const m = db.members.find((x) => x.id === memberId);
+  return submitPayment({ circleId, memberId, cycleIndex, amount: remaining, method: m?.preferredPayment ?? 'cash', paidAt: todayISO() });
+}
+
+/** التراجع الفوري عن تسجيل خاطئ: يُلغى مع السبب ويبقى في السجل (لا حذف) */
+export function undoPayment(paymentId: string) {
+  mutate((db) => {
+    const p = db.payments.find((x) => x.id === paymentId);
+    if (!p || p.status !== 'confirmed') fail('لا يمكن التراجع', 'Cannot undo');
+    requireRole(db, p!.circleId, ['organizer', 'assistant']);
+    if (Date.now() - new Date(p!.reviewedAt ?? p!.submittedAt).getTime() > 15 * 60_000) fail('مرّ وقت طويل؛ استخدم "إلغاء الدفعة" مع ذكر السبب', 'Too late to undo; void it with a reason');
+    db.payments = db.payments.map((x) => (x.id === paymentId ? { ...x, status: 'voided', voidReason: 'تراجع فوري عن تسجيل بالخطأ' } : x));
+    appendLog(db, p!.circleId, db.currentUserId!, 'payment.void', `تراجع عن تسجيل دفعة ${memberName(db, p!.memberId)} (${p!.amount}) فور تسجيلها`);
+  });
+}
+
 // ───────── تسليم المبلغ للمستلم ─────────
 
 export function recordPayout(circleId: string, cycleIndex: number, memberId: string, amount: number, method: PaymentMethod) {
@@ -544,7 +649,10 @@ export function recordPayout(circleId: string, cycleIndex: number, memberId: str
     const share = db.shares.find((s) => s.circleId === circleId && s.position === cycleIndex + 1);
     if (!share?.holders.some((h) => h.memberId === memberId)) fail('هذا العضو ليس صاحب الدور في هذه الدورة', 'Not the recipient of this cycle');
     if (db.payouts.some((p) => p.circleId === circleId && p.cycleIndex === cycleIndex && p.memberId === memberId)) fail('تم تسجيل التسليم مسبقاً', 'Already recorded');
-    db.payouts.push({ id: uid('o_'), circleId, cycleIndex, shareId: share!.id, memberId, amount, deliveredAt: nowISO(), deliveredBy: db.currentUserId!, method });
+    const recipient = db.members.find((m) => m.id === memberId);
+    // المستلم بلا تطبيق (أو المنظم نفسه) لا يستطيع التأكيد من جهازه: يُعتبر التسليم مؤكداً بشهادة المنظم
+    const selfConfirmed = !recipient?.userId || recipient.userId === db.currentUserId;
+    db.payouts.push({ id: uid('o_'), circleId, cycleIndex, shareId: share!.id, memberId, amount, deliveredAt: nowISO(), deliveredBy: db.currentUserId!, method, recipientConfirmedAt: selfConfirmed ? nowISO() : undefined });
     appendLog(db, circleId, db.currentUserId!, 'payout.deliver', `سلّم ${amount} ${c.currency} إلى ${memberName(db, memberId)} (دورة ${cycleIndex + 1})`);
     notify(db, [db.members.find((m) => m.id === memberId)?.userId], circleId, 'turn', L(`سلّمك المنظم ${amount} ${c.currency}. أكّد الاستلام من فضلك.`, 'Please confirm you received your payout'));
   });

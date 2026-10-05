@@ -3,18 +3,21 @@ import { durationDays, endDate, finalSettlement, validateShares, type CellStatus
 import { diffDays, todayISO } from '../../domain/dates';
 import type { Member, PaymentMethod } from '../../domain/types';
 import { L } from '../../lib/i18n';
-import { date, dateTime, displayPhone, freqLabel, maskPhone, methodLabel, money, monthShort, num, unitsLabel } from '../../lib/format';
+import { date, dateTime, freqLabel, methodLabel, money, monthShort, num, unitsLabel } from '../../lib/format';
 import type { TemplateKind, TemplateVars } from '../../lib/whatsapp';
 import * as A from '../../store/actions';
 import { useDB, verifyLog } from '../../store/db';
-import { canConfirm, circleView, cycleSummary, ledgerFor, paymentsFor, phoneVisible, roleIn, userReliability, type CircleView } from '../../store/selectors';
+import { canConfirm, circleView, cycleSummary, paymentsFor, roleIn, type CircleView } from '../../store/selectors';
 import { Icon } from '../components/Icon';
-import { AddMemberSheet, InviteSheet, PaymentItem, PaySheet, ReputationLine, WhatsAppSheet } from '../components/sheets';
+import { AddMemberSheet, InviteSheet, PaymentItem, PaySheet, WhatsAppSheet } from '../components/sheets';
 import { attempt, Avatar, Empty, Field, Progress, ReasonSheet, Seg, Sheet, StatusChip, statusText, TopBar } from '../components/ui';
 import { go, useRoute } from '../router';
 import { roleLabel, statusLabel } from './Home';
+import { NowTab } from './CircleNow';
+import { PersonalScreen } from './Personal';
 
-type Tab = 'overview' | 'grid' | 'members' | 'order' | 'log' | 'more';
+type Tab = 'now' | 'grid' | 'members' | 'more';
+const TAB_ALIASES: Record<string, Tab> = { overview: 'now', order: 'members', log: 'more' };
 
 export function CircleScreen({ circleId }: { circleId: string }) {
   const db = useDB();
@@ -23,7 +26,8 @@ export function CircleScreen({ circleId }: { circleId: string }) {
   const v = circleView(db, circleId, today);
   const role = roleIn(db, circleId, db.currentUserId);
   const [tabState, setTab] = useState<Tab | null>(null);
-  const tab: Tab = tabState ?? ((query.get('tab') as Tab) || 'overview');
+  const q = query.get('tab') ?? 'now';
+  const tab: Tab = tabState ?? TAB_ALIASES[q] ?? (q as Tab);
   const [invite, setInvite] = useState(query.get('invite') === '1');
 
   if (!v || !role) {
@@ -39,12 +43,12 @@ export function CircleScreen({ circleId }: { circleId: string }) {
     );
   }
 
+  if (v.circle.mode === 'personal') return <PersonalScreen v={v} />;
+  const staff = canConfirm(role);
   const tabs: { k: Tab; t: string }[] = [
-    { k: 'overview', t: L('نظرة عامة', 'Overview') },
-    { k: 'grid', t: L('الدفعات', 'Payments') },
+    { k: 'now', t: L('الآن', 'Now') },
+    { k: 'grid', t: L('الجدول', 'Table') },
     { k: 'members', t: L('الأعضاء', 'Members') },
-    { k: 'order', t: L('الترتيب', 'Order') },
-    { k: 'log', t: L('السجل', 'Log') },
     { k: 'more', t: L('المزيد', 'More') },
   ];
 
@@ -55,8 +59,8 @@ export function CircleScreen({ circleId }: { circleId: string }) {
         backTo="/"
         actions={
           role === 'organizer' && (
-            <button className="icon-btn" onClick={() => setInvite(true)} aria-label={L('دعوة', 'Invite')}>
-              <Icon name="qr" />
+            <button className="icon-btn" onClick={() => setInvite(true)} aria-label={L('دعوة عبر واتساب', 'Invite via WhatsApp')}>
+              <Icon name="whatsapp" />
             </button>
           )
         }
@@ -69,11 +73,10 @@ export function CircleScreen({ circleId }: { circleId: string }) {
             </button>
           ))}
         </div>
-        {tab === 'overview' && <Overview v={v} role={role} onInvite={() => setInvite(true)} goTab={setTab} />}
+        {tab === 'now' &&
+          (staff && v.circle.status !== 'draft' ? <NowTab v={v} role={role} /> : <Overview v={v} role={role} onInvite={() => setInvite(true)} goTab={setTab} />)}
         {tab === 'grid' && <Grid v={v} role={role} />}
-        {tab === 'members' && <Members v={v} role={role} onInvite={() => setInvite(true)} />}
-        {tab === 'order' && <Order v={v} role={role} />}
-        {tab === 'log' && <Log circleId={circleId} />}
+        {tab === 'members' && <Order v={v} role={role} onInvite={() => setInvite(true)} />}
         {tab === 'more' && <More v={v} role={role} />}
       </main>
       <InviteSheet open={invite} onClose={() => setInvite(false)} circleId={circleId} />
@@ -87,7 +90,6 @@ const nameOf = (v: CircleView, id: string) => v.members.find((m) => m.id === id)
 
 function Overview({ v, role, onInvite, goTab }: { v: CircleView; role: string; onInvite: () => void; goTab: (t: Tab) => void }) {
   const db = useDB();
-  const today = todayISO();
   const { circle } = v;
   const staff = canConfirm(role as never);
   const me = v.members.find((m) => m.userId === db.currentUserId && m.status === 'active');
@@ -96,7 +98,6 @@ function Overview({ v, role, onInvite, goTab }: { v: CircleView; role: string; o
   // دورة التركيز: الحالية، أو القادمة إن كانت خلال أيام قليلة وكانت الحالية مكتملة التحصيل
   const focus = circle.status === 'draft' ? -1 : cur;
   const sum = focus >= 0 ? cycleSummary(v, focus) : null;
-  const nextCycle = v.schedule.find((c) => c.dueDate > today);
   const [pay, setPay] = useState<{ memberId: string; cycle: number } | null>(null);
   const [wa, setWa] = useState<{ phone?: string; kinds: TemplateKind[]; vars: TemplateVars } | null>(null);
   const [deliver, setDeliver] = useState<{ memberId: string; amount: number; cycle: number } | null>(null);
@@ -261,18 +262,7 @@ function Overview({ v, role, onInvite, goTab }: { v: CircleView; role: string; o
         />
       )}
 
-      {/* أرقام الجمعية */}
-      <section className="card stack" style={{ gap: 6 }}>
-        <h3>{L('تفاصيل الجمعية', 'Details')}</h3>
-        <KV k={L('القسط للسهم', 'Per share')} v={`${money(circle.installment, circle.currency)} · ${freqLabel(circle.frequency)}`} />
-        <KV k={L('مبلغ الاستلام', 'Payout')} v={money(v.pot, circle.currency)} />
-        <KV k={L('الأسهم / الأعضاء', 'Shares / members')} v={`${num(circle.sharesCount)} / ${num(v.holders.length)}`} />
-        <KV k={L('البداية — النهاية', 'Start — end')} v={`${date(v.schedule[0].dueDate)} — ${date(endDate(circle))}`} />
-        <KV k={L('المدة', 'Duration')} v={`${num(Math.round(durationDays(circle) / 30.4))} ${L('شهر تقريباً', 'months approx.')}`} />
-        <KV k={L('مهلة السماح', 'Grace')} v={`${num(circle.graceDays)} ${L('أيام', 'days')}`} />
-        {nextCycle && <KV k={L('الموعد القادم', 'Next due')} v={`${date(nextCycle.dueDate)} (${num(diffDays(today, nextCycle.dueDate))} ${L('يوم', 'd')})`} />}
-        {circle.postponements.length > 0 && <KV k={L('تأجيلات', 'Postponements')} v={circle.postponements.map((p) => `${L('قبل الدورة', 'before')} ${num(p.beforeCycle + 1)} (${p.reason})`).join('، ')} />}
-      </section>
+      <CircleDetails v={v} />
 
       {pay && <PaySheet open onClose={() => setPay(null)} circleId={circle.id} memberId={pay.memberId} cycleIndex={pay.cycle} />}
       {wa && <WhatsAppSheet open onClose={() => setWa(null)} phone={wa.phone} kinds={wa.kinds} vars={wa.vars} />}
@@ -281,7 +271,7 @@ function Overview({ v, role, onInvite, goTab }: { v: CircleView; role: string; o
   );
 }
 
-function DeliverSheet({ v, memberId, amount, cycle, onClose }: { v: CircleView; memberId: string; amount: number; cycle: number; onClose: () => void }) {
+export function DeliverSheet({ v, memberId, amount, cycle, onClose }: { v: CircleView; memberId: string; amount: number; cycle: number; onClose: () => void }) {
   const [method, setMethod] = useState<PaymentMethod>('bank');
   const sum = cycleSummary(v, cycle);
   return (
@@ -325,6 +315,25 @@ function LateList({ v, onRemind }: { v: CircleView; onRemind: (m: Member, cycle:
           </button>
         </div>
       ))}
+    </section>
+  );
+}
+
+function CircleDetails({ v }: { v: CircleView }) {
+  const today = todayISO();
+  const { circle } = v;
+  const nextCycle = v.schedule.find((c) => c.dueDate > today);
+  return (
+      <section className="card stack" style={{ gap: 6 }}>
+      <h3>{L('تفاصيل الجمعية', 'Details')}</h3>
+      <KV k={L('القسط للسهم', 'Per share')} v={`${money(circle.installment, circle.currency)} · ${freqLabel(circle.frequency)}`} />
+      <KV k={L('مبلغ الاستلام', 'Payout')} v={money(v.pot, circle.currency)} />
+      <KV k={L('الأسهم / الأعضاء', 'Shares / members')} v={`${num(circle.sharesCount)} / ${num(v.holders.length)}`} />
+      <KV k={L('البداية — النهاية', 'Start — end')} v={`${date(v.schedule[0].dueDate)} — ${date(endDate(circle))}`} />
+      <KV k={L('المدة', 'Duration')} v={`${num(Math.round(durationDays(circle) / 30.4))} ${L('شهر تقريباً', 'months approx.')}`} />
+      <KV k={L('مهلة السماح', 'Grace')} v={`${num(circle.graceDays)} ${L('أيام', 'days')}`} />
+      {nextCycle && <KV k={L('الموعد القادم', 'Next due')} v={`${date(nextCycle.dueDate)} (${num(diffDays(today, nextCycle.dueDate))} ${L('يوم', 'd')})`} />}
+      {circle.postponements.length > 0 && <KV k={L('تأجيلات', 'Postponements')} v={circle.postponements.map((p) => `${L('قبل الدورة', 'before')} ${num(p.beforeCycle + 1)} (${p.reason})`).join('، ')} />}
     </section>
   );
 }
@@ -512,69 +521,10 @@ function Grid({ v, role }: { v: CircleView; role: string }) {
   );
 }
 
-// ───────────────────────── الأعضاء ─────────────────────────
-
-function Members({ v, role, onInvite }: { v: CircleView; role: string; onInvite: () => void }) {
-  const db = useDB();
-  const today = todayISO();
-  const [add, setAdd] = useState(false);
-  const organizer = role === 'organizer';
-  const all = [...v.members].sort((a, b) => (a.status === b.status ? 0 : a.status === 'active' ? -1 : 1));
-  return (
-    <>
-      {organizer && (v.circle.status === 'draft' || v.circle.status === 'active') && (
-        <div className="btns">
-          <button className="btn" onClick={onInvite}>
-            <Icon name="qr" /> {L('دعوة', 'Invite')}
-          </button>
-          {v.circle.status === 'draft' && (
-            <button className="btn soft" onClick={() => setAdd(true)}>
-              <Icon name="plus" /> {L('إضافة يدوية', 'Add manually')}
-            </button>
-          )}
-        </div>
-      )}
-      <section className="card list">
-        {all.map((m) => {
-          const row = v.rows.find((r) => r.member.id === m.id);
-          const u = m.userId ? db.users.find((x) => x.id === m.userId) : undefined;
-          const showRep = u?.shareReputation && (organizer || m.userId === db.currentUserId);
-          const rel = showRep ? userReliability(db, u!.id, today) : undefined;
-          const led = row ? ledgerFor(db, v, m.id, today) : undefined;
-          return (
-            <a key={m.id} className="item" href={`#/c/${v.circle.id}/m/${m.id}`} style={{ alignItems: 'flex-start', opacity: m.status === 'withdrawn' ? 0.6 : 1 }}>
-              <Avatar name={m.name} />
-              <div className="grow stack" style={{ gap: 2 }}>
-                <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-                  <b>{m.name}</b>
-                  {m.role !== 'member' && <span className="chip s-brand">{roleLabel(m.role)}</span>}
-                  {!m.userId && <span className="chip">{L('بلا تطبيق', 'No app')}</span>}
-                  {m.status === 'withdrawn' && <span className="chip s-late">{L('منسحب', 'Withdrawn')}</span>}
-                  {m.replacesMemberId && <span className="chip s-due">{L('بديل', 'Replacement')}</span>}
-                </div>
-                <div className="tiny muted">
-                  {row ? `${unitsLabel(row.units)} · ${L('الدور', 'Turn')} ${row.positions.filter(Boolean).map((p) => num(p)).join('، ') || '—'}` : L('لا أسهم', 'No shares')}
-                  {' · '}
-                  <bdi dir="ltr">{phoneVisible(db, db.currentUserId, m) ? displayPhone(m.phone) : maskPhone(m.phone)}</bdi>
-                </div>
-                {led && led.arrears > 0 && <span className="chip s-late">{L('متأخرات', 'Arrears')}: {money(led.arrears, v.circle.currency)}</span>}
-                {m.guarantor && <div className="tiny muted">🛡️ {L('الكفيل', 'Guarantor')}: {m.guarantor.name}</div>}
-                {rel && <ReputationLine stats={rel} />}
-              </div>
-              <Icon name="next" className="flip" size={18} />
-            </a>
-          );
-        })}
-      </section>
-      <div className="small muted">{L('أرقام الجوالات مخفية عن الأعضاء إلا لمن سمح بعرض رقمه.', 'Phone numbers are hidden unless the member allows it.')}</div>
-      <AddMemberSheet open={add} onClose={() => setAdd(false)} circleId={v.circle.id} />
-    </>
-  );
-}
-
 // ───────────────────────── الترتيب والتبديل ─────────────────────────
 
-function Order({ v, role }: { v: CircleView; role: string }) {
+function Order({ v, role, onInvite }: { v: CircleView; role: string; onInvite: () => void }) {
+  const [add, setAdd] = useState(false);
   const db = useDB();
   const organizer = role === 'organizer';
   const ordered = [...v.shares].sort((a, b) => (a.position || 999) - (b.position || 999));
@@ -588,6 +538,7 @@ function Order({ v, role }: { v: CircleView; role: string }) {
   const myMemberIds = v.members.filter((m) => m.userId === db.currentUserId).map((m) => m.id);
   const label = (shareId: string) => v.shares.find((s) => s.id === shareId)?.holders.map((h) => nameOf(v, h.memberId)).join(' و') ?? '؟';
   const sharePos = (shareId: string) => v.shares.find((s) => s.id === shareId)?.position ?? 0;
+  const rowArrears = new Map(v.rows.map((r) => [r.member.id, r.cells.filter((c) => c.status === 'late').length]));
 
   const list = manual ?? ordered.map((s) => s.id);
   const move = (i: number, d: number) => {
@@ -600,6 +551,19 @@ function Order({ v, role }: { v: CircleView; role: string }) {
 
   return (
     <>
+      {organizer && (v.circle.status === 'draft' || v.circle.status === 'active') && (
+        <div className="btns">
+          {v.circle.status === 'draft' && (
+            <button className="btn" onClick={() => setAdd(true)}>
+              <Icon name="plus" /> {L('إضافة أعضاء', 'Add members')}
+            </button>
+          )}
+          <button className="btn soft" onClick={onInvite}>
+            <Icon name="whatsapp" /> {L('دعوة عبر واتساب', 'Invite via WhatsApp')}
+          </button>
+        </div>
+      )}
+      <AddMemberSheet open={add} onClose={() => setAdd(false)} circleId={v.circle.id} />
       {v.circle.lottery && (
         <div className="note small row between wrap">
           <span>
@@ -645,9 +609,10 @@ function Order({ v, role }: { v: CircleView; role: string }) {
           return (
             <div className="item" key={id} style={mine ? { background: 'var(--brand-soft)', borderRadius: 12, paddingInline: 8 } : undefined}>
               <span className={`pos ${delivered.length ? 'done' : isNow ? 'now' : ''}`}>{pos ? num(pos) : '؟'}</span>
-              <div className="grow">
+              <a className="grow" style={{ color: 'inherit', textDecoration: 'none', minWidth: 0 }} href={manual ? undefined : `#/c/${v.circle.id}/m/${s.holders[0]?.memberId}`}>
                 <b className="ellipsis" style={{ display: 'block' }}>
                   {label(id)} {mine && <span className="chip s-brand">{L('أنت', 'You')}</span>}
+                  {s.holders.some((h) => (rowArrears.get(h.memberId) ?? 0) > 0) && <span className="chip s-late">{L('متأخر', 'Late')}</span>}
                 </b>
                 <div className="tiny muted">
                   {cy ? date(cy.dueDate) : L('لم يُحدد', 'Not set')} · {money(v.pot, v.circle.currency)}
@@ -655,7 +620,7 @@ function Order({ v, role }: { v: CircleView; role: string }) {
                   {delivered.length > 0 && ` · ✓ ${L('سُلّم', 'paid out')}`}
                   {!v.circle.orderLocked && s.requestedPosition && ` · ${L('طلب الدور', 'requested')} ${num(s.requestedPosition)}`}
                 </div>
-              </div>
+              </a>
               {manual ? (
                 <div className="row" style={{ gap: 2 }}>
                   <button className="icon-btn" onClick={() => move(i, -1)} aria-label={L('أعلى', 'Up')}>
@@ -856,6 +821,7 @@ function More({ v, role }: { v: CircleView; role: string }) {
 
   return (
     <>
+      <CircleDetails v={v} />
       <section className="card stack">
         <div className="row between">
           <h3 style={{ margin: 0 }}>{L('قواعد الجمعية', 'Rules')}</h3>
@@ -931,6 +897,13 @@ function More({ v, role }: { v: CircleView; role: string }) {
           </div>
         </section>
       )}
+
+      <details className="card">
+        <summary style={{ cursor: 'pointer', fontWeight: 800 }}>{L('سجل النشاط (لا يُحذف — مرجع عند أي خلاف)', 'Activity log (tamper-evident)')}</summary>
+        <div className="stack" style={{ marginTop: 10 }}>
+          <Log circleId={v.circle.id} />
+        </div>
+      </details>
 
       <div className="note small">{L('مبدأ جمعيتي: التطبيق أداة تنظيم وتوثيق فقط، لا يحتفظ بأموال ولا يحوّلها، وبلا فوائد أو رسوم.', 'Jamiyati organizes and documents only. It never holds or moves money. No interest or fees.')}</div>
 

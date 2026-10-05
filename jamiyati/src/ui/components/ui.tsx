@@ -6,27 +6,49 @@ import type { CellStatus } from '../../domain/calc';
 import { back } from '../router';
 
 // ───── Toast ─────
-let pushToast: (t: { text: string; err?: boolean }) => void = () => {};
-export function toast(text: string) {
-  pushToast({ text });
+export interface ToastAction {
+  label: string;
+  run: () => void;
+}
+let pushToast: (t: { text: string; err?: boolean; actions?: ToastAction[] }) => void = () => {};
+export function toast(text: string, actions?: ToastAction[]) {
+  pushToast({ text, actions });
 }
 export function toastError(e: unknown) {
   pushToast({ text: e instanceof Error ? e.message : String(e), err: true });
 }
 export function Toaster() {
-  const [t, setT] = useState<{ text: string; err?: boolean; k: number } | null>(null);
+  const [t, setT] = useState<{ text: string; err?: boolean; actions?: ToastAction[]; k: number } | null>(null);
   useEffect(() => {
     pushToast = (x) => setT({ ...x, k: Date.now() });
+    // أزرار التراجع تخص الشاشة التي ظهرت فيها
+    const clear = () => setT((cur) => (cur?.actions?.length ? null : cur));
+    window.addEventListener('hashchange', clear);
+    return () => window.removeEventListener('hashchange', clear);
   }, []);
   useEffect(() => {
     if (!t) return;
-    const id = setTimeout(() => setT(null), t.err ? 4500 : 2600);
+    const id = setTimeout(() => setT(null), t.actions?.length ? 7000 : t.err ? 4500 : 2600);
     return () => clearTimeout(id);
   }, [t]);
   if (!t) return null;
   return (
     <div className="toast" role="status" aria-live="polite">
-      <div className={t.err ? 'err' : ''} key={t.k}>{t.text}</div>
+      <div className={`${t.err ? 'err' : ''} ${t.actions?.length ? 'has-actions' : ''}`} key={t.k}>
+        <span>{t.text}</span>
+        {t.actions?.map((a) => (
+          <button
+            key={a.label}
+            className="toast-act"
+            onClick={() => {
+              setT(null);
+              a.run();
+            }}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

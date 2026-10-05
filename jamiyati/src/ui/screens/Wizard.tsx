@@ -9,7 +9,10 @@ import * as A from '../../store/actions';
 import { useDB } from '../../store/db';
 import { Icon } from '../components/Icon';
 import { attempt, Field, Seg } from '../components/ui';
-import { back, go } from '../router';
+import { back, go, useRoute } from '../router';
+import { PersonalForm } from './Personal';
+import { QuickPeople } from '../components/QuickPeople';
+import { countryOf, toIntl } from '../../lib/people';
 
 const DEFAULT_RULES_AR = `١. يُدفع القسط في موعده، ومهلة السماح المحددة للظروف فقط.
 ٢. يُرفع إثبات التحويل في التطبيق لكل دفعة.
@@ -22,7 +25,7 @@ const DEFAULT_RULES_EN = `1. Pay on time; the grace period is for emergencies on
 4. Turn swaps need both members and the organizer to agree.
 5. No interest and no fees.`;
 
-export function Wizard() {
+function OrganizerWizard() {
   const db = useDB();
   const me = db.users.find((u) => u.id === db.currentUserId)!;
   const [step, setStep] = useState(0);
@@ -140,7 +143,8 @@ export function Wizard() {
 
         {step === 2 && (
           <div className="card stack">
-            <div className="small muted">{L('اختياري — يمكنك أيضاً الدعوة برابط أو QR بعد الإنشاء.', 'Optional — you can also invite by link or QR after creating.')}</div>
+            <div className="small muted">{L('أضف الأعضاء الآن أو لاحقاً. الأسرع: من جهات الاتصال أو لصق قائمة الأسماء من مجموعة واتساب.', 'Add members now or later — fastest: from contacts or paste names from your WhatsApp group.')}</div>
+            <QuickPeople country={countryOf(me.phone)} onAdd={(people) => setMembers((prev) => [...prev, ...people])} />
             <div className="row between small">
               <span>
                 {L('الأسهم المحجوزة', 'Shares taken')}: <b className="num">{num(usedUnits)}</b> / {num(shares)}
@@ -170,13 +174,13 @@ export function Wizard() {
             </div>
             <div className="grid2">
               <input className="input" placeholder={L('الاسم', 'Name')} value={mName} onChange={(e) => setMName(e.target.value)} />
-              <input className="input ltr num" inputMode="tel" placeholder="9665xxxxxxxx" value={mPhone} onChange={(e) => setMPhone(e.target.value)} />
+              <input className="input ltr num" inputMode="tel" placeholder="05xxxxxxxx" value={mPhone} onChange={(e) => setMPhone(e.target.value)} />
             </div>
             <button
               className="btn soft block"
               disabled={!mName.trim()}
               onClick={() => {
-                setMembers([...members, { name: mName.trim(), phone: mPhone.replace(/\D/g, ''), units: 1 }]);
+                setMembers([...members, { name: mName.trim(), phone: toIntl(mPhone, countryOf(me.phone)), units: 1 }]);
                 setMName('');
                 setMPhone('');
               }}
@@ -230,5 +234,55 @@ function Line({ k, v }: { k: string; v: string }) {
         {v}
       </b>
     </div>
+  );
+}
+
+/** نقطة البداية: هل أنت المنظِّم أم عضو تتابع أقساطك؟ */
+export function Wizard() {
+  const { query } = useRoute();
+  const type = query.get('type');
+  if (type === 'organized') return <OrganizerWizard />;
+  if (type === 'personal')
+    return (
+      <>
+        <header className="top">
+          <button className="icon-btn" onClick={() => back()} aria-label={L('رجوع', 'Back')}>
+            <Icon name="back" className="flip" />
+          </button>
+          <h1>{L('متابعة جمعية أنا عضو فيها', 'Track a circle I belong to')}</h1>
+        </header>
+        <main>
+          <PersonalForm />
+        </main>
+      </>
+    );
+  return (
+    <>
+      <header className="top">
+        <button className="icon-btn" onClick={() => back()} aria-label={L('رجوع', 'Back')}>
+          <Icon name="back" className="flip" />
+        </button>
+        <h1>{L('جمعية جديدة', 'New circle')}</h1>
+      </header>
+      <main>
+        <h2 style={{ margin: '4px 0' }}>{L('ما دورك في الجمعية؟', 'What is your role?')}</h2>
+        <button className="card choice" onClick={() => go('/new?type=organized', true)}>
+          <span className="choice-ic">👑</span>
+          <span className="grow">
+            <b>{L('أنا المنظِّم', "I'm the organizer")}</b>
+            <span className="small muted">{L('أُنشئ الجمعية وأضيف الأعضاء وأُجري القرعة وأسجّل من دفع.', 'Create the circle, add members, run the lottery, track who paid.')}</span>
+          </span>
+          <Icon name="next" className="flip" />
+        </button>
+        <button className="card choice" onClick={() => go('/new?type=personal', true)}>
+          <span className="choice-ic">🙋</span>
+          <span className="grow">
+            <b>{L('أنا عضو في جمعية', "I'm a member")}</b>
+            <span className="small muted">{L('أتابع أقساطي ومتى دوري، وأحصل على تذكير قبل كل قسط.', 'Track my installments and turn, with reminders.')}</span>
+          </span>
+          <Icon name="next" className="flip" />
+        </button>
+      </main>
+    </>
   );
 }

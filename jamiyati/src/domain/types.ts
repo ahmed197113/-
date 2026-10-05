@@ -36,6 +36,10 @@ export interface Circle {
   postponements: Postponement[];
   lottery?: LotteryRecord;
   terminatedAt?: string;
+  /** organized = أنا المنظِّم وأدير الجميع، personal = أنا عضو أتابع أقساطي ودوري في جمعية يديرها غيري */
+  mode?: 'organized' | 'personal';
+  organizerName?: string;
+  organizerPhone?: string;
   createdAt: string;
 }
 
