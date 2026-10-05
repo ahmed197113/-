@@ -1,6 +1,5 @@
 import datetime as dt
 import json
-from decimal import Decimal
 
 from django.contrib import messages
 from django.core import management
@@ -16,7 +15,7 @@ from .forms import (AccountForm, CompanyForm, CostCenterForm, JournalEntryForm, 
                     YearCloseForm)
 from .models import (Account, AccountMapping, Company, CostCenter, JournalEntry, JournalLine, JournalTemplate,
                      Partner, Tax, ZERO, r2)
-from .posting import create_entry, post_manual, remove_entry
+from .posting import create_entry, post_manual
 from .reports import treasury_balances
 from .ui import Col, delete_object, render_list, save_form, today
 

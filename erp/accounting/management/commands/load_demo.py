@@ -42,7 +42,7 @@ class Command(BaseCommand):
         sup3 = P(code="S003", name="الشركة الحديثة لتأجير المعدات", type="supplier", tax_id="611-909-808")
         sub1 = P(code="SC01", name="مؤسسة البنا للنجارة والحدادة المسلحة", type="subcontractor", tax_id="733-121-454")
         sub2 = P(code="SC02", name="شركة الإتقان للأعمال الكهربائية", type="subcontractor", tax_id="744-656-232")
-        emp = P(code="E001", name="م. أحمد سامي - مهندس الموقع", type="employee")
+        P(code="E001", name="م. أحمد سامي - مهندس الموقع", type="employee")
 
         cc1 = CostCenter.objects.create(code="CC1", name="الإدارة العامة")
         cc2 = CostCenter.objects.create(code="CC2", name="قطاع المباني")
@@ -55,7 +55,7 @@ class Command(BaseCommand):
                                     location="العاشر من رمضان", manager="م. محمود فتحي", budget=D("2600000"),
                                     start_date=d(90), status="active", cost_center=cc3)
         wh = Warehouse.objects.get(code="WH1")
-        wh_site = Warehouse.objects.create(code="WH2", name="مخزن موقع التجمع", project=p1)
+        Warehouse.objects.create(code="WH2", name="مخزن موقع التجمع", project=p1)
 
         # رأس المال وأرصدة البنك
         create_entry(d(160), "رأس المال المدفوع", [
@@ -98,7 +98,7 @@ class Command(BaseCommand):
 
         cert1 = cert(c1, d(110), {"1/1": 4200, "1/2": 380, "1/3": 300}, pct={"1/3": 80})
         cert2 = cert(c1, d(75), {"1/3": 520, "1/4": 250, "1/5": 2400}, pct={"1/3": 100})
-        cert3 = cert(c1, d(40), {"1/3": 450, "1/4": 400, "1/6": 2500},
+        cert(c1, d(40), {"1/3": 450, "1/4": 400, "1/6": 2500},
                      deductions=[("غرامة تأخير توريد", "5211", 15000)])
         Payment.objects.create(kind="receipt", date=d(95), purpose="partner", partner=cust1, certificate=cert1,
                                treasury=acc("1213"), amount=cert1.net_amount, method="transfer",
@@ -132,7 +132,7 @@ class Command(BaseCommand):
         Payment.objects.create(kind="payment", date=d(135), purpose="advance", partner=sub1, contract=s1,
                                treasury=acc("1211"), amount=D("100000"), memo="دفعة مقدمة لمقاول النجارة").post(user)
         sc1 = cert(s1, d(100), {"N1": 600, "N2": 150})
-        sc2 = cert(s1, d(60), {"N2": 500})
+        cert(s1, d(60), {"N2": 500})
         Payment.objects.create(kind="payment", date=d(90), purpose="partner", partner=sub1, certificate=sc1,
                                treasury=acc("1213"), amount=sc1.net_amount, method="cheque", cheque_no="100231",
                                memo="سداد المستخلص الأول").post(user)

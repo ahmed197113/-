@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 erp/db.sqlite3
 erp/staticfiles/
+.venv/
