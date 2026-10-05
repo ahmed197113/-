@@ -70,8 +70,17 @@ def dashboard(request):
     drafts = (Invoice.objects.filter(state="draft").count() + Payment.objects.filter(state="draft").count()
               + Certificate.objects.filter(state="draft").count()
               + JournalEntry.objects.filter(state="draft").count())
+    steps = [
+        ("بيانات الشركة والسنة المالية", "/settings/", Company.get().tax_id != ""),
+        ("مراجعة شجرة الحسابات وإضافة البنوك والخزائن", "/accounts/", Account.objects.filter(kind="bank").count() > 2),
+        ("إدخال الأرصدة الافتتاحية (قيد افتتاحي)", "/journal/new/", JournalEntry.objects.filter(source="opening").exists()),
+        ("إضافة العملاء ومقاولي الباطن والموردين", "/partners/new/?type=customer", Partner.objects.exists()),
+        ("إضافة أول مشروع", "/projects/new/", Project.objects.exists()),
+        ("عقد العميل ومقايسة البنود", "/contracts/new/?kind=client", Project.objects.filter(contracts__isnull=False).exists()),
+        ("أول مستخلص", "/certificates/new/?kind=client", Certificate.objects.exists()),
+    ]
     ctx = dict(
-        title="لوحة التحكم",
+        title="لوحة التحكم", steps=steps, show_steps=not all(done for _, _, done in steps),
         cash=sum((x["balance"] for x in treasury), ZERO), treasury=treasury,
         receivable=kind_sum("receivable"), payable=-kind_sum("payable"),
         revenue=revenue, expense=expense, profit=revenue - expense,

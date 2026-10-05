@@ -27,6 +27,6 @@
 </div>
 {% endblock %}
 {% block scripts %}<script src="{% static 'vendor/chart.umd.min.js' %}"></script><script>
-const d={{ chart|safe }};Chart.defaults.font.family="Cairo";
+const d={{ chart|safe }};Chart.defaults.font.family="Plex Arabic";
 if(d.values.length){new Chart(document.getElementById("pie"),{type:"doughnut",data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:["#1f3a5f","#2e7d7a","#d69e2e","#c53030","#6b46c1","#38a169","#718096","#dd6b20","#3182ce"]}]},options:{plugins:{legend:{position:"bottom"}}}});}
 </script>{% endblock %}

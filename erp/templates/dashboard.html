@@ -4,6 +4,12 @@
   <h1 class="page-title"><i class="bi bi-speedometer2"></i> لوحة التحكم</h1>
   {% if drafts %}<a href="/journal/?state=draft" class="badge text-bg-warning ms-3 text-decoration-none">{{ drafts }} مستند مسودة بانتظار الترحيل</a>{% endif %}
 </div>
+{% if show_steps %}
+<div class="card mb-3" style="border-color:#7fc8c1"><div class="card-header" style="background:#dff3f1;color:#0b3b38"><i class="bi bi-flag"></i> ابدأ من هنا — خطوات تجهيز البرنامج</div>
+<div class="card-body py-2"><ol class="mb-0 d-flex flex-wrap gap-2 list-unstyled">
+{% for label, url, done in steps %}<li><a href="{{ url }}" class="btn btn-sm {% if done %}btn-success{% else %}btn-outline-primary{% endif %}"><span class="badge text-bg-light me-1">{{ forloop.counter }}</span>{% if done %}<i class="bi bi-check2"></i> {% endif %}{{ label }}</a></li>{% endfor %}
+</ol></div></div>
+{% endif %}
 <div class="row g-3 mb-3">
   <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g1"><i class="bi bi-cash-stack"></i><div class="label">النقدية والبنوك</div><div class="value">{{ cash|money0 }}</div></div></div>
   <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g2"><i class="bi bi-person-down"></i><div class="label">مستحق من العملاء</div><div class="value">{{ receivable|money0 }}</div></div></div>
@@ -35,9 +41,9 @@
     <table class="table table-sm table-hover"><tbody>
     {% for e in recent %}<tr class="clickable" data-href="/journal/{{ e.id }}/"><td>{{ e.number }}</td><td>{{ e.date|date:"Y/m/d" }}</td><td>{{ e.memo|truncatechars:50 }}</td><td><span class="badge text-bg-light">{{ e.get_source_display }}</span></td></tr>
     {% empty %}<tr><td class="text-muted text-center">لا توجد قيود</td></tr>{% endfor %}</tbody></table></div></div>
-  <div class="col-lg-3"><div class="card"><div class="card-header text-danger"><i class="bi bi-exclamation-triangle"></i> فواتير متأخرة</div>
+  <div class="col-lg-3"><div class="card"><div class="card-header" style="color:#9b1c1c"><i class="bi bi-exclamation-triangle"></i> فواتير متأخرة</div>
     <table class="table table-sm"><tbody>{% for i in overdue %}<tr class="clickable" data-href="/invoices/{{ i.id }}/"><td>{{ i.partner }}<div class="small text-muted">{{ i.number }}</div></td><td class="num">{{ i.residual|money }}</td></tr>{% empty %}<tr><td class="text-muted text-center">لا يوجد</td></tr>{% endfor %}</tbody></table></div></div>
-  <div class="col-lg-3"><div class="card"><div class="card-header text-warning"><i class="bi bi-box"></i> أصناف تحت حد الطلب</div>
+  <div class="col-lg-3"><div class="card"><div class="card-header" style="color:#8a4b08"><i class="bi bi-box"></i> أصناف تحت حد الطلب</div>
     <table class="table table-sm"><tbody>{% for p in low_stock %}<tr><td>{{ p.name }}</td><td class="num">{{ p.qty_on_hand|qty }}</td></tr>{% empty %}<tr><td class="text-muted text-center">لا يوجد</td></tr>{% endfor %}</tbody></table></div></div>
 </div>
 {% endblock %}
@@ -45,10 +51,10 @@
 <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
 <script>
 const d = {{ chart|safe }};
-Chart.defaults.font.family = "Cairo";
+Chart.defaults.font.family="Plex Arabic";
 new Chart(document.getElementById("chart"), {type: "bar", data: {labels: d.labels, datasets: [
-  {label: "الإيرادات", data: d.revenue, backgroundColor: "#2e7d7a", borderRadius: 4},
-  {label: "التكاليف والمصروفات", data: d.expense, backgroundColor: "#d69e2e", borderRadius: 4}]},
+  {label: "الإيرادات", data: d.revenue, backgroundColor: "#0f6e6a", borderRadius: 4},
+  {label: "التكاليف والمصروفات", data: d.expense, backgroundColor: "#c27c0e", borderRadius: 4}]},
   options: {plugins: {legend: {position: "bottom"}}, scales: {y: {ticks: {callback: v => v.toLocaleString()}}}}});
 </script>
 {% endblock %}
