@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { round2 } from '../../domain/calc';
 import { diffDays, todayISO } from '../../domain/dates';
 import { L } from '../../lib/i18n';
-import { date, money, relDays, num, freqLabel } from '../../lib/format';
+import { date, money, relDays, num } from '../../lib/format';
 import { useDB } from '../../store/db';
 import { canConfirm, cycleSummary, myCircles, roleIn, type MyCircleCard } from '../../store/selectors';
 import * as A from '../../store/actions';
 import { focusCycle } from './CircleNow';
+import { RegistryCard } from './Circles';
 import { Icon } from '../components/Icon';
 import { PaySheet } from '../components/sheets';
-import { attempt, Empty, Progress, StatusChip, toast, toastError } from '../components/ui';
+import { attempt, Empty, toast, toastError } from '../components/ui';
 import { go } from '../router';
 import { Logo } from './Auth';
 
@@ -21,6 +22,7 @@ export function Home() {
   const today = todayISO();
   const me = db.users.find((u) => u.id === db.currentUserId)!;
   const cards = myCircles(db, me.id, today);
+  const unread = db.notifications.filter((n) => n.userId === me.id && !n.read).length;
   const active = cards.filter((c) => c.view.circle.status === 'active' || c.view.circle.status === 'draft');
   const [pay, setPay] = useState<{ circleId: string; memberId: string; cycle: number } | null>(null);
 
@@ -86,6 +88,10 @@ export function Home() {
         </h1>
         <button className="icon-btn" onClick={() => go('/tools')} aria-label={L('أدوات', 'Tools')}>
           <Icon name="calc" />
+        </button>
+        <button className="icon-btn" onClick={() => go('/notifications')} aria-label={L('الإشعارات', 'Notifications')}>
+          <Icon name="bell" />
+          {unread > 0 && <span className="dot">{unread > 9 ? '9+' : num(unread)}</span>}
         </button>
       </header>
       <main>
@@ -227,14 +233,18 @@ export function Home() {
             )}
 
             <div className="section-title">
-              <h2>{L('جمعياتي', 'My circles')}</h2>
+              <h2>{L('جمعياتي النشطة', 'Active circles')}</h2>
               <button className="btn sm ghost" onClick={() => go('/new')}>
                 <Icon name="plus" size={18} /> {L('جمعية', 'Circle')}
               </button>
             </div>
-            {cards.map((c) => (
-              <CircleCard key={c.view.circle.id} c={c} />
+            {active.length === 0 && <div className="card small muted">{L('لا توجد جمعيات نشطة. الجمعيات المنتهية في سجل جمعياتي.', 'No active circles. Finished ones are in My circles.')}</div>}
+            {active.slice(0, 3).map((c) => (
+              <RegistryCard key={c.view.circle.id} c={c} />
             ))}
+            <button className="btn soft block" onClick={() => go('/circles')}>
+              <Icon name="users" /> {L(`كل جمعياتي (${num(cards.length)})`, `All my circles (${cards.length})`)}
+            </button>
 
             <div className="section-title">
               <h2>{L('ملخصي المالي', 'My finances')}</h2>
@@ -274,43 +284,6 @@ export function Home() {
       </main>
       {pay && <PaySheet open onClose={() => setPay(null)} circleId={pay.circleId} memberId={pay.memberId} cycleIndex={pay.cycle} />}
     </>
-  );
-}
-
-function CircleCard({ c }: { c: MyCircleCard }) {
-  const { circle, schedule, current, pot } = c.view;
-  const done = c.view.circle.status === 'completed' ? schedule.length : Math.max(0, current + 1);
-  return (
-    <a href={`#/c/${circle.id}`} className="card stack" style={{ textDecoration: 'none', color: 'inherit', gap: 8 }}>
-      <div className="row between">
-        <b style={{ fontSize: '1.08rem' }} className="ellipsis">
-          {circle.name}
-        </b>
-        <div className="row" style={{ gap: 6 }}>
-          <span className="chip s-brand">{circle.mode === 'personal' ? L('عضو · متابعة', 'Member · tracking') : roleLabel(c.role)}</span>
-          {circle.status !== 'active' && <span className="chip">{statusLabel(circle.status)}</span>}
-        </div>
-      </div>
-      <div className="small muted">
-        {money(c.duePerCycle || circle.installment, circle.currency)} · {freqLabel(circle.frequency)} · {L('الاستلام', 'Pot')} {money(pot, circle.currency)}
-      </div>
-      {circle.status !== 'draft' && (
-        <>
-          <Progress value={(done / schedule.length) * 100} />
-          <div className="row between small">
-            <span className="muted">{L(`الدورة ${num(Math.min(done, schedule.length))} من ${num(schedule.length)}`, `Cycle ${done} of ${schedule.length}`)}</span>
-            {c.next ? <StatusChip s={c.next.status} /> : circle.status === 'active' && <span className="chip s-paid">{L('مسدد ✓', 'Up to date ✓')}</span>}
-          </div>
-        </>
-      )}
-      {c.myTurns.length > 0 && (
-        <div className="small">
-          🎯 {L('دوري', 'My turn')}: {c.myTurns.map((t) => `${num(t.cycleIndex + 1)}${t.received ? ' ✓' : ''}`).join('، ')}
-          {c.myTurns.find((t) => !t.received)?.date && <> · {date(c.myTurns.find((t) => !t.received)!.date)}</>}
-        </div>
-      )}
-      {circle.status === 'draft' && <div className="warn small">{L('قيد التجهيز: أكمل الأعضاء ثم أجرِ القرعة لتبدأ', 'Draft: add members, then run the lottery to start')}</div>}
-    </a>
   );
 }
 

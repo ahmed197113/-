@@ -18,6 +18,7 @@ import { Receipt } from './ui/screens/Receipt';
 import { Report } from './ui/screens/Report';
 import { CalendarScreen } from './ui/screens/Calendar';
 import { Notifications } from './ui/screens/Notifications';
+import { CirclesScreen } from './ui/screens/Circles';
 import { Tools } from './ui/screens/Tools';
 import { SettingsScreen } from './ui/screens/Settings';
 
@@ -107,6 +108,7 @@ export function App() {
   else if (p0 === 'r' && p1) screen = <Receipt paymentId={p1} />;
   else if (p0 === 'calendar') screen = <CalendarScreen />;
   else if (p0 === 'notifications') screen = <Notifications />;
+  else if (p0 === 'circles') screen = <CirclesScreen />;
   else if (p0 === 'tools') screen = <Tools />;
   else if (p0 === 'settings') screen = <SettingsScreen />;
   else screen = <Home />;
@@ -119,10 +121,10 @@ export function App() {
       {nav && db.currentUserId && (
         <nav className="nav no-print" aria-label={L('التنقل الرئيسي', 'Main navigation')}>
           <div className="nav-inner">
-            <NavLink to="/" icon="home" label={L('الرئيسية', 'Home')} on={!p0 || p0 === 'c' || p0 === 'r'} />
-            <NavLink to="/calendar" icon="cal" label={L('التقويم', 'Calendar')} on={p0 === 'calendar'} />
+            <NavLink to="/" icon="home" label={L('الرئيسية', 'Home')} on={!p0 || p0 === 'notifications'} badge={unread} />
+            <NavLink to="/circles" icon="users" label={L('جمعياتي', 'Circles')} on={p0 === 'circles' || p0 === 'c' || p0 === 'r'} />
             <NavLink to="/new" icon="plus" label={L('جديدة', 'New')} on={false} fab />
-            <NavLink to="/notifications" icon="bell" label={L('الإشعارات', 'Alerts')} on={p0 === 'notifications'} badge={unread} />
+            <NavLink to="/calendar" icon="cal" label={L('التقويم', 'Calendar')} on={p0 === 'calendar'} />
             <NavLink to="/settings" icon="gear" label={L('حسابي', 'Account')} on={p0 === 'settings' || p0 === 'tools'} />
           </div>
         </nav>
