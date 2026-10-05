@@ -6,6 +6,8 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.Rect
+import android.os.Build
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
@@ -38,6 +40,10 @@ class GuardService : AccessibilityService() {
     private var inShorts = false
     private var shortsPkg: String? = null
     private var lastCheck = 0L
+    private var lastPositive = 0L
+    private var lastSwipe = 0L
+    private var lastIndex = -1
+    private val indexReliable = mutableSetOf<String>()
     private var lastScrollEvent = 0L
     private var tickCount = 0
     private val swipeTimes = ArrayDeque<Long>()
@@ -81,25 +87,44 @@ class GuardService : AccessibilityService() {
         ) return
 
         if (!ShortsDetector.isMonitored(pkg)) {
-            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && inShorts) leaveShorts()
+            // A real switch to another app (launcher, WhatsApp…): leave right away.
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && inShorts) evaluate()
             return
         }
         val now = SystemClock.uptimeMillis()
         when (event.eventType) {
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> evaluate(pkg)
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> if (now - lastCheck > 700) evaluate(pkg)
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> evaluate()
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> if (now - lastCheck > 800) evaluate()
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                if (!inShorts) evaluate(pkg)
-                if (inShorts) onScroll(now)
+                if (!inShorts) evaluate()
+                if (inShorts) onScroll(event, pkg, now)
             }
         }
     }
 
-    private fun evaluate(pkg: String) {
-        lastCheck = SystemClock.uptimeMillis()
-        val shorts = ShortsDetector.isShorts(rootInActiveWindow, pkg)
-        if (shorts && !inShorts) enterShorts(pkg)
-        else if (!shorts && inShorts) leaveShorts()
+    private fun screenHeight() = resources.displayMetrics.heightPixels
+
+    /**
+     * Re-reads the screen. Entering is immediate; leaving needs [LEAVE_GRACE_MS] without any
+     * positive reading (or a confirmed switch to another app), so a momentary read glitch never
+     * removes and re-shows the gate.
+     */
+    private fun evaluate() {
+        val now = SystemClock.uptimeMillis()
+        lastCheck = now
+        val root = rootInActiveWindow ?: return
+        val rootPkg = root.packageName?.toString() ?: return
+        if (rootPkg == packageName || rootPkg == "com.android.systemui" ||
+            rootPkg.contains("inputmethod") || rootPkg.contains("keyboard")
+        ) return
+        val shorts = ShortsDetector.detect(root, screenHeight()) ?: return
+        if (shorts) {
+            lastPositive = now
+            if (!inShorts) enterShorts(rootPkg)
+        } else if (inShorts) {
+            val otherApp = !ShortsDetector.isMonitored(rootPkg)
+            if (otherApp || now - lastPositive > LEAVE_GRACE_MS) leaveShorts()
+        }
     }
 
     private fun enterShorts(pkg: String) {
@@ -118,16 +143,44 @@ class GuardService : AccessibilityService() {
     private fun leaveShorts() {
         inShorts = false
         shortsPkg = null
+        lastIndex = -1
         swipeTimes.clear()
         hideHud()
         removeOverlay()
     }
 
-    /** One swipe = one burst of scroll events separated by a pause. */
-    private fun onScroll(now: Long) {
-        val newSwipe = now - lastScrollEvent > 650
+    /**
+     * Counts one swipe per new video. Only full-screen vertical scrolls count, so scrolling
+     * comments, descriptions or side carousels never drains the budget. When the app reports
+     * item indexes, a swipe is a change of index; otherwise a burst of scroll events.
+     */
+    private fun onScroll(event: AccessibilityEvent, pkg: String, now: Long) {
+        if (overlay != null) return
+        event.source?.let { src ->
+            val r = Rect()
+            src.getBoundsInScreen(r)
+            if (r.height() < screenHeight() * 0.55f) return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+            event.scrollDeltaX != 0 && event.scrollDeltaY == 0
+        ) return
+
+        val idx = event.fromIndex
+        val gap = now - lastScrollEvent
         lastScrollEvent = now
-        if (!newSwipe || overlay != null) return
+        val newSwipe = if (idx >= 0 && pkg in indexReliable) {
+            val changed = idx != lastIndex
+            lastIndex = idx
+            changed && now - lastSwipe > 350
+        } else {
+            if (idx >= 0) {
+                if (lastIndex >= 0 && idx != lastIndex) indexReliable += pkg
+                lastIndex = idx
+            }
+            gap > 650
+        }
+        if (!newSwipe) return
+        lastSwipe = now
 
         Store.recordSwipe()
         swipeTimes.addLast(now)
@@ -146,18 +199,13 @@ class GuardService : AccessibilityService() {
     }
 
     private fun tick() {
+        Store.guardHeartbeat = System.currentTimeMillis()
         Store.tick()
         if (!inShorts) return
         tickCount++
         if (tickCount % 2 == 0) {
-            val root = rootInActiveWindow
-            val pkg = root?.packageName?.toString()
-            if (pkg != null && pkg != packageName && pkg != "com.android.systemui") {
-                if (!ShortsDetector.isMonitored(pkg) || !ShortsDetector.isShorts(root, pkg)) {
-                    leaveShorts()
-                    return
-                }
-            }
+            evaluate()
+            if (!inShorts) return
         }
         if (overlay != null) return
         Store.addShortsTime(1)
@@ -213,7 +261,7 @@ class GuardService : AccessibilityService() {
 
     private fun showGate() {
         val d = Store.state.value
-        val wait = (d.gateSeconds + d.today.sessions * 5).coerceAtMost(60)
+        val wait = (d.gateSeconds + d.today.sessions * 3).coerceAtMost(30)
         val p = panel()
         p.addView(text("🧠 لحظة وعي", 28f, WHITE, bold = true))
         p.addView(text("أنت على وشك دخول المقاطع القصيرة. توقّف وتنفّس.", 15f, MUTED))
@@ -498,6 +546,9 @@ class GuardService : AccessibilityService() {
     }
 
     companion object {
+        /** How long the feed must be absent before the shield considers the user gone. */
+        private const val LEAVE_GRACE_MS = 2500L
+
         private val WHITE = 0xFFE6EDF7.toInt()
         private val MUTED = 0xFF8A97B0.toInt()
         private val CYAN = 0xFF22D3EE.toInt()

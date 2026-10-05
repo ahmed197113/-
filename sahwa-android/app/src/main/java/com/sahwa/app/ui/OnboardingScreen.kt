@@ -60,7 +60,7 @@ private val PLANS = listOf(
 fun OnboardingScreen(now: Long) {
     val ctx = LocalContext.current
     var step by remember { mutableIntStateOf(0) }
-    var plan by remember { mutableIntStateOf(2) }
+    var plan by remember { mutableIntStateOf(1) }
     var msg by remember { mutableStateOf("أنا أقوى من خوارزمية صُمّمت لتسرق وقتي.") }
     val guardOn = remember(now / 2000) { isGuardEnabled(ctx) }
 
@@ -119,7 +119,7 @@ fun OnboardingScreen(now: Long) {
                                     "  ${p.name}", color = if (selected) p.color else C.Text,
                                     fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
                                 )
-                                if (i == 2) Text("موصى به", color = C.Red, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                if (i == 1) Text("موصى به", color = C.Cyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                             Text(p.desc, color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp))
                         }

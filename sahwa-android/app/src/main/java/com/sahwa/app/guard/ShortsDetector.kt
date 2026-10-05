@@ -1,5 +1,6 @@
 package com.sahwa.app.guard
 
+import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 
 /**
@@ -21,18 +22,22 @@ object ShortsDetector {
         "com.kwai.bulldog",
     )
 
+    /**
+     * View-id fragments of the *full-screen* short-video pager in mixed apps.
+     * A match only counts when the node is visible and covers most of the screen,
+     * so a Reels post in the normal feed or a "Shorts" tab button never triggers.
+     */
     private val FEED_MARKERS: Map<String, List<String>> = mapOf(
         "com.google.android.youtube" to listOf(
             "reel_recycler",
             "reel_player_page_container",
             "reel_watch_player",
             "reel_watch_fragment_root",
-            "reel_progress_bar",
         ),
         "com.instagram.android" to listOf(
+            "clips_viewer_view_pager",
             "clips_viewer",
             "clips_video_container",
-            "clips_ufi",
         ),
         "com.facebook.katana" to listOf(
             "reels_viewer",
@@ -61,18 +66,31 @@ object ShortsDetector {
 
     fun isMonitored(pkg: String) = pkg in ALL
 
-    fun isShorts(root: AccessibilityNodeInfo?, pkg: String): Boolean {
+    /**
+     * Whether the active window shows a short-video feed.
+     * Returns null when the screen can't be read right now (unknown), so callers
+     * don't mistake a momentary read failure for the user having left the feed.
+     */
+    fun detect(root: AccessibilityNodeInfo?, screenHeight: Int): Boolean? {
+        if (root == null) return null
+        val pkg = root.packageName?.toString() ?: return null
         if (pkg in FULL_SHORT_APPS) return true
         val markers = FEED_MARKERS[pkg] ?: return false
-        if (root == null) return false
+        val minHeight = (screenHeight * 0.6f).toInt()
+        val rect = Rect()
         val queue = ArrayDeque<AccessibilityNodeInfo>()
         queue.addLast(root)
         var visited = 0
-        while (queue.isNotEmpty() && visited < 450) {
+        while (queue.isNotEmpty() && visited < 2500) {
             val node = queue.removeFirst()
             visited++
+            // Hidden fragments (e.g. Shorts kept alive in the back stack) must not count.
+            if (!node.isVisibleToUser) continue
             val id = node.viewIdResourceName?.lowercase()
-            if (id != null && markers.any { id.contains(it) }) return true
+            if (id != null && markers.any { id.contains(it) }) {
+                node.getBoundsInScreen(rect)
+                if (rect.height() >= minHeight) return true
+            }
             for (i in 0 until node.childCount) {
                 node.getChild(i)?.let { queue.addLast(it) }
             }

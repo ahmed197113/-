@@ -5,7 +5,10 @@ import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.ComponentName
 import android.content.Context
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
 import android.os.Build
 import android.os.Process
 import android.provider.Settings
@@ -26,6 +29,28 @@ fun openAccessibilitySettings(ctx: Context) {
         ctx.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }
+
+fun isIgnoringBattery(ctx: Context): Boolean {
+    val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
+    return pm.isIgnoringBatteryOptimizations(ctx.packageName)
+}
+
+/** Asks the system not to kill the shield to save battery (a common cause of it stopping). */
+@SuppressLint("BatteryLife")
+fun requestIgnoreBattery(ctx: Context) {
+    val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + ctx.packageName))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { ctx.startActivity(direct) }.onFailure {
+        runCatching {
+            ctx.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
+    }
+}
+
+/** The shield is switched on in settings but hasn't ticked recently: the system stopped it. */
+fun isGuardStalled(ctx: Context, now: Long): Boolean =
+    android.os.SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime() > 15_000L &&
+        isGuardEnabled(ctx) && now - com.sahwa.app.data.Store.guardHeartbeat > 15_000L
 
 fun hasUsageAccess(ctx: Context): Boolean {
     val ops = ctx.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager

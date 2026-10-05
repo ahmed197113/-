@@ -66,6 +66,12 @@ fun SettingsScreen(d: AppData, now: Long) {
                         contentColor = if (guardOn) C.Text else Color.Black,
                     ),
                 ) { Text(if (guardOn) "إعدادات إمكانية الوصول" else "تفعيل الدرع") }
+                val batteryOk = remember(now / 3000) { isIgnoringBattery(ctx) }
+                if (!batteryOk) {
+                    OutlinedButton(onClick = { requestIgnoreBattery(ctx) }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+                        Text("🔋 اسمح بالعمل في الخلفية (يمنع توقف الدرع)")
+                    }
+                }
             }
         }
         item { StrictCard(d) }
@@ -87,7 +93,7 @@ fun SettingsScreen(d: AppData, now: Long) {
         item {
             GlowCard(accent = C.Violet) {
                 SectionTitle("🧠 بوابة الوعي: ${d.gateSeconds} ثوانٍ")
-                Text("مدة التنفس قبل كل جلسة. تزيد 5 ثوانٍ مع كل جلسة إضافية في اليوم.", color = C.Muted, fontSize = 12.sp)
+                Text("مدة التنفس قبل كل جلسة. تزيد 3 ثوانٍ مع كل جلسة إضافية في اليوم (حتى 30 ثانية).", color = C.Muted, fontSize = 12.sp)
                 Slider(
                     value = d.gateSeconds.toFloat(),
                     onValueChange = { v -> if (!d.strictActive || v.toInt() >= d.gateSeconds) Store.setGateSeconds(v.toInt()) },

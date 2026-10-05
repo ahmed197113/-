@@ -66,6 +66,7 @@ fun brainColor(score: Float): Color {
 fun HomeScreen(d: AppData, now: Long, onOpenTab: (Tab) -> Unit) {
     val ctx = LocalContext.current
     val guardOn = remember(now / 3000) { isGuardEnabled(ctx) }
+    val stalled = remember(now / 3000) { isGuardStalled(ctx, now) }
 
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -74,6 +75,8 @@ fun HomeScreen(d: AppData, now: Long, onOpenTab: (Tab) -> Unit) {
         item { ScreenHeader("صحوة", "استعد عقلك من التمرير اللانهائي") }
         item { BrainCard(d) }
         if (!guardOn) item { GuardCta() }
+        if (stalled) item { GuardStalledCard() }
+        item { RulesStrip(d, now) }
         item { BudgetCard(d) }
         item { FocusCard(d, now) }
         item { TodayRow(d) }
@@ -203,6 +206,50 @@ private fun GuardCta() {
             },
             dismissButton = { TextButton(onClick = { show = false }) { Text("لاحقًا") } },
         )
+    }
+}
+
+/** Shows, in one line each, which rules are active right now, so a block is never a surprise. */
+@Composable
+private fun RulesStrip(d: AppData, now: Long) {
+    val rules = buildList {
+        if (d.focusUntil > now) add("🎯 التركيز مفعّل — المقاطع مغلقة حتى ينتهي" to C.Violet)
+        if (d.nightActive()) {
+            add("🌙 درع الليل يعمل الآن (حتى %02d:00)".format(d.nightEnd) to C.Indigo)
+        } else if (d.nightShield) {
+            add("🌙 درع الليل يبدأ الساعة %02d:00".format(d.nightStart) to C.Muted)
+        }
+        if (d.remaining <= 0) add("⚡ نفد رصيد اليوم — اكسب المزيد من «بدائل»" to C.Red)
+        if (d.strictActive) add("🔒 الوضع الصارم مفعّل" to C.Red)
+    }
+    if (rules.isEmpty()) return
+    GlowCard(accent = C.Indigo, padding = PaddingValues(14.dp)) {
+        rules.forEach { (text, color) ->
+            Text(text, color = color, fontSize = 13.sp, modifier = Modifier.padding(vertical = 2.dp))
+        }
+    }
+}
+
+@Composable
+private fun GuardStalledCard() {
+    val ctx = LocalContext.current
+    GlowCard(accent = C.Red) {
+        Text("⚠️ النظام أوقف الدرع", color = C.Red, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(
+            "الدرع مفعّل في الإعدادات لكنه لا يعمل — غالبًا أوقفه توفير البطارية. لهذا يعمل أحيانًا ولا يعمل أحيانًا.\n" +
+                "1) اسمح لصحوة بالعمل في الخلفية.\n2) أطفئ «درع صحوة» وشغّله مرة أخرى.",
+            color = C.Muted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 8.dp),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = { requestIgnoreBattery(ctx) },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(containerColor = C.Red, contentColor = Color.Black),
+            ) { Text("🔋 البطارية") }
+            OutlinedButton(onClick = { openAccessibilitySettings(ctx) }, modifier = Modifier.weight(1f)) {
+                Text("🛡️ إعادة التشغيل")
+            }
+        }
     }
 }
 

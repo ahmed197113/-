@@ -142,6 +142,10 @@ object Store {
     private val _state = MutableStateFlow(AppData())
     val state: StateFlow<AppData> = _state
 
+    /** Last time the shield service ticked (in-memory). Used to spot a shield the system killed. */
+    @Volatile
+    var guardHeartbeat: Long = 0L
+
     fun init(ctx: Context) {
         if (::prefs.isInitialized) return
         prefs = ctx.applicationContext.getSharedPreferences("sahwa", Context.MODE_PRIVATE)
