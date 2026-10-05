@@ -115,6 +115,10 @@ class DepreciationRun(PostableDocument):
     def month_end(d):
         return Date(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
 
+    @property
+    def total(self):
+        return self.lines.aggregate(s=Sum("amount"))["s"] or ZERO
+
     def generate_lines(self):
         self.lines.all().delete()
         for a in Asset.objects.filter(status="running").select_related("category"):

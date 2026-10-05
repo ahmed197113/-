@@ -1,1 +1,40 @@
-urlpatterns = []
+from django.urls import path
+
+from . import views
+from .models import Product, Warehouse
+
+urlpatterns = [
+    path("invoices/", views.invoice_list, name="invoice_list"),
+    path("invoices/new/", views.invoice_form),
+    path("invoices/<int:pk>/", views.invoice_detail, name="invoice_detail"),
+    path("invoices/<int:pk>/edit/", views.invoice_form),
+    path("invoices/<int:pk>/<str:action>/", views.invoice_action),
+    path("payments/", views.payment_list, name="payment_list"),
+    path("payments/new/", views.payment_form),
+    path("payments/<int:pk>/", views.payment_detail, name="payment_detail"),
+    path("payments/<int:pk>/edit/", views.payment_form),
+    path("payments/<int:pk>/<str:action>/", views.payment_action),
+    path("transfers/", views.transfer_list, name="transfer_list"),
+    path("transfers/new/", views.transfer_form),
+    path("transfers/<int:pk>/", views.transfer_form),
+    path("transfers/<int:pk>/<str:action>/", views.transfer_action),
+    path("products/", views.product_list, name="product_list"),
+    path("products/new/", views.product_form),
+    path("products/<int:pk>/", views.product_form),
+    path("products/<int:pk>/card/", views.product_card),
+    path("products/<int:pk>/delete/", views.generic_delete, {"model": Product, "back": "/products/"}),
+    path("warehouses/", views.warehouse_list),
+    path("warehouses/new/", views.warehouse_form),
+    path("warehouses/<int:pk>/", views.warehouse_form),
+    path("warehouses/<int:pk>/delete/", views.generic_delete, {"model": Warehouse, "back": "/warehouses/"}),
+    path("stock/balance/", views.stock_balance),
+    path("stock/docs/", views.stockdoc_list),
+    path("stock/docs/new/", views.stockdoc_form),
+    path("stock/docs/<int:pk>/", views.stockdoc_detail, name="stockdoc_detail"),
+    path("stock/docs/<int:pk>/edit/", views.stockdoc_form),
+    path("stock/docs/<int:pk>/<str:action>/", views.stockdoc_action),
+    path("api/product/<int:pk>/", views.api_product),
+    path("api/partner/<int:pk>/docs/", views.api_partner_docs),
+    path("api/suggest/line/", views.api_suggest_line),
+    path("api/suggest/invoice/", views.api_review_invoice),
+]

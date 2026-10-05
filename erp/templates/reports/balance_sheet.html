@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}{% include "reports/_head.html" %}{% include "reports/_period.html" with no_from=1 no_project=1 %}
+{% if not balanced %}<div class="alert alert-danger">تنبيه: المركز المالي غير متزن</div>{% endif %}
+<div class="row g-3"><div class="col-lg-6"><div class="card"><table class="table table-sm exportable"><tbody>
+<tr class="table-primary"><th>الأصول</th><th></th></tr>{% include "reports/_tree_rows.html" with rows=asset_rows %}
+<tr class="total"><td>إجمالي الأصول</td><td class="num">{{ total_assets|money0 }}</td></tr></tbody></table></div></div>
+<div class="col-lg-6"><div class="card"><table class="table table-sm"><tbody>
+<tr class="table-warning"><th>الخصوم</th><th></th></tr>{% include "reports/_tree_rows.html" with rows=liability_rows %}
+<tr class="fw-bold table-light"><td>إجمالي الخصوم</td><td class="num">{{ total_liabilities|money0 }}</td></tr>
+<tr class="table-success"><th>حقوق الملكية</th><th></th></tr>{% include "reports/_tree_rows.html" with rows=equity_rows %}
+<tr><td>صافي ربح (خسارة) الفترة غير المقفل</td><td class="num">{{ profit|money0 }}</td></tr>
+<tr class="fw-bold table-light"><td>إجمالي حقوق الملكية</td><td class="num">{{ total_equity|money0 }}</td></tr>
+<tr class="total"><td>إجمالي الخصوم وحقوق الملكية</td><td class="num">{{ total_le|money0 }}</td></tr></tbody></table></div></div></div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 no-print">
+  <h1 class="page-title"><i class="bi bi-receipt-cutoff"></i> {{ cert }}</h1> {{ cert.state|state_badge }}
+  <div class="ms-auto d-flex gap-2">
+  {% if cert.is_draft %}
+    <a href="/certificates/{{ cert.id }}/edit/" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> تعديل الكميات</a>
+    <form method="post" action="/certificates/{{ cert.id }}/post/">{% csrf_token %}<button class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> اعتماد وترحيل</button></form>
+    <form method="post" action="/certificates/{{ cert.id }}/delete/" data-confirm="حذف المستخلص؟">{% csrf_token %}<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+  {% else %}
+    {% if cert.residual > 0 %}<a href="/payments/new/?kind={% if c.is_client %}receipt{% else %}payment{% endif %}&certificate={{ cert.id }}" class="btn btn-sm btn-success"><i class="bi bi-cash"></i> {% if c.is_client %}تحصيل{% else %}سداد{% endif %} المستخلص</a>{% endif %}
+    {% if cert.move %}<a href="/journal/{{ cert.move.id }}/" class="btn btn-sm btn-outline-dark"><i class="bi bi-journal-text"></i> القيد {{ cert.move.number }}</a>{% endif %}
+    <form method="post" action="/certificates/{{ cert.id }}/unpost/" data-confirm="إلغاء اعتماد المستخلص وحذف قيده؟">{% csrf_token %}<button class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-counterclockwise"></i> إلغاء الاعتماد</button></form>
+  {% endif %}
+  <a href="?all={% if show_all %}0{% else %}1{% endif %}" class="btn btn-sm btn-light">{% if show_all %}إخفاء البنود الصفرية{% else %}عرض كل البنود{% endif %}</a>
+  <button class="btn btn-sm btn-outline-success" onclick="exportTable(this,'{{ cert.number }}')"><i class="bi bi-file-earmark-excel"></i></button>
+  <button onclick="window.print()" class="btn btn-sm btn-dark"><i class="bi bi-printer"></i> طباعة</button>
+  </div>
+</div>
+<div class="card"><div class="card-body">
+<div class="text-center mb-3"><h4 class="fw-bold mb-1">{% if cert.is_final %}المستخلص الختامي{% else %}مستخلص جاري رقم ({{ cert.seq }}){% endif %}</h4>
+<div class="text-muted">{% if c.is_client %}مقدم إلى: {{ c.partner }}{% else %}مقاول الباطن: {{ c.partner }}{% endif %}</div></div>
+<div class="row small mb-3">
+  <div class="col-md-3"><b>المشروع:</b> {{ c.project }}</div>
+  <div class="col-md-3"><b>العقد:</b> {{ c.number }} - {{ c.title }}</div>
+  <div class="col-md-2"><b>رقم المستند:</b> {{ cert.number }}</div>
+  <div class="col-md-2"><b>التاريخ:</b> {{ cert.date|date:"Y/m/d" }}</div>
+  <div class="col-md-2"><b>الفترة:</b> {{ cert.period_from|date:"Y/m/d" }} - {{ cert.period_to|date:"Y/m/d" }}</div>
+</div>
+<div class="table-responsive"><table class="table table-sm table-bordered exportable">
+<thead><tr><th rowspan="2">البند</th><th rowspan="2">بيان الأعمال</th><th rowspan="2">الوحدة</th><th rowspan="2" class="num">كمية العقد</th><th rowspan="2" class="num">الفئة</th>
+<th colspan="3" class="text-center">الكميات</th><th rowspan="2" class="num">نسبة الصرف</th><th colspan="3" class="text-center">القيمة</th><th rowspan="2" class="num">الإنجاز</th></tr>
+<tr><th class="num">السابقة</th><th class="num">الحالية</th><th class="num">الإجمالية</th><th class="num">السابقة</th><th class="num">الحالية</th><th class="num">الإجمالية</th></tr></thead>
+<tbody>{% for ln in lines %}<tr><td>{{ ln.item.code }}</td><td>{{ ln.item.description }}</td><td>{{ ln.item.unit }}</td><td class="num">{{ ln.item.quantity|qty }}</td><td class="num">{{ ln.unit_price|money }}</td>
+<td class="num">{{ ln.prev_qty|qty }}</td><td class="num fw-bold">{{ ln.current_qty|qty }}</td><td class="num">{{ ln.cumulative_qty|qty }}</td><td class="num">{{ ln.completion_pct|qty }}%</td>
+<td class="num">{{ ln.prev_amount|money }}</td><td class="num fw-bold">{{ ln.current_amount|money }}</td><td class="num">{{ ln.cumulative_amount|money }}</td><td class="num">{{ ln.progress_pct|pct }}</td></tr>{% endfor %}</tbody>
+<tfoot><tr><td colspan="9">الإجمالي</td><td class="num">{{ cert.prev_gross|money }}</td><td class="num">{{ cert.gross|money }}</td><td class="num">{{ cert.cumulative_gross|money }}</td><td></td></tr></tfoot>
+</table></div>
+<div class="row mt-3">
+<div class="col-md-6">
+  {% if deductions %}<h6 class="fw-bold">استقطاعات أخرى</h6><table class="table table-sm"><tbody>{% for d in deductions %}<tr><td>{{ d.description }}</td><td class="small text-muted">{{ d.account }}</td><td class="num">{{ d.amount|money }}</td></tr>{% endfor %}</tbody></table>{% endif %}
+  {% if cert.notes %}<p class="small"><b>ملاحظات:</b> {{ cert.notes|linebreaksbr }}</p>{% endif %}
+  {% if payments %}<h6 class="fw-bold no-print">السداد</h6><table class="table table-sm no-print"><tbody>{% for p in payments %}<tr><td><a href="{{ p.get_absolute_url }}">{{ p.number }}</a></td><td>{{ p.date|date:"Y/m/d" }}</td><td class="num">{{ p.amount|money }}</td><td>{{ p.state|state_badge }}</td></tr>{% endfor %}
+  <tr class="fw-bold"><td colspan="2">المتبقي</td><td class="num">{{ cert.residual|money0 }}</td><td></td></tr></tbody></table>{% endif %}
+</div>
+<div class="col-md-6"><table class="table table-sm summary-table table-bordered"><tbody>
+<tr><td>إجمالي الأعمال حتى تاريخه</td><td class="num">{{ cert.cumulative_gross|money0 }}</td></tr>
+<tr><td>يُخصم: ما سبق صرفه بالمستخلصات السابقة</td><td class="num">{{ cert.prev_gross|money0 }}</td></tr>
+<tr class="fw-bold table-light"><td>قيمة الأعمال الحالية</td><td class="num">{{ cert.gross|money0 }}</td></tr>
+<tr><td>يُضاف: ضريبة القيمة المضافة</td><td class="num">{{ cert.vat_amount|money0 }}</td></tr>
+<tr><td>يُخصم: ضمان أعمال (محتجزات) {{ c.retention_pct|qty }}%</td><td class="num">({{ cert.retention_amount|money0 }})</td></tr>
+<tr><td>يُخصم: استرداد دفعة مقدمة</td><td class="num">({{ cert.advance_recovery|money0 }})</td></tr>
+<tr><td>يُخصم: ضريبة الخصم من المنبع</td><td class="num">({{ cert.wht_amount|money0 }})</td></tr>
+<tr><td>يُخصم: تأمينات اجتماعية</td><td class="num">({{ cert.social_ins_amount|money0 }})</td></tr>
+<tr><td>يُخصم: استقطاعات أخرى</td><td class="num">({{ cert.other_deductions|money0 }})</td></tr>
+<tr class="total"><td>صافي المستحق</td><td class="num">{{ cert.net_amount|money0 }}</td></tr>
+</tbody></table>
+<div class="tafqeet">{{ cert.net_amount|tafqeet:company }}</div></div>
+</div>
+<div class="signatures"><div>مهندس الموقع<span>التوقيع</span></div><div>مدير المشروع<span>التوقيع</span></div><div>المراجعة والحسابات<span>التوقيع</span></div><div>{% if c.is_client %}استشاري / مندوب المالك{% else %}مقاول الباطن{% endif %}<span>التوقيع</span></div><div>المدير العام<span>اعتماد</span></div></div>
+</div></div>
+{% endblock %}

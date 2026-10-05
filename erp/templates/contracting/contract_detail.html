@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <h1 class="page-title"><i class="bi bi-file-earmark-text"></i> {{ c.get_kind_display }} {{ c.number }}</h1><span class="badge text-bg-info">{{ c.get_status_display }}</span>
+  <div class="ms-auto d-flex gap-2 no-print">
+    {% if c.status == 'active' %}<a href="/certificates/new/?kind={{ c.kind }}&contract={{ c.id }}" class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> مستخلص جديد</a>{% endif %}
+    <a href="/payments/new/?kind={% if c.is_client %}receipt{% else %}payment{% endif %}&contract={{ c.id }}&purpose=advance" class="btn btn-sm btn-outline-primary"><i class="bi bi-cash-coin"></i> {% if c.is_client %}استلام{% else %}صرف{% endif %} دفعة مقدمة</a>
+    {% if c.retention_held > 0 %}<a href="/contracts/{{ c.id }}/retention/" class="btn btn-sm btn-outline-warning"><i class="bi bi-unlock"></i> رد محتجزات</a>{% endif %}
+    <a href="/contracts/{{ c.id }}/edit/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> تعديل العقد والمقايسة</a>
+    <button onclick="window.print()" class="btn btn-sm btn-dark"><i class="bi bi-printer"></i></button>
+  </div></div>
+<div class="doc-head mb-3"><div class="row">
+<div class="col-md-3"><dl><dt>الموضوع</dt><dd>{{ c.title }}</dd><dt>{% if c.is_client %}العميل{% else %}مقاول الباطن{% endif %}</dt><dd><a href="/partners/{{ c.partner.id }}/">{{ c.partner }}</a></dd></dl></div>
+<div class="col-md-3"><dl><dt>المشروع</dt><dd><a href="{{ c.project.get_absolute_url }}">{{ c.project }}</a></dd><dt>تاريخ العقد</dt><dd>{{ c.date|date:"Y/m/d" }}</dd></dl></div>
+<div class="col-md-3"><dl><dt>ضمان الأعمال / استرداد المقدم</dt><dd>{{ c.retention_pct|qty }}% / {{ c.advance_recovery_pct|qty }}%</dd><dt>الضرائب</dt><dd>{{ c.vat|default:"-" }} · {{ c.wht|default:"-" }}{% if c.social_ins_pct %} · تأمينات {{ c.social_ins_pct|qty }}%{% endif %}</dd></dl></div>
+<div class="col-md-3"><dl><dt>شروط الدفع</dt><dd>{{ c.payment_terms|default:"-" }}</dd></dl></div>
+</div></div>
+<div class="row g-3 mb-3">
+  <div class="col-md-2 col-6"><div class="kpi bg-g1"><div class="label">قيمة المقايسة</div><div class="value">{{ c.boq_total|money0 }}</div></div></div>
+  <div class="col-md-2 col-6"><div class="kpi bg-g2"><div class="label">المنفذ حتى تاريخه ({{ c.progress_pct|pct }})</div><div class="value">{{ c.certified_gross|money0 }}</div></div></div>
+  <div class="col-md-2 col-6"><div class="kpi bg-g5"><div class="label">صافي المستخلصات</div><div class="value">{{ c.certified_net|money0 }}</div></div></div>
+  <div class="col-md-2 col-6"><div class="kpi bg-g6"><div class="label">{% if c.is_client %}المحصّل{% else %}المسدد{% endif %}</div><div class="value">{{ c.paid_on_certs|money0 }}</div></div></div>
+  <div class="col-md-2 col-6"><div class="kpi bg-g4"><div class="label">الرصيد المستحق</div><div class="value">{{ c.balance_due|money0 }}</div></div></div>
+  <div class="col-md-2 col-6"><div class="kpi bg-g3"><div class="label">محتجزات / مقدم متبقي</div><div class="value" style="font-size:1.05rem">{{ c.retention_held|money0 }}<br>{{ c.advance_remaining|money0 }}</div></div></div>
+</div>
+<div class="card mb-3"><div class="card-header">المقايسة ونسب الإنجاز</div><div class="table-responsive"><table class="table table-sm table-hover exportable">
+<thead><tr><th>البند</th><th>الوصف</th><th>الوحدة</th><th class="num">الكمية</th><th class="num">الفئة</th><th class="num">الإجمالي</th><th class="num">كمية منفذة</th><th class="num">قيمة منفذة</th><th style="width:160px">الإنجاز</th></tr></thead>
+<tbody>{% for x in items %}<tr><td>{{ x.it.code }}</td><td>{{ x.it.description }}{% if x.it.is_variation %} <span class="badge text-bg-warning">إضافي</span>{% endif %}</td><td>{{ x.it.unit }}</td><td class="num">{{ x.it.quantity|qty }}</td><td class="num">{{ x.it.unit_price|money }}</td><td class="num">{{ x.it.total|money }}</td><td class="num">{{ x.qty|qty }}</td><td class="num">{{ x.amount|money }}</td>
+<td><div class="progress" style="height:16px"><div class="progress-bar {% if x.pct > 100 %}bg-danger{% elif x.pct >= 100 %}bg-success{% endif %}" style="width:{% if x.pct > 100 %}100{% else %}{{ x.pct|floatformat:0 }}{% endif %}%">{{ x.pct|floatformat:0 }}%</div></div></td></tr>{% endfor %}</tbody>
+<tfoot><tr><td colspan="5">الإجمالي</td><td class="num">{{ c.boq_total|money }}</td><td></td><td class="num">{{ c.certified_gross|money }}</td><td></td></tr></tfoot></table></div></div>
+<div class="row g-3">
+<div class="col-lg-8"><div class="card"><div class="card-header">المستخلصات</div><div class="table-responsive"><table class="table table-sm table-hover">
+<thead><tr><th>م</th><th>الرقم</th><th>التاريخ</th><th class="num">الأعمال الحالية</th><th class="num">محتجزات</th><th class="num">استرداد مقدم</th><th class="num">ض.ق.م</th><th class="num">الصافي</th><th class="num">المتبقي</th><th>الحالة</th></tr></thead>
+<tbody>{% for x in certs %}<tr class="clickable" data-href="/certificates/{{ x.id }}/"><td>{{ x.seq }}{% if x.is_final %} <span class="badge text-bg-dark">ختامي</span>{% endif %}</td><td>{{ x.number }}</td><td>{{ x.date|date:"Y/m/d" }}</td><td class="num">{{ x.gross|money }}</td><td class="num">{{ x.retention_amount|money }}</td><td class="num">{{ x.advance_recovery|money }}</td><td class="num">{{ x.vat_amount|money }}</td><td class="num fw-bold">{{ x.net_amount|money }}</td><td class="num">{{ x.residual|money }}</td><td>{{ x.state|state_badge }}</td></tr>
+{% empty %}<tr><td colspan="10" class="text-center text-muted">لا توجد مستخلصات</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="col-lg-4"><div class="card mb-3"><div class="card-header">الدفعات والسداد</div><table class="table table-sm"><tbody>
+{% for p in payments %}<tr class="clickable" data-href="{{ p.get_absolute_url }}"><td>{{ p.number }}<div class="small text-muted">{{ p.get_purpose_display }}</div></td><td>{{ p.date|date:"Y/m/d" }}</td><td class="num">{{ p.amount|money }}</td><td>{{ p.state|state_badge }}</td></tr>{% empty %}<tr><td class="text-muted text-center">لا يوجد</td></tr>{% endfor %}</tbody></table></div>
+{% if releases %}<div class="card"><div class="card-header">رد المحتجزات</div><table class="table table-sm"><tbody>{% for r in releases %}<tr><td>{{ r.number }}</td><td>{{ r.date|date:"Y/m/d" }}</td><td class="num">{{ r.amount|money }}</td><td>{{ r.state|state_badge }}</td>
+<td>{% if r.is_draft %}<form method="post" action="/retention/{{ r.id }}/post/">{% csrf_token %}<button class="btn btn-sm btn-success py-0">ترحيل</button></form>{% else %}<form method="post" action="/retention/{{ r.id }}/unpost/">{% csrf_token %}<button class="btn btn-sm btn-link py-0">إلغاء</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+</div></div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-truck-front"></i> {{ a }}</h1><a href="/assets/{{ a.id }}/edit/" class="btn btn-sm btn-outline-secondary ms-auto">تعديل</a></div>
+<div class="row g-3 mb-3"><div class="col-md-3"><div class="kpi bg-g1"><div class="label">التكلفة</div><div class="value">{{ a.cost|money0 }}</div></div></div><div class="col-md-3"><div class="kpi bg-g3"><div class="label">القسط الشهري</div><div class="value">{{ a.monthly|money0 }}</div></div></div>
+<div class="col-md-3"><div class="kpi bg-g4"><div class="label">مجمع الإهلاك</div><div class="value">{{ a.accumulated|money0 }}</div></div></div><div class="col-md-3"><div class="kpi bg-g6"><div class="label">القيمة الدفترية</div><div class="value">{{ a.book_value|money0 }}</div></div></div></div>
+<div class="card"><table class="table table-sm"><thead><tr><th>الشهر</th><th>القيد</th><th class="num">قسط الإهلاك</th></tr></thead><tbody>{% for l in lines %}<tr><td>{{ l.run.date|date:"Y/m" }}</td><td>{{ l.run.move.number|default:"" }}</td><td class="num">{{ l.amount|money }}</td></tr>{% empty %}<tr><td colspan="3" class="text-muted text-center">لم يُحسب إهلاك بعد</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

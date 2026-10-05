@@ -88,6 +88,7 @@ TIME_ZONE = os.environ.get("ERP_TIME_ZONE", "Africa/Cairo")
 USE_I18N = True
 USE_TZ = True
 USE_THOUSAND_SEPARATOR = False
+FORMAT_MODULE_PATH = ["config.formats"]
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]

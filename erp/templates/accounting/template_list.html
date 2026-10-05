@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-lightning-charge"></i> القيود الجاهزة</h1>
+<a href="/journal/templates/new/" class="btn btn-sm btn-primary ms-auto"><i class="bi bi-plus-lg"></i> نموذج جديد</a></div>
+<div class="alert alert-info py-2 small"><i class="bi bi-info-circle"></i> اختر العملية وأدخل المبلغ فقط — البرنامج يكوّن القيد كاملاً (الحسابات والجوانب والنسب) ويرحّله. يمكنك إضافة نماذجك الخاصة.</div>
+<div class="row g-3">{% for t in templates %}<div class="col-xl-3 col-lg-4 col-md-6"><div class="card h-100"><div class="card-body">
+<h6 class="fw-bold"><i class="bi bi-lightning-charge-fill text-warning"></i> {{ t.name }}</h6>
+<ul class="list-unstyled small mb-0">{% for l in t.lines.all %}<li>{% if l.side == 'debit' %}<span class="text-success">من ح/</span>{% else %}<span class="text-danger">إلى ح/</span>{% endif %} {{ l.account.name }}{% if l.percent != 100 %} ({{ l.percent|qty }}%){% endif %}</li>{% endfor %}</ul></div>
+<div class="card-footer bg-white d-flex"><a href="/journal/templates/{{ t.id }}/use/" class="btn btn-sm btn-success flex-fill"><i class="bi bi-play-fill"></i> استخدام</a><a href="/journal/templates/{{ t.id }}/edit/" class="btn btn-sm btn-link"><i class="bi bi-pencil"></i></a></div></div></div>{% endfor %}</div>
+{% endblock %}

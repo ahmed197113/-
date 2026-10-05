@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% load static %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-cash-stack"></i> {{ title }}{% if obj %} {{ obj.number }}{% endif %}</h1>
+<a href="javascript:history.back()" class="btn btn-sm btn-light ms-auto"><i class="bi bi-arrow-right"></i> رجوع</a></div>
+<form method="post" novalidate data-smart data-side="{% if kind == 'receipt' %}sale{% else %}purchase{% endif %}">{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+<div class="row g-3"><div class="col-lg-8"><div class="card mb-3"><div class="card-body"><div class="row g-2">
+{% for field in form.visible_fields %}<div class="f-{{ field.name }} {% if field.name == 'memo' %}col-12{% else %}col-md-4{% endif %}">{% include "generic/_field.html" with cls="" %}</div>{% endfor %}{% for h in form.hidden_fields %}{{ h }}{% endfor %}
+</div></div></div>
+<div class="form-check mb-3"><input type="checkbox" class="form-check-input" name="post_now" id="post_now" checked><label class="form-check-label" for="post_now">ترحيل فوري (إنشاء القيد آلياً)</label></div>
+<button class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button></div>
+<div class="col-lg-4"><div class="card smart-panel mb-3"><div class="card-header"><i class="bi bi-stars"></i> المساعد الذكي</div><div class="card-body p-2 small" id="partner-info"><span class="text-muted">اختر جهة التعامل لعرض رصيدها ومستنداتها المفتوحة. وفي الصرف المباشر اكتب البيان ليقترح عليك الحساب المناسب.</span></div></div></div></div>
+</form>
+{% endblock %}
+{% block scripts %}<script>
+const KIND="{{ kind }}";
+function togglePurpose(){const p=document.getElementById("id_purpose").value;
+ const show=(n,v)=>{const el=document.querySelector(".f-"+n);if(el)el.style.display=v?"":"none";};
+ show("partner",p!=="account");show("counter_account",p==="account");show("invoice",p==="partner");show("certificate",p==="partner");show("contract",p!=="account");show("cost_center",p==="account");
+ const m=document.getElementById("id_method").value;show("cheque_no",m!=="cash");show("cheque_date",m==="cheque");}
+document.getElementById("id_purpose").addEventListener("change",togglePurpose);document.getElementById("id_method").addEventListener("change",togglePurpose);togglePurpose();
+async function partnerInfo(){const id=document.getElementById("id_partner").value;const box=document.getElementById("partner-info");if(!id)return;
+ const d=await (await fetch(`/api/partner/${id}/docs/?kind=${KIND}`)).json();
+ let h=`<div class="mb-2">الرصيد الحالي: <b class="num">${fmt(d.balance)}</b></div>`;
+ const pick=(type,x)=>`<button type="button" class="smart-chip mid mb-1" data-type="${type}" data-id="${x.id}" data-amount="${x.residual}" ${x.contract?`data-contract="${x.contract}"`:""}>${x.label} <span>${fmt(x.residual)}</span></button> `;
+ if(d.certificates.length)h+=`<div class="fw-bold">مستخلصات مفتوحة:</div>`+d.certificates.map(x=>pick("certificate",x)).join("");
+ if(d.invoices.length)h+=`<div class="fw-bold mt-2">فواتير مفتوحة:</div>`+d.invoices.map(x=>pick("invoice",x)).join("");
+ if(!d.certificates.length&&!d.invoices.length)h+=`<div class="text-muted">لا توجد مستندات مفتوحة</div>`;
+ box.innerHTML=h;box.querySelectorAll("[data-type]").forEach(b=>b.addEventListener("click",()=>{const s=document.getElementById("id_"+b.dataset.type);
+  s.tomselect?s.tomselect.setValue(b.dataset.id):s.value=b.dataset.id;document.getElementById("id_amount").value=b.dataset.amount;
+  if(b.dataset.contract){const c=document.getElementById("id_contract");c.tomselect?c.tomselect.setValue(b.dataset.contract):c.value=b.dataset.contract;}
+  const memo=document.getElementById("id_memo");if(!memo.value)memo.value=(KIND==="receipt"?"تحصيل ":"سداد ")+b.textContent.trim().split("  ")[0];}));}
+document.getElementById("id_partner").addEventListener("change",partnerInfo);partnerInfo();
+</script><script src="{% static 'js/smart.js' %}"></script>{% endblock %}

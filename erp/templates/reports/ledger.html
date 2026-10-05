@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}{% include "reports/_head.html" %}
+<form class="filters card card-body py-2 mb-3"><div class="row g-2 align-items-end">
+<div class="col-md-3"><label class="small">الحساب</label><select name="account" class="form-select form-select-sm searchable"><option value="">اختر الحساب</option>{% for a in accounts %}<option value="{{ a.id }}" {% if account.id == a.id %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></div>
+<div class="col-auto"><label class="small">من</label><input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control form-control-sm"></div>
+<div class="col-auto"><label class="small">إلى</label><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm"></div>
+<div class="col-md-2"><label class="small">جهة التعامل</label><select name="partner" class="form-select form-select-sm searchable"><option value="">الكل</option>{% for p in partners %}<option value="{{ p.id }}" {% if request.GET.partner == p.id|stringformat:"s" %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></div>
+<div class="col-md-2"><label class="small">المشروع</label><select name="project" class="form-select form-select-sm"><option value="">الكل</option>{% for p in projects %}<option value="{{ p.id }}" {% if request.GET.project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+<div class="col-auto"><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> عرض</button></div></div></form>
+{% if account %}<div class="card"><div class="card-header">{{ account }}</div><div class="table-responsive"><table class="table table-sm table-hover exportable">
+<thead><tr><th>التاريخ</th><th>رقم القيد</th><th>المصدر</th><th>البيان</th><th>جهة التعامل</th><th>المشروع</th><th class="num">مدين</th><th class="num">دائن</th><th class="num">الرصيد</th></tr></thead>
+<tbody><tr class="table-light"><td colspan="8">رصيد أول المدة</td><td class="num fw-bold">{{ opening|money0 }}</td></tr>
+{% for r in rows %}<tr class="clickable" data-href="/journal/{{ r.line.entry_id }}/"><td>{{ r.line.entry.date|date:"Y/m/d" }}</td><td>{{ r.line.entry.number }}</td><td class="small">{{ r.line.entry.get_source_display }}</td><td class="small">{{ r.line.label|default:r.line.entry.memo }}</td><td class="small">{{ r.line.partner|default:"" }}</td><td class="small">{{ r.line.project.name|default:"" }}</td><td class="num">{{ r.line.debit|money }}</td><td class="num">{{ r.line.credit|money }}</td><td class="num">{{ r.balance|money0 }}</td></tr>{% endfor %}</tbody>
+<tfoot><tr><td colspan="6">الإجمالي / الرصيد الختامي</td><td class="num">{{ total_debit|money }}</td><td class="num">{{ total_credit|money }}</td><td class="num">{{ closing|money0 }}</td></tr></tfoot></table></div></div>
+{% else %}<div class="text-muted text-center py-5">اختر حساباً لعرض حركته</div>{% endif %}
+{% endblock %}

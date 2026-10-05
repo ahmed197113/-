@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 no-print"><h1 class="page-title"><i class="bi bi-clipboard-check"></i> {{ d }}</h1>{{ d.state|state_badge }}
+<div class="ms-auto d-flex gap-2">{% if d.is_draft %}<a href="/stock/docs/{{ d.id }}/edit/" class="btn btn-sm btn-primary">تعديل</a><form method="post" action="/stock/docs/{{ d.id }}/post/">{% csrf_token %}<button class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> ترحيل</button></form>
+<form method="post" action="/stock/docs/{{ d.id }}/delete/" data-confirm="حذف؟">{% csrf_token %}<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+{% else %}{% if d.move %}<a href="/journal/{{ d.move.id }}/" class="btn btn-sm btn-outline-dark">القيد {{ d.move.number }}</a>{% endif %}<form method="post" action="/stock/docs/{{ d.id }}/unpost/">{% csrf_token %}<button class="btn btn-sm btn-outline-warning">إلغاء الترحيل</button></form>{% endif %}
+<button onclick="print()" class="btn btn-sm btn-dark"><i class="bi bi-printer"></i></button></div></div>
+<div class="card"><div class="card-body"><div class="row mb-3 small"><div class="col-md-3"><b>التاريخ:</b> {{ d.date|date:"Y/m/d" }}</div><div class="col-md-3"><b>المخزن:</b> {{ d.warehouse }}</div><div class="col-md-3"><b>المشروع:</b> {{ d.project|default:"-" }}</div><div class="col-md-3">{{ d.notes }}</div></div>
+<table class="table table-sm table-bordered"><thead><tr><th>الصنف</th><th class="num">الكمية</th><th class="num">التكلفة</th><th class="num">القيمة</th></tr></thead><tbody>{% for x in lines %}<tr><td>{{ x.ln.product }}</td><td class="num">{{ x.ln.qty|qty }}</td><td class="num">{{ x.cost|money }}</td><td class="num">{{ x.value|money }}</td></tr>{% endfor %}</tbody></table>
+<div class="signatures"><div>أمين المخزن<span>التوقيع</span></div><div>المستلم / مهندس الموقع<span>التوقيع</span></div><div>الحسابات<span>التوقيع</span></div></div></div></div>
+{% endblock %}

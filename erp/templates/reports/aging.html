@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}{% include "reports/_head.html" %}
+<form class="filters card card-body py-2 mb-3"><div class="row g-2 align-items-end"><div class="col-auto"><select name="side" class="form-select form-select-sm"><option value="receivable" {% if side == 'receivable' %}selected{% endif %}>العملاء</option><option value="payable" {% if side == 'payable' %}selected{% endif %}>الموردون ومقاولو الباطن</option></select></div>
+<div class="col-auto"><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm"></div><div class="col-auto"><button class="btn btn-sm btn-primary">عرض</button></div></div></form>
+<div class="card mb-3"><table class="table table-sm table-hover exportable"><thead><tr><th>الجهة</th>{% for b in buckets %}<th class="num">{{ b }}</th>{% endfor %}<th class="num">الإجمالي</th></tr></thead><tbody>
+{% for p, vals in rows %}<tr class="clickable" data-href="/reports/partner-statement/{{ p.id }}/"><td>{{ p }}</td>{% for v in vals %}<td class="num {% if forloop.last %}fw-bold{% endif %}">{{ v|money }}</td>{% endfor %}</tr>{% empty %}<tr><td colspan="8" class="text-center text-muted">لا توجد مستحقات مفتوحة</td></tr>{% endfor %}</tbody>
+<tfoot><tr><td>الإجمالي</td>{% for v in totals %}<td class="num">{{ v|money }}</td>{% endfor %}</tr></tfoot></table></div>
+<div class="card"><div class="card-header">التفاصيل</div><table class="table table-sm table-hover"><thead><tr><th>المستند</th><th>الجهة</th><th>الاستحقاق</th><th class="num">أيام التأخير</th><th class="num">المتبقي</th></tr></thead><tbody>
+{% for d in details %}<tr class="clickable" data-href="{{ d.doc.get_absolute_url }}"><td>{{ d.label }}</td><td>{{ d.partner }}</td><td>{{ d.due|date:"Y/m/d" }}</td><td class="num {% if d.days > 90 %}text-danger fw-bold{% endif %}">{{ d.days }}</td><td class="num">{{ d.residual|money }}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

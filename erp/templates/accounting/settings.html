@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title mb-3"><i class="bi bi-gear"></i> الإعدادات</h1>
+<div class="row g-3"><div class="col-lg-8"><form method="post" class="card" novalidate>{% csrf_token %}<div class="card-header">بيانات الشركة والفترة المالية</div><div class="card-body"><div class="row g-2">
+{% for field in form %}{% include "generic/_field.html" with cls="col-md-4" %}{% endfor %}</div><button class="btn btn-primary mt-3"><i class="bi bi-save"></i> حفظ</button></div></form></div>
+<div class="col-lg-4"><div class="list-group">
+<a href="/settings/mapping/" class="list-group-item list-group-item-action"><i class="bi bi-signpost-split"></i> التوجيه المحاسبي للقيود الآلية</a>
+<a href="/taxes/" class="list-group-item list-group-item-action"><i class="bi bi-percent"></i> الضرائب (قيمة مضافة / خصم وإضافة)</a>
+<a href="/cost-centers/" class="list-group-item list-group-item-action"><i class="bi bi-bullseye"></i> مراكز التكلفة</a>
+<a href="/journal/templates/" class="list-group-item list-group-item-action"><i class="bi bi-lightning-charge"></i> القيود الجاهزة</a>
+<a href="/journal/new/" class="list-group-item list-group-item-action"><i class="bi bi-flag"></i> قيد أرصدة افتتاحية (اختر نوع: قيد افتتاحي)</a>
+<a href="/settings/close-year/" class="list-group-item list-group-item-action"><i class="bi bi-lock"></i> إقفال السنة المالية</a>
+<a href="/settings/backup/" class="list-group-item list-group-item-action"><i class="bi bi-cloud-download"></i> تنزيل نسخة احتياطية</a>
+{% if user.is_superuser %}<a href="/admin/auth/user/" class="list-group-item list-group-item-action"><i class="bi bi-people"></i> المستخدمون والصلاحيات</a>{% endif %}
+</div></div></div>
+{% endblock %}

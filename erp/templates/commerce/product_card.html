@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3"><h1 class="page-title"><i class="bi bi-box-seam"></i> {{ title }}</h1>
+<div class="ms-auto d-flex gap-2"><a href="/products/{{ p.id }}/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> تعديل الصنف</a><button class="btn btn-sm btn-outline-success" onclick="exportTable(this,'{{ title }}')"><i class="bi bi-file-earmark-excel"></i></button></div></div>
+<div class="row g-3 mb-3">{% for x in by_wh %}<div class="col-md-3"><div class="card card-body py-2"><div class="small text-muted">{{ x.w }}</div><div class="fs-5 fw-bold num">{{ x.qty|qty }} {{ p.unit }}</div></div></div>{% endfor %}
+<div class="col-md-3"><div class="card card-body py-2"><div class="small text-muted">متوسط التكلفة</div><div class="fs-5 fw-bold num">{{ p.avg_cost|money }}</div></div></div></div>
+<form class="filters mb-2"><select name="warehouse" class="form-select form-select-sm w-auto d-inline" onchange="this.form.submit()"><option value="">كل المخازن</option>{% for w in warehouses %}<option value="{{ w.id }}" {% if wh == w.id|stringformat:"s" %}selected{% endif %}>{{ w }}</option>{% endfor %}</select></form>
+<div class="card"><table class="table table-sm table-hover exportable"><thead><tr><th>التاريخ</th><th>المستند</th><th>المخزن</th><th>المشروع</th><th class="num">وارد</th><th class="num">منصرف</th><th class="num">الرصيد</th><th class="num">التكلفة</th></tr></thead><tbody>
+{% for r in rows %}<tr class="{% if r.m.url %}clickable{% endif %}" data-href="{{ r.m.url }}"><td>{{ r.m.date|date:"Y/m/d" }}</td><td>{{ r.m.label }}</td><td>{{ r.m.warehouse }}</td><td>{{ r.m.project|default:"" }}</td><td class="num">{% if r.m.qty > 0 %}{{ r.m.qty|qty }}{% endif %}</td><td class="num">{% if r.m.qty < 0 %}{{ r.m.qty|neg|qty }}{% endif %}</td><td class="num fw-bold">{{ r.balance|qty }}</td><td class="num">{{ r.m.unit_cost|money }}</td></tr>{% empty %}<tr><td colspan="8" class="text-center text-muted">لا توجد حركات</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}{% include "reports/_head.html" %}
+<form class="filters card card-body py-2 mb-3"><div class="row g-2 align-items-end">
+<div class="col-auto"><label class="small">من</label><input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control form-control-sm"></div>
+<div class="col-auto"><label class="small">إلى</label><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm"></div>
+<div class="col-auto"><label class="small">المستوى</label><select name="level" class="form-select form-select-sm"><option value="all">كل المستويات</option>{% for l in "0123" %}<option value="{{ l }}" {% if level == l %}selected{% endif %}>حتى المستوى {{ l|add:1 }}</option>{% endfor %}</select></div>
+<div class="col-md-2"><label class="small">المشروع</label><select name="project" class="form-select form-select-sm"><option value="">الكل</option>{% for p in projects %}<option value="{{ p.id }}" {% if request.GET.project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+<div class="col-auto form-check mt-4 ms-2"><input type="checkbox" class="form-check-input" name="zero" value="1" id="z" {% if show_zero %}checked{% endif %}><label for="z" class="form-check-label small">إظهار الصفرية</label></div>
+<div class="col-auto"><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> عرض</button></div></div></form>
+{% if not balanced %}<div class="alert alert-danger">تنبيه: الميزان غير متزن!</div>{% endif %}
+<div class="card"><div class="table-responsive"><table class="table table-sm table-hover exportable">
+<thead><tr><th rowspan="2">الكود</th><th rowspan="2">اسم الحساب</th><th colspan="2" class="text-center">رصيد أول المدة</th><th colspan="2" class="text-center">حركة الفترة</th><th colspan="2" class="text-center">الرصيد الختامي</th></tr>
+<tr><th class="num">مدين</th><th class="num">دائن</th><th class="num">مدين</th><th class="num">دائن</th><th class="num">مدين</th><th class="num">دائن</th></tr></thead>
+<tbody>{% for r in rows %}<tr class="{% if r.is_group %}grp{% endif %} {% if r.level == 0 %}lvl0{% endif %} {% if not r.is_group %}clickable{% endif %}" {% if not r.is_group %}data-href="/reports/ledger/?account={{ r.account.id }}&date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"{% endif %}>
+<td>{{ r.account.code }}</td><td style="padding-right:calc({{ r.level }} * 1.2rem + .5rem)">{{ r.account.name }}</td>{% for v in r.vals %}<td class="num">{{ v|money }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+<tfoot><tr><td colspan="2">الإجمالي</td>{% for v in totals %}<td class="num">{{ v|money }}</td>{% endfor %}</tr></tfoot></table></div></div>
+{% endblock %}

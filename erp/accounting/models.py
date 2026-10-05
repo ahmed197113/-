@@ -17,7 +17,7 @@ def r2(x):
 class Company(models.Model):
     """بيانات الشركة والإعدادات العامة (سجل واحد فقط)."""
 
-    name = models.CharField("اسم الشركة", max_length=200, default="شركتي للمقاولات")
+    name = models.CharField("اسم الشركة", max_length=200, default="الخطوط المعدنية للمقاولات العامة")
     legal_name = models.CharField("الاسم القانوني", max_length=200, blank=True)
     tax_id = models.CharField("رقم التسجيل الضريبي", max_length=50, blank=True)
     commercial_reg = models.CharField("السجل التجاري", max_length=50, blank=True)

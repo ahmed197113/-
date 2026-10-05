@@ -1,0 +1,9 @@
+{% extends "generic/form.html" %}
+{% block extra_form %}
+<div class="card mb-3"><div class="card-body d-flex align-items-center"><span class="fw-bold">إجمالي قيمة المقايسة:</span><span class="num fs-5 fw-bold text-primary ms-3" id="boq-total">0.00</span>
+<span class="small text-muted ms-auto">يمكنك إضافة بنود جديدة لاحقاً كأعمال إضافية / أوامر تغيير</span></div></div>
+{% endblock %}
+{% block scripts %}<script>
+function boqTotal(){let t=0;document.querySelectorAll("#items-body tr").forEach(tr=>{if(tr.style.display==="none")return;const q=tr.querySelector("input[name$='quantity']"),p=tr.querySelector("input[name$='unit_price']");if(q&&p)t+=num(q.value)*num(p.value);});document.getElementById("boq-total").textContent=fmt(t);}
+document.addEventListener("input",boqTotal);document.addEventListener("formset:changed",boqTotal);boqTotal();
+</script>{% endblock %}

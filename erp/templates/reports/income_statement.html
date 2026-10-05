@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}{% include "reports/_head.html" %}{% include "reports/_period.html" %}
+<div class="card" style="max-width:900px"><table class="table table-sm exportable"><tbody>
+<tr class="table-primary"><th>الإيرادات</th><th></th></tr>{% include "reports/_tree_rows.html" with rows=income_rows %}
+<tr class="fw-bold table-light"><td>إجمالي الإيرادات</td><td class="num">{{ total_income|money0 }}</td></tr>
+<tr class="table-warning"><th>التكاليف والمصروفات</th><th></th></tr>{% include "reports/_tree_rows.html" with rows=expense_rows %}
+<tr class="fw-bold table-light"><td>إجمالي التكاليف والمصروفات</td><td class="num">{{ total_expense|money0 }}</td></tr>
+{% if gross is not None %}<tr class="fw-bold"><td>مجمل الربح (إيرادات النشاط - التكاليف المباشرة)</td><td class="num">{{ gross|money0 }}</td></tr>{% endif %}
+<tr class="total fw-bold {% if net < 0 %}table-danger{% else %}table-success{% endif %}"><td>صافي {% if net < 0 %}الخسارة{% else %}الربح{% endif %}</td><td class="num fs-5">{{ net|money0 }}</td></tr>
+</tbody></table></div>
+{% endblock %}

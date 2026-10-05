@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% load static %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3"><h1 class="page-title"><i class="bi bi-building-gear"></i> {{ p }}</h1><span class="badge text-bg-info">{{ p.get_status_display }}</span>
+<div class="ms-auto d-flex gap-2 no-print">
+<a href="/contracts/new/?kind=client&project={{ p.id }}" class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> عقد عميل</a>
+<a href="/contracts/new/?kind=sub&project={{ p.id }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus"></i> عقد مقاول باطن</a>
+<a href="/stock/docs/new/?kind=issue&project={{ p.id }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-right"></i> صرف مواد</a>
+<a href="/projects/{{ p.id }}/edit/" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a></div></div>
+<div class="row g-3 mb-3">
+<div class="col-md-2 col-6"><div class="kpi bg-g1"><div class="label">قيمة عقود العميل</div><div class="value">{{ client_value|money0 }}</div></div></div>
+<div class="col-md-2 col-6"><div class="kpi bg-g2"><div class="label">المنفذ ({{ progress|pct }})</div><div class="value">{{ certified|money0 }}</div></div></div>
+<div class="col-md-2 col-6"><div class="kpi bg-g5"><div class="label">الإيرادات</div><div class="value">{{ revenue|money0 }}</div></div></div>
+<div class="col-md-2 col-6"><div class="kpi bg-g4"><div class="label">التكاليف{% if budget_used is not None %} ({{ budget_used|pct }} من الموازنة){% endif %}</div><div class="value">{{ cost|money0 }}</div></div></div>
+<div class="col-md-2 col-6"><div class="kpi bg-g6"><div class="label">الربح (هامش {{ margin|pct }})</div><div class="value">{{ profit|money0 }}</div></div></div>
+<div class="col-md-2 col-6"><div class="kpi bg-g3"><div class="label">عقود مقاولي الباطن</div><div class="value">{{ sub_value|money0 }}</div></div></div>
+</div>
+<div class="row g-3 mb-3">
+<div class="col-lg-7"><div class="card h-100"><div class="card-header">العقود</div><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>النوع</th><th>الرقم</th><th>الطرف</th><th class="num">القيمة</th><th class="num">المنفذ</th><th class="num">المستحق</th></tr></thead><tbody>
+{% for c in contracts %}<tr class="clickable" data-href="/contracts/{{ c.id }}/"><td>{% if c.is_client %}<span class="badge text-bg-primary">عميل</span>{% else %}<span class="badge text-bg-secondary">باطن</span>{% endif %}</td><td>{{ c.number }}</td><td>{{ c.partner }}</td><td class="num">{{ c.boq_total|money }}</td><td class="num">{{ c.certified_gross|money }}</td><td class="num">{{ c.balance_due|money }}</td></tr>{% empty %}<tr><td colspan="6" class="text-muted text-center">لا توجد عقود</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="col-lg-5"><div class="card h-100"><div class="card-header">توزيع التكاليف</div><div class="card-body"><canvas id="pie" height="200"></canvas></div></div></div>
+</div>
+<div class="row g-3">
+<div class="col-lg-5"><div class="card"><div class="card-header">الإيرادات والتكاليف حسب الحساب</div><table class="table table-sm exportable"><tbody>
+{% for b in breakdown %}<tr><td>{% if b.type == 'income' %}<i class="bi bi-arrow-down-circle text-success"></i>{% else %}<i class="bi bi-arrow-up-circle text-danger"></i>{% endif %} {{ b.code }} - {{ b.name }}</td><td class="num">{{ b.amount|money }}</td></tr>{% empty %}<tr><td class="text-muted text-center">لا توجد حركات</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="col-lg-7"><div class="card"><div class="card-header">آخر الحركات على المشروع</div><div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>التاريخ</th><th>القيد</th><th>الحساب</th><th>البيان</th><th class="num">مدين</th><th class="num">دائن</th></tr></thead><tbody>
+{% for l in recent %}<tr class="clickable" data-href="/journal/{{ l.entry_id }}/"><td>{{ l.entry.date|date:"Y/m/d" }}</td><td>{{ l.entry.number }}</td><td class="small">{{ l.account.name }}</td><td class="small">{{ l.label|truncatechars:40 }}</td><td class="num">{{ l.debit|money }}</td><td class="num">{{ l.credit|money }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/chart.umd.min.js' %}"></script><script>
+const d={{ chart|safe }};Chart.defaults.font.family="Cairo";
+if(d.values.length){new Chart(document.getElementById("pie"),{type:"doughnut",data:{labels:d.labels,datasets:[{data:d.values,backgroundColor:["#1f3a5f","#2e7d7a","#d69e2e","#c53030","#6b46c1","#38a169","#718096","#dd6b20","#3182ce"]}]},options:{plugins:{legend:{position:"bottom"}}}});}
+</script>{% endblock %}

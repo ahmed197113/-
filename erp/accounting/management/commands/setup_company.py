@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help = "تهيئة النظام: دليل الحسابات والضرائب والتوجيه المحاسبي والقيود الجاهزة + مستخدم مدير"
 
     def add_arguments(self, parser):
-        parser.add_argument("--name", default=None, help="اسم الشركة")
+        parser.add_argument("--name", default="الخطوط المعدنية للمقاولات العامة", help="اسم الشركة")
         parser.add_argument("--admin-user", default="admin")
         parser.add_argument("--admin-password", default="admin123")
 

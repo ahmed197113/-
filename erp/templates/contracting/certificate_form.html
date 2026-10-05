@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-receipt-cutoff"></i> {{ cert }}</h1>
+<a href="{{ cert.get_absolute_url }}" class="btn btn-sm btn-light ms-auto"><i class="bi bi-eye"></i> عرض / طباعة</a></div>
+<div class="doc-head mb-3"><div class="row">
+  <div class="col-md-3"><dl><dt>العقد</dt><dd><a href="{{ c.get_absolute_url }}">{{ c.number }}</a> - {{ c.title }}</dd></dl></div>
+  <div class="col-md-3"><dl><dt>{% if c.is_client %}العميل{% else %}مقاول الباطن{% endif %}</dt><dd>{{ c.partner }}</dd></dl></div>
+  <div class="col-md-2"><dl><dt>المشروع</dt><dd>{{ c.project.name }}</dd></dl></div>
+  <div class="col-md-4"><dl><dt>شروط العقد</dt><dd class="small">ضمان أعمال {{ c.retention_pct|qty }}% · استرداد مقدم {{ c.advance_recovery_pct|qty }}% · {{ c.wht|default:"بدون خصم منبع" }} · {{ c.vat|default:"بدون ض.ق.م" }}{% if c.social_ins_pct %} · تأمينات {{ c.social_ins_pct|qty }}%{% endif %}<br>رصيد الدفعة المقدمة غير المسترد: <b class="num">{{ remaining_adv|money0 }}</b></dd></dl></div>
+</div></div>
+<form method="post" novalidate>{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+<div class="card mb-3"><div class="card-body"><div class="row g-2">
+  {% with field=form.date %}{% include "generic/_field.html" with cls="col-md-2" %}{% endwith %}
+  {% with field=form.period_from %}{% include "generic/_field.html" with cls="col-md-2" %}{% endwith %}
+  {% with field=form.period_to %}{% include "generic/_field.html" with cls="col-md-2" %}{% endwith %}
+  {% with field=form.is_final %}{% include "generic/_field.html" with cls="col-md-2" %}{% endwith %}
+  {% with field=form.auto_deductions %}{% include "generic/_field.html" with cls="col-md-3" %}{% endwith %}
+</div></div></div>
+
+<div class="card mb-3"><div class="card-header d-flex align-items-center"><span><i class="bi bi-list-ol"></i> بنود الأعمال المنفذة</span>
+<span class="ms-auto small text-muted">أدخل <b>الكمية الحالية</b> أو <b>الكمية التراكمية</b> — والباقي يُحسب تلقائياً</span></div>
+<div class="table-responsive"><table class="table table-sm table-bordered align-middle mb-0" id="lines">
+{{ lines.management_form }}
+<thead><tr><th>البند</th><th style="min-width:220px">الوصف</th><th>الوحدة</th><th class="num">كمية العقد</th><th class="num">الفئة</th><th class="num">السابقة</th><th style="width:110px">الحالية</th><th style="width:110px">التراكمية</th><th style="width:85px">نسبة الصرف%</th><th class="num">الإنجاز%</th><th class="num">قيمة سابقة</th><th class="num">قيمة حالية</th><th class="num">قيمة تراكمية</th></tr></thead>
+<tbody>
+{% for f in lines %}{% with ln=f.instance %}
+<tr data-prev="{{ ln.prev_qty }}" data-prev-amount="{{ ln.prev_amount }}" data-price="{{ ln.unit_price }}" data-qty="{{ ln.item.quantity }}">
+<td>{{ ln.item.code }}{% for h in f.hidden_fields %}{{ h }}{% endfor %}</td><td class="small">{{ ln.item.description }}{% if ln.item.is_variation %} <span class="badge text-bg-warning">إضافي</span>{% endif %}</td><td>{{ ln.item.unit }}</td>
+<td class="num">{{ ln.item.quantity|qty }}</td><td class="num">{{ ln.unit_price|money }}</td><td class="num">{{ ln.prev_qty|qty }}</td>
+<td>{{ f.current_qty }}{{ f.current_qty.errors }}</td><td>{{ f.cumulative_qty }}</td><td>{{ f.completion_pct }}</td>
+<td class="num c-pct"></td><td class="num">{{ ln.prev_amount|money }}</td><td class="num c-cur fw-bold"></td><td class="num c-cum"></td></tr>
+{% endwith %}{% endfor %}
+</tbody>
+<tfoot><tr><td colspan="10">الإجمالي</td><td class="num" id="t-prev"></td><td class="num" id="t-cur"></td><td class="num" id="t-cum"></td></tr></tfoot>
+</table></div></div>
+
+<div class="row g-3">
+<div class="col-lg-7">
+  {% include "generic/_formset.html" with f=deds_f %}
+  <div class="card mb-3"><div class="card-header">استقطاعات يدوية (تُستخدم فقط عند إلغاء "الاحتساب التلقائي")</div><div class="card-body"><div class="row g-2">
+  {% with field=form.retention_amount %}{% include "generic/_field.html" with cls="col-md-3" %}{% endwith %}
+  {% with field=form.advance_recovery %}{% include "generic/_field.html" with cls="col-md-3" %}{% endwith %}
+  {% with field=form.wht_amount %}{% include "generic/_field.html" with cls="col-md-3" %}{% endwith %}
+  {% with field=form.social_ins_amount %}{% include "generic/_field.html" with cls="col-md-3" %}{% endwith %}
+  {% with field=form.notes %}{% include "generic/_field.html" with cls="col-12" %}{% endwith %}
+  </div></div></div>
+</div>
+<div class="col-lg-5"><div class="card"><div class="card-header"><i class="bi bi-calculator"></i> ملخص المستخلص (معاينة فورية)</div>
+<table class="table summary-table mb-0"><tbody>
+<tr><td>إجمالي الأعمال حتى تاريخه</td><td class="num" id="s-cum"></td></tr>
+<tr><td>يُخصم: ما سبق صرفه</td><td class="num" id="s-prev"></td></tr>
+<tr class="table-light fw-bold"><td>قيمة الأعمال الحالية</td><td class="num" id="s-gross"></td></tr>
+<tr><td>+ ضريبة القيمة المضافة</td><td class="num" id="s-vat"></td></tr>
+<tr><td>- ضمان أعمال (محتجزات) {{ c.retention_pct|qty }}%</td><td class="num text-danger" id="s-ret"></td></tr>
+<tr><td>- استرداد دفعة مقدمة</td><td class="num text-danger" id="s-adv"></td></tr>
+<tr><td>- ضريبة خصم من المنبع</td><td class="num text-danger" id="s-wht"></td></tr>
+<tr><td>- تأمينات اجتماعية</td><td class="num text-danger" id="s-soc"></td></tr>
+<tr><td>- استقطاعات أخرى</td><td class="num text-danger" id="s-oth"></td></tr>
+<tr class="total"><td>صافي المستحق {% if c.is_client %}من العميل{% else %}لمقاول الباطن{% endif %}</td><td class="num" id="s-net"></td></tr>
+</tbody></table></div>
+<div class="d-flex gap-2 mt-3"><button class="btn btn-primary flex-fill"><i class="bi bi-save"></i> حفظ كمسودة</button>
+<button class="btn btn-success flex-fill" name="then" value="post"><i class="bi bi-check2-circle"></i> حفظ واعتماد (قيد آلي)</button></div>
+</div></div>
+</form>
+{% endblock %}
+{% block scripts %}<script>
+const P = {{ params|safe }};
+const r2 = x => Math.round(x * 100) / 100;
+function calc() {
+  let prev = 0, cur = 0, cum = 0;
+  document.querySelectorAll("#lines tbody tr").forEach(tr => {
+    const pq = num(tr.dataset.prev), pa = num(tr.dataset.prevAmount), price = num(tr.dataset.price), q = num(tr.dataset.qty);
+    const curI = tr.querySelector("input[name$='current_qty']"), cumI = tr.querySelector("input[name$='cumulative_qty']");
+    const pct = num(tr.querySelector("input[name$='completion_pct']").value);
+    const cq = pq + num(curI.value);
+    const ca = r2(cq * price * pct / 100);
+    tr.querySelector(".c-cum").textContent = fmt(ca);
+    tr.querySelector(".c-cur").textContent = fmt(ca - pa);
+    tr.querySelector(".c-pct").textContent = q ? (cq / q * 100).toFixed(1) + "%" : "";
+    tr.classList.toggle("table-success", num(curI.value) !== 0);
+    tr.classList.toggle("table-danger", q > 0 && cq > q);
+    prev += pa; cum += ca; cur += ca - pa;
+  });
+  document.getElementById("t-prev").textContent = fmt(prev);
+  document.getElementById("t-cur").textContent = fmt(cur);
+  document.getElementById("t-cum").textContent = fmt(cum);
+  const auto = document.getElementById("id_auto_deductions").checked;
+  let ret, adv, wht, soc;
+  if (auto) {
+    ret = r2(cur * P.retention / 100); wht = r2(cur * P.wht / 100); soc = r2(cur * P.social / 100);
+    const planned = document.getElementById("id_is_final").checked ? P.adv_remaining : r2(cur * P.adv_pct / 100);
+    adv = Math.max(0, Math.min(planned, P.adv_remaining));
+  } else {
+    ret = num(document.getElementById("id_retention_amount").value); adv = num(document.getElementById("id_advance_recovery").value);
+    wht = num(document.getElementById("id_wht_amount").value); soc = num(document.getElementById("id_social_ins_amount").value);
+  }
+  const vat = r2((P.vat_on_net ? cur - ret : cur) * P.vat / 100);
+  let oth = 0;
+  document.querySelectorAll("#deds-body tr").forEach(tr => { if (tr.style.display !== "none") { const a = tr.querySelector("input[name$='amount']"); if (a) oth += num(a.value); } });
+  const set = (id, v) => document.getElementById(id).textContent = fmt(v);
+  set("s-cum", cum); set("s-prev", prev); set("s-gross", cur); set("s-vat", vat); set("s-ret", ret); set("s-adv", adv);
+  set("s-wht", wht); set("s-soc", soc); set("s-oth", oth); set("s-net", cur + vat - ret - adv - wht - soc - oth);
+}
+document.querySelectorAll("#lines input[name$='cumulative_qty']").forEach(inp => inp.addEventListener("input", () => {
+  const tr = inp.closest("tr"); tr.querySelector("input[name$='current_qty']").value = (num(inp.value) - num(tr.dataset.prev)).toFixed(3) * 1;
+}));
+document.querySelectorAll("#lines input[name$='current_qty']").forEach(inp => inp.addEventListener("input", () => {
+  const tr = inp.closest("tr"); tr.querySelector("input[name$='cumulative_qty']").value = (num(inp.value) + num(tr.dataset.prev)).toFixed(3) * 1;
+}));
+document.addEventListener("input", calc); document.addEventListener("change", calc);
+document.addEventListener("formset:changed", calc);
+calc();
+</script>{% endblock %}

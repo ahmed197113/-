@@ -1,0 +1,7 @@
+<form class="filters card card-body py-2 mb-3"><div class="row g-2 align-items-end">
+{% if not no_from %}<div class="col-auto"><label class="small">من</label><input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control form-control-sm"></div>{% endif %}
+<div class="col-auto"><label class="small">{% if no_from %}في تاريخ{% else %}إلى{% endif %}</label><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm"></div>
+{% if projects is not None and not no_project %}<div class="col-md-2"><label class="small">المشروع</label><select name="project" class="form-select form-select-sm"><option value="">الكل</option>{% for p in projects %}<option value="{{ p.id }}" {% if request.GET.project == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}</select></div>
+<div class="col-md-2"><label class="small">مركز التكلفة</label><select name="cost_center" class="form-select form-select-sm"><option value="">الكل</option>{% for c in cost_centers %}<option value="{{ c.id }}" {% if request.GET.cost_center == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>{% endif %}
+{% block extra %}{{ extra_filters|default:"" }}{% endblock %}
+<div class="col-auto"><button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> عرض</button></div></div></form>

@@ -189,7 +189,7 @@ def partner_detail(request, pk):
 
 # ---------------------------------------------------------------------------- قيود اليومية
 def journal_list(request):
-    qs = JournalEntry.objects.annotate(total=Sum("lines__debit")).select_related("created_by")
+    qs = JournalEntry.objects.annotate(total=Sum("lines__debit")).select_related("created_by").order_by("-date", "-id")
     return render_list(
         request, "قيود اليومية", qs,
         [Col("رقم القيد", "number"), Col("التاريخ", "date", "date"), Col("البيان", "memo"),

@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3"><h1 class="page-title">{{ t }}</h1>{{ t.state|state_badge }}
+<div class="ms-auto d-flex gap-2">{% if t.move %}<a href="/journal/{{ t.move.id }}/" class="btn btn-sm btn-outline-dark">القيد {{ t.move.number }}</a>{% endif %}
+<form method="post" action="/transfers/{{ t.id }}/unpost/">{% csrf_token %}<button class="btn btn-sm btn-outline-warning">إلغاء الترحيل</button></form></div></div>
+<div class="card card-body" style="max-width:600px"><p>من: <b>{{ t.from_account }}</b></p><p>إلى: <b>{{ t.to_account }}</b></p><p>المبلغ: <b class="num">{{ t.amount|money0 }}</b></p><p>{{ t.memo }}</p><p class="text-muted">{{ t.date|date:"Y/m/d" }}</p></div>
+{% endblock %}

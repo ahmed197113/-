@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load static %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-receipt"></i> {{ title }}{% if obj %} {{ obj.number }}{% endif %}</h1>
+<a href="javascript:history.back()" class="btn btn-sm btn-light ms-auto"><i class="bi bi-arrow-right"></i> رجوع</a></div>
+<form method="post" novalidate data-smart data-side="{{ side }}" {% if obj %}data-id="{{ obj.id }}"{% endif %}>{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+<div class="row g-3">
+<div class="col-xl-9">
+  <div class="card mb-3"><div class="card-body"><div class="row g-2">
+  {% for field in form.visible_fields %}{% include "generic/_field.html" with cls="col-md-3" %}{% endfor %}{% for h in form.hidden_fields %}{{ h }}{% endfor %}
+  </div></div></div>
+  {% for f in formsets %}{% include "generic/_formset.html" %}{% endfor %}
+</div>
+<div class="col-xl-3">
+  <div class="card smart-panel mb-3"><div class="card-header"><i class="bi bi-stars"></i> المساعد الذكي</div><div class="card-body p-2">
+    <div class="small text-muted mb-2">اكتب البيان (مثلاً: «سولار لودر موقع التجمع» أو «حديد تسليح 16 مم») وسيتم اقتراح الحساب والمشروع والضريبة تلقائياً.</div>
+    <div id="smart-notes"></div></div></div>
+  <div class="card"><div class="card-header">الإجماليات</div><table class="table table-sm summary-table mb-0"><tbody>
+    <tr><td>الإجمالي قبل الخصم</td><td class="num" id="g-gross">0.00</td></tr>
+    <tr><td>الخصم</td><td class="num" id="g-disc">0.00</td></tr>
+    <tr><td>الصافي قبل الضريبة</td><td class="num" id="g-sub">0.00</td></tr>
+    <tr><td>ضريبة القيمة المضافة</td><td class="num" id="g-vat">0.00</td></tr>
+    <tr><td>خصم من المنبع</td><td class="num" id="g-wht">0.00</td></tr>
+    <tr class="total"><td>الإجمالي المستحق</td><td class="num" id="g-total" data-value="0">0.00</td></tr></tbody></table></div>
+  <button class="btn btn-primary w-100 mt-3"><i class="bi bi-save"></i> حفظ (مسودة)</button>
+  <div class="small text-muted mt-2 text-center">بعد الحفظ اضغط «ترحيل» ليتم إنشاء القيد آلياً</div>
+</div></div>
+</form>
+{{ tax_rates|json_script:"tax-rates" }}
+{% endblock %}
+{% block scripts %}
+<script>
+const RATES = JSON.parse(document.getElementById("tax-rates").textContent || "{}");
+const SIDE = "{{ side }}";
+function totals(){let g=0,dsc=0,sub=0,vat=0;document.querySelectorAll("#lines-body tr").forEach(tr=>{if(tr.style.display==="none")return;
+ const q=num(tr.querySelector("[name$='-qty']").value),p=num(tr.querySelector("[name$='-unit_price']").value),d=num(tr.querySelector("[name$='-discount_pct']").value);
+ const v=tr.querySelector("[name$='-vat']").value;const gross=q*p,net=Math.round(gross*(100-d))/100;g+=gross;dsc+=gross-net;sub+=net;vat+=Math.round(net*(RATES[v]||0))/100;});
+ const w=RATES[document.getElementById("id_wht").value]||0;const wht=Math.round(sub*w)/100;const t=sub+vat-wht;
+ [["g-gross",g],["g-disc",dsc],["g-sub",sub],["g-vat",vat],["g-wht",wht],["g-total",t]].forEach(([id,v])=>document.getElementById(id).textContent=fmt(v));
+ document.getElementById("g-total").dataset.value=t.toFixed(2);}
+document.addEventListener("input",totals);document.addEventListener("change",totals);document.addEventListener("formset:changed",totals);
+document.addEventListener("change",async e=>{if(!e.target.name||!e.target.name.endsWith("-product")||!e.target.value)return;const tr=e.target.closest("tr");
+ const p=await (await fetch(`/api/product/${e.target.value}/`)).json();const desc=tr.querySelector("[name$='-description']");if(!desc.value)desc.value=p.name;
+ tr.querySelector("[name$='-unit_price']").value=SIDE==="sale"?p.sale_price:p.purchase_price;const tax=SIDE==="sale"?p.sale_tax:p.purchase_tax;
+ const vs=tr.querySelector("[name$='-vat']");if(tax){vs.tomselect?vs.tomselect.setValue(String(tax)):vs.value=tax;}totals();});
+totals();
+</script>
+<script src="{% static 'js/smart.js' %}"></script>
+{% endblock %}

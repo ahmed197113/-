@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title mb-3"><i class="bi bi-bar-chart-line"></i> تقارير المقاولات</h1>
+<div class="row g-3">
+<div class="col-md-4"><a href="/contracting/reports/projects/" class="card card-body text-decoration-none h-100"><i class="bi bi-graph-up-arrow fs-2 text-primary"></i><h6 class="mt-2 fw-bold">ربحية المشروعات</h6><small class="text-muted">قيمة التعاقد، المنفذ، الإيرادات، التكاليف، الربح وهامش الربح لكل مشروع</small></a></div>
+<div class="col-md-4"><a href="/contracting/reports/retention/" class="card card-body text-decoration-none h-100"><i class="bi bi-safe2 fs-2 text-warning"></i><h6 class="mt-2 fw-bold">المحتجزات (ضمان الأعمال)</h6><small class="text-muted">المحتجز لدى العملاء والمحتجز من مقاولي الباطن والمردود منه</small></a></div>
+<div class="col-md-4"><a href="/contracting/reports/advances/" class="card card-body text-decoration-none h-100"><i class="bi bi-cash-coin fs-2 text-success"></i><h6 class="mt-2 fw-bold">الدفعات المقدمة</h6><small class="text-muted">المتعاقد عليه، المستلم/المدفوع، المسترد، والمتبقي</small></a></div>
+<div class="col-md-4"><a href="/certificates/?kind=client" class="card card-body text-decoration-none h-100"><i class="bi bi-receipt-cutoff fs-2 text-info"></i><h6 class="mt-2 fw-bold">سجل مستخلصات العملاء</h6><small class="text-muted">مع إمكانية الفلترة بالمشروع والحالة والتصدير لـ Excel</small></a></div>
+<div class="col-md-4"><a href="/certificates/?kind=sub" class="card card-body text-decoration-none h-100"><i class="bi bi-receipt fs-2 text-secondary"></i><h6 class="mt-2 fw-bold">سجل مستخلصات مقاولي الباطن</h6><small class="text-muted">المستحق لكل مقاول والمسدد والمتبقي</small></a></div>
+<div class="col-md-4"><a href="/reports/aging/?side=payable" class="card card-body text-decoration-none h-100"><i class="bi bi-hourglass-split fs-2 text-danger"></i><h6 class="mt-2 fw-bold">أعمار مستحقات المقاولين</h6><small class="text-muted">المستخلصات والفواتير غير المسددة حسب مدة التأخير</small></a></div>
+</div>
+{% endblock %}

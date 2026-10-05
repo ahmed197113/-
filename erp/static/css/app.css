@@ -39,7 +39,7 @@ input.num { text-align: left; direction: ltr; }
 .card-header { background: #fff; font-weight: 600; border-bottom: 1px solid #edf0f4; }
 .kpi { border-radius: .8rem; padding: 1rem 1.1rem; color: #fff; position: relative; overflow: hidden; }
 .kpi .label { font-size: .82rem; opacity: .9; }
-.kpi .value { font-size: 1.45rem; font-weight: 700; direction: ltr; text-align: right; }
+.kpi .value { font-size: 1.3rem; position: relative; font-weight: 700; direction: ltr; text-align: right; }
 .kpi i { position: absolute; left: .9rem; top: .8rem; font-size: 2.2rem; opacity: .25; }
 .bg-g1 { background: linear-gradient(135deg, #1f3a5f, #2c5282); }
 .bg-g2 { background: linear-gradient(135deg, #2e7d7a, #38a89d); }
@@ -85,3 +85,21 @@ tr.lvl0 td { background: #e8eef6; font-weight: 700; }
   a { text-decoration: none; color: inherit; }
 }
 .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #16294a, #2e7d7a); }
+
+/* المساعد الذكي */
+.smart-box { font-size: .78rem; margin-top: .25rem; }
+.smart-box:empty { display: none; }
+.smart-chips { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.smart-chips.applied { opacity: .55; }
+.smart-chip { border: 1px solid #cbd5e0; background: #fff; border-radius: 1rem; padding: 0 .55rem; font-size: .75rem; cursor: pointer; }
+.smart-chip span { font-weight: 700; margin-right: .2rem; }
+.smart-chip.high { border-color: #38a169; background: #f0fff4; color: #22543d; }
+.smart-chip.mid { border-color: #d69e2e; background: #fffff0; color: #744210; }
+.smart-chip.low { color: #718096; }
+.smart-auto { color: #2c7a7b; background: #e6fffa; border-radius: .4rem; padding: .1rem .4rem; margin-bottom: .2rem; display: inline-block; }
+.smart-hint { color: #4a5568; margin-top: .2rem; }
+.smart-panel { border: 1px solid #b2f5ea; background: linear-gradient(180deg, #f0fffd, #fff); }
+.smart-panel .card-header { background: transparent; color: #234e52; }
+.formset-table td.desc { min-width: 260px; }
+#lines input[name$='current_qty'], #lines input[name$='cumulative_qty'] { min-width: 90px; }
+.row > * { min-width: 0; }

@@ -1,0 +1,3 @@
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3"><h1 class="page-title"><i class="bi bi-graph-up-arrow"></i> {{ title }}</h1>
+<div class="ms-auto d-flex gap-2 no-print"><button class="btn btn-sm btn-outline-success" onclick="exportTable(this,'{{ title }}')"><i class="bi bi-file-earmark-excel"></i> Excel</button><button class="btn btn-sm btn-dark" onclick="print()"><i class="bi bi-printer"></i> طباعة</button></div></div>
+<div class="print-only small mb-2 d-none d-print-block">{% if date_from %}من {{ date_from|date:"Y/m/d" }} {% endif %}حتى {{ date_to|date:"Y/m/d" }}</div>

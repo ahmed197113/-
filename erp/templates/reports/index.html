@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="page-title mb-3"><i class="bi bi-graph-up-arrow"></i> التقارير المالية</h1>
+<div class="row g-3">
+{% with c="col-xl-3 col-md-4" %}
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/trial-balance/"><i class="bi bi-scale fs-2 text-primary"></i><h6 class="fw-bold mt-2">ميزان المراجعة</h6><small class="text-muted">أرصدة أول المدة والحركة والختامي بمستويات الشجرة</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/income-statement/"><i class="bi bi-bar-chart fs-2 text-success"></i><h6 class="fw-bold mt-2">قائمة الدخل</h6><small class="text-muted">الإيرادات والتكاليف ومجمل وصافي الربح — بالمشروع أو مركز التكلفة</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/balance-sheet/"><i class="bi bi-bank fs-2 text-info"></i><h6 class="fw-bold mt-2">المركز المالي</h6><small class="text-muted">الأصول والخصوم وحقوق الملكية في تاريخ معين</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/ledger/"><i class="bi bi-journal-text fs-2 text-secondary"></i><h6 class="fw-bold mt-2">دفتر الأستاذ / كشف حساب</h6><small class="text-muted">حركة أي حساب برصيد تراكمي — ويستخدم كدفتر خزينة وبنك</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/partner-statement/"><i class="bi bi-person-lines-fill fs-2 text-primary"></i><h6 class="fw-bold mt-2">كشف حساب عميل / مورد / مقاول</h6><small class="text-muted">شامل المحتجزات والدفعات المقدمة</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/aging/?side=receivable"><i class="bi bi-hourglass-split fs-2 text-warning"></i><h6 class="fw-bold mt-2">أعمار الديون - العملاء</h6><small class="text-muted">فواتير ومستخلصات غير محصلة حسب مدة التأخير</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/aging/?side=payable"><i class="bi bi-hourglass fs-2 text-danger"></i><h6 class="fw-bold mt-2">أعمار الديون - الموردون والمقاولون</h6><small class="text-muted">المستحق علينا حسب مدة التأخير</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/taxes/"><i class="bi bi-percent fs-2 text-success"></i><h6 class="fw-bold mt-2">تقرير الضرائب</h6><small class="text-muted">ض.ق.م مخرجات ومدخلات وصافي المستحق، وضرائب الخصم والإضافة بالجهات</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/reports/cost-centers/"><i class="bi bi-bullseye fs-2 text-info"></i><h6 class="fw-bold mt-2">مراكز التكلفة</h6><small class="text-muted">إيرادات وتكاليف كل مركز</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/contracting/reports/"><i class="bi bi-building-gear fs-2 text-primary"></i><h6 class="fw-bold mt-2">تقارير المقاولات</h6><small class="text-muted">ربحية المشروعات، المحتجزات، الدفعات المقدمة</small></a></div>
+<div class="{{ c }}"><a class="card card-body h-100 text-decoration-none" href="/stock/balance/"><i class="bi bi-boxes fs-2 text-secondary"></i><h6 class="fw-bold mt-2">أرصدة وتقييم المخزون</h6><small class="text-muted">بالمخزن وفي أي تاريخ</small></a></div>
+{% endwith %}</div>
+{% endblock %}

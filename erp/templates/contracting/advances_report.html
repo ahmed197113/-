@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-cash-coin"></i> {{ title }}</h1><button class="btn btn-sm btn-outline-success ms-auto" onclick="exportTable(this,'{{ title }}')"><i class="bi bi-file-earmark-excel"></i> Excel</button></div>
+<div class="card"><table class="table table-sm table-hover exportable"><thead><tr><th>النوع</th><th>العقد</th><th>الطرف</th><th>المشروع</th><th class="num">المتعاقد عليه</th><th class="num">المستلم / المدفوع</th><th class="num">المسترد بالمستخلصات</th><th class="num">المتبقي</th></tr></thead><tbody>
+{% for r in rows %}<tr class="clickable" data-href="/contracts/{{ r.c.id }}/"><td>{% if r.c.is_client %}من عميل{% else %}لمقاول باطن{% endif %}</td><td>{{ r.c.number }}</td><td>{{ r.c.partner }}</td><td>{{ r.c.project.name }}</td><td class="num">{{ r.agreed|money }}</td><td class="num">{{ r.paid|money }}</td><td class="num">{{ r.recovered|money }}</td><td class="num fw-bold">{{ r.remaining|money }}</td></tr>{% empty %}<tr><td colspan="8" class="text-center text-muted">لا يوجد</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-3"><h1 class="page-title"><i class="bi bi-boxes"></i> {{ title }}</h1>
+<div class="ms-auto d-flex gap-2"><a href="/stock/docs/new/?kind=issue" class="btn btn-sm btn-primary"><i class="bi bi-box-arrow-right"></i> صرف مواد لمشروع</a><button class="btn btn-sm btn-outline-success" onclick="exportTable(this,'{{ title }}')"><i class="bi bi-file-earmark-excel"></i> Excel</button></div></div>
+<form class="filters row g-2 mb-3"><div class="col-auto"><input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control form-control-sm"></div>
+<div class="col-auto"><select name="warehouse" class="form-select form-select-sm"><option value="">كل المخازن</option>{% for w in warehouses %}<option value="{{ w.id }}" {% if wh == w.id|stringformat:"s" %}selected{% endif %}>{{ w }}</option>{% endfor %}</select></div><div class="col-auto"><button class="btn btn-sm btn-secondary">عرض</button></div></form>
+<div class="card"><table class="table table-sm table-hover exportable"><thead><tr><th>الكود</th><th>الصنف</th><th>الوحدة</th><th class="num">الكمية</th><th class="num">متوسط التكلفة</th><th class="num">القيمة</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr class="clickable" data-href="/products/{{ r.p.id }}/card/"><td>{{ r.p.code }}</td><td>{{ r.p.name }}</td><td>{{ r.p.unit }}</td><td class="num">{{ r.qty|qty }}</td><td class="num">{{ r.p.avg_cost|money }}</td><td class="num">{{ r.value|money }}</td><td>{% if r.low %}<span class="badge text-bg-warning">تحت حد الطلب</span>{% endif %}</td></tr>{% empty %}<tr><td colspan="7" class="text-center text-muted">لا توجد أرصدة</td></tr>{% endfor %}</tbody>
+<tfoot><tr><td colspan="5">إجمالي قيمة المخزون</td><td class="num">{{ total|money }}</td><td></td></tr></tfoot></table></div>
+{% endblock %}

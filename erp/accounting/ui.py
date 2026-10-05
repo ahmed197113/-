@@ -33,7 +33,7 @@ class BootstrapMixin:
             else:
                 w.attrs.setdefault("class", "form-control form-control-sm")
             if isinstance(w, forms.Textarea):
-                w.attrs.setdefault("rows", 2)
+                w.attrs["rows"] = 2
             if isinstance(f, forms.DecimalField):
                 w.attrs.setdefault("step", "any")
                 w.attrs["class"] += " num"

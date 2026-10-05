@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 no-print"><h1 class="page-title"><i class="bi bi-receipt"></i> {{ inv }}</h1>{{ inv.state|state_badge }}{% if inv.payment_status %}<span class="badge text-bg-light">{{ inv.payment_status }}</span>{% endif %}
+<div class="ms-auto d-flex gap-2">
+{% if inv.is_draft %}<a href="/invoices/{{ inv.id }}/edit/" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> تعديل</a>
+<form method="post" action="/invoices/{{ inv.id }}/post/">{% csrf_token %}<button class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> ترحيل</button></form>
+<form method="post" action="/invoices/{{ inv.id }}/delete/" data-confirm="حذف الفاتورة؟">{% csrf_token %}<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+{% else %}
+{% if inv.residual > 0 and not inv.is_return %}<a href="/payments/new/?kind={% if inv.side == 'sale' %}receipt{% else %}payment{% endif %}&invoice={{ inv.id }}" class="btn btn-sm btn-success"><i class="bi bi-cash"></i> تسجيل سداد</a>
+<a href="/invoices/new/?kind={{ inv.side }}_return&partner={{ inv.partner_id }}&origin={{ inv.id }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i> مرتجع</a>{% endif %}
+{% if inv.move %}<a href="/journal/{{ inv.move.id }}/" class="btn btn-sm btn-outline-dark"><i class="bi bi-journal-text"></i> القيد {{ inv.move.number }}</a>{% endif %}
+<form method="post" action="/invoices/{{ inv.id }}/unpost/" data-confirm="إلغاء الترحيل؟">{% csrf_token %}<button class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-counterclockwise"></i> إلغاء الترحيل</button></form>{% endif %}
+<button onclick="print()" class="btn btn-sm btn-dark"><i class="bi bi-printer"></i> طباعة</button></div></div>
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between mb-3"><div><h4 class="fw-bold">{{ inv.get_kind_display }}</h4><div>رقم: <b>{{ inv.number }}</b></div><div>التاريخ: {{ inv.date|date:"Y/m/d" }}{% if inv.due_date %} — الاستحقاق: {{ inv.due_date|date:"Y/m/d" }}{% endif %}</div>{% if inv.reference %}<div>المرجع: {{ inv.reference }}</div>{% endif %}</div>
+<div class="text-start"><div class="text-muted small">{% if inv.side == 'sale' %}العميل{% else %}المورد{% endif %}</div><div class="fw-bold fs-5">{{ inv.partner }}</div>{% if inv.partner.tax_id %}<div class="small">رقم ضريبي: {{ inv.partner.tax_id }}</div>{% endif %}<div class="small">{{ inv.partner.address }}</div>{% if inv.project %}<div class="small">المشروع: {{ inv.project }}</div>{% endif %}</div></div>
+<table class="table table-sm table-bordered"><thead><tr><th>#</th><th>الصنف / البيان</th><th class="no-print">الحساب</th><th class="num">الكمية</th><th class="num">السعر</th><th class="num">خصم%</th><th class="num">الصافي</th><th>الضريبة</th><th class="num">الإجمالي</th></tr></thead><tbody>
+{% for l in lines %}<tr><td>{{ forloop.counter }}</td><td>{% if l.product %}{{ l.product.name }}{% if l.description and l.description != l.product.name %}<div class="small text-muted">{{ l.description }}</div>{% endif %}{% else %}{{ l.description }}{% endif %}{% if l.project and l.project != inv.project %}<div class="small text-info">{{ l.project.name }}</div>{% endif %}</td><td class="small no-print">{{ l.account|default:"تلقائي" }}</td>
+<td class="num">{{ l.qty|qty }}</td><td class="num">{{ l.unit_price|money }}</td><td class="num">{{ l.discount_pct|qty }}</td><td class="num">{{ l.net_amount|money }}</td><td class="small">{{ l.vat|default:"" }}</td><td class="num">{{ l.line_total|money }}</td></tr>{% endfor %}</tbody></table>
+<div class="row"><div class="col-md-6">{% if inv.notes %}<p class="small">{{ inv.notes|linebreaksbr }}</p>{% endif %}
+{% if payments %}<h6 class="no-print">السداد</h6><table class="table table-sm no-print"><tbody>{% for p in payments %}<tr class="clickable" data-href="{{ p.get_absolute_url }}"><td>{{ p.number }}</td><td>{{ p.date|date:"Y/m/d" }}</td><td class="num">{{ p.amount|money }}</td><td>{{ p.state|state_badge }}</td></tr>{% endfor %}</tbody></table>{% endif %}</div>
+<div class="col-md-6"><table class="table table-sm summary-table table-bordered"><tbody>
+<tr><td>الإجمالي قبل الخصم</td><td class="num">{{ inv.subtotal|add:inv.discount_total|money0 }}</td></tr>
+{% if inv.discount_total %}<tr><td>الخصم</td><td class="num">({{ inv.discount_total|money0 }})</td></tr>{% endif %}
+<tr><td>الصافي قبل الضريبة</td><td class="num">{{ inv.subtotal|money0 }}</td></tr>
+<tr><td>ضريبة القيمة المضافة</td><td class="num">{{ inv.vat_total|money0 }}</td></tr>
+{% if inv.wht_total %}<tr><td>{{ inv.wht }}</td><td class="num">({{ inv.wht_total|money0 }})</td></tr>{% endif %}
+<tr class="total"><td>الإجمالي المستحق</td><td class="num">{{ inv.total|money0 }}</td></tr>
+{% if inv.is_posted and not inv.is_return %}<tr><td>المسدد</td><td class="num">{{ inv.paid_amount|money0 }}</td></tr><tr class="fw-bold"><td>المتبقي</td><td class="num">{{ inv.residual|money0 }}</td></tr>{% endif %}
+</tbody></table><div class="tafqeet">{{ inv.total|tafqeet:company }}</div></div></div>
+</div></div>
+{% endblock %}

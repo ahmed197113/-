@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3 no-print"><h1 class="page-title"><i class="bi bi-cash-stack"></i> {{ p }}</h1>{{ p.state|state_badge }}
+<div class="ms-auto d-flex gap-2">
+{% if p.is_draft %}<a href="/payments/{{ p.id }}/edit/" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> تعديل</a><form method="post" action="/payments/{{ p.id }}/post/">{% csrf_token %}<button class="btn btn-sm btn-success"><i class="bi bi-check2-circle"></i> ترحيل</button></form>
+<form method="post" action="/payments/{{ p.id }}/delete/" data-confirm="حذف السند؟">{% csrf_token %}<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+{% else %}{% if p.move %}<a href="/journal/{{ p.move.id }}/" class="btn btn-sm btn-outline-dark"><i class="bi bi-journal-text"></i> القيد {{ p.move.number }}</a>{% endif %}
+<form method="post" action="/payments/{{ p.id }}/unpost/" data-confirm="إلغاء الترحيل؟">{% csrf_token %}<button class="btn btn-sm btn-outline-warning"><i class="bi bi-arrow-counterclockwise"></i> إلغاء الترحيل</button></form>{% endif %}
+<button onclick="print()" class="btn btn-sm btn-dark"><i class="bi bi-printer"></i> طباعة</button></div></div>
+<div class="card" style="max-width:850px"><div class="card-body p-4">
+<div class="d-flex justify-content-between align-items-start mb-4"><h3 class="fw-bold">{{ p.get_kind_display }}</h3><div class="text-start"><div>رقم: <b>{{ p.number }}</b></div><div>التاريخ: {{ p.date|date:"Y/m/d" }}</div></div></div>
+<div class="fs-5 mb-3 p-3 border rounded text-center">المبلغ: <b class="num">{{ p.amount|money0 }}</b> {{ company.currency }}</div>
+<div class="tafqeet mb-3">{{ p.amount|tafqeet:company }}</div>
+<table class="table table-sm"><tbody>
+<tr><th style="width:200px">{% if p.kind == 'receipt' %}استلمنا من{% else %}صرفنا إلى{% endif %}</th><td>{{ p.partner|default:p.counter_account }}</td></tr>
+<tr><th>وذلك عن</th><td>{{ p.memo|default:p.get_purpose_display }}</td></tr>
+<tr><th>{% if p.kind == 'receipt' %}أودع في{% else %}صُرف من{% endif %}</th><td>{{ p.treasury.name }} — {{ p.get_method_display }}{% if p.cheque_no %} رقم {{ p.cheque_no }}{% endif %}{% if p.cheque_date %} استحقاق {{ p.cheque_date|date:"Y/m/d" }}{% endif %}</td></tr>
+{% if p.invoice %}<tr><th>الفاتورة</th><td><a href="{{ p.invoice.get_absolute_url }}">{{ p.invoice }}</a></td></tr>{% endif %}
+{% if p.certificate %}<tr><th>المستخلص</th><td><a href="{{ p.certificate.get_absolute_url }}">{{ p.certificate }}</a></td></tr>{% endif %}
+{% if p.contract %}<tr><th>العقد</th><td><a href="{{ p.contract.get_absolute_url }}">{{ p.contract }}</a></td></tr>{% endif %}
+{% if p.project %}<tr><th>المشروع</th><td>{{ p.project }}</td></tr>{% endif %}
+</tbody></table>
+<div class="signatures"><div>المحاسب<span>التوقيع</span></div><div>أمين الخزينة<span>التوقيع</span></div><div>{% if p.kind == 'receipt' %}المسلِّم{% else %}المستلِم{% endif %}<span>التوقيع</span></div><div>المدير المالي<span>اعتماد</span></div></div>
+</div></div>
+{% endblock %}

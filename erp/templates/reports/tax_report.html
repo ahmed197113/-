@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}{% include "reports/_head.html" %}{% include "reports/_period.html" with no_project=1 %}
+<div class="alert {% if net_vat >= 0 %}alert-warning{% else %}alert-success{% endif %}">صافي ضريبة القيمة المضافة عن الفترة (مخرجات - مدخلات): <b class="num">{{ net_vat|money0 }}</b> {% if net_vat >= 0 %}مستحق السداد{% else %}رصيد دائن لصالح الشركة{% endif %}</div>
+{% for s in sections %}<div class="card mb-3"><div class="card-header">{{ s.title }}</div><div class="card-body">
+{% for i in s.items %}<h6 class="fw-bold">{{ i.account }} — مدين {{ i.debit|money0 }} / دائن {{ i.credit|money0 }}</h6>
+<table class="table table-sm exportable mb-3"><thead><tr><th>الجهة</th><th>الرقم الضريبي</th><th class="num">مدين</th><th class="num">دائن</th></tr></thead><tbody>
+{% for b in i.by_partner %}<tr><td>{{ b.partner__name|default:"بدون جهة" }}</td><td>{{ b.partner__tax_id|default:"" }}</td><td class="num">{{ b.d|money }}</td><td class="num">{{ b.c|money }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">لا حركة</td></tr>{% endfor %}</tbody></table>{% endfor %}
+</div></div>{% endfor %}
+{% endblock %}
