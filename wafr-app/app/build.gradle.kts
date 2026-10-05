@@ -17,17 +17,25 @@ android {
         applicationId = "com.wafr.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "2.0"
+        // Always increasing so every CI build installs as an update over the previous one.
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 100
+        versionName = "2.1"
     }
 
     signingConfigs {
-        if (keystorePath != null) {
-            create("release") {
+        // One fixed key for every build, so new versions install as updates and keep the user's data.
+        create("release") {
+            if (keystorePath != null) {
                 storeFile = file(keystorePath)
                 storePassword = System.getenv("SIGNING_STORE_PASSWORD")
                 keyAlias = System.getenv("SIGNING_KEY_ALIAS")
                 keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            } else {
+                storeFile = file("signing/wafr-release.p12")
+                storeType = "pkcs12"
+                storePassword = "wafr-release-2026"
+                keyAlias = "wafr"
+                keyPassword = "wafr-release-2026"
             }
         }
     }
@@ -37,8 +45,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = if (keystorePath != null) signingConfigs.getByName("release")
-            else signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

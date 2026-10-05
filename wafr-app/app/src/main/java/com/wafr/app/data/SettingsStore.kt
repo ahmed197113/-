@@ -41,6 +41,8 @@ data class Settings(
     /** When the next "did you spend?" alarm is due (epoch millis). */
     val nextCheckInAt: Long = 0,
     val rushBest: Int = 0,
+    val catcherBest: Int = 0,
+    val monthBest: Int = 0,
 )
 
 class SettingsStore(private val context: Context) {
@@ -66,6 +68,8 @@ class SettingsStore(private val context: Context) {
         val quizBest = intPreferencesKey("quiz_best")
         val nextCheckIn = longPreferencesKey("next_checkin")
         val rushBest = intPreferencesKey("rush_best")
+        val catcherBest = intPreferencesKey("catcher_best")
+        val monthBest = intPreferencesKey("month_best")
     }
 
     val flow: Flow<Settings> = context.dataStore.data.map { currentFrom(it) }
@@ -96,6 +100,8 @@ class SettingsStore(private val context: Context) {
             p[K.quizBest] = s.quizBest
             p[K.nextCheckIn] = s.nextCheckInAt
             p[K.rushBest] = s.rushBest
+            p[K.catcherBest] = s.catcherBest
+            p[K.monthBest] = s.monthBest
         }
     }
 
@@ -123,6 +129,8 @@ class SettingsStore(private val context: Context) {
             quizBest = p[K.quizBest] ?: d.quizBest,
             nextCheckInAt = p[K.nextCheckIn] ?: d.nextCheckInAt,
             rushBest = p[K.rushBest] ?: d.rushBest,
+            catcherBest = p[K.catcherBest] ?: d.catcherBest,
+            monthBest = p[K.monthBest] ?: d.monthBest,
         )
     }
 }

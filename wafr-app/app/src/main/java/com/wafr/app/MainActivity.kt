@@ -46,6 +46,14 @@ class MainActivity : ComponentActivity() {
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("demo", false) == true) {
             appScope.launch { if (repo.allExpenses().isEmpty()) repo.seedDemo() }
         }
+        if (BuildConfig.DEBUG && intent?.getBooleanExtra("backup_roundtrip", false) == true) {
+            appScope.launch {
+                val json = repo.exportJson()
+                repo.wipeExpenses()
+                val n = repo.importJson(json)
+                android.util.Log.i("WafrTest", "backup roundtrip restored=$n")
+            }
+        }
         if (BuildConfig.DEBUG && intent?.getBooleanExtra("notify", false) == true) {
             appScope.launch {
                 val snap = repo.snapshotOnce()

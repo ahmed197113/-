@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
@@ -45,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +99,7 @@ fun ExpenseEditor(
     val effectiveNeed = need ?: selectedCategory?.defaultNeed ?: true
     val accent by animateColorAsState(if (effectiveNeed) c.need else c.want, label = "accent")
     val amountMinor = amountText.toDoubleOrNull()?.let { Money.toMinor(it) } ?: 0L
+    val today = LocalDate.now().toMillis()
 
     fun press(key: String) {
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -113,7 +118,15 @@ fun ExpenseEditor(
         }
     }
 
-    Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+    // Compact layout for short screens / large font sizes so everything fits.
+    val compact = LocalConfiguration.current.screenHeightDp / LocalDensity.current.fontScale < 760
+    val keyHeight = if (compact) 46.dp else 54.dp
+    // The save button lives outside the scrollable area so it is ALWAYS visible.
+    Column(Modifier.fillMaxWidth()) {
+    Column(
+        Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState())
+            .padding(start = 20.dp, end = 20.dp, top = 4.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(if (initial == null) "مصروف جديد" else "تعديل المصروف", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             if (onDelete != null) IconButton(onClick = onDelete) { Icon(Icons.Outlined.DeleteOutline, "حذف", tint = c.danger) }
@@ -140,7 +153,7 @@ fun ExpenseEditor(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
                 Text(
-                    amountText.ifEmpty { "0" }, fontSize = 52.sp, fontWeight = FontWeight.ExtraBold, color = accent,
+                    amountText.ifEmpty { "0" }, fontSize = if (compact) 42.sp else 52.sp, fontWeight = FontWeight.ExtraBold, color = accent,
                     maxLines = 1,
                 )
                 Spacer(Modifier.width(8.dp))
@@ -177,7 +190,6 @@ fun ExpenseEditor(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(8.dp))
-        val today = LocalDate.now().toMillis()
         val yesterday = LocalDate.now().minusDays(1).toMillis()
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = dateMillis == today, onClick = { dateMillis = today }, label = { Text("اليوم") })
@@ -212,7 +224,7 @@ fun ExpenseEditor(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { k ->
                             Box(
-                                Modifier.weight(1f).height(54.dp).clip(RoundedCornerShape(16.dp))
+                                Modifier.weight(1f).height(keyHeight).clip(RoundedCornerShape(16.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                                     .clickable { press(k) },
                                 contentAlignment = Alignment.Center,
@@ -225,7 +237,8 @@ fun ExpenseEditor(
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
+    }
         Button(
             onClick = {
                 val ts = when {
@@ -237,7 +250,7 @@ fun ExpenseEditor(
                 onSave(amountMinor, effectiveNeed, categoryId, note.trim(), ts)
             },
             enabled = amountMinor > 0,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 12.dp).height(56.dp),
             shape = RoundedCornerShape(18.dp),
             colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color(0xFF02101A)),
         ) {
@@ -246,6 +259,7 @@ fun ExpenseEditor(
                 fontWeight = FontWeight.Bold, fontSize = 17.sp,
             )
         }
+    }
     }
 
     if (showDatePicker) {

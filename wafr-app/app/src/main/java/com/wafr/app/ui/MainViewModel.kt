@@ -85,11 +85,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun saveBest(quiz: Int? = null, rush: Int? = null) = viewModelScope.launch {
+    fun saveBest(quiz: Int? = null, rush: Int? = null, catcher: Int? = null, month: Int? = null) = viewModelScope.launch {
         repo.settingsStore.update { s ->
             s.copy(
                 quizBest = maxOf(s.quizBest, quiz ?: 0),
                 rushBest = maxOf(s.rushBest, rush ?: 0),
+                catcherBest = maxOf(s.catcherBest, catcher ?: 0),
+                monthBest = maxOf(s.monthBest, month ?: 0),
             )
         }
     }

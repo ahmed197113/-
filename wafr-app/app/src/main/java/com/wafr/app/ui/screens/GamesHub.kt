@@ -80,7 +80,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private enum class G { HUB, FREEDOM, RUSH, QUIZ, TIME }
+private enum class G { HUB, FREEDOM, RUSH, QUIZ, TIME, CATCHER, MONTH }
 
 @Composable
 fun GameHeader(title: String, onBack: () -> Unit, subtitle: String? = null) {
@@ -105,6 +105,8 @@ fun GamesHub(vm: MainViewModel, settings: Settings, freedom: Game.State, content
             G.RUSH -> RushGame(settings.rushBest, contentPadding, back) { vm.saveBest(rush = it) }
             G.QUIZ -> QuizGame(settings.quizBest, contentPadding, back) { vm.saveBest(quiz = it) }
             G.TIME -> TimeMachineGame(settings, contentPadding, back)
+            G.CATCHER -> WealthCatcherGame(settings.catcherBest, contentPadding, back) { vm.saveBest(catcher = it) }
+            G.MONTH -> MonthSwipeGame(settings.monthBest, contentPadding, back) { vm.saveBest(month = it) }
         }
     }
 }
@@ -120,6 +122,20 @@ private fun Hub(settings: Settings, freedom: Game.State, contentPadding: Padding
         item {
             Text("العب وتعلّم 🎮", style = MaterialTheme.typography.headlineSmall)
             Text("ألعاب قصيرة تبني عقلية الثراء — دقيقة يومياً تكفي.", color = c.muted, style = MaterialTheme.typography.bodySmall)
+        }
+        item {
+            GameCard(
+                "🪙", "صائد الثروة", "لعبة أركيد ثنائية الأبعاد: التقط الأصول بمحفظتك وتجنّب فخاخ الديون والشراء الاندفاعي.",
+                if (settings.catcherBest > 0) "🏆 أفضل ثروة: ${settings.catcherBest}" else "جديدة • 2D",
+                listOf(Color(0xFF00F5C4), Color(0xFF8A5CFF)),
+            ) { open(G.CATCHER) }
+        }
+        item {
+            GameCard(
+                "🗓️", "شهر في حياتك", "اسحب البطاقات: ادفع أم ارفض؟ وازن بين مالك وسعادتك وحقق هدف الادخار.",
+                if (settings.monthBest > 0) "⭐ أفضل نتيجة: ${settings.monthBest} نجوم" else "جديدة",
+                listOf(Color(0xFFFF7AD9), Color(0xFFFFB020)),
+            ) { open(G.MONTH) }
         }
         item {
             GameCard(

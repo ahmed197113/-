@@ -41,6 +41,20 @@ if hit:
 # Scrolls until the text is visible, then taps it.
 scroll_tap() { for i in 1 2 3 4 5 6; do tap_text "$1" && return 0; swipe_up; done; return 1; }
 has_text() { dump | grep -q -- "$1"; }
+# Passes when an element with this text is fully on screen (not pushed below the bottom edge).
+visible_on_screen() {
+  local H; H=$(adb shell wm size | grep -oE "[0-9]+x[0-9]+" | tail -1 | cut -dx -f2)
+  dump | python3 -c '
+import re,sys
+x=sys.stdin.read(); t=sys.argv[1]; H=int(sys.argv[2])
+for m in re.finditer(r"<node [^>]*>", x):
+    n=m.group(0); tx=re.search(r"text=\"([^\"]*)\"", n)
+    if tx and t in tx.group(1):
+        a=list(map(int,re.search(r"bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"", n).groups()))
+        sys.exit(0 if a[3] <= H and a[1] < a[3] else 1)
+sys.exit(1)
+' "$1" "$H"
+}
 check() { # name, text
   if has_text "$2"; then echo "PASS  $1" >> "$report"; else echo "FAIL  $1 (expected text: $2)" >> "$report"; fails=$((fails+1)); fi
 }
@@ -79,6 +93,22 @@ tap_text "انطلق"
 shot 10-home-empty 4
 check "home after onboarding" "مسموح لك اليوم"
 check "user name shown" "Ahmed"
+
+# ---- 1b. Small screen + large text (like many real phones): the save button must stay visible
+adb shell wm size 1080x1920; adb shell wm density 460; adb shell settings put system font_scale 1.15
+sleep 3
+start --es tab HOME; sleep 2
+tap_text "إضافة مصروف"; sleep 2
+shot 05-small-screen-editor 1
+if visible_on_screen "أدخل المبلغ"; then pass "save button visible on small screen + large font"; else fail "save button visible on small screen + large font"; fi
+keys 7
+if visible_on_screen "سجّل 7"; then pass "save button shows amount on small screen"; else fail "save button shows amount on small screen"; fi
+tap_text "سجّل"; sleep 2
+adb shell wm size reset; adb shell wm density reset; adb shell settings put system font_scale 1.0
+sleep 3
+start --es tab HISTORY; sleep 2
+check "small-screen expense saved (7)" "-7"
+start --es tab HOME; sleep 2
 
 # ---- 2. Log a NEED expense from the + button
 tap_text "إضافة مصروف"; sleep 2
@@ -226,6 +256,31 @@ start --es overlay SETTINGS; sleep 2
 scroll_tap "فاتح"
 start --es tab HOME; shot 80-light-home 3
 start --es tab PLAN; shot 81-light-plan 3
+
+# ---- 11b. Backup → wipe → restore keeps the data
+adb shell am force-stop $pkg
+start --ez backup_roundtrip true
+sleep 5
+if adb logcat -d -s WafrTest | grep -q "restored=[1-9]"; then pass "backup and restore round-trip keeps expenses"; else fail "backup and restore round-trip keeps expenses"; fi
+start --es tab HISTORY; sleep 2
+check "history intact after restore" "-150"
+
+# ---- 11c. 2D arcade + swipe games
+start --es tab GAME; sleep 2
+tap_text "صائد الثروة"; sleep 2
+tap_text "ابدأ"; sleep 1
+for x in 200 500 800 300 700 540; do adb shell input swipe $x 1500 $((1080 - x)) 1500 400; done
+shot 75-catcher 0
+check "catcher running" "مستوى"
+in_back
+tap_text "شهر في حياتك"; sleep 2
+tap_text "ابدأ الشهر"; sleep 2
+shot 76-month 0
+adb shell input swipe 300 1100 950 1100 250; sleep 1
+tap_text "ارفض"; sleep 1
+tap_text "ادفع"; sleep 1
+shot 77-month-after 0
+check "month game advances" "الموقف 4"
 
 # ---- 12. Crash check
 adb logcat -d > "$out/logcat.txt"
