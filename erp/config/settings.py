@@ -11,7 +11,16 @@ SECRET_KEY = os.environ.get(
     "ERP_SECRET_KEY", "dev-only-change-me-3b1c9f0a7d2e4b8c9a6f5e1d0c3b2a19"
 )
 DEBUG = os.environ.get("ERP_DEBUG", "1") == "1"
-ALLOWED_HOSTS = os.environ.get("ERP_ALLOWED_HOSTS", "localhost,127.0.0.1,*").split(",")
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get(
+    "ERP_ALLOWED_HOSTS", "localhost,127.0.0.1,*" if DEBUG else "localhost,127.0.0.1").split(",") if h.strip()]
+
+# مطلوب عند التشغيل على دومين بـ HTTPS (مثال: https://metal-lines.com,https://www.metal-lines.com)
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get("ERP_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()]
+# خلف nginx/Apache/cPanel الذي ينهي الـ SSL
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+if os.environ.get("ERP_HTTPS") == "1":
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -29,6 +38,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -92,7 +102,11 @@ FORMAT_MODULE_PATH = ["config.formats"]
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.environ.get("ERP_STATIC_ROOT", BASE_DIR / "staticfiles")
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
