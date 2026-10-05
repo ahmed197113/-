@@ -260,7 +260,6 @@ fun ExpenseEditor(
             )
         }
     }
-    }
 
     if (showDatePicker) {
         val state = rememberDatePickerState(
