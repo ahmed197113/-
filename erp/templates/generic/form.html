@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi {{ icon }}"></i> {{ title }}</h1>
+  <a href="javascript:history.back()" class="btn btn-sm btn-light ms-auto"><i class="bi bi-arrow-right"></i> رجوع</a></div>
+{% if help %}<div class="alert alert-info py-2 small"><i class="bi bi-info-circle"></i> {{ help }}</div>{% endif %}
+<form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+  <div class="card mb-3"><div class="card-body"><div class="row g-3">
+    {% for field in form.visible_fields %}{% include "generic/_field.html" %}{% endfor %}
+    {% for h in form.hidden_fields %}{{ h }}{% endfor %}
+  </div></div></div>
+  {% for f in formsets %}{% include "generic/_formset.html" %}{% endfor %}
+  {% block extra_form %}{% endblock %}
+  <div class="d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+  <a href="javascript:history.back()" class="btn btn-light">إلغاء</a></div>
+</form>
+{% endblock %}

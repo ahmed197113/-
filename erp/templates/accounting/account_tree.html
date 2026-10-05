@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3"><h1 class="page-title"><i class="bi bi-diagram-3"></i> شجرة الحسابات</h1>
+<div class="ms-auto d-flex gap-2"><input id="filter" class="form-control form-control-sm" placeholder="بحث بالكود أو الاسم" style="width:220px">
+<button class="btn btn-sm btn-outline-success" onclick="exportTable(this,'شجرة الحسابات')"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+<a href="/accounts/new/" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> حساب جديد</a></div></div>
+<div class="card"><table class="table table-sm table-hover align-middle exportable" id="tree"><thead><tr><th>الكود</th><th>اسم الحساب</th><th>النوع</th><th>طبيعة خاصة</th><th class="num">الرصيد</th><th class="no-print"></th></tr></thead><tbody>
+{% for r in rows %}<tr class="{% if r.a.is_group %}grp{% endif %} {% if r.level == 0 %}lvl0{% endif %} {% if not r.a.active %}text-muted{% endif %}">
+<td>{{ r.a.code }}</td><td style="padding-right:calc({{ r.level }} * 1.5rem + .5rem)">{% if r.a.is_group %}<i class="bi bi-folder2-open text-warning"></i>{% else %}<i class="bi bi-file-earmark text-secondary"></i>{% endif %} {{ r.a.name }}</td>
+<td>{{ r.a.get_type_display }}</td><td>{% if r.a.kind != 'other' %}<span class="badge text-bg-info">{{ r.a.get_kind_display }}</span>{% endif %}</td>
+<td class="num">{{ r.balance|money }}</td>
+<td class="no-print text-nowrap">{% if r.a.is_group %}<a href="/accounts/new/?parent={{ r.a.id }}" class="btn btn-sm btn-link p-0" title="إضافة حساب فرعي"><i class="bi bi-plus-circle"></i></a>{% else %}<a href="/reports/ledger/?account={{ r.a.id }}" class="btn btn-sm btn-link p-0" title="كشف الحساب"><i class="bi bi-journal-text"></i></a>{% endif %}
+<a href="/accounts/{{ r.a.id }}/" class="btn btn-sm btn-link p-0" title="تعديل"><i class="bi bi-pencil"></i></a></td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}
+{% block scripts %}<script>
+document.getElementById("filter").addEventListener("input", function(){const q=this.value.trim();document.querySelectorAll("#tree tbody tr").forEach(tr=>{tr.style.display=!q||tr.innerText.includes(q)?"":"none";});});
+</script>{% endblock %}

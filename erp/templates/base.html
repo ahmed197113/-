@@ -1,0 +1,90 @@
+{% load static %}<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title|default:"النظام المحاسبي" }} | {{ company.name }}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.rtl.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/tom-select.bootstrap5.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav class="sidebar">
+  <div class="brand"><i class="bi bi-buildings"></i> {{ company.name }}<small>نظام المحاسبة والمقاولات المتكامل</small></div>
+
+  <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2"></i> لوحة التحكم</a>
+
+  <div class="section">المقاولات</div>
+  <a href="/projects/" class="{% active '/projects/' %}"><i class="bi bi-building-gear"></i> المشروعات</a>
+  <a href="/contracts/?kind=client" class="{% if '/contracts/' in request.path and request.GET.kind == 'client' %}active{% endif %}"><i class="bi bi-file-earmark-text"></i> عقود العملاء والمقايسات</a>
+  <a href="/contracts/?kind=sub" class="{% if '/contracts/' in request.path and request.GET.kind == 'sub' %}active{% endif %}"><i class="bi bi-person-gear"></i> عقود مقاولي الباطن</a>
+  <a href="/certificates/?kind=client" class="{% if '/certificates/' in request.path and request.GET.kind == 'client' %}active{% endif %}"><i class="bi bi-receipt-cutoff"></i> مستخلصات العملاء</a>
+  <a href="/certificates/?kind=sub" class="{% if '/certificates/' in request.path and request.GET.kind == 'sub' %}active{% endif %}"><i class="bi bi-receipt"></i> مستخلصات مقاولي الباطن</a>
+  <a href="/contracting/reports/" class="{% active '/contracting/reports/' %}"><i class="bi bi-bar-chart-line"></i> تقارير المقاولات</a>
+
+  <div class="section">المبيعات والمشتريات</div>
+  <a href="/invoices/?kind=sale" class="{% if '/invoices/' in request.path and request.GET.kind == 'sale' %}active{% endif %}"><i class="bi bi-cart-check"></i> فواتير المبيعات</a>
+  <a href="/invoices/?kind=purchase" class="{% if '/invoices/' in request.path and request.GET.kind == 'purchase' %}active{% endif %}"><i class="bi bi-bag"></i> فواتير المشتريات</a>
+  <a href="/invoices/?kind=sale_return" class="{% if '/invoices/' in request.path and 'return' in request.GET.kind %}active{% endif %}"><i class="bi bi-arrow-counterclockwise"></i> المرتجعات</a>
+  <a href="/partners/?type=customer" class="{% if '/partners/' in request.path and request.GET.type == 'customer' %}active{% endif %}"><i class="bi bi-people"></i> العملاء</a>
+  <a href="/partners/?type=supplier" class="{% if '/partners/' in request.path and request.GET.type == 'supplier' %}active{% endif %}"><i class="bi bi-truck"></i> الموردون</a>
+  <a href="/partners/?type=subcontractor" class="{% if '/partners/' in request.path and request.GET.type == 'subcontractor' %}active{% endif %}"><i class="bi bi-person-badge"></i> مقاولو الباطن</a>
+
+  <div class="section">الخزينة والبنوك</div>
+  <a href="/payments/?kind=receipt" class="{% if '/payments/' in request.path and request.GET.kind == 'receipt' %}active{% endif %}"><i class="bi bi-box-arrow-in-down"></i> سندات القبض</a>
+  <a href="/payments/?kind=payment" class="{% if '/payments/' in request.path and request.GET.kind == 'payment' %}active{% endif %}"><i class="bi bi-box-arrow-up"></i> سندات الصرف</a>
+  <a href="/transfers/" class="{% active '/transfers/' %}"><i class="bi bi-arrow-left-right"></i> التحويلات</a>
+
+  <div class="section">المخزون</div>
+  <a href="/products/" class="{% active '/products/' %}"><i class="bi bi-box-seam"></i> الأصناف</a>
+  <a href="/stock/docs/" class="{% active '/stock/docs/' %}"><i class="bi bi-clipboard-check"></i> الأذونات المخزنية</a>
+  <a href="/stock/balance/" class="{% active '/stock/balance/' %}"><i class="bi bi-boxes"></i> أرصدة المخزون</a>
+  <a href="/warehouses/" class="{% active '/warehouses/' %}"><i class="bi bi-house-door"></i> المخازن</a>
+
+  <div class="section">المحاسبة العامة</div>
+  <a href="/journal/" class="{% if request.path == '/journal/' or '/journal/new' in request.path %}active{% endif %}"><i class="bi bi-journal-text"></i> قيود اليومية</a>
+  <a href="/journal/templates/" class="{% active '/journal/templates/' %}"><i class="bi bi-lightning-charge"></i> القيود الجاهزة</a>
+  <a href="/accounts/" class="{% active '/accounts/' %}"><i class="bi bi-diagram-3"></i> شجرة الحسابات</a>
+  <a href="/cost-centers/" class="{% active '/cost-centers/' %}"><i class="bi bi-bullseye"></i> مراكز التكلفة</a>
+  <a href="/assets/" class="{% active '/assets/' %}"><i class="bi bi-truck-front"></i> الأصول الثابتة والإهلاك</a>
+
+  <div class="section">التقارير والإعدادات</div>
+  <a href="/reports/" class="{% active '/reports/' %}"><i class="bi bi-graph-up-arrow"></i> التقارير المالية</a>
+  <a href="/settings/" class="{% active '/settings/' '/taxes/' %}"><i class="bi bi-gear"></i> الإعدادات</a>
+  {% if user.is_superuser %}<a href="/admin/auth/user/"><i class="bi bi-shield-lock"></i> المستخدمون والصلاحيات</a>{% endif %}
+  <div style="height:2rem"></div>
+</nav>
+
+<div class="main">
+  <div class="topbar d-flex align-items-center gap-2">
+    <button class="btn btn-sm btn-outline-secondary d-lg-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+    <div class="d-none d-md-flex gap-1">
+      <a class="btn btn-sm btn-primary" href="/invoices/new/?kind=sale"><i class="bi bi-plus-lg"></i> فاتورة بيع</a>
+      <a class="btn btn-sm btn-outline-primary" href="/payments/new/?kind=receipt"><i class="bi bi-plus-lg"></i> سند قبض</a>
+      <a class="btn btn-sm btn-outline-primary" href="/payments/new/?kind=payment"><i class="bi bi-plus-lg"></i> سند صرف</a>
+      <a class="btn btn-sm btn-outline-success" href="/certificates/new/?kind=client"><i class="bi bi-plus-lg"></i> مستخلص</a>
+      <a class="btn btn-sm btn-outline-warning" href="/journal/templates/"><i class="bi bi-lightning-charge"></i> قيد جاهز</a>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <span class="text-muted small"><i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}</span>
+      <form method="post" action="/logout/" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-light"><i class="bi bi-box-arrow-left"></i> خروج</button></form>
+    </div>
+  </div>
+  <div class="content">
+    <div class="print-header"><h4>{{ company.name }}</h4><div>{{ company.address }} {% if company.tax_id %}| رقم التسجيل الضريبي: {{ company.tax_id }}{% endif %}</div></div>
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show py-2">{{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+<script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/tom-select.complete.min.js' %}"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

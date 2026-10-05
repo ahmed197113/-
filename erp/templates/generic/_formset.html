@@ -1,0 +1,12 @@
+<div class="card mb-3"><div class="card-header d-flex align-items-center"><span>{{ f.title }}</span><button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addFormRow('{{ f.prefix }}')"><i class="bi bi-plus"></i> إضافة سطر</button></div>
+<div class="table-responsive"><table class="table table-sm formset-table mb-0" id="{{ f.prefix }}-table">
+{{ f.fs.management_form }}
+{% if f.fs.non_form_errors %}<caption class="text-danger px-2" style="caption-side:top">{{ f.fs.non_form_errors }}</caption>{% endif %}
+<thead><tr>{% for field in f.fs.empty_form.visible_fields %}{% if field.name != 'DELETE' %}<th>{{ field.label }}</th>{% endif %}{% endfor %}<th></th></tr></thead>
+<tbody id="{{ f.prefix }}-body">
+{% for form in f.fs.forms %}<tr>{% for field in form.visible_fields %}{% if field.name != 'DELETE' %}<td class="{% if field.name == 'account' or field.name == 'product' or field.name == 'item' %}acc{% endif %}">{{ field }}{{ field.errors }}</td>{% endif %}{% endfor %}<td>{% for h in form.hidden_fields %}{{ h }}{% endfor %}<span class="d-none">{{ form.DELETE }}</span><button type="button" class="btn btn-sm btn-link text-danger" onclick="removeFormRow(this)"><i class="bi bi-trash"></i></button>{% if form.non_field_errors %}<div class="text-danger small">{{ form.non_field_errors }}</div>{% endif %}</td></tr>{% endfor %}
+</tbody>
+{% block tfoot %}{% endblock %}
+</table></div>
+<template id="{{ f.prefix }}-empty"><tr>{% for field in f.fs.empty_form.visible_fields %}{% if field.name != 'DELETE' %}<td class="{% if field.name == 'account' or field.name == 'product' %}acc{% endif %}">{{ field }}</td>{% endif %}{% endfor %}<td>{% for h in f.fs.empty_form.hidden_fields %}{{ h }}{% endfor %}<button type="button" class="btn btn-sm btn-link text-danger" onclick="removeFormRow(this)"><i class="bi bi-trash"></i></button></td></tr></template>
+</div>

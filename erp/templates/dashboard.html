@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% load static %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <h1 class="page-title"><i class="bi bi-speedometer2"></i> لوحة التحكم</h1>
+  {% if drafts %}<a href="/journal/?state=draft" class="badge text-bg-warning ms-3 text-decoration-none">{{ drafts }} مستند مسودة بانتظار الترحيل</a>{% endif %}
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g1"><i class="bi bi-cash-stack"></i><div class="label">النقدية والبنوك</div><div class="value">{{ cash|money0 }}</div></div></div>
+  <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g2"><i class="bi bi-person-down"></i><div class="label">مستحق من العملاء</div><div class="value">{{ receivable|money0 }}</div></div></div>
+  <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g3"><i class="bi bi-person-up"></i><div class="label">مستحق للموردين والمقاولين</div><div class="value">{{ payable|money0 }}</div></div></div>
+  <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g5"><i class="bi bi-graph-up"></i><div class="label">إيرادات السنة</div><div class="value">{{ revenue|money0 }}</div></div></div>
+  <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g4"><i class="bi bi-graph-down"></i><div class="label">تكاليف ومصروفات السنة</div><div class="value">{{ expense|money0 }}</div></div></div>
+  <div class="col-xl-2 col-md-4 col-6"><div class="kpi bg-g6"><i class="bi bi-trophy"></i><div class="label">صافي الربح</div><div class="value">{{ profit|money0 }}</div></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-bar-chart"></i> الإيرادات والمصروفات - آخر 12 شهراً</div><div class="card-body"><canvas id="chart" height="110"></canvas></div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-safe"></i> أرصدة الخزائن والبنوك</div>
+    <table class="table table-sm"><tbody>
+    {% for t in treasury %}<tr><td><a href="/reports/ledger/?account={{ t.account.id }}">{{ t.account.name }}</a></td><td class="num">{{ t.balance|money0 }}</td></tr>{% endfor %}
+    </tbody></table></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-8"><div class="card"><div class="card-header d-flex"><span><i class="bi bi-building-gear"></i> ربحية المشروعات الجارية</span><a class="ms-auto small" href="/contracting/reports/projects/">التقرير الكامل</a></div>
+    <div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>المشروع</th><th class="num">قيمة التعاقد</th><th class="num">الإيرادات</th><th class="num">التكاليف</th><th class="num">الربح</th></tr></thead><tbody>
+    {% for x in projects %}<tr class="clickable" data-href="/projects/{{ x.p.id }}/"><td>{{ x.p.name }}</td><td class="num">{{ x.value|money }}</td><td class="num">{{ x.revenue|money }}</td><td class="num">{{ x.cost|money }}</td><td class="num {% if x.profit < 0 %}text-danger{% else %}text-success{% endif %} fw-bold">{{ x.profit|money }}</td></tr>
+    {% empty %}<tr><td colspan="5" class="text-muted text-center">لا توجد مشروعات بعد</td></tr>{% endfor %}
+    </tbody></table></div></div></div>
+  <div class="col-lg-4"><div class="card"><div class="card-header"><i class="bi bi-hourglass-split"></i> مستخلصات لم تُحصّل / لم تُسدد</div>
+    <table class="table table-sm"><tbody>
+    {% for c in pending_certs %}<tr class="clickable" data-href="/certificates/{{ c.id }}/"><td>{{ c.contract.partner }}<div class="small text-muted">مستخلص {{ c.seq }} - {{ c.contract.number }}</div></td><td class="num">{{ c.residual|money }}</td></tr>
+    {% empty %}<tr><td class="text-muted text-center">لا يوجد</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card"><div class="card-header"><i class="bi bi-clock-history"></i> آخر القيود</div>
+    <table class="table table-sm table-hover"><tbody>
+    {% for e in recent %}<tr class="clickable" data-href="/journal/{{ e.id }}/"><td>{{ e.number }}</td><td>{{ e.date|date:"Y/m/d" }}</td><td>{{ e.memo|truncatechars:50 }}</td><td><span class="badge text-bg-light">{{ e.get_source_display }}</span></td></tr>
+    {% empty %}<tr><td class="text-muted text-center">لا توجد قيود</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="col-lg-3"><div class="card"><div class="card-header text-danger"><i class="bi bi-exclamation-triangle"></i> فواتير متأخرة</div>
+    <table class="table table-sm"><tbody>{% for i in overdue %}<tr class="clickable" data-href="/invoices/{{ i.id }}/"><td>{{ i.partner }}<div class="small text-muted">{{ i.number }}</div></td><td class="num">{{ i.residual|money }}</td></tr>{% empty %}<tr><td class="text-muted text-center">لا يوجد</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="col-lg-3"><div class="card"><div class="card-header text-warning"><i class="bi bi-box"></i> أصناف تحت حد الطلب</div>
+    <table class="table table-sm"><tbody>{% for p in low_stock %}<tr><td>{{ p.name }}</td><td class="num">{{ p.qty_on_hand|qty }}</td></tr>{% empty %}<tr><td class="text-muted text-center">لا يوجد</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+<script>
+const d = {{ chart|safe }};
+Chart.defaults.font.family = "Cairo";
+new Chart(document.getElementById("chart"), {type: "bar", data: {labels: d.labels, datasets: [
+  {label: "الإيرادات", data: d.revenue, backgroundColor: "#2e7d7a", borderRadius: 4},
+  {label: "التكاليف والمصروفات", data: d.expense, backgroundColor: "#d69e2e", borderRadius: 4}]},
+  options: {plugins: {legend: {position: "bottom"}}, scales: {y: {ticks: {callback: v => v.toLocaleString()}}}}});
+</script>
+{% endblock %}

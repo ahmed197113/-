@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <h1 class="page-title"><i class="bi {{ icon }}"></i> {{ title }}</h1>
+  <div class="ms-auto d-flex gap-2">
+    {% for url, label, ic, color in buttons %}<a href="{{ url }}" class="btn btn-sm btn-{{ color }}"><i class="bi {{ ic }}"></i> {{ label }}</a>{% endfor %}
+    <button class="btn btn-sm btn-outline-success" onclick="exportTable(this,'{{ title }}')"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+    <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i></button>
+    {% if new_url %}<a href="{{ new_url }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> جديد</a>{% endif %}
+  </div>
+</div>
+{% if has_search or filters %}
+<form class="filters row g-2 mb-3" method="get">
+  {% for k, v in request.GET.items %}{% if k == 'kind' or k == 'type' %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+  {% if has_search %}<div class="col-md-4"><input class="form-control form-control-sm" name="q" value="{{ q }}" placeholder="بحث..."></div>{% endif %}
+  {% for f in filters %}<div class="col-md-2"><select name="{{ f.name }}" class="form-select form-select-sm" onchange="this.form.submit()"><option value="">{{ f.title }}: الكل</option>{% for val, lbl in f.choices %}<option value="{{ val }}" {% if f.value == val|stringformat:"s" %}selected{% endif %}>{{ lbl }}</option>{% endfor %}</select></div>{% endfor %}
+  <div class="col-auto"><button class="btn btn-sm btn-secondary"><i class="bi bi-search"></i> بحث</button></div>
+</form>
+{% endif %}
+{% block before_table %}{% endblock %}
+<div class="card"><div class="table-responsive">
+<table class="table table-hover table-sm align-middle exportable">
+  <thead><tr>{% for c in columns %}<th class="{% if c.is_num %}num{% endif %}">{{ c.title }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for r in rows %}<tr class="{% if r.url %}clickable{% endif %}" {% if r.url %}data-href="{{ r.url }}"{% endif %}>{% for c, v in r.cells %}<td class="{% if c.is_num %}num{% endif %}">{{ v }}</td>{% endfor %}</tr>
+  {% empty %}<tr><td colspan="{{ columns|length }}" class="text-center text-muted py-4">لا توجد بيانات</td></tr>{% endfor %}
+  </tbody>
+  {% if totals %}<tfoot><tr>{% for t in totals %}<td class="num">{% if forloop.first and not t %}الإجمالي{% else %}{{ t }}{% endif %}</td>{% endfor %}</tr></tfoot>{% endif %}
+</table></div></div>
+{% if page.paginator.num_pages > 1 %}
+<nav class="mt-3"><ul class="pagination pagination-sm">
+  {% if page.has_previous %}<li class="page-item"><a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page={{ page.previous_page_number }}">السابق</a></li>{% endif %}
+  <li class="page-item disabled"><span class="page-link">صفحة {{ page.number }} من {{ page.paginator.num_pages }}</span></li>
+  {% if page.has_next %}<li class="page-item"><a class="page-link" href="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page={{ page.next_page_number }}">التالي</a></li>{% endif %}
+</ul></nav>{% endif %}
+{% endblock %}
