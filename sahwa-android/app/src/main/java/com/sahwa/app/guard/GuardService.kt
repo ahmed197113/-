@@ -260,6 +260,7 @@ class GuardService : AccessibilityService() {
     // ---------------- overlays ----------------
 
     private fun showGate() {
+        removeOverlay()
         val d = Store.state.value
         val wait = (d.gateSeconds + d.today.sessions * 3).coerceAtMost(30)
         val p = panel()
@@ -346,6 +347,7 @@ class GuardService : AccessibilityService() {
     }
 
     private fun showBlock(title: String, msg: String) {
+        removeOverlay()
         hideHud()
         val p = panel()
         p.addView(text("🛡️", 64f, WHITE))
@@ -359,6 +361,7 @@ class GuardService : AccessibilityService() {
     }
 
     private fun showZombie(count: Int) {
+        removeOverlay()
         hideHud()
         val p = panel()
         p.addView(text("🧟", 64f, WHITE))
@@ -405,6 +408,7 @@ class GuardService : AccessibilityService() {
     }
 
     private fun showSessionEnd() {
+        removeOverlay()
         hideHud()
         val p = panel()
         p.addView(text("⏰", 64f, WHITE))
@@ -420,14 +424,20 @@ class GuardService : AccessibilityService() {
         showOverlay(p)
     }
 
+    /**
+     * Attaches [content] as the full-screen overlay. Callers clear the previous overlay with
+     * [removeOverlay] *before* starting the new one's countdowns and animations; doing it here
+     * would cancel them (the gate countdown froze on its first number because of that).
+     */
     private fun showOverlay(content: View) {
-        removeOverlay()
+        overlay?.let { runCatching { wm.removeView(it) } }
+        overlay = null
         val root = ScrollView(this).apply {
             isFillViewport = true
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             background = GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
-                intArrayOf(0xF5060A13.toInt(), 0xF5120A2A.toInt(), 0xF5060A13.toInt()),
+                intArrayOf(0xFF060A13.toInt(), 0xFF120A2A.toInt(), 0xFF060A13.toInt()),
             )
             addView(content, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         }
