@@ -120,7 +120,8 @@ fun ExpenseEditor(
 
     // Compact layout for short screens / large font sizes so everything fits.
     val compact = LocalConfiguration.current.screenHeightDp / LocalDensity.current.fontScale < 760
-    val keyHeight = if (compact) 46.dp else 54.dp
+    val keyHeight = if (compact) 40.dp else 54.dp
+    val gap = if (compact) 6.dp else 10.dp
     // The save button lives outside the scrollable area so it is ALWAYS visible.
     Column(Modifier.fillMaxWidth()) {
     Column(
@@ -153,7 +154,7 @@ fun ExpenseEditor(
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.Bottom) {
                 Text(
-                    amountText.ifEmpty { "0" }, fontSize = if (compact) 42.sp else 52.sp, fontWeight = FontWeight.ExtraBold, color = accent,
+                    amountText.ifEmpty { "0" }, fontSize = if (compact) 36.sp else 52.sp, fontWeight = FontWeight.ExtraBold, color = accent,
                     maxLines = 1,
                 )
                 Spacer(Modifier.width(8.dp))
@@ -163,10 +164,10 @@ fun ExpenseEditor(
 
         // Need / want
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            NeedOption("✅", "ضروري", "لا غنى عنه", effectiveNeed, c.need, Modifier.weight(1f)) { need = true }
-            NeedOption("🛍️", "كمالي", "أقدر أستغني عنه", !effectiveNeed, c.want, Modifier.weight(1f)) { need = false }
+            NeedOption("✅", "ضروري", "لا غنى عنه", effectiveNeed, c.need, Modifier.weight(1f), compact) { need = true }
+            NeedOption("🛍️", "كمالي", "أقدر أستغني عنه", !effectiveNeed, c.want, Modifier.weight(1f), compact) { need = false }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(gap))
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 2.dp)) {
             items(categories, key = { it.id }) { cat ->
@@ -219,7 +220,7 @@ fun ExpenseEditor(
         }
 
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 8.dp)) {
                 listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf(".", "0", "⌫")).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { k ->
@@ -282,8 +283,8 @@ fun ExpenseEditor(
 }
 
 @Composable
-private fun NeedOption(emoji: String, title: String, subtitle: String, selected: Boolean, color: Color, modifier: Modifier, onClick: () -> Unit) {
-    OutlinedBox(modifier.height(64.dp).clickable(onClick = onClick), selected = selected, color = color) {
+private fun NeedOption(emoji: String, title: String, subtitle: String, selected: Boolean, color: Color, modifier: Modifier, compact: Boolean, onClick: () -> Unit) {
+    OutlinedBox(modifier.height(if (compact) 50.dp else 64.dp).clickable(onClick = onClick), selected = selected, color = color) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(emoji, fontSize = 22.sp)
             Spacer(Modifier.width(8.dp))

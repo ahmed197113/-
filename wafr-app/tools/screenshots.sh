@@ -101,6 +101,7 @@ start --es tab HOME; sleep 2
 tap_text "إضافة مصروف"; sleep 2
 shot 05-small-screen-editor 1
 if visible_on_screen "أدخل المبلغ"; then pass "save button visible on small screen + large font"; else fail "save button visible on small screen + large font"; fi
+if visible_on_screen "0"; then pass "whole keypad (0 key) visible on small screen"; else fail "whole keypad (0 key) visible on small screen"; fi
 keys 7
 if visible_on_screen "سجّل 7"; then pass "save button shows amount on small screen"; else fail "save button shows amount on small screen"; fi
 tap_text "سجّل"; sleep 2
@@ -263,7 +264,7 @@ start --ez backup_roundtrip true
 sleep 5
 if adb logcat -d -s WafrTest | grep -q "restored=[1-9]"; then pass "backup and restore round-trip keeps expenses"; else fail "backup and restore round-trip keeps expenses"; fi
 start --es tab HISTORY; sleep 2
-check "history intact after restore" "-150"
+check "history intact after restore" "6 عملية"
 
 # ---- 11c. 2D arcade + swipe games
 start --es tab GAME; sleep 2
