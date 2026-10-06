@@ -532,5 +532,5 @@
     <string name="qibla_adjust_left">Turn the arrow left</string>
     <string name="qibla_adjust_right">Turn the arrow right</string>
     <string name="memorize_needs_ayah_reciter">Repeating needs a reciter recorded ayah by ayah. Choose another reciter (Islam Sobhi is available as whole surahs only).</string>
-    <string name="quran_audio_error_surah">Couldn't play the surah: check your connection. (A few surahs aren't available in Islam Sobhi's voice.)</string>
+    <string name="quran_audio_error_surah">Couldn\'t play the surah: check your connection. (A few surahs aren\'t available in Islam Sobhi\'s voice.)</string>
 </resources>
