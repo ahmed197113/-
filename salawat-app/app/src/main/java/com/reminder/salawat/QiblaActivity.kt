@@ -32,6 +32,8 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
     /** Magnetometer accuracy as reported by the phone: below MEDIUM the compass needs a figure-8 calibration. */
     private var magAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
     private var wasAligned = false
+    /** The user's correction for this phone's compass bias (degrees, clockwise), kept between visits. */
+    private var userOffset = 0f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +49,7 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
             binding.imageArrow.visibility = View.GONE
             binding.textQiblaHint.visibility = View.GONE
             binding.btnQiblaLocation.visibility = View.VISIBLE
+            binding.rowQiblaAdjust.visibility = View.GONE
             binding.btnQiblaLocation.setOnClickListener {
                 LocationSheet.show(this, permissions) { recreate() }
             }
@@ -56,6 +59,15 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
             // Google's Qibla Finder: the line from here to the Ka'bah on a map, to check the needle against.
             runCatching { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://qiblafinder.withgoogle.com/"))) }
         }
+        userOffset = Prefs.get(this).getFloat(KEY_OFFSET, 0f)
+        updateOffsetLabel()
+        // The arrow turns the way the button points (layout mirroring aside): ◀ anticlockwise, ▶ clockwise.
+        binding.rowQiblaAdjust.layoutDirection = View.LAYOUT_DIRECTION_LTR
+        binding.btnQiblaMinus.setOnClickListener { nudge(-1f) }
+        binding.btnQiblaPlus.setOnClickListener { nudge(1f) }
+        binding.btnQiblaMinus.setOnLongClickListener { nudge(-5f); true }
+        binding.btnQiblaPlus.setOnLongClickListener { nudge(5f); true }
+        binding.textQiblaOffset.setOnLongClickListener { userOffset = 0f; save(); true }
         val (lat, lng) = location
         qiblaBearing = bearingToKaaba(lat, lng)
         declination = GeomagneticField(lat.toFloat(), lng.toFloat(), 0f, System.currentTimeMillis()).declination
@@ -117,13 +129,29 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
         val magneticAzimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
         val trueAzimuth = (magneticAzimuth + declination + 360f) % 360f
         smoothedAzimuth = if (smoothedAzimuth.isNaN()) trueAzimuth else smoothAngle(smoothedAzimuth, trueAzimuth)
-        val arrow = (qiblaBearing - smoothedAzimuth + 360f) % 360f
+        val arrow = (qiblaBearing - smoothedAzimuth + userOffset + 720f) % 360f
         binding.imageArrow.rotation = arrow
         val off = if (arrow > 180f) 360f - arrow else arrow
         val aligned = abs(off) < 4f
         binding.textAligned.visibility = if (aligned) View.VISIBLE else View.INVISIBLE
         if (aligned && !wasAligned) binding.imageArrow.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
         wasAligned = aligned
+    }
+
+    private fun nudge(degrees: Float) {
+        userOffset = (userOffset + degrees).coerceIn(-45f, 45f)
+        save()
+    }
+
+    private fun save() {
+        Prefs.get(this).edit().putFloat(KEY_OFFSET, userOffset).apply()
+        updateOffsetLabel()
+    }
+
+    private fun updateOffsetLabel() {
+        val d = userOffset.roundToInt()
+        binding.textQiblaOffset.text = if (d == 0) getString(R.string.qibla_adjust_none)
+        else getString(R.string.qibla_adjust_value, (if (d > 0) "+" else "") + QuranData.toArabicDigits(d))
     }
 
     private fun updateAccuracy(accuracy: Int) {
@@ -145,6 +173,7 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
     }
 
     companion object {
+        private const val KEY_OFFSET = "qibla_user_offset"
         private const val KAABA_LAT = 21.422487
         private const val KAABA_LNG = 39.826206
 

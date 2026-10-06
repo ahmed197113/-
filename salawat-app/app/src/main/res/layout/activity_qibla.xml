@@ -63,6 +63,42 @@
         android:text="@string/qibla_map"
         app:icon="@drawable/ic_location" />
 
+    <LinearLayout
+        android:id="@+id/rowQiblaAdjust"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnQiblaMinus"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/qibla_adjust_left"
+            android:text="◀"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/textQiblaOffset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:minWidth="140dp"
+            android:textColor="@color/text_secondary_light"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnQiblaPlus"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/qibla_adjust_right"
+            android:text="▶"
+            android:textSize="18sp" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/textQiblaHint"
         android:layout_width="match_parent"

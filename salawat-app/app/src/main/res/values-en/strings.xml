@@ -527,4 +527,8 @@
     <string name="adhan_log_line">Due %1$s · arrived %2$s (%3$s s later) · %4$s</string>
     <string name="qibla_map">Check on the map (Google)</string>
     <string name="quran_text_source">Quran text: the Tanzil project, tanzil.net</string>
+    <string name="qibla_adjust_none">Manual calibration: ◀ ▶ to adjust</string>
+    <string name="qibla_adjust_value">Correction %1$s° (long-press to reset)</string>
+    <string name="qibla_adjust_left">Turn the arrow left</string>
+    <string name="qibla_adjust_right">Turn the arrow right</string>
 </resources>
