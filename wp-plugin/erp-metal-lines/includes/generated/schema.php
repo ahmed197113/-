@@ -221,14 +221,14 @@ return [
         'sequence' => [
             'columns' => [
                 'id bigint(20) NOT NULL AUTO_INCREMENT',
-                'key varchar(40) NOT NULL DEFAULT \'\'',
+                'seq_key varchar(40) NOT NULL DEFAULT \'\'',
                 'prefix varchar(20) NOT NULL DEFAULT \'\'',
                 'next_number int(10) unsigned NOT NULL DEFAULT 1',
                 'padding smallint(5) unsigned NOT NULL DEFAULT 5',
             ],
             'primary' => 'id',
             'uniques' => [
-                'UNIQUE KEY key (key)',
+                'UNIQUE KEY seq_key (seq_key)',
             ],
             'keys' => [],
             'fks' => [],

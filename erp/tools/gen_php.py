@@ -61,6 +61,8 @@ def php(v, indent=0):
 
 models_list = [m for a in APPS for m in apps.get_app_config(a).get_models()]
 MODEL_TABLE = {m: table(m) for m in models_list}
+# أعمدة يُعاد تسميتها في MySQL لأن dbDelta يخلط بينها وبين تعريف الفهارس (اسم الحقل في Django يبقى كما هو)
+RENAME = {("sequence", "key"): "seq_key"}
 ON_DELETE = {"PROTECT": "RESTRICT", "CASCADE": "CASCADE", "SET_NULL": "SET NULL"}
 
 
@@ -85,9 +87,14 @@ for M in models_list:
     cols, keys, fks, uniques = [], [], [], []
     fmeta = {}
     for f in M._meta.concrete_fields:
-        col = f.column
+        col = RENAME.get((table(M), f.column), f.column)
         null = "NULL" if f.null else "NOT NULL"
-        info = dict(label=str(f.verbose_name), column=col)
+        info = dict(label=str(f.verbose_name), column=col, blank=bool(f.blank), editable=bool(f.editable),
+                    help=str(f.help_text or ""))
+        if f.default is not NOT_PROVIDED and not callable(f.default):
+            info["default"] = str(f.default) if not isinstance(f.default, bool) else f.default
+        if isinstance(f, models.DateTimeField):
+            info["auto_now_add"], info["auto_now"] = bool(f.auto_now_add), bool(f.auto_now)
         if isinstance(f, models.BigAutoField):
             cols.append(f"{col} bigint(20) NOT NULL AUTO_INCREMENT")
             info["type"] = "id"
