@@ -48,11 +48,11 @@ jobs:
         if: github.event_name != 'pull_request'
         working-directory: ${{ github.workspace }}
         run: |
-          mkdir -p /tmp/apk && cp ContractingAcademy/app/build/outputs/apk/release/app-release.apk /tmp/apk/ContractingAcademy.apk
+          mkdir -p /tmp/apk && cp ContractingAcademy/app/build/outputs/apk/release/app-release.apk /tmp/apk/AccountantAcademy.apk
           cd /tmp/apk
           git init -q -b apk
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add ContractingAcademy.apk
+          git add AccountantAcademy.apk
           git commit -q -m "APK from ${GITHUB_SHA::7}"
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" apk

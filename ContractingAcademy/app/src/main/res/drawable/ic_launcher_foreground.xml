@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- شعار «أكاديمية المحاسب»: كتاب مفتوح تنمو منه أعمدة بيانية وسهم صاعد -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- قاعدة -->
-    <path android:fillColor="#FFFFFF" android:pathData="M30,74h48v4h-48z" />
-    <!-- مبنى -->
-    <path android:fillColor="#FFFFFF" android:pathData="M36,44h20v30h-20z" />
-    <path android:fillColor="#1F3A5F" android:pathData="M40,48h4v4h-4zM48,48h4v4h-4zM40,56h4v4h-4zM48,56h4v4h-4zM42,66h8v8h-8z" />
-    <!-- رافعة -->
-    <path android:fillColor="#F2B705" android:pathData="M60,30h3v44h-3z" />
-    <path android:fillColor="#F2B705" android:pathData="M48,30h28v3h-28z" />
-    <path android:fillColor="#F2B705" android:pathData="M73,33h1.5v10h-1.5z" />
-    <!-- أعمدة بيانية -->
-    <path android:fillColor="#4FD1C5" android:pathData="M66,62h4v12h-4zM72,54h4v20h-4z" />
+    <!-- الكتاب المفتوح -->
+    <path android:fillColor="#FFFFFF" android:pathData="M29,62 Q41,56 53,62 L53,81 Q41,75 29,81 Z" />
+    <path android:fillColor="#E6EEF5" android:pathData="M55,62 Q67,56 79,62 L79,81 Q67,75 55,81 Z" />
+    <path android:fillColor="#F2C75C" android:pathData="M53,62h2v19h-2z" />
+    <!-- الأعمدة البيانية -->
+    <path android:fillColor="#4FD1C5" android:pathData="M36,58h7v-11h-7z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M50.5,58h7v-17h-7z" />
+    <path android:fillColor="#F2C75C" android:pathData="M65,58h7v-24h-7z" />
+    <!-- السهم الصاعد -->
+    <path
+        android:strokeColor="#F2C75C"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M33,46 L47,37 L56,40 L72,27" />
+    <path android:fillColor="#F2C75C" android:pathData="M74.5,25 L66,26.5 L72.5,32.5 Z" />
 </vector>

@@ -72,10 +72,10 @@ fun HomeScreen(nav: Nav) {
                     .background(Brush.linearGradient(listOf(Navy, Teal)))
                     .padding(20.dp)
             ) {
-                Text("أكاديمية محاسبة المقاولات", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+                Text("أكاديمية المحاسب", color = Color.White, style = MaterialTheme.typography.headlineSmall)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "من القيد الأول حتى إقفال المشروع — بشرح بسيط ومراجع موثوقة",
+                    "المحاسبة والمعايير الدولية ببساطة — من القيد الأول حتى مستوى الخبير",
                     color = Color.White.copy(alpha = 0.85f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
