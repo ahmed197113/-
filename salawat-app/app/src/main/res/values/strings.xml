@@ -589,4 +589,6 @@
     <string name="qibla_adjust_value">تصحيح %1$s° (اضغط مطولًا للإلغاء)</string>
     <string name="qibla_adjust_left">تدوير السهم لليسار</string>
     <string name="qibla_adjust_right">تدوير السهم لليمين</string>
+    <string name="memorize_needs_ayah_reciter">التكرار للحفظ يحتاج قارئًا مسجّلًا آية بآية. اختر قارئًا آخر (القارئ إسلام صبحي متاح بتلاوة السورة كاملة فقط).</string>
+    <string name="quran_audio_error_surah">تعذّر تشغيل السورة: تأكد من الاتصال بالإنترنت. (بعض السور غير متوفرة بصوت القارئ إسلام صبحي)</string>
 </resources>

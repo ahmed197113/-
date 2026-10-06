@@ -79,6 +79,18 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun start(global: Int, continuous: Boolean, untilGlobal: Int = Int.MAX_VALUE) {
+        val reciter = Reciters.selected(getApplication())
+        if (reciter.bySurah) {
+            // Whole-surah recording: play the surah of this ayah from its start (and the next ones when continuous).
+            val ayah = QuranData.byGlobal(getApplication(), global) ?: return
+            val first = QuranData.ensureLoaded(getApplication()).first { it.surah == ayah.surah }.global
+            this.continuous = continuous
+            stopAtGlobal = Int.MAX_VALUE
+            playingGlobal.value = first
+            buffering.value = true
+            player.play(reciter.surahUrl(ayah.surah))
+            return
+        }
         this.continuous = continuous
         stopAtGlobal = untilGlobal
         playingGlobal.value = global
@@ -108,6 +120,13 @@ class QuranViewModel(app: Application) : AndroidViewModel(app) {
                 planIndex = 0
             }
             start(steps[planIndex], continuous = false)
+            return
+        }
+        if (Reciters.selected(getApplication()).bySurah) {
+            val surah = QuranData.byGlobal(getApplication(), current)?.surah ?: 114
+            if (continuous && surah < 114) {
+                start(QuranData.ensureLoaded(getApplication()).first { it.surah == surah + 1 }.global, continuous = true)
+            } else stop()
             return
         }
         if (continuous && current in 1 until 6236 && current < stopAtGlobal) {
@@ -209,7 +228,8 @@ class QuranPagerActivity : LocalizedActivity() {
         viewModel.playingGlobal.observe(this) { global -> onPlayingChanged(global) }
         viewModel.buffering.observe(this) { binding.progressAudio.visibility = if (it) View.VISIBLE else View.GONE }
         viewModel.audioError.observe(this) {
-            Toast.makeText(this, R.string.quran_audio_error, Toast.LENGTH_SHORT).show()
+            val msg = if (Reciters.selected(this).bySurah) R.string.quran_audio_error_surah else R.string.quran_audio_error
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -253,6 +273,10 @@ class QuranPagerActivity : LocalizedActivity() {
     }
 
     private fun showRepeatDialog(ayah: QAyah) {
+        if (Reciters.selected(this).bySurah) {
+            Toast.makeText(this, R.string.memorize_needs_ayah_reciter, Toast.LENGTH_LONG).show()
+            return
+        }
         val count = QuranData.ensureLoaded(this).count { it.surah == ayah.surah }
         val ends = (ayah.ayah..count).toList()
         val eachOptions = intArrayOf(1, 2, 3, 5, 7, 10, 15, 20)

@@ -130,8 +130,15 @@ object QuranData {
  * A reciter with one recording per ayah: either an islamic.network edition ([bitrate]/[id]) or, when
  * [everyAyahFolder] is set, a folder on everyayah.com (files named SSSAAA.mp3).
  */
-data class Reciter(val id: String, val arName: String, val bitrate: Int, val everyAyahFolder: String? = null, val enName: String = arName) {
+data class Reciter(
+    val id: String, val arName: String, val bitrate: Int, val everyAyahFolder: String? = null, val enName: String = arName,
+    /** Recited by whole surahs only (files 001.mp3…114.mp3 in this folder): no per-ayah audio exists for this reciter. */
+    val surahFolder: String? = null
+) {
     val name get() = Lang.pick(arName, enName)
+    val bySurah get() = surahFolder != null
+
+    fun surahUrl(surah: Int): String = "%s%03d.mp3".format(java.util.Locale.US, surahFolder, surah)
 
     fun ayahUrl(context: Context, global: Int): String {
         everyAyahFolder?.let { folder ->
@@ -153,6 +160,9 @@ object Reciters {
         Reciter("ar.abdulbasitmurattal", "عبد الباسط عبد الصمد (مرتّل)", 64, enName = "Abdul Basit Abdus Samad (Murattal)"),
         Reciter("ar.abdulsamad", "عبد الباسط عبد الصمد (مجوّد)", 64, enName = "Abdul Basit Abdus Samad (Mujawwad)"),
         Reciter("ar.mahermuaiqly", "ماهر المعيقلي", 128, enName = "Maher al-Muaiqly"),
+        Reciter("everyayah.faresabbad", "فارس عباد", 64, everyAyahFolder = "Fares_Abbad_64kbps", enName = "Fares Abbad"),
+        Reciter("mp3quran.islamsobhi", "إسلام صبحي (تلاوة السورة كاملة)", 128, enName = "Islam Sobhi (whole surahs)",
+            surahFolder = "https://cdn.mp3quran.net/audio/islam-sobhi/r1/"),
         Reciter("everyayah.yasserdussary", "ياسر الدوسري", 128, everyAyahFolder = "Yasser_Ad-Dussary_128kbps", enName = "Yasser al-Dosari"),
         Reciter("ar.abdurrahmaansudais", "عبد الرحمن السديس", 64, enName = "Abdur-Rahman as-Sudais"),
         Reciter("ar.saoodshuraym", "سعود الشريم", 64, enName = "Saud ash-Shuraim"),
