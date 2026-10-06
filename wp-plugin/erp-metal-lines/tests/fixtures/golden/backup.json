@@ -1,0 +1,8077 @@
+[
+{
+ "model": "auth.user",
+ "pk": 1,
+ "fields": {
+  "password": "pbkdf2_sha256$1000000$ZSnYC0ZYllN0ekQ9Wsr5Fn$vKhmPWrJCIbPW3kr8PQxqE/DtI4jlpyMTqtmPhvFfCc=",
+  "last_login": null,
+  "is_superuser": true,
+  "username": "admin",
+  "first_name": "",
+  "last_name": "",
+  "email": "",
+  "is_staff": true,
+  "is_active": true,
+  "date_joined": "2026-10-05T22:13:19.819Z",
+  "groups": [],
+  "user_permissions": []
+ }
+},
+{
+ "model": "accounting.company",
+ "pk": 1,
+ "fields": {
+  "name": "الخطوط المعدنية للمقاولات العامة",
+  "legal_name": "",
+  "tax_id": "",
+  "commercial_reg": "",
+  "address": "",
+  "phone": "",
+  "email": "",
+  "currency": "ج.م",
+  "currency_name": "جنيه",
+  "currency_sub": "قرش",
+  "fiscal_year_start": null,
+  "lock_date": null
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 1,
+ "fields": {
+  "code": "1",
+  "name": "الأصول",
+  "parent": null,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 2,
+ "fields": {
+  "code": "11",
+  "name": "الأصول غير المتداولة",
+  "parent": 1,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 3,
+ "fields": {
+  "code": "111",
+  "name": "الأصول الثابتة",
+  "parent": 2,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 4,
+ "fields": {
+  "code": "1111",
+  "name": "الأراضي",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 5,
+ "fields": {
+  "code": "1112",
+  "name": "المباني والإنشاءات",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 6,
+ "fields": {
+  "code": "1113",
+  "name": "الآلات والمعدات الثقيلة",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 7,
+ "fields": {
+  "code": "1114",
+  "name": "السيارات ووسائل النقل",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 8,
+ "fields": {
+  "code": "1115",
+  "name": "الأثاث والتجهيزات المكتبية",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 9,
+ "fields": {
+  "code": "1116",
+  "name": "أجهزة الحاسب الآلي",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 10,
+ "fields": {
+  "code": "1117",
+  "name": "العدد والأدوات والشدات",
+  "parent": 3,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 11,
+ "fields": {
+  "code": "112",
+  "name": "مجمع إهلاك الأصول الثابتة",
+  "parent": 2,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 12,
+ "fields": {
+  "code": "1121",
+  "name": "مجمع إهلاك المباني",
+  "parent": 11,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 13,
+ "fields": {
+  "code": "1122",
+  "name": "مجمع إهلاك الآلات والمعدات",
+  "parent": 11,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 14,
+ "fields": {
+  "code": "1123",
+  "name": "مجمع إهلاك السيارات",
+  "parent": 11,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 15,
+ "fields": {
+  "code": "1124",
+  "name": "مجمع إهلاك الأثاث",
+  "parent": 11,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 16,
+ "fields": {
+  "code": "1125",
+  "name": "مجمع إهلاك الحاسبات",
+  "parent": 11,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 17,
+ "fields": {
+  "code": "1126",
+  "name": "مجمع إهلاك العدد والشدات",
+  "parent": 11,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 18,
+ "fields": {
+  "code": "113",
+  "name": "مشروعات وأصول تحت الإنشاء",
+  "parent": 2,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 19,
+ "fields": {
+  "code": "1131",
+  "name": "أصول تحت الإنشاء",
+  "parent": 18,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 20,
+ "fields": {
+  "code": "12",
+  "name": "الأصول المتداولة",
+  "parent": 1,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 21,
+ "fields": {
+  "code": "121",
+  "name": "النقدية وما في حكمها",
+  "parent": 20,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 22,
+ "fields": {
+  "code": "1211",
+  "name": "الخزينة الرئيسية",
+  "parent": 21,
+  "type": "asset",
+  "kind": "cash",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 23,
+ "fields": {
+  "code": "1212",
+  "name": "عهد خزائن المواقع",
+  "parent": 21,
+  "type": "asset",
+  "kind": "cash",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 24,
+ "fields": {
+  "code": "1213",
+  "name": "البنك الأهلي المصري - جاري",
+  "parent": 21,
+  "type": "asset",
+  "kind": "bank",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 25,
+ "fields": {
+  "code": "1214",
+  "name": "بنك مصر - جاري",
+  "parent": 21,
+  "type": "asset",
+  "kind": "bank",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 26,
+ "fields": {
+  "code": "122",
+  "name": "العملاء والمدينون",
+  "parent": 20,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 27,
+ "fields": {
+  "code": "1221",
+  "name": "العملاء",
+  "parent": 26,
+  "type": "asset",
+  "kind": "receivable",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 28,
+ "fields": {
+  "code": "1222",
+  "name": "أوراق القبض (شيكات تحت التحصيل)",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 29,
+ "fields": {
+  "code": "1223",
+  "name": "محتجزات ضمان أعمال لدى العملاء",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 30,
+ "fields": {
+  "code": "1224",
+  "name": "سلف وعهد العاملين",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 31,
+ "fields": {
+  "code": "1225",
+  "name": "دفعات مقدمة للموردين ومقاولي الباطن",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 32,
+ "fields": {
+  "code": "1226",
+  "name": "تأمينات لدى الغير وخطابات ضمان",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 33,
+ "fields": {
+  "code": "1227",
+  "name": "مصروفات مدفوعة مقدماً",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 34,
+ "fields": {
+  "code": "1228",
+  "name": "مدينون متنوعون",
+  "parent": 26,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 35,
+ "fields": {
+  "code": "123",
+  "name": "المخزون",
+  "parent": 20,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 36,
+ "fields": {
+  "code": "1231",
+  "name": "مخزون المواد والخامات",
+  "parent": 35,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 37,
+ "fields": {
+  "code": "124",
+  "name": "ضرائب مدينة",
+  "parent": 20,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 38,
+ "fields": {
+  "code": "1241",
+  "name": "ضريبة القيمة المضافة - مدخلات",
+  "parent": 37,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 39,
+ "fields": {
+  "code": "1242",
+  "name": "ضرائب خصم من المنبع مخصومة منا",
+  "parent": 37,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 40,
+ "fields": {
+  "code": "125",
+  "name": "أعمال تحت التنفيذ",
+  "parent": 20,
+  "type": "asset",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 41,
+ "fields": {
+  "code": "1251",
+  "name": "أعمال منفذة لم يصدر بها مستخلصات",
+  "parent": 40,
+  "type": "asset",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 42,
+ "fields": {
+  "code": "2",
+  "name": "الخصوم",
+  "parent": null,
+  "type": "liability",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 43,
+ "fields": {
+  "code": "21",
+  "name": "الخصوم طويلة الأجل",
+  "parent": 42,
+  "type": "liability",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 44,
+ "fields": {
+  "code": "2101",
+  "name": "قروض طويلة الأجل",
+  "parent": 43,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 45,
+ "fields": {
+  "code": "22",
+  "name": "الخصوم المتداولة",
+  "parent": 42,
+  "type": "liability",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 46,
+ "fields": {
+  "code": "221",
+  "name": "الموردون والدائنون",
+  "parent": 45,
+  "type": "liability",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 47,
+ "fields": {
+  "code": "2211",
+  "name": "الموردون",
+  "parent": 46,
+  "type": "liability",
+  "kind": "payable",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 48,
+ "fields": {
+  "code": "2212",
+  "name": "مقاولو الباطن",
+  "parent": 46,
+  "type": "liability",
+  "kind": "payable",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 49,
+ "fields": {
+  "code": "2213",
+  "name": "أوراق الدفع (شيكات صادرة)",
+  "parent": 46,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 50,
+ "fields": {
+  "code": "2214",
+  "name": "محتجزات ضمان أعمال مقاولي الباطن",
+  "parent": 46,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 51,
+ "fields": {
+  "code": "2215",
+  "name": "دفعات مقدمة من العملاء",
+  "parent": 46,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 52,
+ "fields": {
+  "code": "2216",
+  "name": "مصروفات مستحقة",
+  "parent": 46,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 53,
+ "fields": {
+  "code": "2217",
+  "name": "مرتبات وأجور مستحقة",
+  "parent": 46,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 54,
+ "fields": {
+  "code": "2218",
+  "name": "دائنون متنوعون",
+  "parent": 46,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 55,
+ "fields": {
+  "code": "222",
+  "name": "الضرائب والتأمينات المستحقة",
+  "parent": 45,
+  "type": "liability",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 56,
+ "fields": {
+  "code": "2221",
+  "name": "ضريبة القيمة المضافة - مخرجات",
+  "parent": 55,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 57,
+ "fields": {
+  "code": "2222",
+  "name": "ضريبة الخصم والإضافة المستحقة",
+  "parent": 55,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 58,
+ "fields": {
+  "code": "2223",
+  "name": "تأمينات اجتماعية مستحقة على مقاولي الباطن",
+  "parent": 55,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 59,
+ "fields": {
+  "code": "2224",
+  "name": "ضريبة كسب العمل",
+  "parent": 55,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 60,
+ "fields": {
+  "code": "2225",
+  "name": "تأمينات اجتماعية مستحقة - العاملين",
+  "parent": 55,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 61,
+ "fields": {
+  "code": "2226",
+  "name": "ضريبة الدخل المستحقة",
+  "parent": 55,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 62,
+ "fields": {
+  "code": "223",
+  "name": "بنوك وقروض قصيرة الأجل",
+  "parent": 45,
+  "type": "liability",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 63,
+ "fields": {
+  "code": "2231",
+  "name": "بنوك سحب على المكشوف",
+  "parent": 62,
+  "type": "liability",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 64,
+ "fields": {
+  "code": "3",
+  "name": "حقوق الملكية",
+  "parent": null,
+  "type": "equity",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 65,
+ "fields": {
+  "code": "3101",
+  "name": "رأس المال",
+  "parent": 64,
+  "type": "equity",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 66,
+ "fields": {
+  "code": "3201",
+  "name": "الاحتياطي القانوني",
+  "parent": 64,
+  "type": "equity",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 67,
+ "fields": {
+  "code": "3301",
+  "name": "الأرباح (الخسائر) المرحلة",
+  "parent": 64,
+  "type": "equity",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 68,
+ "fields": {
+  "code": "3401",
+  "name": "جاري الشركاء",
+  "parent": 64,
+  "type": "equity",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 69,
+ "fields": {
+  "code": "3501",
+  "name": "أرصدة افتتاحية",
+  "parent": 64,
+  "type": "equity",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 70,
+ "fields": {
+  "code": "4",
+  "name": "الإيرادات",
+  "parent": null,
+  "type": "income",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 71,
+ "fields": {
+  "code": "41",
+  "name": "إيرادات النشاط",
+  "parent": 70,
+  "type": "income",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 72,
+ "fields": {
+  "code": "4101",
+  "name": "إيرادات مستخلصات المشروعات",
+  "parent": 71,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 73,
+ "fields": {
+  "code": "4102",
+  "name": "إيرادات المبيعات",
+  "parent": 71,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 74,
+ "fields": {
+  "code": "4103",
+  "name": "مردودات ومسموحات المبيعات",
+  "parent": 71,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 75,
+ "fields": {
+  "code": "4104",
+  "name": "إيرادات الخدمات وتأجير المعدات",
+  "parent": 71,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 76,
+ "fields": {
+  "code": "42",
+  "name": "إيرادات أخرى",
+  "parent": 70,
+  "type": "income",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 77,
+ "fields": {
+  "code": "4201",
+  "name": "إيرادات متنوعة",
+  "parent": 76,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 78,
+ "fields": {
+  "code": "4202",
+  "name": "خصم مكتسب",
+  "parent": 76,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 79,
+ "fields": {
+  "code": "4203",
+  "name": "أرباح بيع أصول ثابتة",
+  "parent": 76,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 80,
+ "fields": {
+  "code": "4204",
+  "name": "فوائد دائنة",
+  "parent": 76,
+  "type": "income",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 81,
+ "fields": {
+  "code": "5",
+  "name": "التكاليف والمصروفات",
+  "parent": null,
+  "type": "expense",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 82,
+ "fields": {
+  "code": "51",
+  "name": "تكاليف المشروعات المباشرة",
+  "parent": 81,
+  "type": "expense",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 83,
+ "fields": {
+  "code": "5101",
+  "name": "مواد وخامات مستخدمة بالمشروعات",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 84,
+ "fields": {
+  "code": "5102",
+  "name": "تكلفة أعمال مقاولي الباطن",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 85,
+ "fields": {
+  "code": "5103",
+  "name": "أجور ومرتبات المواقع",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 86,
+ "fields": {
+  "code": "5104",
+  "name": "إيجار معدات",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 87,
+ "fields": {
+  "code": "5105",
+  "name": "وقود وزيوت",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 88,
+ "fields": {
+  "code": "5106",
+  "name": "نقل ومشال",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 89,
+ "fields": {
+  "code": "5107",
+  "name": "تأمينات اجتماعية على المستخلصات",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 90,
+ "fields": {
+  "code": "5108",
+  "name": "مصروفات مواقع متنوعة",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 91,
+ "fields": {
+  "code": "5109",
+  "name": "تكلفة البضاعة المباعة",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 92,
+ "fields": {
+  "code": "5110",
+  "name": "فروق جرد وتسويات المخزون",
+  "parent": 82,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 93,
+ "fields": {
+  "code": "52",
+  "name": "المصروفات العمومية والإدارية",
+  "parent": 81,
+  "type": "expense",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 94,
+ "fields": {
+  "code": "5201",
+  "name": "مرتبات وأجور إدارية",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 95,
+ "fields": {
+  "code": "5202",
+  "name": "إيجار مكاتب",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 96,
+ "fields": {
+  "code": "5203",
+  "name": "كهرباء ومياه",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 97,
+ "fields": {
+  "code": "5204",
+  "name": "اتصالات وإنترنت",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 98,
+ "fields": {
+  "code": "5205",
+  "name": "أدوات كتابية ومطبوعات",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 99,
+ "fields": {
+  "code": "5206",
+  "name": "مصروفات وعمولات بنكية",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 100,
+ "fields": {
+  "code": "5207",
+  "name": "أتعاب مهنية واستشارات",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 101,
+ "fields": {
+  "code": "5208",
+  "name": "صيانة وإصلاحات",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 102,
+ "fields": {
+  "code": "5209",
+  "name": "ضيافة ونظافة",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 103,
+ "fields": {
+  "code": "5210",
+  "name": "انتقالات وبدلات سفر",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 104,
+ "fields": {
+  "code": "5211",
+  "name": "غرامات وجزاءات",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 105,
+ "fields": {
+  "code": "5212",
+  "name": "رسوم واشتراكات حكومية",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 106,
+ "fields": {
+  "code": "5213",
+  "name": "خصم مسموح به",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 107,
+ "fields": {
+  "code": "5214",
+  "name": "دعاية وإعلان",
+  "parent": 93,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 108,
+ "fields": {
+  "code": "53",
+  "name": "الإهلاكات",
+  "parent": 81,
+  "type": "expense",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 109,
+ "fields": {
+  "code": "5301",
+  "name": "مصروف إهلاك الأصول الثابتة",
+  "parent": 108,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 110,
+ "fields": {
+  "code": "54",
+  "name": "المصروفات التمويلية",
+  "parent": 81,
+  "type": "expense",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 111,
+ "fields": {
+  "code": "5401",
+  "name": "فوائد ومصروفات تمويلية",
+  "parent": 110,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 112,
+ "fields": {
+  "code": "55",
+  "name": "الضرائب على الدخل",
+  "parent": 81,
+  "type": "expense",
+  "kind": "other",
+  "is_group": true,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.account",
+ "pk": 113,
+ "fields": {
+  "code": "5501",
+  "name": "ضريبة الدخل",
+  "parent": 112,
+  "type": "expense",
+  "kind": "other",
+  "is_group": false,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 1,
+ "fields": {
+  "role": "receivable",
+  "account": 27
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 2,
+ "fields": {
+  "role": "payable",
+  "account": 47
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 3,
+ "fields": {
+  "role": "subcontractor_payable",
+  "account": 48
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 4,
+ "fields": {
+  "role": "sales",
+  "account": 73
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 5,
+ "fields": {
+  "role": "sales_return",
+  "account": 74
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 6,
+ "fields": {
+  "role": "purchase",
+  "account": 90
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 7,
+ "fields": {
+  "role": "inventory",
+  "account": 36
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 8,
+ "fields": {
+  "role": "cogs",
+  "account": 91
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 9,
+ "fields": {
+  "role": "project_materials",
+  "account": 83
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 10,
+ "fields": {
+  "role": "stock_adjustment",
+  "account": 92
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 11,
+ "fields": {
+  "role": "vat_out",
+  "account": 56
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 12,
+ "fields": {
+  "role": "vat_in",
+  "account": 38
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 13,
+ "fields": {
+  "role": "wht_receivable",
+  "account": 39
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 14,
+ "fields": {
+  "role": "wht_payable",
+  "account": 57
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 15,
+ "fields": {
+  "role": "customer_advance",
+  "account": 51
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 16,
+ "fields": {
+  "role": "supplier_advance",
+  "account": 31
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 17,
+ "fields": {
+  "role": "retention_receivable",
+  "account": 29
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 18,
+ "fields": {
+  "role": "retention_payable",
+  "account": 50
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 19,
+ "fields": {
+  "role": "contract_revenue",
+  "account": 72
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 20,
+ "fields": {
+  "role": "subcontract_cost",
+  "account": 84
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 21,
+ "fields": {
+  "role": "social_ins_expense",
+  "account": 89
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 22,
+ "fields": {
+  "role": "social_ins_payable",
+  "account": 58
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 23,
+ "fields": {
+  "role": "retained_earnings",
+  "account": 67
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 24,
+ "fields": {
+  "role": "opening_equity",
+  "account": 69
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 25,
+ "fields": {
+  "role": "discount_allowed",
+  "account": 106
+ }
+},
+{
+ "model": "accounting.accountmapping",
+ "pk": 26,
+ "fields": {
+  "role": "discount_received",
+  "account": 78
+ }
+},
+{
+ "model": "accounting.costcenter",
+ "pk": 1,
+ "fields": {
+  "code": "CC1",
+  "name": "الإدارة العامة",
+  "parent": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.costcenter",
+ "pk": 2,
+ "fields": {
+  "code": "CC2",
+  "name": "قطاع المباني",
+  "parent": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.costcenter",
+ "pk": 3,
+ "fields": {
+  "code": "CC3",
+  "name": "قطاع الطرق",
+  "parent": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.tax",
+ "pk": 1,
+ "fields": {
+  "name": "ض.ق.م 14%",
+  "kind": "vat",
+  "rate": "14.000",
+  "scope": "both",
+  "sale_account": null,
+  "purchase_account": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.tax",
+ "pk": 2,
+ "fields": {
+  "name": "ض.ق.م 5% (مقاولات - جدول)",
+  "kind": "vat",
+  "rate": "5.000",
+  "scope": "both",
+  "sale_account": null,
+  "purchase_account": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.tax",
+ "pk": 3,
+ "fields": {
+  "name": "معفي / صفر",
+  "kind": "vat",
+  "rate": "0.000",
+  "scope": "both",
+  "sale_account": null,
+  "purchase_account": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.tax",
+ "pk": 4,
+ "fields": {
+  "name": "خصم وإضافة 1% (مقاولات وتوريدات)",
+  "kind": "wht",
+  "rate": "1.000",
+  "scope": "both",
+  "sale_account": null,
+  "purchase_account": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.tax",
+ "pk": 5,
+ "fields": {
+  "name": "خصم وإضافة 3% (خدمات)",
+  "kind": "wht",
+  "rate": "3.000",
+  "scope": "both",
+  "sale_account": null,
+  "purchase_account": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.tax",
+ "pk": 6,
+ "fields": {
+  "name": "خصم وإضافة 5% (مهن حرة وعمولات)",
+  "kind": "wht",
+  "rate": "5.000",
+  "scope": "both",
+  "sale_account": null,
+  "purchase_account": null,
+  "active": true
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 1,
+ "fields": {
+  "code": "C001",
+  "name": "شركة الأمل للتطوير العقاري",
+  "type": "customer",
+  "tax_id": "512-345-678",
+  "national_id": "",
+  "phone": "01001234567",
+  "email": "",
+  "address": "القاهرة الجديدة",
+  "credit_limit": "0.00",
+  "payment_days": 30,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 2,
+ "fields": {
+  "code": "C002",
+  "name": "مؤسسة النور للاستثمار",
+  "type": "customer",
+  "tax_id": "498-111-222",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 45,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 3,
+ "fields": {
+  "code": "S001",
+  "name": "شركة الصفا لتوريد مواد البناء",
+  "type": "supplier",
+  "tax_id": "301-555-777",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 0,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 4,
+ "fields": {
+  "code": "S002",
+  "name": "محطة وقود الرحاب",
+  "type": "supplier",
+  "tax_id": "220-333-444",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 0,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 5,
+ "fields": {
+  "code": "S003",
+  "name": "الشركة الحديثة لتأجير المعدات",
+  "type": "supplier",
+  "tax_id": "611-909-808",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 0,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 6,
+ "fields": {
+  "code": "SC01",
+  "name": "مؤسسة البنا للنجارة والحدادة المسلحة",
+  "type": "subcontractor",
+  "tax_id": "733-121-454",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 0,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 7,
+ "fields": {
+  "code": "SC02",
+  "name": "شركة الإتقان للأعمال الكهربائية",
+  "type": "subcontractor",
+  "tax_id": "744-656-232",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 0,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.partner",
+ "pk": 8,
+ "fields": {
+  "code": "E001",
+  "name": "م. أحمد سامي - مهندس الموقع",
+  "type": "employee",
+  "tax_id": "",
+  "national_id": "",
+  "phone": "",
+  "email": "",
+  "address": "",
+  "credit_limit": "0.00",
+  "payment_days": 0,
+  "receivable_account": null,
+  "payable_account": null,
+  "active": true,
+  "notes": ""
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 1,
+ "fields": {
+  "key": "JE",
+  "prefix": "JV-",
+  "next_number": 55,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 2,
+ "fields": {
+  "key": "CCON",
+  "prefix": "CC-",
+  "next_number": 3,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 3,
+ "fields": {
+  "key": "RCPT",
+  "prefix": "RV-",
+  "next_number": 5,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 4,
+ "fields": {
+  "key": "CCERT",
+  "prefix": "CIP-",
+  "next_number": 6,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 5,
+ "fields": {
+  "key": "SCON",
+  "prefix": "SC-",
+  "next_number": 3,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 6,
+ "fields": {
+  "key": "PAY",
+  "prefix": "PV-",
+  "next_number": 7,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 7,
+ "fields": {
+  "key": "SCERT",
+  "prefix": "SIP-",
+  "next_number": 4,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 8,
+ "fields": {
+  "key": "PINV",
+  "prefix": "BILL-",
+  "next_number": 7,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 9,
+ "fields": {
+  "key": "STK",
+  "prefix": "ST-",
+  "next_number": 3,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 10,
+ "fields": {
+  "key": "SINV",
+  "prefix": "INV-",
+  "next_number": 2,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 11,
+ "fields": {
+  "key": "DEP",
+  "prefix": "DEP-",
+  "next_number": 5,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.sequence",
+ "pk": 12,
+ "fields": {
+  "key": "RET",
+  "prefix": "RR-",
+  "next_number": 2,
+  "padding": 5
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 1,
+ "fields": {
+  "number": "JV-00001",
+  "date": "2026-04-29",
+  "reference": "",
+  "memo": "رأس المال المدفوع",
+  "state": "posted",
+  "source": "opening",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.509Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 2,
+ "fields": {
+  "number": "JV-00002",
+  "date": "2026-05-14",
+  "reference": "RV-00001",
+  "memo": "سند قبض RV-00001 - دفعة مقدمة 600,000 - عقد المبنى الإداري",
+  "state": "posted",
+  "source": "receipt",
+  "source_url": "/payments/1/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.533Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 3,
+ "fields": {
+  "number": "JV-00003",
+  "date": "2026-06-18",
+  "reference": "CIP-00001",
+  "memo": "مستخلص عميل رقم 1 - CC-00001 - شركة الأمل للتطوير العقاري",
+  "state": "posted",
+  "source": "client_cert",
+  "source_url": "/certificates/1/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.570Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 4,
+ "fields": {
+  "number": "JV-00004",
+  "date": "2026-07-23",
+  "reference": "CIP-00002",
+  "memo": "مستخلص عميل رقم 2 - CC-00001 - شركة الأمل للتطوير العقاري",
+  "state": "posted",
+  "source": "client_cert",
+  "source_url": "/certificates/2/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.602Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 5,
+ "fields": {
+  "number": "JV-00005",
+  "date": "2026-08-27",
+  "reference": "CIP-00003",
+  "memo": "مستخلص عميل رقم 3 - CC-00001 - شركة الأمل للتطوير العقاري",
+  "state": "posted",
+  "source": "client_cert",
+  "source_url": "/certificates/3/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.636Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 6,
+ "fields": {
+  "number": "JV-00006",
+  "date": "2026-07-03",
+  "reference": "RV-00002",
+  "memo": "سند قبض RV-00002 - تحصيل المستخلص الأول",
+  "state": "posted",
+  "source": "receipt",
+  "source_url": "/payments/2/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.642Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 7,
+ "fields": {
+  "number": "JV-00007",
+  "date": "2026-08-17",
+  "reference": "RV-00003",
+  "memo": "سند قبض RV-00003 - دفعة من المستخلص الثاني",
+  "state": "posted",
+  "source": "receipt",
+  "source_url": "/payments/3/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.647Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 8,
+ "fields": {
+  "number": "JV-00008",
+  "date": "2026-08-22",
+  "reference": "CIP-00005",
+  "memo": "مستخلص عميل رقم 1 - CC-00002 - مؤسسة النور للاستثمار",
+  "state": "posted",
+  "source": "client_cert",
+  "source_url": "/certificates/5/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.693Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 9,
+ "fields": {
+  "number": "JV-00009",
+  "date": "2026-09-16",
+  "reference": "RV-00004",
+  "memo": "سند قبض RV-00004 - دفعة تحت الحساب",
+  "state": "posted",
+  "source": "receipt",
+  "source_url": "/payments/4/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.699Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 10,
+ "fields": {
+  "number": "JV-00010",
+  "date": "2026-05-24",
+  "reference": "PV-00001",
+  "memo": "سند صرف PV-00001 - دفعة مقدمة لمقاول النجارة",
+  "state": "posted",
+  "source": "payment",
+  "source_url": "/payments/5/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.707Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 11,
+ "fields": {
+  "number": "JV-00011",
+  "date": "2026-06-28",
+  "reference": "SIP-00001",
+  "memo": "مستخلص مقاول باطن رقم 1 - SC-00001 - مؤسسة البنا للنجارة والحدادة المسلحة",
+  "state": "posted",
+  "source": "sub_cert",
+  "source_url": "/certificates/6/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.731Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 12,
+ "fields": {
+  "number": "JV-00012",
+  "date": "2026-08-07",
+  "reference": "SIP-00002",
+  "memo": "مستخلص مقاول باطن رقم 2 - SC-00001 - مؤسسة البنا للنجارة والحدادة المسلحة",
+  "state": "posted",
+  "source": "sub_cert",
+  "source_url": "/certificates/7/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.754Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 13,
+ "fields": {
+  "number": "JV-00013",
+  "date": "2026-07-08",
+  "reference": "PV-00002",
+  "memo": "سند صرف PV-00002 - سداد المستخلص الأول",
+  "state": "posted",
+  "source": "payment",
+  "source_url": "/payments/6/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.760Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 14,
+ "fields": {
+  "number": "JV-00014",
+  "date": "2026-09-11",
+  "reference": "SIP-00003",
+  "memo": "مستخلص مقاول باطن رقم 1 - SC-00002 - شركة الإتقان للأعمال الكهربائية",
+  "state": "posted",
+  "source": "sub_cert",
+  "source_url": "/certificates/8/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.785Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 15,
+ "fields": {
+  "number": "JV-00015",
+  "date": "2026-06-08",
+  "reference": "BILL-00001",
+  "memo": "فاتورة مشتريات BILL-00001",
+  "state": "posted",
+  "source": "purchase",
+  "source_url": "/invoices/1/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.804Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 16,
+ "fields": {
+  "number": "JV-00016",
+  "date": "2026-06-13",
+  "reference": "ST-00001",
+  "memo": "صرف مواد لمشروع ST-00001",
+  "state": "posted",
+  "source": "stock",
+  "source_url": "/stock/docs/1/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.820Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 17,
+ "fields": {
+  "number": "JV-00017",
+  "date": "2026-09-06",
+  "reference": "ST-00002",
+  "memo": "صرف مواد لمشروع ST-00002",
+  "state": "posted",
+  "source": "stock",
+  "source_url": "/stock/docs/2/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.832Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 18,
+ "fields": {
+  "number": "JV-00018",
+  "date": "2026-07-28",
+  "reference": "BILL-00002",
+  "memo": "فاتورة مشتريات BILL-00002",
+  "state": "posted",
+  "source": "purchase",
+  "source_url": "/invoices/2/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.845Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 19,
+ "fields": {
+  "number": "JV-00019",
+  "date": "2026-09-01",
+  "reference": "BILL-00003",
+  "memo": "فاتورة مشتريات BILL-00003",
+  "state": "posted",
+  "source": "purchase",
+  "source_url": "/invoices/3/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.857Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 20,
+ "fields": {
+  "number": "JV-00020",
+  "date": "2026-07-18",
+  "reference": "BILL-00004",
+  "memo": "فاتورة مشتريات BILL-00004",
+  "state": "posted",
+  "source": "purchase",
+  "source_url": "/invoices/4/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.869Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 21,
+ "fields": {
+  "number": "JV-00021",
+  "date": "2026-09-08",
+  "reference": "BILL-00005",
+  "memo": "فاتورة مشتريات BILL-00005",
+  "state": "posted",
+  "source": "purchase",
+  "source_url": "/invoices/5/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.881Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 22,
+ "fields": {
+  "number": "JV-00022",
+  "date": "2026-08-12",
+  "reference": "BILL-00006",
+  "memo": "فاتورة مشتريات BILL-00006",
+  "state": "posted",
+  "source": "purchase",
+  "source_url": "/invoices/6/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.891Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 23,
+ "fields": {
+  "number": "JV-00023",
+  "date": "2026-08-17",
+  "reference": "PV-00003",
+  "memo": "سند صرف PV-00003 - سداد فاتورة السولار",
+  "state": "posted",
+  "source": "payment",
+  "source_url": "/payments/7/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.896Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 24,
+ "fields": {
+  "number": "JV-00024",
+  "date": "2026-06-28",
+  "reference": "PV-00004",
+  "memo": "سند صرف PV-00004 - سداد فاتورة الحديد والأسمنت",
+  "state": "posted",
+  "source": "payment",
+  "source_url": "/payments/8/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.902Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 25,
+ "fields": {
+  "number": "JV-00025",
+  "date": "2026-09-21",
+  "reference": "INV-00001",
+  "memo": "فاتورة مبيعات INV-00001",
+  "state": "posted",
+  "source": "sale",
+  "source_url": "/invoices/7/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.916Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 26,
+ "fields": {
+  "number": "JV-00026",
+  "date": "2026-06-08",
+  "reference": "",
+  "memo": "صرف مرتبات شهر",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.921Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 27,
+ "fields": {
+  "number": "JV-00027",
+  "date": "2026-06-06",
+  "reference": "",
+  "memo": "صرف عهدة نقدية للموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.924Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 28,
+ "fields": {
+  "number": "JV-00028",
+  "date": "2026-06-11",
+  "reference": "",
+  "memo": "صرف أجور عمالة الموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.928Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 29,
+ "fields": {
+  "number": "JV-00029",
+  "date": "2026-06-08",
+  "reference": "",
+  "memo": "سداد إيجار المكتب",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.932Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 30,
+ "fields": {
+  "number": "JV-00030",
+  "date": "2026-06-08",
+  "reference": "",
+  "memo": "عمولات ومصروفات بنكية",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.935Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 31,
+ "fields": {
+  "number": "JV-00031",
+  "date": "2026-07-08",
+  "reference": "",
+  "memo": "صرف مرتبات شهر",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.939Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 32,
+ "fields": {
+  "number": "JV-00032",
+  "date": "2026-07-06",
+  "reference": "",
+  "memo": "صرف عهدة نقدية للموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.943Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 33,
+ "fields": {
+  "number": "JV-00033",
+  "date": "2026-07-11",
+  "reference": "",
+  "memo": "صرف أجور عمالة الموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.946Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 34,
+ "fields": {
+  "number": "JV-00034",
+  "date": "2026-07-08",
+  "reference": "",
+  "memo": "سداد إيجار المكتب",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.950Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 35,
+ "fields": {
+  "number": "JV-00035",
+  "date": "2026-07-08",
+  "reference": "",
+  "memo": "عمولات ومصروفات بنكية",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.954Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 36,
+ "fields": {
+  "number": "JV-00036",
+  "date": "2026-08-07",
+  "reference": "",
+  "memo": "صرف مرتبات شهر",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.960Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 37,
+ "fields": {
+  "number": "JV-00037",
+  "date": "2026-08-05",
+  "reference": "",
+  "memo": "صرف عهدة نقدية للموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.970Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 38,
+ "fields": {
+  "number": "JV-00038",
+  "date": "2026-08-10",
+  "reference": "",
+  "memo": "صرف أجور عمالة الموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.974Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 39,
+ "fields": {
+  "number": "JV-00039",
+  "date": "2026-08-07",
+  "reference": "",
+  "memo": "سداد إيجار المكتب",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.978Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 40,
+ "fields": {
+  "number": "JV-00040",
+  "date": "2026-08-07",
+  "reference": "",
+  "memo": "عمولات ومصروفات بنكية",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.981Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 41,
+ "fields": {
+  "number": "JV-00041",
+  "date": "2026-09-06",
+  "reference": "",
+  "memo": "صرف مرتبات شهر",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.985Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 42,
+ "fields": {
+  "number": "JV-00042",
+  "date": "2026-09-04",
+  "reference": "",
+  "memo": "صرف عهدة نقدية للموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.989Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 43,
+ "fields": {
+  "number": "JV-00043",
+  "date": "2026-09-09",
+  "reference": "",
+  "memo": "صرف أجور عمالة الموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.992Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 44,
+ "fields": {
+  "number": "JV-00044",
+  "date": "2026-09-06",
+  "reference": "",
+  "memo": "سداد إيجار المكتب",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.996Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 45,
+ "fields": {
+  "number": "JV-00045",
+  "date": "2026-09-06",
+  "reference": "",
+  "memo": "عمولات ومصروفات بنكية",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.000Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 46,
+ "fields": {
+  "number": "JV-00046",
+  "date": "2026-09-16",
+  "reference": "",
+  "memo": "صرف أجور عمالة الموقع",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.003Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 47,
+ "fields": {
+  "number": "JV-00047",
+  "date": "2026-09-18",
+  "reference": "",
+  "memo": "وقود وزيوت",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.007Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 48,
+ "fields": {
+  "number": "JV-00048",
+  "date": "2026-09-24",
+  "reference": "PV-00005",
+  "memo": "سند صرف PV-00005 - فاتورة كهرباء المكتب",
+  "state": "posted",
+  "source": "payment",
+  "source_url": "/payments/9/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.011Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 49,
+ "fields": {
+  "number": "JV-00049",
+  "date": "2026-09-28",
+  "reference": "PV-00006",
+  "memo": "سند صرف PV-00006 - نقل ومشال مخلفات من موقع التجمع",
+  "state": "posted",
+  "source": "payment",
+  "source_url": "/payments/10/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.016Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 50,
+ "fields": {
+  "number": "JV-00050",
+  "date": "2026-05-01",
+  "reference": "",
+  "memo": "شراء لودر وسيارة نقل",
+  "state": "posted",
+  "source": "manual",
+  "source_url": "",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.022Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 51,
+ "fields": {
+  "number": "JV-00051",
+  "date": "2026-06-30",
+  "reference": "DEP-00001",
+  "memo": "إهلاك شهر 2026/06",
+  "state": "posted",
+  "source": "depreciation",
+  "source_url": "/assets/depreciation/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.038Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 52,
+ "fields": {
+  "number": "JV-00052",
+  "date": "2026-07-31",
+  "reference": "DEP-00002",
+  "memo": "إهلاك شهر 2026/07",
+  "state": "posted",
+  "source": "depreciation",
+  "source_url": "/assets/depreciation/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.053Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 53,
+ "fields": {
+  "number": "JV-00053",
+  "date": "2026-08-31",
+  "reference": "DEP-00003",
+  "memo": "إهلاك شهر 2026/08",
+  "state": "posted",
+  "source": "depreciation",
+  "source_url": "/assets/depreciation/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.067Z"
+ }
+},
+{
+ "model": "accounting.journalentry",
+ "pk": 54,
+ "fields": {
+  "number": "JV-00054",
+  "date": "2026-09-30",
+  "reference": "DEP-00004",
+  "memo": "إهلاك شهر 2026/09",
+  "state": "posted",
+  "source": "depreciation",
+  "source_url": "/assets/depreciation/",
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.081Z"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 1,
+ "fields": {
+  "entry": 1,
+  "account": 24,
+  "label": "إيداع رأس المال",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "4400000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 2,
+ "fields": {
+  "entry": 1,
+  "account": 22,
+  "label": "نقدية بالخزينة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "1600000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 3,
+ "fields": {
+  "entry": 1,
+  "account": 65,
+  "label": "رأس المال",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "6000000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 4,
+ "fields": {
+  "entry": 2,
+  "account": 24,
+  "label": "دفعة مقدمة 600,000 - عقد المبنى الإداري",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "600000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 5,
+ "fields": {
+  "entry": 2,
+  "account": 51,
+  "label": "دفعة مقدمة 600,000 - عقد المبنى الإداري",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "600000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 6,
+ "fields": {
+  "entry": 3,
+  "account": 27,
+  "label": "صافي مستخلص 1 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "2049180.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 7,
+ "fields": {
+  "entry": 3,
+  "account": 29,
+  "label": "ضمان أعمال مستخلص 1 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "104550.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 8,
+ "fields": {
+  "entry": 3,
+  "account": 51,
+  "label": "استرداد دفعة مقدمة مستخلص 1 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "209100.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 9,
+ "fields": {
+  "entry": 3,
+  "account": 39,
+  "label": "خصم من المنبع مستخلص 1 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "20910.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 10,
+ "fields": {
+  "entry": 3,
+  "account": 72,
+  "label": "إيراد مستخلص 1 عقد CC-00001",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "0.00",
+  "credit": "2091000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 11,
+ "fields": {
+  "entry": 3,
+  "account": 56,
+  "label": "ض.ق.م مستخلص 1 عقد CC-00001",
+  "partner": 1,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "292740.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 12,
+ "fields": {
+  "entry": 4,
+  "account": 27,
+  "label": "صافي مستخلص 2 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "2948330.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 13,
+ "fields": {
+  "entry": 4,
+  "account": 29,
+  "label": "ضمان أعمال مستخلص 2 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "150425.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 14,
+ "fields": {
+  "entry": 4,
+  "account": 51,
+  "label": "استرداد دفعة مقدمة مستخلص 2 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "300850.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 15,
+ "fields": {
+  "entry": 4,
+  "account": 39,
+  "label": "خصم من المنبع مستخلص 2 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "30085.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 16,
+ "fields": {
+  "entry": 4,
+  "account": 72,
+  "label": "إيراد مستخلص 2 عقد CC-00001",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "0.00",
+  "credit": "3008500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 17,
+ "fields": {
+  "entry": 4,
+  "account": 56,
+  "label": "ض.ق.م مستخلص 2 عقد CC-00001",
+  "partner": 1,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "421190.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 18,
+ "fields": {
+  "entry": 5,
+  "account": 27,
+  "label": "صافي مستخلص 3 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "2740750.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 19,
+ "fields": {
+  "entry": 5,
+  "account": 29,
+  "label": "ضمان أعمال مستخلص 3 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "131750.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 20,
+ "fields": {
+  "entry": 5,
+  "account": 51,
+  "label": "استرداد دفعة مقدمة مستخلص 3 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "90050.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 21,
+ "fields": {
+  "entry": 5,
+  "account": 39,
+  "label": "خصم من المنبع مستخلص 3 عقد CC-00001",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "26350.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 22,
+ "fields": {
+  "entry": 5,
+  "account": 104,
+  "label": "غرامة تأخير توريد - مستخلص 3 عقد CC-00001",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "15000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 23,
+ "fields": {
+  "entry": 5,
+  "account": 72,
+  "label": "إيراد مستخلص 3 عقد CC-00001",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "0.00",
+  "credit": "2635000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 24,
+ "fields": {
+  "entry": 5,
+  "account": 56,
+  "label": "ض.ق.م مستخلص 3 عقد CC-00001",
+  "partner": 1,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "368900.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 25,
+ "fields": {
+  "entry": 6,
+  "account": 24,
+  "label": "تحصيل المستخلص الأول",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "2049180.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 26,
+ "fields": {
+  "entry": 6,
+  "account": 27,
+  "label": "تحصيل المستخلص الأول",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "2049180.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 27,
+ "fields": {
+  "entry": 7,
+  "account": 24,
+  "label": "دفعة من المستخلص الثاني",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "1768998.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 28,
+ "fields": {
+  "entry": 7,
+  "account": 27,
+  "label": "دفعة من المستخلص الثاني",
+  "partner": 1,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1768998.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 29,
+ "fields": {
+  "entry": 8,
+  "account": 27,
+  "label": "صافي مستخلص 1 عقد CC-00002",
+  "partner": 2,
+  "project": 2,
+  "cost_center": null,
+  "debit": "1452300.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 30,
+ "fields": {
+  "entry": 8,
+  "account": 29,
+  "label": "ضمان أعمال مستخلص 1 عقد CC-00002",
+  "partner": 2,
+  "project": 2,
+  "cost_center": null,
+  "debit": "141000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 31,
+ "fields": {
+  "entry": 8,
+  "account": 39,
+  "label": "خصم من المنبع مستخلص 1 عقد CC-00002",
+  "partner": 2,
+  "project": 2,
+  "cost_center": null,
+  "debit": "14100.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 32,
+ "fields": {
+  "entry": 8,
+  "account": 72,
+  "label": "إيراد مستخلص 1 عقد CC-00002",
+  "partner": null,
+  "project": 2,
+  "cost_center": 3,
+  "debit": "0.00",
+  "credit": "1410000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 33,
+ "fields": {
+  "entry": 8,
+  "account": 56,
+  "label": "ض.ق.م مستخلص 1 عقد CC-00002",
+  "partner": 2,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "197400.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 34,
+ "fields": {
+  "entry": 9,
+  "account": 25,
+  "label": "دفعة تحت الحساب",
+  "partner": 2,
+  "project": 2,
+  "cost_center": null,
+  "debit": "726150.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 35,
+ "fields": {
+  "entry": 9,
+  "account": 27,
+  "label": "دفعة تحت الحساب",
+  "partner": 2,
+  "project": 2,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "726150.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 36,
+ "fields": {
+  "entry": 10,
+  "account": 31,
+  "label": "دفعة مقدمة لمقاول النجارة",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "100000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 37,
+ "fields": {
+  "entry": 10,
+  "account": 22,
+  "label": "دفعة مقدمة لمقاول النجارة",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "100000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 38,
+ "fields": {
+  "entry": 11,
+  "account": 84,
+  "label": "تكلفة مستخلص 1 عقد SC-00001 - مؤسسة البنا للنجارة والحدادة المسلحة",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "513000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 39,
+ "fields": {
+  "entry": 11,
+  "account": 48,
+  "label": "صافي مستخلص 1 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "371960.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 40,
+ "fields": {
+  "entry": 11,
+  "account": 50,
+  "label": "ضمان أعمال مستخلص 1 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "25650.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 41,
+ "fields": {
+  "entry": 11,
+  "account": 31,
+  "label": "استرداد دفعة مقدمة مستخلص 1 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "100000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 42,
+ "fields": {
+  "entry": 11,
+  "account": 57,
+  "label": "خصم وإضافة مستخلص 1 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "5130.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 43,
+ "fields": {
+  "entry": 11,
+  "account": 58,
+  "label": "تأمينات مستخلص 1 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "10260.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 44,
+ "fields": {
+  "entry": 12,
+  "account": 84,
+  "label": "تكلفة مستخلص 2 عقد SC-00001 - مؤسسة البنا للنجارة والحدادة المسلحة",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "410000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 45,
+ "fields": {
+  "entry": 12,
+  "account": 48,
+  "label": "صافي مستخلص 2 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "377200.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 46,
+ "fields": {
+  "entry": 12,
+  "account": 50,
+  "label": "ضمان أعمال مستخلص 2 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "20500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 47,
+ "fields": {
+  "entry": 12,
+  "account": 57,
+  "label": "خصم وإضافة مستخلص 2 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "4100.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 48,
+ "fields": {
+  "entry": 12,
+  "account": 58,
+  "label": "تأمينات مستخلص 2 عقد SC-00001",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "8200.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 49,
+ "fields": {
+  "entry": 13,
+  "account": 48,
+  "label": "سداد المستخلص الأول",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "371960.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 50,
+ "fields": {
+  "entry": 13,
+  "account": 24,
+  "label": "سداد المستخلص الأول",
+  "partner": 6,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "371960.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 51,
+ "fields": {
+  "entry": 14,
+  "account": 84,
+  "label": "تكلفة مستخلص 1 عقد SC-00002 - شركة الإتقان للأعمال الكهربائية",
+  "partner": null,
+  "project": 1,
+  "cost_center": 2,
+  "debit": "198000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 52,
+ "fields": {
+  "entry": 14,
+  "account": 38,
+  "label": "ض.ق.م مستخلص 1 عقد SC-00002",
+  "partner": 7,
+  "project": null,
+  "cost_center": null,
+  "debit": "27720.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 53,
+ "fields": {
+  "entry": 14,
+  "account": 48,
+  "label": "صافي مستخلص 1 عقد SC-00002",
+  "partner": 7,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "213840.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 54,
+ "fields": {
+  "entry": 14,
+  "account": 50,
+  "label": "ضمان أعمال مستخلص 1 عقد SC-00002",
+  "partner": 7,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "9900.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 55,
+ "fields": {
+  "entry": 14,
+  "account": 57,
+  "label": "خصم وإضافة مستخلص 1 عقد SC-00002",
+  "partner": 7,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1980.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 56,
+ "fields": {
+  "entry": 15,
+  "account": 47,
+  "label": "فاتورة مشتريات BILL-00001",
+  "partner": 3,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "3310900.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 57,
+ "fields": {
+  "entry": 15,
+  "account": 57,
+  "label": "خصم وإضافة BILL-00001",
+  "partner": 3,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "29300.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 58,
+ "fields": {
+  "entry": 15,
+  "account": 36,
+  "label": "حديد تسليح 16 مم",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "2310000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 59,
+ "fields": {
+  "entry": 15,
+  "account": 38,
+  "label": "ض.ق.م BILL-00001",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "410200.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 60,
+ "fields": {
+  "entry": 15,
+  "account": 36,
+  "label": "أسمنت بورتلاندي",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "620000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 61,
+ "fields": {
+  "entry": 16,
+  "account": 83,
+  "label": "حديد تسليح 16 مم × 45.000",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "1732500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 62,
+ "fields": {
+  "entry": 16,
+  "account": 36,
+  "label": "حديد تسليح 16 مم × 45.000",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1732500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 63,
+ "fields": {
+  "entry": 16,
+  "account": 83,
+  "label": "أسمنت بورتلاندي × 150.000",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "465000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 64,
+ "fields": {
+  "entry": 16,
+  "account": 36,
+  "label": "أسمنت بورتلاندي × 150.000",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "465000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 65,
+ "fields": {
+  "entry": 17,
+  "account": 83,
+  "label": "حديد تسليح 16 مم × 12.000",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "462000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 66,
+ "fields": {
+  "entry": 17,
+  "account": 36,
+  "label": "حديد تسليح 16 مم × 12.000",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "462000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 67,
+ "fields": {
+  "entry": 17,
+  "account": 83,
+  "label": "أسمنت بورتلاندي × 40.000",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "124000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 68,
+ "fields": {
+  "entry": 17,
+  "account": 36,
+  "label": "أسمنت بورتلاندي × 40.000",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "124000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 69,
+ "fields": {
+  "entry": 18,
+  "account": 47,
+  "label": "فاتورة مشتريات BILL-00002",
+  "partner": 3,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "209050.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 70,
+ "fields": {
+  "entry": 18,
+  "account": 57,
+  "label": "خصم وإضافة BILL-00002",
+  "partner": 3,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1850.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 71,
+ "fields": {
+  "entry": 18,
+  "account": 83,
+  "label": "رمل وزلط مورد للموقع",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "185000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 72,
+ "fields": {
+  "entry": 18,
+  "account": 38,
+  "label": "ض.ق.م BILL-00002",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "25900.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 73,
+ "fields": {
+  "entry": 19,
+  "account": 47,
+  "label": "فاتورة مشتريات BILL-00003",
+  "partner": 3,
+  "project": 2,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "474600.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 74,
+ "fields": {
+  "entry": 19,
+  "account": 57,
+  "label": "خصم وإضافة BILL-00003",
+  "partner": 3,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "4200.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 75,
+ "fields": {
+  "entry": 19,
+  "account": 83,
+  "label": "سن وزلط وأسفلت لطبقة الأساس",
+  "partner": null,
+  "project": 2,
+  "cost_center": null,
+  "debit": "420000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 76,
+ "fields": {
+  "entry": 19,
+  "account": 38,
+  "label": "ض.ق.م BILL-00003",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "58800.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 77,
+ "fields": {
+  "entry": 20,
+  "account": 47,
+  "label": "فاتورة مشتريات BILL-00004",
+  "partner": 5,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "108480.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 78,
+ "fields": {
+  "entry": 20,
+  "account": 57,
+  "label": "خصم وإضافة BILL-00004",
+  "partner": 5,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "960.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 79,
+ "fields": {
+  "entry": 20,
+  "account": 86,
+  "label": "إيجار لودر وحفار شهر كامل",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "96000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 80,
+ "fields": {
+  "entry": 20,
+  "account": 38,
+  "label": "ض.ق.م BILL-00004",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "13440.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 81,
+ "fields": {
+  "entry": 21,
+  "account": 47,
+  "label": "فاتورة مشتريات BILL-00005",
+  "partner": 5,
+  "project": 2,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "155940.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 82,
+ "fields": {
+  "entry": 21,
+  "account": 57,
+  "label": "خصم وإضافة BILL-00005",
+  "partner": 5,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1380.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 83,
+ "fields": {
+  "entry": 21,
+  "account": 86,
+  "label": "إيجار هراس وجريدر",
+  "partner": null,
+  "project": 2,
+  "cost_center": null,
+  "debit": "138000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 84,
+ "fields": {
+  "entry": 21,
+  "account": 38,
+  "label": "ض.ق.م BILL-00005",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "19320.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 85,
+ "fields": {
+  "entry": 22,
+  "account": 47,
+  "label": "فاتورة مشتريات BILL-00006",
+  "partner": 4,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "82500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 86,
+ "fields": {
+  "entry": 22,
+  "account": 87,
+  "label": "سولار للمعدات - موقع التجمع",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "82500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 87,
+ "fields": {
+  "entry": 23,
+  "account": 47,
+  "label": "سداد فاتورة السولار",
+  "partner": 4,
+  "project": null,
+  "cost_center": null,
+  "debit": "82500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 88,
+ "fields": {
+  "entry": 23,
+  "account": 22,
+  "label": "سداد فاتورة السولار",
+  "partner": 4,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "82500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 89,
+ "fields": {
+  "entry": 24,
+  "account": 47,
+  "label": "سداد فاتورة الحديد والأسمنت",
+  "partner": 3,
+  "project": null,
+  "cost_center": null,
+  "debit": "3310900.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 90,
+ "fields": {
+  "entry": 24,
+  "account": 24,
+  "label": "سداد فاتورة الحديد والأسمنت",
+  "partner": 3,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "3310900.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 91,
+ "fields": {
+  "entry": 25,
+  "account": 27,
+  "label": "فاتورة مبيعات INV-00001",
+  "partner": 2,
+  "project": 2,
+  "cost_center": null,
+  "debit": "61560.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 92,
+ "fields": {
+  "entry": 25,
+  "account": 75,
+  "label": "تأجير لودر بالسائق",
+  "partner": null,
+  "project": 2,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "54000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 93,
+ "fields": {
+  "entry": 25,
+  "account": 56,
+  "label": "ض.ق.م INV-00001",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "7560.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 94,
+ "fields": {
+  "entry": 26,
+  "account": 94,
+  "label": "مرتبات إدارية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "145000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 95,
+ "fields": {
+  "entry": 26,
+  "account": 22,
+  "label": "صرف المرتبات من الخزينة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "145000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 96,
+ "fields": {
+  "entry": 27,
+  "account": 23,
+  "label": "عهدة موقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "120000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 97,
+ "fields": {
+  "entry": 27,
+  "account": 22,
+  "label": "من الخزينة الرئيسية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "120000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 98,
+ "fields": {
+  "entry": 28,
+  "account": 85,
+  "label": "أجور عمالة",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "78000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 99,
+ "fields": {
+  "entry": 28,
+  "account": 23,
+  "label": "من عهدة الموقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "78000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 100,
+ "fields": {
+  "entry": 29,
+  "account": 95,
+  "label": "إيجار",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "35000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 101,
+ "fields": {
+  "entry": 29,
+  "account": 22,
+  "label": "نقداً",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "35000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 102,
+ "fields": {
+  "entry": 30,
+  "account": 99,
+  "label": "مصروفات بنكية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "1850.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 103,
+ "fields": {
+  "entry": 30,
+  "account": 24,
+  "label": "خصم من البنك",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1850.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 104,
+ "fields": {
+  "entry": 31,
+  "account": 94,
+  "label": "مرتبات إدارية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "145000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 105,
+ "fields": {
+  "entry": 31,
+  "account": 22,
+  "label": "صرف المرتبات من الخزينة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "145000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 106,
+ "fields": {
+  "entry": 32,
+  "account": 23,
+  "label": "عهدة موقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "120000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 107,
+ "fields": {
+  "entry": 32,
+  "account": 22,
+  "label": "من الخزينة الرئيسية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "120000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 108,
+ "fields": {
+  "entry": 33,
+  "account": 85,
+  "label": "أجور عمالة",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "78000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 109,
+ "fields": {
+  "entry": 33,
+  "account": 23,
+  "label": "من عهدة الموقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "78000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 110,
+ "fields": {
+  "entry": 34,
+  "account": 95,
+  "label": "إيجار",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "35000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 111,
+ "fields": {
+  "entry": 34,
+  "account": 22,
+  "label": "نقداً",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "35000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 112,
+ "fields": {
+  "entry": 35,
+  "account": 99,
+  "label": "مصروفات بنكية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "1850.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 113,
+ "fields": {
+  "entry": 35,
+  "account": 24,
+  "label": "خصم من البنك",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1850.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 114,
+ "fields": {
+  "entry": 36,
+  "account": 94,
+  "label": "مرتبات إدارية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "145000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 115,
+ "fields": {
+  "entry": 36,
+  "account": 22,
+  "label": "صرف المرتبات من الخزينة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "145000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 116,
+ "fields": {
+  "entry": 37,
+  "account": 23,
+  "label": "عهدة موقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "120000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 117,
+ "fields": {
+  "entry": 37,
+  "account": 22,
+  "label": "من الخزينة الرئيسية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "120000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 118,
+ "fields": {
+  "entry": 38,
+  "account": 85,
+  "label": "أجور عمالة",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "78000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 119,
+ "fields": {
+  "entry": 38,
+  "account": 23,
+  "label": "من عهدة الموقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "78000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 120,
+ "fields": {
+  "entry": 39,
+  "account": 95,
+  "label": "إيجار",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "35000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 121,
+ "fields": {
+  "entry": 39,
+  "account": 22,
+  "label": "نقداً",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "35000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 122,
+ "fields": {
+  "entry": 40,
+  "account": 99,
+  "label": "مصروفات بنكية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "1850.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 123,
+ "fields": {
+  "entry": 40,
+  "account": 24,
+  "label": "خصم من البنك",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1850.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 124,
+ "fields": {
+  "entry": 41,
+  "account": 94,
+  "label": "مرتبات إدارية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "145000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 125,
+ "fields": {
+  "entry": 41,
+  "account": 22,
+  "label": "صرف المرتبات من الخزينة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "145000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 126,
+ "fields": {
+  "entry": 42,
+  "account": 23,
+  "label": "عهدة موقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "120000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 127,
+ "fields": {
+  "entry": 42,
+  "account": 22,
+  "label": "من الخزينة الرئيسية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "120000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 128,
+ "fields": {
+  "entry": 43,
+  "account": 85,
+  "label": "أجور عمالة",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "78000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 129,
+ "fields": {
+  "entry": 43,
+  "account": 23,
+  "label": "من عهدة الموقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "78000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 130,
+ "fields": {
+  "entry": 44,
+  "account": 95,
+  "label": "إيجار",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "35000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 131,
+ "fields": {
+  "entry": 44,
+  "account": 22,
+  "label": "نقداً",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "35000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 132,
+ "fields": {
+  "entry": 45,
+  "account": 99,
+  "label": "مصروفات بنكية",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "1850.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 133,
+ "fields": {
+  "entry": 45,
+  "account": 24,
+  "label": "خصم من البنك",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "1850.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 134,
+ "fields": {
+  "entry": 46,
+  "account": 85,
+  "label": "أجور عمالة",
+  "partner": null,
+  "project": 2,
+  "cost_center": null,
+  "debit": "64000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 135,
+ "fields": {
+  "entry": 46,
+  "account": 23,
+  "label": "من عهدة الموقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "64000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 136,
+ "fields": {
+  "entry": 47,
+  "account": 87,
+  "label": "وقود وزيوت",
+  "partner": null,
+  "project": 2,
+  "cost_center": null,
+  "debit": "38000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 137,
+ "fields": {
+  "entry": 47,
+  "account": 23,
+  "label": "من عهدة الموقع",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "38000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 138,
+ "fields": {
+  "entry": 48,
+  "account": 96,
+  "label": "فاتورة كهرباء المكتب",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "6800.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 139,
+ "fields": {
+  "entry": 48,
+  "account": 22,
+  "label": "فاتورة كهرباء المكتب",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "6800.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 140,
+ "fields": {
+  "entry": 49,
+  "account": 88,
+  "label": "نقل ومشال مخلفات من موقع التجمع",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "14500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 141,
+ "fields": {
+  "entry": 49,
+  "account": 23,
+  "label": "نقل ومشال مخلفات من موقع التجمع",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "14500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 142,
+ "fields": {
+  "entry": 50,
+  "account": 6,
+  "label": "لودر كاتربيلر",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "2400000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 143,
+ "fields": {
+  "entry": 50,
+  "account": 7,
+  "label": "سيارة نصف نقل",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "650000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 144,
+ "fields": {
+  "entry": 50,
+  "account": 24,
+  "label": "سداد بشيك",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "3050000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 145,
+ "fields": {
+  "entry": 51,
+  "account": 109,
+  "label": "إهلاك لودر 950",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "22500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 146,
+ "fields": {
+  "entry": 51,
+  "account": 13,
+  "label": "مجمع إهلاك معدات ثقيلة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "22500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 147,
+ "fields": {
+  "entry": 51,
+  "account": 109,
+  "label": "إهلاك سيارة نصف نقل",
+  "partner": null,
+  "project": null,
+  "cost_center": 1,
+  "debit": "10000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 148,
+ "fields": {
+  "entry": 51,
+  "account": 14,
+  "label": "مجمع إهلاك سيارات",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "10000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 149,
+ "fields": {
+  "entry": 52,
+  "account": 109,
+  "label": "إهلاك لودر 950",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "22500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 150,
+ "fields": {
+  "entry": 52,
+  "account": 13,
+  "label": "مجمع إهلاك معدات ثقيلة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "22500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 151,
+ "fields": {
+  "entry": 52,
+  "account": 109,
+  "label": "إهلاك سيارة نصف نقل",
+  "partner": null,
+  "project": null,
+  "cost_center": 1,
+  "debit": "10000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 152,
+ "fields": {
+  "entry": 52,
+  "account": 14,
+  "label": "مجمع إهلاك سيارات",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "10000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 153,
+ "fields": {
+  "entry": 53,
+  "account": 109,
+  "label": "إهلاك لودر 950",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "22500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 154,
+ "fields": {
+  "entry": 53,
+  "account": 13,
+  "label": "مجمع إهلاك معدات ثقيلة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "22500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 155,
+ "fields": {
+  "entry": 53,
+  "account": 109,
+  "label": "إهلاك سيارة نصف نقل",
+  "partner": null,
+  "project": null,
+  "cost_center": 1,
+  "debit": "10000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 156,
+ "fields": {
+  "entry": 53,
+  "account": 14,
+  "label": "مجمع إهلاك سيارات",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "10000.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 157,
+ "fields": {
+  "entry": 54,
+  "account": 109,
+  "label": "إهلاك لودر 950",
+  "partner": null,
+  "project": 1,
+  "cost_center": null,
+  "debit": "22500.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 158,
+ "fields": {
+  "entry": 54,
+  "account": 13,
+  "label": "مجمع إهلاك معدات ثقيلة",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "22500.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 159,
+ "fields": {
+  "entry": 54,
+  "account": 109,
+  "label": "إهلاك سيارة نصف نقل",
+  "partner": null,
+  "project": null,
+  "cost_center": 1,
+  "debit": "10000.00",
+  "credit": "0.00"
+ }
+},
+{
+ "model": "accounting.journalline",
+ "pk": 160,
+ "fields": {
+  "entry": 54,
+  "account": 14,
+  "label": "مجمع إهلاك سيارات",
+  "partner": null,
+  "project": null,
+  "cost_center": null,
+  "debit": "0.00",
+  "credit": "10000.00"
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 1,
+ "fields": {
+  "name": "صرف مرتبات الإدارة نقداً",
+  "memo": "صرف مرتبات شهر",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 2,
+ "fields": {
+  "name": "صرف أجور عمالة موقع",
+  "memo": "صرف أجور عمالة الموقع",
+  "ask_partner": false,
+  "ask_project": true,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 3,
+ "fields": {
+  "name": "صرف عهدة لموقع",
+  "memo": "صرف عهدة نقدية للموقع",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 4,
+ "fields": {
+  "name": "إيداع نقدية بالبنك",
+  "memo": "إيداع نقدية بالبنك",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 5,
+ "fields": {
+  "name": "مصروفات بنكية",
+  "memo": "عمولات ومصروفات بنكية",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 6,
+ "fields": {
+  "name": "سداد إيجار مكتب",
+  "memo": "سداد إيجار المكتب",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 7,
+ "fields": {
+  "name": "سداد كهرباء ومياه",
+  "memo": "سداد فواتير كهرباء ومياه",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 8,
+ "fields": {
+  "name": "شراء وقود لمعدات المشروع",
+  "memo": "وقود وزيوت",
+  "ask_partner": false,
+  "ask_project": true,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 9,
+ "fields": {
+  "name": "إيجار معدات للمشروع (مستحق للمورد)",
+  "memo": "إيجار معدات",
+  "ask_partner": true,
+  "ask_project": true,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 10,
+ "fields": {
+  "name": "زيادة رأس المال نقداً",
+  "memo": "زيادة رأس المال",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 11,
+ "fields": {
+  "name": "مسحوبات / جاري الشركاء",
+  "memo": "مسحوبات شخصية",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 12,
+ "fields": {
+  "name": "سلفة لموظف",
+  "memo": "سلفة موظف",
+  "ask_partner": true,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 13,
+ "fields": {
+  "name": "سداد ضريبة الخصم والإضافة",
+  "memo": "توريد ضريبة الخصم والإضافة",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 14,
+ "fields": {
+  "name": "سداد ضريبة القيمة المضافة",
+  "memo": "سداد إقرار ض.ق.م",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 15,
+ "fields": {
+  "name": "توريد تأمينات مقاولي الباطن",
+  "memo": "توريد التأمينات المخصومة من مقاولي الباطن",
+  "ask_partner": false,
+  "ask_project": false,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 16,
+ "fields": {
+  "name": "خطاب ضمان (تأمين نقدي لدى البنك)",
+  "memo": "غطاء نقدي لخطاب ضمان",
+  "ask_partner": false,
+  "ask_project": true,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplate",
+ "pk": 17,
+ "fields": {
+  "name": "إثبات أعمال منفذة لم يصدر بها مستخلص (نهاية الفترة)",
+  "memo": "إثبات أعمال تحت التنفيذ",
+  "ask_partner": false,
+  "ask_project": true,
+  "active": true
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 1,
+ "fields": {
+  "template": 1,
+  "account": 94,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "مرتبات إدارية",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 2,
+ "fields": {
+  "template": 1,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "صرف المرتبات من الخزينة",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 3,
+ "fields": {
+  "template": 2,
+  "account": 85,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "أجور عمالة",
+  "use_partner": false,
+  "use_project": true
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 4,
+ "fields": {
+  "template": 2,
+  "account": 23,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من عهدة الموقع",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 5,
+ "fields": {
+  "template": 3,
+  "account": 23,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "عهدة موقع",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 6,
+ "fields": {
+  "template": 3,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من الخزينة الرئيسية",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 7,
+ "fields": {
+  "template": 4,
+  "account": 24,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "إيداع",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 8,
+ "fields": {
+  "template": 4,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من الخزينة",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 9,
+ "fields": {
+  "template": 5,
+  "account": 99,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "مصروفات بنكية",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 10,
+ "fields": {
+  "template": 5,
+  "account": 24,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "خصم من البنك",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 11,
+ "fields": {
+  "template": 6,
+  "account": 95,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "إيجار",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 12,
+ "fields": {
+  "template": 6,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "نقداً",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 13,
+ "fields": {
+  "template": 7,
+  "account": 96,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "كهرباء ومياه",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 14,
+ "fields": {
+  "template": 7,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "نقداً",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 15,
+ "fields": {
+  "template": 8,
+  "account": 87,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "وقود وزيوت",
+  "use_partner": false,
+  "use_project": true
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 16,
+ "fields": {
+  "template": 8,
+  "account": 23,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من عهدة الموقع",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 17,
+ "fields": {
+  "template": 9,
+  "account": 86,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "إيجار معدات",
+  "use_partner": false,
+  "use_project": true
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 18,
+ "fields": {
+  "template": 9,
+  "account": 47,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "مستحق للمؤجر",
+  "use_partner": true,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 19,
+ "fields": {
+  "template": 10,
+  "account": 24,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "إيداع رأس المال",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 20,
+ "fields": {
+  "template": 10,
+  "account": 65,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "رأس المال",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 21,
+ "fields": {
+  "template": 11,
+  "account": 68,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "جاري الشركاء",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 22,
+ "fields": {
+  "template": 11,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "نقداً",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 23,
+ "fields": {
+  "template": 12,
+  "account": 30,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "سلفة",
+  "use_partner": true,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 24,
+ "fields": {
+  "template": 12,
+  "account": 22,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "نقداً",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 25,
+ "fields": {
+  "template": 13,
+  "account": 57,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "توريد خصم وإضافة",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 26,
+ "fields": {
+  "template": 13,
+  "account": 24,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من البنك",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 27,
+ "fields": {
+  "template": 14,
+  "account": 56,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "سداد ض.ق.م",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 28,
+ "fields": {
+  "template": 14,
+  "account": 24,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من البنك",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 29,
+ "fields": {
+  "template": 15,
+  "account": 58,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "توريد تأمينات",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 30,
+ "fields": {
+  "template": 15,
+  "account": 24,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من البنك",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 31,
+ "fields": {
+  "template": 16,
+  "account": 32,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "تأمين خطاب ضمان",
+  "use_partner": false,
+  "use_project": true
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 32,
+ "fields": {
+  "template": 16,
+  "account": 24,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "من البنك",
+  "use_partner": false,
+  "use_project": false
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 33,
+ "fields": {
+  "template": 17,
+  "account": 41,
+  "side": "debit",
+  "percent": "100.000",
+  "label": "أعمال تحت التنفيذ",
+  "use_partner": false,
+  "use_project": true
+ }
+},
+{
+ "model": "accounting.journaltemplateline",
+ "pk": 34,
+ "fields": {
+  "template": 17,
+  "account": 72,
+  "side": "credit",
+  "percent": "100.000",
+  "label": "إيراد أعمال منفذة",
+  "use_partner": false,
+  "use_project": true
+ }
+},
+{
+ "model": "commerce.warehouse",
+ "pk": 1,
+ "fields": {
+  "code": "WH1",
+  "name": "المخزن الرئيسي",
+  "project": null,
+  "active": true
+ }
+},
+{
+ "model": "commerce.warehouse",
+ "pk": 2,
+ "fields": {
+  "code": "WH2",
+  "name": "مخزن موقع التجمع",
+  "project": 1,
+  "active": true
+ }
+},
+{
+ "model": "commerce.product",
+ "pk": 1,
+ "fields": {
+  "code": "M001",
+  "name": "حديد تسليح 16 مم",
+  "type": "stock",
+  "unit": "طن",
+  "barcode": "",
+  "sale_price": "0.00",
+  "purchase_price": "38500.00",
+  "sale_tax": null,
+  "purchase_tax": 1,
+  "income_account": null,
+  "expense_account": null,
+  "min_qty": "10.000",
+  "avg_cost": "38500.0000",
+  "active": true
+ }
+},
+{
+ "model": "commerce.product",
+ "pk": 2,
+ "fields": {
+  "code": "M002",
+  "name": "أسمنت بورتلاندي",
+  "type": "stock",
+  "unit": "طن",
+  "barcode": "",
+  "sale_price": "0.00",
+  "purchase_price": "3100.00",
+  "sale_tax": null,
+  "purchase_tax": 1,
+  "income_account": null,
+  "expense_account": null,
+  "min_qty": "40.000",
+  "avg_cost": "3100.0000",
+  "active": true
+ }
+},
+{
+ "model": "commerce.product",
+ "pk": 3,
+ "fields": {
+  "code": "SRV1",
+  "name": "تأجير لودر بالسائق",
+  "type": "service",
+  "unit": "يوم",
+  "barcode": "",
+  "sale_price": "4500.00",
+  "purchase_price": "0.00",
+  "sale_tax": 1,
+  "purchase_tax": null,
+  "income_account": 75,
+  "expense_account": null,
+  "min_qty": "0.000",
+  "avg_cost": "0.0000",
+  "active": true
+ }
+},
+{
+ "model": "commerce.stockmove",
+ "pk": 1,
+ "fields": {
+  "date": "2026-06-08",
+  "product": 1,
+  "warehouse": 1,
+  "qty": "60.000",
+  "unit_cost": "38500.0000",
+  "project": 1,
+  "doc_key": "INV:1",
+  "label": "فاتورة مشتريات BILL-00001",
+  "url": "/invoices/1/"
+ }
+},
+{
+ "model": "commerce.stockmove",
+ "pk": 2,
+ "fields": {
+  "date": "2026-06-08",
+  "product": 2,
+  "warehouse": 1,
+  "qty": "200.000",
+  "unit_cost": "3100.0000",
+  "project": 1,
+  "doc_key": "INV:1",
+  "label": "فاتورة مشتريات BILL-00001",
+  "url": "/invoices/1/"
+ }
+},
+{
+ "model": "commerce.stockmove",
+ "pk": 3,
+ "fields": {
+  "date": "2026-06-13",
+  "product": 1,
+  "warehouse": 1,
+  "qty": "-45.000",
+  "unit_cost": "38500.0000",
+  "project": 1,
+  "doc_key": "STK:1",
+  "label": "صرف مواد لمشروع ST-00001",
+  "url": "/stock/docs/1/"
+ }
+},
+{
+ "model": "commerce.stockmove",
+ "pk": 4,
+ "fields": {
+  "date": "2026-06-13",
+  "product": 2,
+  "warehouse": 1,
+  "qty": "-150.000",
+  "unit_cost": "3100.0000",
+  "project": 1,
+  "doc_key": "STK:1",
+  "label": "صرف مواد لمشروع ST-00001",
+  "url": "/stock/docs/1/"
+ }
+},
+{
+ "model": "commerce.stockmove",
+ "pk": 5,
+ "fields": {
+  "date": "2026-09-06",
+  "product": 1,
+  "warehouse": 1,
+  "qty": "-12.000",
+  "unit_cost": "38500.0000",
+  "project": 1,
+  "doc_key": "STK:2",
+  "label": "صرف مواد لمشروع ST-00002",
+  "url": "/stock/docs/2/"
+ }
+},
+{
+ "model": "commerce.stockmove",
+ "pk": 6,
+ "fields": {
+  "date": "2026-09-06",
+  "product": 2,
+  "warehouse": 1,
+  "qty": "-40.000",
+  "unit_cost": "3100.0000",
+  "project": 1,
+  "doc_key": "STK:2",
+  "label": "صرف مواد لمشروع ST-00002",
+  "url": "/stock/docs/2/"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 1,
+ "fields": {
+  "state": "posted",
+  "move": 15,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.789Z",
+  "updated_at": "2026-10-05T22:13:20.805Z",
+  "kind": "purchase",
+  "number": "BILL-00001",
+  "partner": 3,
+  "date": "2026-06-08",
+  "due_date": "2026-07-08",
+  "reference": "SF-2291",
+  "origin": null,
+  "project": 1,
+  "cost_center": null,
+  "warehouse": 1,
+  "wht": 4,
+  "notes": "",
+  "subtotal": "2930000.00",
+  "discount_total": "0.00",
+  "vat_total": "410200.00",
+  "wht_total": "29300.00",
+  "total": "3310900.00"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 2,
+ "fields": {
+  "state": "posted",
+  "move": 18,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.836Z",
+  "updated_at": "2026-10-05T22:13:20.846Z",
+  "kind": "purchase",
+  "number": "BILL-00002",
+  "partner": 3,
+  "date": "2026-07-28",
+  "due_date": "2026-08-27",
+  "reference": "SF-2350",
+  "origin": null,
+  "project": 1,
+  "cost_center": null,
+  "warehouse": null,
+  "wht": 4,
+  "notes": "",
+  "subtotal": "185000.00",
+  "discount_total": "0.00",
+  "vat_total": "25900.00",
+  "wht_total": "1850.00",
+  "total": "209050.00"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 3,
+ "fields": {
+  "state": "posted",
+  "move": 19,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.848Z",
+  "updated_at": "2026-10-05T22:13:20.858Z",
+  "kind": "purchase",
+  "number": "BILL-00003",
+  "partner": 3,
+  "date": "2026-09-01",
+  "due_date": "2026-10-01",
+  "reference": "SF-2410",
+  "origin": null,
+  "project": 2,
+  "cost_center": null,
+  "warehouse": null,
+  "wht": 4,
+  "notes": "",
+  "subtotal": "420000.00",
+  "discount_total": "0.00",
+  "vat_total": "58800.00",
+  "wht_total": "4200.00",
+  "total": "474600.00"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 4,
+ "fields": {
+  "state": "posted",
+  "move": 20,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.859Z",
+  "updated_at": "2026-10-05T22:13:20.870Z",
+  "kind": "purchase",
+  "number": "BILL-00004",
+  "partner": 5,
+  "date": "2026-07-18",
+  "due_date": "2026-08-17",
+  "reference": "R-77",
+  "origin": null,
+  "project": 1,
+  "cost_center": null,
+  "warehouse": null,
+  "wht": 4,
+  "notes": "",
+  "subtotal": "96000.00",
+  "discount_total": "0.00",
+  "vat_total": "13440.00",
+  "wht_total": "960.00",
+  "total": "108480.00"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 5,
+ "fields": {
+  "state": "posted",
+  "move": 21,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.872Z",
+  "updated_at": "2026-10-05T22:13:20.882Z",
+  "kind": "purchase",
+  "number": "BILL-00005",
+  "partner": 5,
+  "date": "2026-09-08",
+  "due_date": "2026-10-08",
+  "reference": "R-91",
+  "origin": null,
+  "project": 2,
+  "cost_center": null,
+  "warehouse": null,
+  "wht": 4,
+  "notes": "",
+  "subtotal": "138000.00",
+  "discount_total": "0.00",
+  "vat_total": "19320.00",
+  "wht_total": "1380.00",
+  "total": "155940.00"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 6,
+ "fields": {
+  "state": "posted",
+  "move": 22,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.884Z",
+  "updated_at": "2026-10-05T22:13:20.892Z",
+  "kind": "purchase",
+  "number": "BILL-00006",
+  "partner": 4,
+  "date": "2026-08-12",
+  "due_date": "2026-09-11",
+  "reference": "F-5521",
+  "origin": null,
+  "project": 1,
+  "cost_center": null,
+  "warehouse": null,
+  "wht": null,
+  "notes": "",
+  "subtotal": "82500.00",
+  "discount_total": "0.00",
+  "vat_total": "0.00",
+  "wht_total": "0.00",
+  "total": "82500.00"
+ }
+},
+{
+ "model": "commerce.invoice",
+ "pk": 7,
+ "fields": {
+  "state": "posted",
+  "move": 25,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.905Z",
+  "updated_at": "2026-10-05T22:13:20.917Z",
+  "kind": "sale",
+  "number": "INV-00001",
+  "partner": 2,
+  "date": "2026-09-21",
+  "due_date": "2026-10-21",
+  "reference": "",
+  "origin": null,
+  "project": 2,
+  "cost_center": null,
+  "warehouse": null,
+  "wht": null,
+  "notes": "",
+  "subtotal": "54000.00",
+  "discount_total": "0.00",
+  "vat_total": "7560.00",
+  "wht_total": "0.00",
+  "total": "61560.00"
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 1,
+ "fields": {
+  "invoice": 1,
+  "product": 1,
+  "description": "حديد تسليح 16 مم",
+  "account": null,
+  "qty": "60.000",
+  "unit_price": "38500.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 2,
+ "fields": {
+  "invoice": 1,
+  "product": 2,
+  "description": "أسمنت بورتلاندي",
+  "account": null,
+  "qty": "200.000",
+  "unit_price": "3100.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 3,
+ "fields": {
+  "invoice": 2,
+  "product": null,
+  "description": "رمل وزلط مورد للموقع",
+  "account": 83,
+  "qty": "1.000",
+  "unit_price": "185000.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 4,
+ "fields": {
+  "invoice": 3,
+  "product": null,
+  "description": "سن وزلط وأسفلت لطبقة الأساس",
+  "account": 83,
+  "qty": "1.000",
+  "unit_price": "420000.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 5,
+ "fields": {
+  "invoice": 4,
+  "product": null,
+  "description": "إيجار لودر وحفار شهر كامل",
+  "account": 86,
+  "qty": "1.000",
+  "unit_price": "96000.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 6,
+ "fields": {
+  "invoice": 5,
+  "product": null,
+  "description": "إيجار هراس وجريدر",
+  "account": 86,
+  "qty": "1.000",
+  "unit_price": "138000.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 7,
+ "fields": {
+  "invoice": 6,
+  "product": null,
+  "description": "سولار للمعدات - موقع التجمع",
+  "account": 87,
+  "qty": "6000.000",
+  "unit_price": "13.7500",
+  "discount_pct": "0.00",
+  "vat": null,
+  "project": null
+ }
+},
+{
+ "model": "commerce.invoiceline",
+ "pk": 8,
+ "fields": {
+  "invoice": 7,
+  "product": 3,
+  "description": "تأجير لودر بالسائق",
+  "account": null,
+  "qty": "12.000",
+  "unit_price": "4500.0000",
+  "discount_pct": "0.00",
+  "vat": 1,
+  "project": null
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 1,
+ "fields": {
+  "state": "posted",
+  "move": 2,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.515Z",
+  "updated_at": "2026-10-05T22:13:20.534Z",
+  "kind": "receipt",
+  "number": "RV-00001",
+  "date": "2026-05-14",
+  "purpose": "advance",
+  "partner": 1,
+  "treasury": 24,
+  "counter_account": null,
+  "amount": "600000.00",
+  "invoice": null,
+  "contract": 1,
+  "certificate": null,
+  "project": 1,
+  "cost_center": null,
+  "method": "transfer",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "دفعة مقدمة 600,000 - عقد المبنى الإداري"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 2,
+ "fields": {
+  "state": "posted",
+  "move": 6,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.640Z",
+  "updated_at": "2026-10-05T22:13:20.643Z",
+  "kind": "receipt",
+  "number": "RV-00002",
+  "date": "2026-07-03",
+  "purpose": "partner",
+  "partner": 1,
+  "treasury": 24,
+  "counter_account": null,
+  "amount": "2049180.00",
+  "invoice": null,
+  "contract": 1,
+  "certificate": 1,
+  "project": 1,
+  "cost_center": null,
+  "method": "transfer",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "تحصيل المستخلص الأول"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 3,
+ "fields": {
+  "state": "posted",
+  "move": 7,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.645Z",
+  "updated_at": "2026-10-05T22:13:20.648Z",
+  "kind": "receipt",
+  "number": "RV-00003",
+  "date": "2026-08-17",
+  "purpose": "partner",
+  "partner": 1,
+  "treasury": 24,
+  "counter_account": null,
+  "amount": "1768998.00",
+  "invoice": null,
+  "contract": 1,
+  "certificate": 2,
+  "project": 1,
+  "cost_center": null,
+  "method": "cheque",
+  "cheque_no": "458812",
+  "cheque_date": null,
+  "memo": "دفعة من المستخلص الثاني"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 4,
+ "fields": {
+  "state": "posted",
+  "move": 9,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.697Z",
+  "updated_at": "2026-10-05T22:13:20.700Z",
+  "kind": "receipt",
+  "number": "RV-00004",
+  "date": "2026-09-16",
+  "purpose": "partner",
+  "partner": 2,
+  "treasury": 25,
+  "counter_account": null,
+  "amount": "726150.00",
+  "invoice": null,
+  "contract": 2,
+  "certificate": 5,
+  "project": 2,
+  "cost_center": null,
+  "method": "transfer",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "دفعة تحت الحساب"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 5,
+ "fields": {
+  "state": "posted",
+  "move": 10,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.704Z",
+  "updated_at": "2026-10-05T22:13:20.708Z",
+  "kind": "payment",
+  "number": "PV-00001",
+  "date": "2026-05-24",
+  "purpose": "advance",
+  "partner": 6,
+  "treasury": 22,
+  "counter_account": null,
+  "amount": "100000.00",
+  "invoice": null,
+  "contract": 3,
+  "certificate": null,
+  "project": 1,
+  "cost_center": null,
+  "method": "cash",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "دفعة مقدمة لمقاول النجارة"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 6,
+ "fields": {
+  "state": "posted",
+  "move": 13,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.757Z",
+  "updated_at": "2026-10-05T22:13:20.761Z",
+  "kind": "payment",
+  "number": "PV-00002",
+  "date": "2026-07-08",
+  "purpose": "partner",
+  "partner": 6,
+  "treasury": 24,
+  "counter_account": null,
+  "amount": "371960.00",
+  "invoice": null,
+  "contract": 3,
+  "certificate": 6,
+  "project": 1,
+  "cost_center": null,
+  "method": "cheque",
+  "cheque_no": "100231",
+  "cheque_date": null,
+  "memo": "سداد المستخلص الأول"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 7,
+ "fields": {
+  "state": "posted",
+  "move": 23,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.894Z",
+  "updated_at": "2026-10-05T22:13:20.897Z",
+  "kind": "payment",
+  "number": "PV-00003",
+  "date": "2026-08-17",
+  "purpose": "partner",
+  "partner": 4,
+  "treasury": 22,
+  "counter_account": null,
+  "amount": "82500.00",
+  "invoice": 6,
+  "contract": null,
+  "certificate": null,
+  "project": null,
+  "cost_center": null,
+  "method": "cash",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "سداد فاتورة السولار"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 8,
+ "fields": {
+  "state": "posted",
+  "move": 24,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.899Z",
+  "updated_at": "2026-10-05T22:13:20.902Z",
+  "kind": "payment",
+  "number": "PV-00004",
+  "date": "2026-06-28",
+  "purpose": "partner",
+  "partner": 3,
+  "treasury": 24,
+  "counter_account": null,
+  "amount": "3310900.00",
+  "invoice": 1,
+  "contract": null,
+  "certificate": null,
+  "project": null,
+  "cost_center": null,
+  "method": "transfer",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "سداد فاتورة الحديد والأسمنت"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 9,
+ "fields": {
+  "state": "posted",
+  "move": 48,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:21.009Z",
+  "updated_at": "2026-10-05T22:13:21.012Z",
+  "kind": "payment",
+  "number": "PV-00005",
+  "date": "2026-09-24",
+  "purpose": "account",
+  "partner": null,
+  "treasury": 22,
+  "counter_account": 96,
+  "amount": "6800.00",
+  "invoice": null,
+  "contract": null,
+  "certificate": null,
+  "project": null,
+  "cost_center": null,
+  "method": "cash",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "فاتورة كهرباء المكتب"
+ }
+},
+{
+ "model": "commerce.payment",
+ "pk": 10,
+ "fields": {
+  "state": "posted",
+  "move": 49,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:21.014Z",
+  "updated_at": "2026-10-05T22:13:21.017Z",
+  "kind": "payment",
+  "number": "PV-00006",
+  "date": "2026-09-28",
+  "purpose": "account",
+  "partner": null,
+  "treasury": 23,
+  "counter_account": 88,
+  "amount": "14500.00",
+  "invoice": null,
+  "contract": null,
+  "certificate": null,
+  "project": 1,
+  "cost_center": null,
+  "method": "cash",
+  "cheque_no": "",
+  "cheque_date": null,
+  "memo": "نقل ومشال مخلفات من موقع التجمع"
+ }
+},
+{
+ "model": "commerce.stockdocument",
+ "pk": 1,
+ "fields": {
+  "state": "posted",
+  "move": 16,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.811Z",
+  "updated_at": "2026-10-05T22:13:20.822Z",
+  "kind": "issue",
+  "number": "ST-00001",
+  "date": "2026-06-13",
+  "warehouse": 1,
+  "project": 1,
+  "counter_account": null,
+  "notes": "صرف للموقع"
+ }
+},
+{
+ "model": "commerce.stockdocument",
+ "pk": 2,
+ "fields": {
+  "state": "posted",
+  "move": 17,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:20.825Z",
+  "updated_at": "2026-10-05T22:13:20.833Z",
+  "kind": "issue",
+  "number": "ST-00002",
+  "date": "2026-09-06",
+  "warehouse": 1,
+  "project": 1,
+  "counter_account": null,
+  "notes": "صرف دفعة ثانية"
+ }
+},
+{
+ "model": "commerce.stockdocumentline",
+ "pk": 1,
+ "fields": {
+  "document": 1,
+  "product": 1,
+  "qty": "45.000",
+  "unit_cost": "0.0000"
+ }
+},
+{
+ "model": "commerce.stockdocumentline",
+ "pk": 2,
+ "fields": {
+  "document": 1,
+  "product": 2,
+  "qty": "150.000",
+  "unit_cost": "0.0000"
+ }
+},
+{
+ "model": "commerce.stockdocumentline",
+ "pk": 3,
+ "fields": {
+  "document": 2,
+  "product": 1,
+  "qty": "12.000",
+  "unit_cost": "0.0000"
+ }
+},
+{
+ "model": "commerce.stockdocumentline",
+ "pk": 4,
+ "fields": {
+  "document": 2,
+  "product": 2,
+  "qty": "40.000",
+  "unit_cost": "0.0000"
+ }
+},
+{
+ "model": "contracting.project",
+ "pk": 1,
+ "fields": {
+  "code": "P001",
+  "name": "مبنى إداري - التجمع الخامس",
+  "customer": 1,
+  "location": "التجمع الخامس - القاهرة الجديدة",
+  "manager": "م. أحمد سامي",
+  "budget": "7500000.00",
+  "start_date": "2026-05-09",
+  "end_date": null,
+  "status": "active",
+  "cost_center": 2,
+  "notes": ""
+ }
+},
+{
+ "model": "contracting.project",
+ "pk": 2,
+ "fields": {
+  "code": "P002",
+  "name": "رصف طرق داخلية - العاشر من رمضان",
+  "customer": 2,
+  "location": "العاشر من رمضان",
+  "manager": "م. محمود فتحي",
+  "budget": "2600000.00",
+  "start_date": "2026-07-08",
+  "end_date": null,
+  "status": "active",
+  "cost_center": 3,
+  "notes": ""
+ }
+},
+{
+ "model": "contracting.contract",
+ "pk": 1,
+ "fields": {
+  "kind": "client",
+  "number": "CC-00001",
+  "title": "تنفيذ الأعمال الإنشائية للمبنى الإداري",
+  "project": 1,
+  "partner": 1,
+  "date": "2026-05-09",
+  "start_date": "2026-05-09",
+  "end_date": null,
+  "retention_pct": "5.000",
+  "advance_amount": "600000.00",
+  "advance_recovery_pct": "10.000",
+  "vat": 1,
+  "wht": 4,
+  "social_ins_pct": "0.000",
+  "vat_on_net": false,
+  "status": "active",
+  "payment_terms": "مستخلصات شهرية - السداد خلال 30 يوماً من الاعتماد",
+  "notes": ""
+ }
+},
+{
+ "model": "contracting.contract",
+ "pk": 2,
+ "fields": {
+  "kind": "client",
+  "number": "CC-00002",
+  "title": "رصف وتطوير الطرق الداخلية",
+  "project": 2,
+  "partner": 2,
+  "date": "2026-07-08",
+  "start_date": null,
+  "end_date": null,
+  "retention_pct": "10.000",
+  "advance_amount": "0.00",
+  "advance_recovery_pct": "0.000",
+  "vat": 1,
+  "wht": 4,
+  "social_ins_pct": "0.000",
+  "vat_on_net": false,
+  "status": "active",
+  "payment_terms": "",
+  "notes": ""
+ }
+},
+{
+ "model": "contracting.contract",
+ "pk": 3,
+ "fields": {
+  "kind": "sub",
+  "number": "SC-00001",
+  "title": "أعمال النجارة والحدادة المسلحة (مصنعية)",
+  "project": 1,
+  "partner": 6,
+  "date": "2026-05-19",
+  "start_date": null,
+  "end_date": null,
+  "retention_pct": "5.000",
+  "advance_amount": "100000.00",
+  "advance_recovery_pct": "20.000",
+  "vat": null,
+  "wht": 4,
+  "social_ins_pct": "2.000",
+  "vat_on_net": false,
+  "status": "active",
+  "payment_terms": "",
+  "notes": ""
+ }
+},
+{
+ "model": "contracting.contract",
+ "pk": 4,
+ "fields": {
+  "kind": "sub",
+  "number": "SC-00002",
+  "title": "التمديدات الكهربائية للمبنى",
+  "project": 1,
+  "partner": 7,
+  "date": "2026-08-07",
+  "start_date": null,
+  "end_date": null,
+  "retention_pct": "5.000",
+  "advance_amount": "0.00",
+  "advance_recovery_pct": "0.000",
+  "vat": 1,
+  "wht": 4,
+  "social_ins_pct": "0.000",
+  "vat_on_net": false,
+  "status": "active",
+  "payment_terms": "",
+  "notes": ""
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 1,
+ "fields": {
+  "contract": 1,
+  "code": "1/1",
+  "description": "أعمال حفر وردم للأساسات",
+  "unit": "م3",
+  "quantity": "4200.000",
+  "unit_price": "85.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 2,
+ "fields": {
+  "contract": 1,
+  "code": "1/2",
+  "description": "خرسانة عادية للأساسات",
+  "unit": "م3",
+  "quantity": "380.000",
+  "unit_price": "2100.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 3,
+ "fields": {
+  "contract": 1,
+  "code": "1/3",
+  "description": "خرسانة مسلحة للأساسات والأعمدة والأسقف",
+  "unit": "م3",
+  "quantity": "1650.000",
+  "unit_price": "3900.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 4,
+ "fields": {
+  "contract": 1,
+  "code": "1/4",
+  "description": "مباني طوب طفلي 25 سم",
+  "unit": "م3",
+  "quantity": "1100.000",
+  "unit_price": "1450.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 5,
+ "fields": {
+  "contract": 1,
+  "code": "1/5",
+  "description": "أعمال عزل الأساسات",
+  "unit": "م2",
+  "quantity": "2400.000",
+  "unit_price": "160.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 6,
+ "fields": {
+  "contract": 1,
+  "code": "1/6",
+  "description": "لياسة داخلية وخارجية",
+  "unit": "م2",
+  "quantity": "9800.000",
+  "unit_price": "120.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 7,
+ "fields": {
+  "contract": 2,
+  "code": "1",
+  "description": "أعمال تسوية وتجهيز الطبقات",
+  "unit": "م2",
+  "quantity": "18000.000",
+  "unit_price": "35.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 8,
+ "fields": {
+  "contract": 2,
+  "code": "2",
+  "description": "طبقة أساس مدكوك",
+  "unit": "م3",
+  "quantity": "5400.000",
+  "unit_price": "260.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 9,
+ "fields": {
+  "contract": 2,
+  "code": "3",
+  "description": "طبقة رابطة أسفلتية 6 سم",
+  "unit": "م2",
+  "quantity": "18000.000",
+  "unit_price": "115.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 10,
+ "fields": {
+  "contract": 2,
+  "code": "4",
+  "description": "بردورات خرسانية",
+  "unit": "م.ط",
+  "quantity": "3600.000",
+  "unit_price": "180.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 11,
+ "fields": {
+  "contract": 3,
+  "code": "N1",
+  "description": "نجارة وحدادة مسلحة للأساسات",
+  "unit": "م3",
+  "quantity": "600.000",
+  "unit_price": "650.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 12,
+ "fields": {
+  "contract": 3,
+  "code": "N2",
+  "description": "نجارة وحدادة أعمدة وأسقف",
+  "unit": "م3",
+  "quantity": "1050.000",
+  "unit_price": "820.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 13,
+ "fields": {
+  "contract": 4,
+  "code": "E1",
+  "description": "تمديد مواسير ومخارج إنارة",
+  "unit": "نقطة",
+  "quantity": "1800.000",
+  "unit_price": "220.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.boqitem",
+ "pk": 14,
+ "fields": {
+  "contract": 4,
+  "code": "E2",
+  "description": "لوحات توزيع فرعية",
+  "unit": "عدد",
+  "quantity": "24.000",
+  "unit_price": "6500.0000",
+  "is_variation": false
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 1,
+ "fields": {
+  "state": "posted",
+  "move": 3,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.538Z",
+  "updated_at": "2026-10-05T22:13:20.571Z",
+  "contract": 1,
+  "seq": 1,
+  "number": "CIP-00001",
+  "date": "2026-06-18",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "2091000.00",
+  "vat_amount": "292740.00",
+  "retention_amount": "104550.00",
+  "advance_recovery": "209100.00",
+  "wht_amount": "20910.00",
+  "social_ins_amount": "0.00",
+  "other_deductions": "0.00",
+  "net_amount": "2049180.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 2,
+ "fields": {
+  "state": "posted",
+  "move": 4,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.573Z",
+  "updated_at": "2026-10-05T22:13:20.604Z",
+  "contract": 1,
+  "seq": 2,
+  "number": "CIP-00002",
+  "date": "2026-07-23",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "3008500.00",
+  "vat_amount": "421190.00",
+  "retention_amount": "150425.00",
+  "advance_recovery": "300850.00",
+  "wht_amount": "30085.00",
+  "social_ins_amount": "0.00",
+  "other_deductions": "0.00",
+  "net_amount": "2948330.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 3,
+ "fields": {
+  "state": "posted",
+  "move": 5,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.606Z",
+  "updated_at": "2026-10-05T22:13:20.638Z",
+  "contract": 1,
+  "seq": 3,
+  "number": "CIP-00003",
+  "date": "2026-08-27",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "2635000.00",
+  "vat_amount": "368900.00",
+  "retention_amount": "131750.00",
+  "advance_recovery": "90050.00",
+  "wht_amount": "26350.00",
+  "social_ins_amount": "0.00",
+  "other_deductions": "15000.00",
+  "net_amount": "2740750.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 4,
+ "fields": {
+  "state": "draft",
+  "move": null,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.650Z",
+  "updated_at": "2026-10-05T22:13:20.665Z",
+  "contract": 1,
+  "seq": 4,
+  "number": "CIP-00004",
+  "date": "2026-10-01",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "633000.00",
+  "vat_amount": "88620.00",
+  "retention_amount": "31650.00",
+  "advance_recovery": "0.00",
+  "wht_amount": "6330.00",
+  "social_ins_amount": "0.00",
+  "other_deductions": "0.00",
+  "net_amount": "683640.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 5,
+ "fields": {
+  "state": "posted",
+  "move": 8,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.669Z",
+  "updated_at": "2026-10-05T22:13:20.695Z",
+  "contract": 2,
+  "seq": 1,
+  "number": "CIP-00005",
+  "date": "2026-08-22",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "1410000.00",
+  "vat_amount": "197400.00",
+  "retention_amount": "141000.00",
+  "advance_recovery": "0.00",
+  "wht_amount": "14100.00",
+  "social_ins_amount": "0.00",
+  "other_deductions": "0.00",
+  "net_amount": "1452300.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 6,
+ "fields": {
+  "state": "posted",
+  "move": 11,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.710Z",
+  "updated_at": "2026-10-05T22:13:20.732Z",
+  "contract": 3,
+  "seq": 1,
+  "number": "SIP-00001",
+  "date": "2026-06-28",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "513000.00",
+  "vat_amount": "0.00",
+  "retention_amount": "25650.00",
+  "advance_recovery": "100000.00",
+  "wht_amount": "5130.00",
+  "social_ins_amount": "10260.00",
+  "other_deductions": "0.00",
+  "net_amount": "371960.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 7,
+ "fields": {
+  "state": "posted",
+  "move": 12,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.734Z",
+  "updated_at": "2026-10-05T22:13:20.755Z",
+  "contract": 3,
+  "seq": 2,
+  "number": "SIP-00002",
+  "date": "2026-08-07",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "410000.00",
+  "vat_amount": "0.00",
+  "retention_amount": "20500.00",
+  "advance_recovery": "0.00",
+  "wht_amount": "4100.00",
+  "social_ins_amount": "8200.00",
+  "other_deductions": "0.00",
+  "net_amount": "377200.00"
+ }
+},
+{
+ "model": "contracting.certificate",
+ "pk": 8,
+ "fields": {
+  "state": "posted",
+  "move": 14,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:20.764Z",
+  "updated_at": "2026-10-05T22:13:20.786Z",
+  "contract": 4,
+  "seq": 1,
+  "number": "SIP-00003",
+  "date": "2026-09-11",
+  "period_from": null,
+  "period_to": null,
+  "is_final": false,
+  "auto_deductions": true,
+  "notes": "",
+  "gross": "198000.00",
+  "vat_amount": "27720.00",
+  "retention_amount": "9900.00",
+  "advance_recovery": "0.00",
+  "wht_amount": "1980.00",
+  "social_ins_amount": "0.00",
+  "other_deductions": "0.00",
+  "net_amount": "213840.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 1,
+ "fields": {
+  "certificate": 1,
+  "item": 1,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "4200.000",
+  "unit_price": "85.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 2,
+ "fields": {
+  "certificate": 1,
+  "item": 2,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "380.000",
+  "unit_price": "2100.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 3,
+ "fields": {
+  "certificate": 1,
+  "item": 3,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "300.000",
+  "unit_price": "3900.0000",
+  "completion_pct": "80.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 4,
+ "fields": {
+  "certificate": 1,
+  "item": 4,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "1450.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 5,
+ "fields": {
+  "certificate": 1,
+  "item": 5,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "160.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 6,
+ "fields": {
+  "certificate": 1,
+  "item": 6,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "120.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 7,
+ "fields": {
+  "certificate": 2,
+  "item": 1,
+  "prev_qty": "4200.000",
+  "prev_amount": "357000.00",
+  "current_qty": "0.000",
+  "unit_price": "85.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 8,
+ "fields": {
+  "certificate": 2,
+  "item": 2,
+  "prev_qty": "380.000",
+  "prev_amount": "798000.00",
+  "current_qty": "0.000",
+  "unit_price": "2100.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 9,
+ "fields": {
+  "certificate": 2,
+  "item": 3,
+  "prev_qty": "300.000",
+  "prev_amount": "936000.00",
+  "current_qty": "520.000",
+  "unit_price": "3900.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 10,
+ "fields": {
+  "certificate": 2,
+  "item": 4,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "250.000",
+  "unit_price": "1450.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 11,
+ "fields": {
+  "certificate": 2,
+  "item": 5,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "2400.000",
+  "unit_price": "160.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 12,
+ "fields": {
+  "certificate": 2,
+  "item": 6,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "120.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 13,
+ "fields": {
+  "certificate": 3,
+  "item": 1,
+  "prev_qty": "4200.000",
+  "prev_amount": "357000.00",
+  "current_qty": "0.000",
+  "unit_price": "85.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 14,
+ "fields": {
+  "certificate": 3,
+  "item": 2,
+  "prev_qty": "380.000",
+  "prev_amount": "798000.00",
+  "current_qty": "0.000",
+  "unit_price": "2100.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 15,
+ "fields": {
+  "certificate": 3,
+  "item": 3,
+  "prev_qty": "820.000",
+  "prev_amount": "3198000.00",
+  "current_qty": "450.000",
+  "unit_price": "3900.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 16,
+ "fields": {
+  "certificate": 3,
+  "item": 4,
+  "prev_qty": "250.000",
+  "prev_amount": "362500.00",
+  "current_qty": "400.000",
+  "unit_price": "1450.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 17,
+ "fields": {
+  "certificate": 3,
+  "item": 5,
+  "prev_qty": "2400.000",
+  "prev_amount": "384000.00",
+  "current_qty": "0.000",
+  "unit_price": "160.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 18,
+ "fields": {
+  "certificate": 3,
+  "item": 6,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "2500.000",
+  "unit_price": "120.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 19,
+ "fields": {
+  "certificate": 4,
+  "item": 1,
+  "prev_qty": "4200.000",
+  "prev_amount": "357000.00",
+  "current_qty": "0.000",
+  "unit_price": "85.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 20,
+ "fields": {
+  "certificate": 4,
+  "item": 2,
+  "prev_qty": "380.000",
+  "prev_amount": "798000.00",
+  "current_qty": "0.000",
+  "unit_price": "2100.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 21,
+ "fields": {
+  "certificate": 4,
+  "item": 3,
+  "prev_qty": "1270.000",
+  "prev_amount": "4953000.00",
+  "current_qty": "0.000",
+  "unit_price": "3900.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 22,
+ "fields": {
+  "certificate": 4,
+  "item": 4,
+  "prev_qty": "650.000",
+  "prev_amount": "942500.00",
+  "current_qty": "180.000",
+  "unit_price": "1450.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 23,
+ "fields": {
+  "certificate": 4,
+  "item": 5,
+  "prev_qty": "2400.000",
+  "prev_amount": "384000.00",
+  "current_qty": "0.000",
+  "unit_price": "160.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 24,
+ "fields": {
+  "certificate": 4,
+  "item": 6,
+  "prev_qty": "2500.000",
+  "prev_amount": "300000.00",
+  "current_qty": "3100.000",
+  "unit_price": "120.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 25,
+ "fields": {
+  "certificate": 5,
+  "item": 7,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "18000.000",
+  "unit_price": "35.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 26,
+ "fields": {
+  "certificate": 5,
+  "item": 8,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "3000.000",
+  "unit_price": "260.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 27,
+ "fields": {
+  "certificate": 5,
+  "item": 9,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "115.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 28,
+ "fields": {
+  "certificate": 5,
+  "item": 10,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "180.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 29,
+ "fields": {
+  "certificate": 6,
+  "item": 11,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "600.000",
+  "unit_price": "650.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 30,
+ "fields": {
+  "certificate": 6,
+  "item": 12,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "150.000",
+  "unit_price": "820.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 31,
+ "fields": {
+  "certificate": 7,
+  "item": 11,
+  "prev_qty": "600.000",
+  "prev_amount": "390000.00",
+  "current_qty": "0.000",
+  "unit_price": "650.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 32,
+ "fields": {
+  "certificate": 7,
+  "item": 12,
+  "prev_qty": "150.000",
+  "prev_amount": "123000.00",
+  "current_qty": "500.000",
+  "unit_price": "820.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 33,
+ "fields": {
+  "certificate": 8,
+  "item": 13,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "900.000",
+  "unit_price": "220.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificateline",
+ "pk": 34,
+ "fields": {
+  "certificate": 8,
+  "item": 14,
+  "prev_qty": "0.000",
+  "prev_amount": "0.00",
+  "current_qty": "0.000",
+  "unit_price": "6500.0000",
+  "completion_pct": "100.00"
+ }
+},
+{
+ "model": "contracting.certificatededuction",
+ "pk": 1,
+ "fields": {
+  "certificate": 3,
+  "description": "غرامة تأخير توريد",
+  "account": 104,
+  "amount": "15000.00"
+ }
+},
+{
+ "model": "contracting.retentionrelease",
+ "pk": 1,
+ "fields": {
+  "state": "draft",
+  "move": null,
+  "created_by": null,
+  "created_at": "2026-10-05T22:13:21.086Z",
+  "updated_at": "2026-10-05T22:13:21.086Z",
+  "contract": 3,
+  "number": "RR-00001",
+  "date": "2026-10-03",
+  "amount": "5000.00",
+  "notes": "رد جزئي محتجزات (تجربة)"
+ }
+},
+{
+ "model": "assets.assetcategory",
+ "pk": 1,
+ "fields": {
+  "name": "معدات ثقيلة",
+  "asset_account": 6,
+  "accum_account": 13,
+  "expense_account": 109,
+  "life_months": 96
+ }
+},
+{
+ "model": "assets.assetcategory",
+ "pk": 2,
+ "fields": {
+  "name": "سيارات",
+  "asset_account": 7,
+  "accum_account": 14,
+  "expense_account": 109,
+  "life_months": 60
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 1,
+ "fields": {
+  "code": "FA0001",
+  "name": "لودر 950",
+  "category": 1,
+  "purchase_date": "2026-05-01",
+  "start_date": "2026-05-01",
+  "cost": "2400000.00",
+  "salvage": "240000.00",
+  "life_months": 96,
+  "opening_depreciation": "0.00",
+  "project": 1,
+  "cost_center": null,
+  "serial": "",
+  "location": "",
+  "status": "running"
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 2,
+ "fields": {
+  "code": "FA0002",
+  "name": "سيارة نصف نقل",
+  "category": 2,
+  "purchase_date": "2026-05-01",
+  "start_date": "2026-05-01",
+  "cost": "650000.00",
+  "salvage": "50000.00",
+  "life_months": 60,
+  "opening_depreciation": "0.00",
+  "project": null,
+  "cost_center": 1,
+  "serial": "",
+  "location": "",
+  "status": "running"
+ }
+},
+{
+ "model": "assets.depreciationrun",
+ "pk": 1,
+ "fields": {
+  "state": "posted",
+  "move": 51,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.025Z",
+  "updated_at": "2026-10-05T22:13:21.039Z",
+  "number": "DEP-00001",
+  "date": "2026-06-30",
+  "notes": ""
+ }
+},
+{
+ "model": "assets.depreciationrun",
+ "pk": 2,
+ "fields": {
+  "state": "posted",
+  "move": 52,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.043Z",
+  "updated_at": "2026-10-05T22:13:21.054Z",
+  "number": "DEP-00002",
+  "date": "2026-07-31",
+  "notes": ""
+ }
+},
+{
+ "model": "assets.depreciationrun",
+ "pk": 3,
+ "fields": {
+  "state": "posted",
+  "move": 53,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.057Z",
+  "updated_at": "2026-10-05T22:13:21.068Z",
+  "number": "DEP-00003",
+  "date": "2026-08-31",
+  "notes": ""
+ }
+},
+{
+ "model": "assets.depreciationrun",
+ "pk": 4,
+ "fields": {
+  "state": "posted",
+  "move": 54,
+  "created_by": [
+   "admin"
+  ],
+  "created_at": "2026-10-05T22:13:21.071Z",
+  "updated_at": "2026-10-05T22:13:21.082Z",
+  "number": "DEP-00004",
+  "date": "2026-09-30",
+  "notes": ""
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 1,
+ "fields": {
+  "run": 1,
+  "asset": 1,
+  "amount": "22500.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 2,
+ "fields": {
+  "run": 1,
+  "asset": 2,
+  "amount": "10000.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 3,
+ "fields": {
+  "run": 2,
+  "asset": 1,
+  "amount": "22500.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 4,
+ "fields": {
+  "run": 2,
+  "asset": 2,
+  "amount": "10000.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 5,
+ "fields": {
+  "run": 3,
+  "asset": 1,
+  "amount": "22500.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 6,
+ "fields": {
+  "run": 3,
+  "asset": 2,
+  "amount": "10000.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 7,
+ "fields": {
+  "run": 4,
+  "asset": 1,
+  "amount": "22500.00"
+ }
+},
+{
+ "model": "assets.depreciationline",
+ "pk": 8,
+ "fields": {
+  "run": 4,
+  "asset": 2,
+  "amount": "10000.00"
+ }
+}
+]
