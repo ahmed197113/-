@@ -4,3 +4,4 @@ erp/db.sqlite3
 erp/staticfiles/
 .venv/
 erp/deploy/*.zip
+wp-plugin/*.zip

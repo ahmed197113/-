@@ -64,6 +64,13 @@ final class ERP_Router
             return new WP_Error('rest_forbidden', 'غير مسموح', ['status' => 401]);
         });
         add_filter('xmlrpc_enabled', '__return_false');
+        add_filter('xmlrpc_methods', '__return_empty_array');
+        add_action('init', function () {
+            if (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) {
+                status_header(403);
+                exit;
+            }
+        }, 0);
         add_filter('pre_option_users_can_register', '__return_zero');
         add_filter('show_admin_bar', '__return_false');
         add_filter('login_redirect', function ($to, $requested, $user) {
