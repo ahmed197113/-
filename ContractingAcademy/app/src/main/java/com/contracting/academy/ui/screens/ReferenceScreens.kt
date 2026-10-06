@@ -119,10 +119,10 @@ fun GlossaryScreen() {
 }
 
 @Composable
-fun SourcesScreen() {
+fun SourcesScreen(nav: Nav) {
     val sources = App.content.sources.values.toList()
     val groups = sources.groupBy { it.type.ifBlank { "أخرى" } }
-    Scaffold(topBar = { AppBar("المصادر والمراجع المعتمدة") }) { pad ->
+    Scaffold(topBar = { AppBar("المصادر والمراجع المعتمدة", onBack = { nav.back() }) }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {

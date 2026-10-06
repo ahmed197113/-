@@ -44,6 +44,21 @@ class ContentRepository(context: Context) {
         }.associateBy { it.id }
     }
 
+    /** ترتيب فئات المكتبة. */
+    val categories: List<String> get() = tracks.map { it.category }.distinct()
+
+    /** أسئلة لدرس، أو بنك أسئلة عشوائي: "bank:all" أو "bank:<trackId>". */
+    fun quizFor(id: String): Pair<String, List<Question>> {
+        if (!id.startsWith("bank:")) {
+            val l = lessons[id] ?: return "" to emptyList()
+            return "اختبار: ${l.title}" to l.quiz
+        }
+        val key = id.removePrefix("bank:")
+        val t = track(key)
+        val pool = (if (t != null) lessonsOf(t) else orderedLessons).flatMap { it.quiz }
+        return "بنك الأسئلة: ${t?.title ?: "كل المسارات"}" to pool.shuffled().take(15)
+    }
+
     fun track(id: String) = tracks.firstOrNull { it.id == id }
 
     fun lessonsOf(track: Track) = track.units.flatMap { it.lessonIds }.mapNotNull { lessons[it] }
@@ -60,6 +75,7 @@ class ContentRepository(context: Context) {
         icon = o.optString("icon"),
         color = o.optString("color", "#1F3A5F").removePrefix("#").toLong(16) or 0xFF000000,
         comingSoon = o.optBoolean("comingSoon"),
+        category = o.optString("category"),
         units = o.optJSONArray("units").objects().map { u ->
             LessonUnit(u.getString("title"), u.optJSONArray("lessons").strings())
         },
@@ -82,6 +98,7 @@ class ContentRepository(context: Context) {
                 explanation = it.optString("explain"),
             )
         },
+        code = o.optString("code"),
         practice = o.optJSONArray("practice").objects().map {
             Practice(
                 scenario = it.getString("scenario"),

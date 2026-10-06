@@ -47,14 +47,15 @@ import com.contracting.academy.ui.theme.Success
 
 @Composable
 fun QuizScreen(id: String, nav: Nav) {
-    val lesson = App.content.lessons[id] ?: return
-    val questions = lesson.quiz
+    val quiz = androidx.compose.runtime.saveable.rememberSaveable(id) { mutableStateOf(0) }
+    val (title, questions) = androidx.compose.runtime.remember(id, quiz.value) { App.content.quizFor(id) }
+    if (questions.isEmpty()) return
     var index by rememberSaveable { mutableIntStateOf(0) }
     var chosen by rememberSaveable { mutableIntStateOf(-1) }
     var correct by rememberSaveable { mutableIntStateOf(0) }
     var finished by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(topBar = { AppBar("اختبار: ${lesson.title}", onBack = { nav.back() }) }) { pad ->
+    Scaffold(topBar = { AppBar(title, onBack = { nav.back() }) }) { pad ->
         Column(
             Modifier
                 .padding(pad)
@@ -90,7 +91,7 @@ fun QuizScreen(id: String, nav: Nav) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = {
-                    index = 0; chosen = -1; correct = 0; finished = false
+                    index = 0; chosen = -1; correct = 0; finished = false; quiz.value++
                 }, modifier = Modifier.fillMaxWidth()) { Text("إعادة الاختبار") }
                 OutlinedButton(onClick = { nav.back() }, modifier = Modifier.fillMaxWidth()) { Text("العودة للدرس") }
             }
@@ -158,7 +159,7 @@ fun QuizScreen(id: String, nav: Nav) {
                         index++; chosen = -1
                     } else {
                         finished = true
-                        App.progress.saveScore(id, correct, questions.size)
+                        if (!id.startsWith("bank:")) App.progress.saveScore(id, correct, questions.size)
                     }
                 }, modifier = Modifier.fillMaxWidth()) {
                     Text(if (index + 1 < questions.size) "السؤال التالي" else "عرض النتيجة")

@@ -21,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Cancel
@@ -210,6 +212,8 @@ fun BlockView(b: Block, onOpenMap: () -> Unit = {}) {
             }
         }
         "flow" -> FlowView(b)
+        "scene" -> SceneView(b)
+        "bars" -> BarsView(b)
         "compare" -> CompareView(b)
         "formula" -> Card(
             colors = CardDefaults.cardColors(containerColor = cs.primary),
@@ -509,6 +513,115 @@ private fun TableView(b: Block) {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+
+/**
+ * «صورة العملية»: طرفان وما يتحرك بينهما.
+ * headers = ["🏢 الشركة", "🏦 البنك"]، rows = [["→", "💵", "نقدية 100,000"], ...]
+ */
+@Composable
+private fun SceneView(b: Block) {
+    val cs = MaterialTheme.colorScheme
+    @Composable
+    fun Party(label: String, color: Color, modifier: Modifier) {
+        val emoji = label.substringBefore(' ')
+        val name = label.substringAfter(' ', "")
+        Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(color.copy(alpha = 0.15f))
+                    .border(2.dp, color, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Text(emoji, fontSize = 30.sp) }
+            Spacer(Modifier.height(4.dp))
+            Text(name, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+        }
+    }
+    Card(
+        colors = CardDefaults.cardColors(containerColor = cs.surface),
+        border = BorderStroke(1.dp, cs.outline),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text("🖼 " + b.title.ifBlank { "صورة العملية" }, style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Party(b.headers.getOrElse(0) { "" }, BranchColors[0], Modifier.width(84.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    b.rows.forEachIndexed { i, r ->
+                        val forward = r.getOrElse(0) { "→" } != "←"
+                        val c = BranchColors[(i + 2) % BranchColors.size]
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                            Text(r.getOrElse(1) { "" } + "  " + r.getOrElse(2) { "" }, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, color = c)
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                if (!forward) Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = c, modifier = Modifier.size(18.dp))
+                                Box(
+                                    Modifier
+                                        .weight(1f)
+                                        .height(3.dp)
+                                        .background(c)
+                                )
+                                if (forward) Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = c, modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                }
+                Party(b.headers.getOrElse(1) { "" }, BranchColors[1], Modifier.width(84.dp))
+            }
+            if (b.text.isNotBlank()) {
+                Spacer(Modifier.height(10.dp))
+                Text(rich(b.text), style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+/** أعمدة أفقية لمقارنة مبالغ: rows = [["الأصول", "3500000"], ...] */
+@Composable
+private fun BarsView(b: Block) {
+    val cs = MaterialTheme.colorScheme
+    val values = b.rows.map { it.getOrElse(1) { "0" }.toDoubleOrNull() ?: 0.0 }
+    val max = (values.maxOrNull() ?: 1.0).coerceAtLeast(1.0)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = cs.surface),
+        border = BorderStroke(1.dp, cs.outline),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("📊 " + b.title.ifBlank { "بالأرقام" }, style = MaterialTheme.typography.titleSmall)
+            b.rows.forEachIndexed { i, r ->
+                val c = BranchColors[(r.getOrNull(2)?.toIntOrNull() ?: i) % BranchColors.size]
+                Column {
+                    Row {
+                        Text(r.getOrElse(0) { "" }, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        Text(money(values[i]).removeSuffix(".00"), style = MaterialTheme.typography.labelLarge, color = c)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(14.dp)
+                            .clip(RoundedCornerShape(7.dp))
+                            .background(cs.surfaceVariant)
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth((values[i] / max).toFloat().coerceIn(0.02f, 1f))
+                                .height(14.dp)
+                                .clip(RoundedCornerShape(7.dp))
+                                .background(c)
+                        )
+                    }
+                }
+            }
+            if (b.text.isNotBlank()) {
+                Text(rich(b.text), style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
             }
         }
     }

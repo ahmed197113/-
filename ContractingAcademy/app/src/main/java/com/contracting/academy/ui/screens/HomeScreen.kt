@@ -3,6 +3,7 @@ package com.contracting.academy.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -209,12 +210,53 @@ fun HomeScreen(nav: Nav) {
         }
 
         item {
-            SectionTitle("مسارات التعلم", Modifier.padding(horizontal = 16.dp)) {
-                TextButton(onClick = { nav.tab("library") }) { Text("الكل") }
+            Card(
+                onClick = { nav.quiz("bank:all") },
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 16.dp)
+                    .fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+            ) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("❓", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("اختبر نفسك", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "15 سؤالاً عشوائياً من بنك ${content.orderedLessons.sumOf { it.quiz.size }} سؤال",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
             }
         }
-        items(content.tracks, key = { it.id }) { track ->
-            TrackCard(track, nav, Modifier.padding(horizontal = 16.dp, vertical = 5.dp))
+
+        item {
+            SectionTitle("خطة التعلم المقترحة", Modifier.padding(horizontal = 16.dp)) {
+                TextButton(onClick = { nav.tab("library") }) { Text("المكتبة") }
+            }
+        }
+        content.categories.forEachIndexed { ci, cat ->
+            item(key = "cat_$cat") {
+                Row(
+                    Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(28.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center,
+                    ) { Text("${ci + 1}", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge) }
+                    Spacer(Modifier.width(10.dp))
+                    Text(cat, style = MaterialTheme.typography.titleSmall)
+                }
+            }
+            items(content.tracks.filter { it.category == cat }, key = { it.id }) { track ->
+                TrackCard(track, nav, Modifier.padding(start = 54.dp, end = 16.dp, top = 4.dp, bottom = 4.dp))
+            }
         }
 
         item { SectionTitle("أدوات وحاسبات سريعة", Modifier.padding(horizontal = 16.dp)) }
@@ -271,6 +313,11 @@ fun HomeScreen(nav: Nav) {
                     nav.bookmarks()
                 }
                 QuickLink("حول التطبيق", Icons.Filled.Info, Modifier.weight(1f)) { nav.about() }
+            }
+        }
+        item {
+            Row(Modifier.padding(horizontal = 16.dp).padding(top = 10.dp)) {
+                QuickLink("المصادر والمراجع المعتمدة", Icons.Filled.Lightbulb, Modifier.weight(1f)) { nav.sources() }
             }
         }
     }

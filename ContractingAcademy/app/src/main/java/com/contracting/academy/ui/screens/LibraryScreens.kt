@@ -101,7 +101,7 @@ fun LessonRow(lesson: Lesson, number: Int?, nav: Nav, modifier: Modifier = Modif
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    (if (number != null) "$number. " else "") + lesson.title,
+                    (if (number != null) "$number. " else "") + (if (lesson.code.isNotBlank()) "${lesson.code} — " else "") + lesson.title,
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -138,12 +138,15 @@ fun LevelFilter(selected: Level?, onSelect: (Level?) -> Unit) {
 fun LibraryScreen(nav: Nav) {
     var level by rememberSaveable { mutableStateOf<Level?>(null) }
     val content = App.content
-    Scaffold(topBar = { AppBar("مكتبة الدروس") }) { pad ->
+    Scaffold(topBar = { AppBar("مكتبة الدروس (${content.orderedLessons.size} درس)") }) { pad ->
         LazyColumn(Modifier.padding(pad), contentPadding = PaddingValues(bottom = 24.dp)) {
             item { LevelFilter(level) { level = it } }
             if (level == null) {
-                items(content.tracks, key = { it.id }) { t ->
-                    TrackCard(t, nav, Modifier.padding(horizontal = 16.dp, vertical = 5.dp))
+                content.categories.forEach { cat ->
+                    item(key = "c_$cat") { SectionTitle(cat, Modifier.padding(horizontal = 16.dp)) }
+                    items(content.tracks.filter { it.category == cat }, key = { it.id }) { t ->
+                        TrackCard(t, nav, Modifier.padding(horizontal = 16.dp, vertical = 5.dp))
+                    }
                 }
             } else {
                 content.tracks.forEach { t ->

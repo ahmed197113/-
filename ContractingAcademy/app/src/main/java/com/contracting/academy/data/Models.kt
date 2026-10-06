@@ -8,6 +8,7 @@ data class Track(
     val color: Long,
     val comingSoon: Boolean,
     val units: List<LessonUnit>,
+    val category: String = "",
 )
 
 data class LessonUnit(val title: String, val lessonIds: List<String>)
@@ -23,6 +24,7 @@ data class Lesson(
     val sources: List<String>,
     val quiz: List<Question>,
     val practice: List<Practice>,
+    val code: String = "",
 ) {
     val mindMap: MapNode? get() = blocks.firstOrNull { it.type == "mindmap" }?.map
 }
@@ -40,7 +42,7 @@ enum class Level(val label: String) {
 /**
  * عنصر محتوى داخل الدرس. يحدد [type] طريقة العرض:
  * simple, text, points, steps, example, entry, table, tip, warning, expert, tree,
- * mindmap, analogy, flow, compare, mistakes, summary, formula, taccount
+ * mindmap, analogy, flow, compare, mistakes, summary, formula, taccount, scene, bars
  */
 data class Block(
     val type: String,

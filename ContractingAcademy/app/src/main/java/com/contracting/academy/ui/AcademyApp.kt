@@ -34,6 +34,7 @@ import com.contracting.academy.ui.screens.TermCardsScreen
 import com.contracting.academy.ui.screens.QuizScreen
 import com.contracting.academy.ui.screens.SearchScreen
 import com.contracting.academy.ui.screens.SourcesScreen
+import com.contracting.academy.ui.screens.StandardsScreen
 import com.contracting.academy.ui.screens.ToolScreen
 import com.contracting.academy.ui.screens.ToolsScreen
 import com.contracting.academy.ui.screens.TrackScreen
@@ -43,9 +44,9 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val tabs = listOf(
     Tab("home", "الرئيسية", Icons.Filled.Home),
     Tab("library", "الدروس", Icons.AutoMirrored.Filled.MenuBook),
+    Tab("standards", "المعايير", Icons.Filled.Verified),
     Tab("tools", "الأدوات", Icons.Filled.Calculate),
     Tab("glossary", "القاموس", Icons.Filled.Translate),
-    Tab("sources", "المصادر", Icons.Filled.Verified),
 )
 
 /** مسارات التنقل المستخدمة من الشاشات. */
@@ -61,6 +62,7 @@ class Nav(private val nav: NavHostController) {
     fun mindMap(id: String) = nav.navigate("map/$id")
     fun maps() = nav.navigate("maps")
     fun termCards() = nav.navigate("termcards")
+    fun sources() = nav.navigate("sources")
     fun tab(route: String) = nav.navigate(route) {
         popUpTo(nav.graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
@@ -106,7 +108,8 @@ fun AcademyApp() {
             composable("library") { LibraryScreen(nav) }
             composable("tools") { ToolsScreen(nav) }
             composable("glossary") { GlossaryScreen() }
-            composable("sources") { SourcesScreen() }
+            composable("sources") { SourcesScreen(nav) }
+            composable("standards") { StandardsScreen(nav) }
             composable("search") { SearchScreen(nav) }
             composable("bookmarks") { BookmarksScreen(nav) }
             composable("about") { AboutScreen(nav) }

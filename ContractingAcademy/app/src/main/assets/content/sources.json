@@ -278,5 +278,53 @@
   "type": "كتب ومراجع مهنية",
   "desc": "المرجع الأكاديمي الأشهر لأساسيات المحاسبة المالية وفق IFRS.",
   "url": "https://www.wiley.com"
+ },
+ {
+  "id": "ifrs_list",
+  "title": "قائمة المعايير الدولية الصادرة (IFRS و IAS)",
+  "issuer": "مؤسسة المعايير الدولية IFRS Foundation",
+  "type": "المعايير الدولية (IFRS)",
+  "desc": "النصوص الرسمية لجميع المعايير والتفسيرات وتواريخ سريانها والتعديلات.",
+  "url": "https://www.ifrs.org/issued-standards/list-of-standards/"
+ },
+ {
+  "id": "issb",
+  "title": "معايير الاستدامة IFRS S1 و IFRS S2",
+  "issuer": "مجلس معايير الاستدامة الدولية ISSB",
+  "type": "المعايير الدولية (IFRS)",
+  "desc": "الإفصاحات العامة عن المعلومات المالية المتعلقة بالاستدامة والإفصاحات المتعلقة بالمناخ.",
+  "url": "https://www.ifrs.org/groups/international-sustainability-standards-board/"
+ },
+ {
+  "id": "isa",
+  "title": "معايير المراجعة الدولية (ISA)",
+  "issuer": "مجلس معايير المراجعة والتأكيد الدولي IAASB",
+  "type": "المعايير الدولية (IFRS)",
+  "desc": "المعايير التي تحكم أعمال مراجعة القوائم المالية، وهي معتمدة في المملكة من SOCPA.",
+  "url": "https://www.iaasb.org"
+ },
+ {
+  "id": "ipsas",
+  "title": "معايير المحاسبة الدولية للقطاع العام (IPSAS)",
+  "issuer": "مجلس IPSASB",
+  "type": "المعايير الدولية (IFRS)",
+  "desc": "المعايير المحاسبية للجهات الحكومية على أساس الاستحقاق.",
+  "url": "https://www.ipsasb.org"
+ },
+ {
+  "id": "horngren",
+  "title": "Cost Accounting: A Managerial Emphasis",
+  "issuer": "Horngren, Datar & Rajan — Pearson",
+  "type": "كتب ومراجع مهنية",
+  "desc": "المرجع الجامعي الأشهر في محاسبة التكاليف والمحاسبة الإدارية.",
+  "url": "https://www.pearson.com"
+ },
+ {
+  "id": "usali",
+  "title": "النظام الموحد لحسابات صناعة الإيواء (USALI)",
+  "issuer": "HFTP / AHLA",
+  "type": "كتب ومراجع مهنية",
+  "desc": "الدليل الدولي الموحد لتبويب حسابات وتقارير الفنادق.",
+  "url": "https://www.hftp.org"
  }
 ]
