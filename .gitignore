@@ -5,3 +5,4 @@ erp/staticfiles/
 .venv/
 erp/deploy/*.zip
 wp-plugin/*.zip
+!wp-plugin/dist/*.zip
