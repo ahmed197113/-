@@ -272,6 +272,11 @@ adb shell input tap 540 1300
 shot 76-en-ayah-sheet 8
 adb shell am force-stop $pkg
 adb shell cmd locale set-app-locales $pkg --locales ar || true
+# A force-stop cancels the app's alarms (as on a phone): open the app once so it re-arms them, as a user would.
+start .MainActivity --es tab home
+sleep 6
+adb shell input keyevent KEYCODE_HOME
+
 
 # ---- End-to-end alarms: jump the clock to just before each scheduled alarm and let it fire on its own ----
 travel() {  # $1 receiver, $2 label
