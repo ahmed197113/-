@@ -178,10 +178,19 @@ final class ERP_Reports
         $before = gmdate('Y-m-d', strtotime($date_from . ' -1 day UTC'));
         [$bd, $bc] = self::totals(null, $before, $f);
         $opening = ERP_Money::sub($bd, $bc);
+        $led = self::ledger_lines($date_from, $date_to, $f, $opening);
+        return ['account' => $account, 'opening' => $opening] + $led;
+    }
+
+    /** ledger_rows(): السطور برصيد تراكمي يبدأ من الرصيد الافتتاحي. */
+    public static function ledger_lines(string $date_from, string $date_to, array $f, string $opening): array
+    {
         $args = [];
         $where = self::where($date_from, $date_to, $f, $args);
         $lines = ERP_DB::rows('SELECT l.*, e.number entry_number, e.date entry_date, e.memo entry_memo, e.source entry_source, '
-            . 'e.source_url entry_source_url FROM ' . self::from() . " WHERE {$where} ORDER BY e.date, l.entry_id, l.id", $args);
+            . 'e.source_url entry_source_url, a.code account_code, a.name account_name, p.name partner_name FROM ' . self::from()
+            . ' LEFT JOIN ' . ERP_DB::t('partner') . ' p ON p.id = l.partner_id'
+            . " WHERE {$where} ORDER BY e.date, l.entry_id, l.id", $args);
         $rows = [];
         $bal = $opening;
         $td = '0';
@@ -192,8 +201,16 @@ final class ERP_Reports
             $tc = ERP_Money::add($tc, $ln['credit']);
             $rows[] = ['line' => $ln, 'balance' => $bal];
         }
-        return ['account' => $account, 'rows' => $rows, 'opening' => $opening, 'closing' => $bal, 'total_debit' => $td,
-            'total_credit' => $tc];
+        return ['rows' => $rows, 'closing' => $bal, 'total_debit' => $td, 'total_credit' => $tc];
+    }
+
+    /** مجاميع كل حساب (كود، اسم، مدين، دائن) — ملخص كشف الجهة. */
+    public static function by_account(?string $date_from, ?string $date_to, array $f): array
+    {
+        $args = [];
+        $where = self::where($date_from, $date_to, $f, $args);
+        return ERP_DB::rows('SELECT a.code, a.name, SUM(l.debit) d, SUM(l.credit) c FROM ' . self::from()
+            . " WHERE {$where} GROUP BY a.code, a.name ORDER BY a.code", $args);
     }
 
     /** period_from_request(): بداية السنة المالية الافتراضية حتى اليوم. */

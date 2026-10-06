@@ -102,10 +102,24 @@ final class ERP_DB
         return $args ? self::wpdb()->prepare($sql, $args) : $sql;
     }
 
+    /** ينفّذ دالة wpdb مع كتم طباعة أخطاء SQL للمستخدم (تُسجَّل داخلياً في check()). */
+    private static function run(callable $fn)
+    {
+        $db = self::wpdb();
+        $prev = $db->suppress_errors(true);
+        try {
+            return $fn($db);
+        } finally {
+            $db->suppress_errors($prev);
+        }
+    }
+
     public static function query(string $sql, array $args = [])
     {
         $q = self::sql($sql, $args);
-        $r = self::wpdb()->query($q);
+        $r = self::run(function ($db) use ($q) {
+            return $db->query($q);
+        });
         self::check($q);
         return $r;
     }
@@ -113,7 +127,9 @@ final class ERP_DB
     public static function rows(string $sql, array $args = []): array
     {
         $q = self::sql($sql, $args);
-        $r = self::wpdb()->get_results($q, ARRAY_A);
+        $r = self::run(function ($db) use ($q) {
+            return $db->get_results($q, ARRAY_A);
+        });
         self::check($q);
         return $r ?: [];
     }
@@ -121,7 +137,9 @@ final class ERP_DB
     public static function row(string $sql, array $args = []): ?array
     {
         $q = self::sql($sql, $args);
-        $r = self::wpdb()->get_row($q, ARRAY_A);
+        $r = self::run(function ($db) use ($q) {
+            return $db->get_row($q, ARRAY_A);
+        });
         self::check($q);
         return $r ?: null;
     }
@@ -129,7 +147,9 @@ final class ERP_DB
     public static function value(string $sql, array $args = [])
     {
         $q = self::sql($sql, $args);
-        $r = self::wpdb()->get_var($q);
+        $r = self::run(function ($db) use ($q) {
+            return $db->get_var($q);
+        });
         self::check($q);
         return $r;
     }
@@ -137,7 +157,9 @@ final class ERP_DB
     public static function col(string $sql, array $args = []): array
     {
         $q = self::sql($sql, $args);
-        $r = self::wpdb()->get_col($q);
+        $r = self::run(function ($db) use ($q) {
+            return $db->get_col($q);
+        });
         self::check($q);
         return $r ?: [];
     }
@@ -210,7 +232,9 @@ final class ERP_DB
             $data = self::fill_timestamps($table, $data, true);
         }
         $values = self::prepare_values($table, $data);
-        $ok = self::wpdb()->insert(self::t($table), $values, self::formats($values));
+        $ok = self::run(function ($db) use ($table, $values) {
+            return $db->insert(self::t($table), $values, self::formats($values));
+        });
         self::check();
         if ($ok === false) {
             throw new ERP_Db_Error('تعذر الحفظ في ' . $table);
@@ -225,7 +249,9 @@ final class ERP_DB
         if (!$values) {
             return;
         }
-        $ok = self::wpdb()->update(self::t($table), $values, ['id' => $id], self::formats($values), ['%d']);
+        $ok = self::run(function ($db) use ($table, $values, $id) {
+            return $db->update(self::t($table), $values, ['id' => $id], self::formats($values), ['%d']);
+        });
         self::check();
         if ($ok === false) {
             throw new ERP_Db_Error('تعذر التعديل في ' . $table);

@@ -5,8 +5,8 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 // تنظيف جداول الاختبار السابقة (مع المفاتيح الأجنبية) قبل أن يعيد WordPress التثبيت
 (function () {
-    require __DIR__ . '/wp-tests-config.php';
-    $db = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+    $db = new mysqli(getenv('ERP_TEST_DB_HOST') ?: 'localhost', getenv('ERP_TEST_DB_USER') ?: 'wp',
+        getenv('ERP_TEST_DB_PASSWORD') ?: 'wp', getenv('ERP_TEST_DB_NAME') ?: 'wp_erp_tests');
     $db->query('SET FOREIGN_KEY_CHECKS = 0');
     $res = $db->query("SHOW TABLES LIKE 'wptests\\_%'");
     while ($row = $res->fetch_row()) {

@@ -242,7 +242,7 @@ final class ERP_UI
             $input = '<textarea class="form-control form-control-sm" rows="2" name="' . erp_a($key) . '" id="' . erp_a($id) . '">'
                 . esc_textarea((string) $value) . '</textarea>';
         } elseif ($type === 'fk' || isset($f['choices'])) {
-            $choices = $type === 'fk' ? ($opts['choices_from'] ?? []) : $f['choices'];
+            $choices = $opts['choices'] ?? ($type === 'fk' ? ($opts['choices_from'] ?? []) : $f['choices']);
             $input = '<select class="form-select form-select-sm' . ($type === 'fk' ? ' searchable' : '') . '" name="'
                 . erp_a($key) . '" id="' . erp_a($id) . '">';
             if ($type === 'fk' || !$required) {
@@ -289,12 +289,12 @@ final class ERP_UI
     }
 
     /** خيارات FK: id => نص العرض. */
-    public static function options(string $table, string $where = '1=1', array $args = [], string $label = 'name',
+    public static function options(string $table, string $where = '1=1', array $args = [], $label = 'name',
                                    string $order = 'id'): array
     {
         $out = [];
         foreach (ERP_DB::rows('SELECT * FROM ' . ERP_DB::t($table) . " WHERE {$where} ORDER BY {$order}", $args) as $r) {
-            $out[(int) $r['id']] = is_callable($label) ? $label($r) : $r[$label];
+            $out[(int) $r['id']] = $label instanceof Closure ? $label($r) : $r[$label];
         }
         return $out;
     }

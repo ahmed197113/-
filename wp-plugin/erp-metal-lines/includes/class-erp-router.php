@@ -93,67 +93,100 @@ final class ERP_Router
             auth_redirect();
             exit;
         }
+        $is_post = isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST';
+        $r = self::handle(self::path(), $is_post);
         nocache_headers();
         header('X-Frame-Options: SAMEORIGIN');
         header('X-Content-Type-Options: nosniff');
         header('Referrer-Policy: same-origin');
-        if (!current_user_can('erp_access')) {
-            self::error_page(403, 'ليس لديك صلاحية الدخول لهذا البرنامج. تواصل مع مدير النظام.');
-        }
-        $path = self::path();
-        $is_post = isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST';
-        foreach (self::routes() as [$re, $handler, $view_cap, $edit_cap]) {
-            if (!preg_match($re, $path, $m)) {
-                continue;
-            }
-            $cap = $is_post ? $edit_cap : $view_cap;
-            if (!current_user_can($cap)) {
-                self::error_page(403, 'ليس لديك صلاحية لهذه الصفحة أو العملية.');
-            }
-            if ($is_post) {
-                $nonce = isset($_POST['_erp_nonce']) ? sanitize_text_field(wp_unslash($_POST['_erp_nonce'])) : '';
-                if (!wp_verify_nonce($nonce, ERP_UI::NONCE)) {
-                    self::error_page(403, 'انتهت صلاحية الصفحة أو الطلب غير موثوق. أعد تحميل الصفحة وحاول مرة أخرى.');
-                }
-            }
-            array_shift($m);
-            try {
-                $out = call_user_func_array($handler, $m);
-                if (is_string($out)) {
-                    status_header(200);
-                    header('Content-Type: text/html; charset=utf-8');
-                    echo $out; // phpcs:ignore — القوالب تهرب كل القيم بنفسها
-                }
-            } catch (ERP_Validation_Error $e) {
-                ERP_UI::flash('danger', $e->getMessage());
-                self::back();
-            } catch (Throwable $e) {
-                ERP_Log::error(get_class($e) . ': ' . $e->getMessage(), ['path' => $path, 'trace' => $e->getTraceAsString()]);
-                self::error_page(500, 'حدث خطأ غير متوقع ولم يتم حفظ أي تغيير. تم تسجيل الخطأ لمراجعته من مدير النظام.');
-            }
+        if (isset($r['redirect'])) {
+            wp_safe_redirect($r['redirect']);
             exit;
         }
-        self::error_page(404, 'الصفحة غير موجودة.');
+        if (isset($r['download'])) {
+            header('Content-Type: ' . $r['download']['type']);
+            header('Content-Disposition: attachment; filename="' . $r['download']['name'] . '"');
+            echo $r['download']['body']; // phpcs:ignore
+            exit;
+        }
+        status_header($r['status']);
+        header('Content-Type: text/html; charset=utf-8');
+        echo $r['body']; // phpcs:ignore — القوالب تهرب كل القيم بنفسها
+        exit;
+    }
+
+    /**
+     * يعالج الطلب ويرجع الاستجابة كمصفوفة (قابل للاختبار بدون exit):
+     * ['status'=>, 'body'=>] أو ['redirect'=>] أو ['download'=>].
+     */
+    public static function handle(string $path, bool $is_post): array
+    {
+        try {
+            if (!current_user_can('erp_access')) {
+                self::error_page(403, 'ليس لديك صلاحية الدخول لهذا البرنامج. تواصل مع مدير النظام.');
+            }
+            foreach (self::routes() as [$re, $handler, $view_cap, $edit_cap]) {
+                if (!preg_match($re, $path, $m)) {
+                    continue;
+                }
+                if (!current_user_can($is_post ? $edit_cap : $view_cap)) {
+                    self::error_page(403, 'ليس لديك صلاحية لهذه الصفحة أو العملية.');
+                }
+                if ($is_post) {
+                    $nonce = isset($_POST['_erp_nonce']) ? sanitize_text_field(wp_unslash($_POST['_erp_nonce'])) : '';
+                    if (!wp_verify_nonce($nonce, ERP_UI::NONCE)) {
+                        self::error_page(403, 'انتهت صلاحية الصفحة أو الطلب غير موثوق. أعد تحميل الصفحة وحاول مرة أخرى.');
+                    }
+                }
+                array_shift($m);
+                try {
+                    $out = call_user_func_array($handler, $m);
+                } catch (ERP_Validation_Error $e) {
+                    ERP_UI::flash('danger', $e->getMessage());
+                    self::back();
+                }
+                if (is_array($out)) {
+                    return $out;
+                }
+                return ['status' => 200, 'body' => (string) $out];
+            }
+            self::error_page(404, 'الصفحة غير موجودة.');
+        } catch (ERP_Http_Response $r) {
+            return $r->response;
+        } catch (Throwable $e) {
+            ERP_Log::error(get_class($e) . ': ' . $e->getMessage(), ['path' => $path, 'trace' => $e->getTraceAsString()]);
+            return ['status' => 500, 'body' => ERP_Templates::page('error', ['title' => 'تنبيه', 'status' => 500,
+                'message' => 'حدث خطأ غير متوقع ولم يتم حفظ أي تغيير. تم تسجيل الخطأ لمراجعته من مدير النظام.'])];
+        }
+        return ['status' => 500, 'body' => ''];
     }
 
     public static function redirect(string $path): void
     {
-        wp_safe_redirect(strpos($path, 'http') === 0 ? $path : home_url($path));
-        exit;
+        throw new ERP_Http_Response(['redirect' => strpos($path, 'http') === 0 ? $path : home_url($path)]);
     }
 
     public static function back(): void
     {
         $ref = wp_get_referer();
-        wp_safe_redirect($ref ?: home_url('/'));
-        exit;
+        throw new ERP_Http_Response(['redirect' => $ref ?: home_url('/')]);
     }
 
     public static function error_page(int $status, string $message): void
     {
-        status_header($status);
-        header('Content-Type: text/html; charset=utf-8');
-        echo ERP_Templates::page('error', ['title' => 'تنبيه', 'status' => $status, 'message' => $message]); // phpcs:ignore
-        exit;
+        throw new ERP_Http_Response(['status' => $status,
+            'body' => ERP_Templates::page('error', ['title' => 'تنبيه', 'status' => $status, 'message' => $message])]);
+    }
+}
+
+/** استجابة HTTP تُرمى كاستثناء (تحويل، صفحة خطأ، تنزيل) وتعالَج في ERP_Router::handle. */
+final class ERP_Http_Response extends Exception
+{
+    public $response;
+
+    public function __construct(array $response)
+    {
+        parent::__construct('http');
+        $this->response = $response;
     }
 }
