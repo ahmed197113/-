@@ -1,0 +1,27 @@
+{# سطور القيد بتخطيط موسّع: كل سطر بطاقة من صفين بعناوين وشرح لكل خانة #}
+{% load static %}
+{% with fs=formsets.0.fs prefix=formsets.0.prefix %}
+<div class="card mb-3"><div class="card-header d-flex align-items-center flex-wrap gap-2"><span><i class="bi bi-list-ol"></i> سطور القيد</span>
+<button type="button" class="btn btn-sm btn-link ms-auto" data-bs-toggle="collapse" data-bs-target="#jl-guide"><i class="bi bi-info-circle"></i> شرح الحقول</button>
+<button type="button" class="btn btn-sm btn-outline-primary" onclick="addFormRow('{{ prefix }}')"><i class="bi bi-plus"></i> إضافة سطر</button></div>
+<div class="collapse" id="jl-guide"><div class="card-body small border-bottom jl-guide">
+<p class="mb-2"><b>كل سطر</b> يمثل طرفاً من أطراف القيد: حساب واحد بمبلغ مدين <b>أو</b> دائن (ليس الاثنين معاً). يجب أن يتساوى إجمالي المدين مع إجمالي الدائن، وأن يحتوي القيد على سطرين على الأقل.</p>
+<dl class="row mb-0">{% for field in fs.empty_form.visible_fields %}{% if field.name != 'DELETE' %}<dt class="col-sm-2">{{ field.label }}</dt><dd class="col-sm-10">{{ field.help_text }}</dd>{% endif %}{% endfor %}</dl></div></div>
+<table class="table mb-0 jl-table" id="{{ prefix }}-table">
+{{ fs.management_form }}
+{% if fs.non_form_errors %}<caption class="text-danger px-3" style="caption-side:top">{{ fs.non_form_errors }}</caption>{% endif %}
+<tbody id="{{ prefix }}-body">
+{% for form in fs.forms %}{% include "accounting/_journal_line.html" with form=form with_delete=True %}{% endfor %}
+</tbody></table>
+<template id="{{ prefix }}-empty">{% include "accounting/_journal_line.html" with form=fs.empty_form with_delete=False %}</template>
+</div>
+{% endwith %}
+<script>
+(function () {
+  function grow(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
+  function tips(root) { if (window.bootstrap) (root || document).querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { bootstrap.Tooltip.getOrCreateInstance(el); }); }
+  document.addEventListener("input", function (e) { if (e.target.classList.contains("jl-label")) grow(e.target); });
+  document.addEventListener("formset:added", function (e) { tips(e.detail.row); });
+  document.addEventListener("DOMContentLoaded", function () { document.querySelectorAll(".jl-label").forEach(grow); tips(); });
+})();
+</script>

@@ -11,7 +11,7 @@
 <div class="card"><div class="card-body">
 <div class="row mb-3"><div class="col-md-3"><b>التاريخ:</b> {{ e.date|date:"Y/m/d" }}</div><div class="col-md-3"><b>المرجع:</b> {{ e.reference|default:"-" }}</div><div class="col-md-6"><b>البيان:</b> {{ e.memo }}</div></div>
 <table class="table table-sm table-bordered"><thead><tr><th>الحساب</th><th>البيان</th><th>جهة التعامل</th><th>المشروع / مركز التكلفة</th><th class="num">مدين</th><th class="num">دائن</th></tr></thead><tbody>
-{% for l in lines %}<tr><td><a href="/reports/ledger/?account={{ l.account_id }}">{{ l.account }}</a></td><td class="small">{{ l.label }}</td><td>{{ l.partner|default:"" }}</td><td class="small">{{ l.project.name|default:"" }} {{ l.cost_center|default:"" }}</td><td class="num">{{ l.debit|money }}</td><td class="num">{{ l.credit|money }}</td></tr>{% endfor %}</tbody>
+{% for l in lines %}<tr><td><a href="/reports/ledger/?account={{ l.account_id }}">{{ l.account }}</a></td><td class="small" style="white-space:pre-line">{{ l.label }}</td><td>{{ l.partner|default:"" }}</td><td class="small">{{ l.project.name|default:"" }} {{ l.cost_center|default:"" }}</td><td class="num">{{ l.debit|money }}</td><td class="num">{{ l.credit|money }}</td></tr>{% endfor %}</tbody>
 <tfoot><tr><td colspan="4">الإجمالي {% if total_debit == total_credit %}<span class="badge text-bg-success">متزن</span>{% else %}<span class="badge text-bg-danger">غير متزن</span>{% endif %}</td><td class="num">{{ total_debit|money }}</td><td class="num">{{ total_credit|money }}</td></tr></tfoot></table>
 <div class="tafqeet">{{ total_debit|tafqeet:company }}</div>
 <div class="small text-muted mt-2">أُنشئ بواسطة {{ e.created_by|default:"النظام" }} في {{ e.created_at|date:"Y/m/d H:i" }}</div>

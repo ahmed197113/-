@@ -1,0 +1,11 @@
+<tr class="jl-row"><td><div class="jl-line"><div class="jl-num"></div><div class="row g-2 flex-grow-1">
+{% include "accounting/_jl_cell.html" with field=form.account cls="col-lg-6 col-md-12" %}
+{% include "accounting/_jl_cell.html" with field=form.debit cls="col-lg-3 col-6" %}
+{% include "accounting/_jl_cell.html" with field=form.credit cls="col-lg-3 col-6" %}
+{% include "accounting/_jl_cell.html" with field=form.label cls="col-lg-6 col-md-12" %}
+{% include "accounting/_jl_cell.html" with field=form.partner cls="col-lg-2 col-md-4" %}
+{% include "accounting/_jl_cell.html" with field=form.project cls="col-lg-2 col-md-4" %}
+{% include "accounting/_jl_cell.html" with field=form.cost_center cls="col-lg-2 col-md-4" %}
+</div><div class="jl-actions">{% for h in form.hidden_fields %}{{ h }}{% endfor %}{% if with_delete %}<span class="d-none">{{ form.DELETE }}</span>{% endif %}
+<button type="button" class="btn btn-sm btn-outline-danger" title="حذف السطر" onclick="removeFormRow(this)"><i class="bi bi-trash"></i></button>
+{% if form.non_field_errors %}<div class="text-danger small">{{ form.non_field_errors }}</div>{% endif %}</div></div></td></tr>

@@ -324,7 +324,10 @@ final class ERP_UI
             $row = ['_index' => $i, 'DELETE' => !empty($_POST["{$prefix}-{$i}-DELETE"])];
             $changed = false;
             foreach ($fields as $f) {
-                $v = isset($_POST["{$prefix}-{$i}-{$f}"]) ? trim(sanitize_text_field(wp_unslash($_POST["{$prefix}-{$i}-{$f}"]))) : '';
+                $raw = isset($_POST["{$prefix}-{$i}-{$f}"]) ? wp_unslash($_POST["{$prefix}-{$i}-{$f}"]) : '';
+                $raw = is_array($raw) ? '' : (string) $raw;
+                // البيان يحتفظ بفواصل الأسطر كما في Django (CharField مع Textarea)
+                $v = in_array($f, ['label', 'description'], true) ? trim(sanitize_textarea_field($raw)) : trim(sanitize_text_field($raw));
                 $row[$f] = $v;
                 if ($v !== '' && $v !== '0' && $v !== '0.00' && $v !== '100') {
                     $changed = true;

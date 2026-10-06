@@ -9,7 +9,7 @@
     echo ERP_UI::field_html($table, $name, $opts, $values[$name] ?? '', $errors[$name] ?? null, '', 'col-md-3'); // phpcs:ignore
 } ?>
 </div></div></div>
-<?php include __DIR__ . '/_formset.php'; ?>
+<?php include __DIR__ . '/_journal_lines.php'; ?>
 <div class="card mb-3"><div class="card-body d-flex gap-4 align-items-center"><div>إجمالي المدين: <b class="num" id="td">0.00</b></div><div>إجمالي الدائن: <b class="num" id="tc">0.00</b></div><div id="diff" class="fw-bold"></div></div></div>
 <button class="btn btn-primary"><i class="bi bi-save"></i> حفظ كمسودة</button>
 </form>

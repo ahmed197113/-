@@ -32,12 +32,13 @@ class Test_Pages extends ERP_TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['_erp_nonce' => wp_create_nonce('erp'), 'date' => '2026-05-01', 'source' => 'manual', 'reference' => '', 'memo' => 'إيداع',
             'lines-TOTAL_FORMS' => '3',
-            'lines-0-account' => (string) $this->acc('1213')['id'], 'lines-0-label' => '', 'lines-0-debit' => '1,500.50', 'lines-0-credit' => '0',
+            'lines-0-account' => (string) $this->acc('1213')['id'], 'lines-0-label' => "إيداع نقدية\nبتاريخ اليوم", 'lines-0-debit' => '1,500.50', 'lines-0-credit' => '0',
             'lines-1-account' => (string) $this->acc('1211')['id'], 'lines-1-label' => '', 'lines-1-debit' => '0', 'lines-1-credit' => '1500.50',
             'lines-2-account' => '', 'lines-2-debit' => '0', 'lines-2-credit' => '0'];
         $r = ERP_Router::handle('/journal/new/', true);
         $this->assertArrayHasKey('redirect', $r, wp_strip_all_tags($r['body'] ?? ''));
         $id = (int) ERP_DB::value('SELECT id FROM ' . ERP_DB::t('journal_entry'));
+        $this->assertSame("إيداع نقدية\nبتاريخ اليوم", ERP_DB::value('SELECT label FROM ' . ERP_DB::t('journal_line') . ' WHERE entry_id=%d ORDER BY id LIMIT 1', [$id]));
         $_POST = ['_erp_nonce' => wp_create_nonce('erp')];
         ERP_Router::handle("/journal/{$id}/post/", true);
         $this->assertMoney('1500.50', $this->balance('1213'));

@@ -144,3 +144,18 @@ tr.lvl0 td { background: #dde6f2; font-weight: 700; color: #0d1d33; }
 .smart-panel { border: 1px solid #7fc8c1; background: #f2fbfa; }
 .smart-panel .card-header { background: #dff3f1; color: #0b3b38; }
 .row > * { min-width: 0; }
+
+/* سطور القيد الموسّعة: كل سطر بطاقة من صفين بعناوين وشرح */
+.jl-table { counter-reset: jl; }
+.jl-table > tbody > tr.jl-row > td { padding: 0; border-bottom: 1px solid var(--line); }
+.jl-table > tbody > tr.jl-row:nth-child(even) > td { background: #f7f9fc; }
+.jl-line { display: flex; gap: .75rem; align-items: flex-start; padding: .75rem 1rem; }
+.jl-num { counter-increment: jl; flex: 0 0 2rem; height: 2rem; border-radius: 50%; background: #14325a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-top: 1.6rem; }
+.jl-num::before { content: counter(jl); }
+.jl-actions { flex: 0 0 auto; margin-top: 1.6rem; }
+.jl-line .form-label { margin-bottom: .2rem; }
+.jl-line .ts-control, .jl-line .form-select, .jl-line .form-control { min-height: 34px; }
+.jl-label { resize: vertical; min-height: 58px; overflow: hidden; line-height: 1.6; }
+.jl-guide dt { font-weight: 600; color: #14325a; }
+.jl-guide dd { margin-bottom: .35rem; color: #2f3e50; }
+.ts-dropdown .option { white-space: normal; }

@@ -5,15 +5,15 @@
 <form method="post" novalidate data-smart data-side="purchase">{% csrf_token %}
 {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 <div class="card mb-3"><div class="card-body"><div class="row g-2">{% for field in form.visible_fields %}{% include "generic/_field.html" with cls="col-md-3" %}{% endfor %}</div></div></div>
-{% for f in formsets %}{% include "generic/_formset.html" %}{% endfor %}
+{% include "accounting/_journal_lines.html" %}
 <div class="card mb-3"><div class="card-body d-flex gap-4 align-items-center"><div>إجمالي المدين: <b class="num" id="td">0.00</b></div><div>إجمالي الدائن: <b class="num" id="tc">0.00</b></div><div id="diff" class="fw-bold"></div>
 <div class="ms-auto small text-muted"><i class="bi bi-stars"></i> اكتب بيان السطر وسيقترح المساعد الذكي الحساب</div></div></div>
 <button class="btn btn-primary"><i class="bi bi-save"></i> حفظ كمسودة</button>
 </form>
 {% endblock %}
 {% block scripts %}<script>
-document.querySelectorAll("input[name$='-label']").forEach(i=>i.classList.add("smart-text"));
-document.addEventListener("formset:added",e=>{const i=e.detail.row.querySelector("input[name$='-label']");if(i)i.classList.add("smart-text");});
+document.querySelectorAll("[name$='-label']").forEach(i=>i.classList.add("smart-text"));
+document.addEventListener("formset:added",e=>{const i=e.detail.row.querySelector("[name$='-label']");if(i)i.classList.add("smart-text");});
 function bal(){let d=0,c=0;document.querySelectorAll("#lines-body tr").forEach(tr=>{if(tr.style.display==="none")return;d+=num(tr.querySelector("[name$='-debit']").value);c+=num(tr.querySelector("[name$='-credit']").value);});
 document.getElementById("td").textContent=fmt(d);document.getElementById("tc").textContent=fmt(c);const df=Math.round((d-c)*100)/100;const el=document.getElementById("diff");
 el.textContent=df===0?"✔ القيد متزن":"الفرق: "+fmt(df);el.className="fw-bold "+(df===0?"text-success":"text-danger");}
