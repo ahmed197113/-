@@ -112,6 +112,13 @@ class SettingsActivity : LocalizedActivity(), PermissionHost {
             getString(if (iqamaOn) R.string.settings_on else R.string.settings_off)) {
             AdhanService.setIqamaSound(this, !iqamaOn); render()
         }
+        Ui.row(prayer, R.drawable.ic_clock, getString(R.string.adhan_log_title), getString(R.string.adhan_log_desc)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.adhan_log_title)
+                .setMessage(AdhanLog.text(this))
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
         val batteryOk = AlertPermissions.ignoresBatteryOptimizations(this)
         Ui.row(prayer, R.drawable.ic_settings, getString(R.string.settings_battery),
             getString(if (batteryOk) R.string.settings_battery_on else R.string.settings_battery_off)) {

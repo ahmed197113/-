@@ -97,6 +97,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // The adhan sounds only at its time; an alarm delivered late (phone off, or held back by the system) becomes a
         // silent notice instead of an adhan minutes after the prayer time. Very old alarms are dropped.
         val late = System.currentTimeMillis() - millis
+        if (prayer != null) AdhanLog.add(context, prayer, millis, if (!enabled) "off" else if (late < LATE_SOUND_LIMIT) "adhan" else "late")
         if (prayer != null && enabled && late >= LATE_SOUND_LIMIT && late < 30 * 60_000L) {
             postPrayerNotification(context, prayer)
         } else if (prayer != null && enabled && late < LATE_SOUND_LIMIT) {

@@ -519,4 +519,10 @@
     </string-array>
     <string name="mushaf_font_offline">Madinah Mushaf pages are downloaded once, the first time each page is opened, and the download failed just now. The same text is shown in the Mushaf font until you are online.</string>
     <string name="qibla_calibrate">⚠️ The compass needs calibrating: wave the phone in a figure 8 a few times, away from electronics, metal and magnets (including magnetic phone cases).</string>
+    <string name="adhan_log_title">Adhan log</string>
+    <string name="adhan_log_desc">When each adhan was due and when it actually sounded</string>
+    <string name="adhan_log_empty">No adhan recorded yet.</string>
+    <string name="adhan_log_played">Adhan played ✓</string>
+    <string name="adhan_log_late">Arrived late: notice only</string>
+    <string name="adhan_log_line">Due %1$s · arrived %2$s (%3$s s later) · %4$s</string>
 </resources>

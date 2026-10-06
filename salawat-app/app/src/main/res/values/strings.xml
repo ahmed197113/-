@@ -577,4 +577,10 @@
     <string name="settings_language">اللغة · Language</string>
     <string name="mushaf_font_offline">صفحات مصحف المدينة تُحمَّل مرة واحدة عند أول فتح لكل صفحة، وتعذّر التحميل الآن. يظهر النص نفسه بخط المصحف حتى يتوفر الاتصال.</string>
     <string name="qibla_calibrate">⚠️ البوصلة تحتاج معايرة: حرّك الهاتف في الهواء على شكل رقم ٨ عدة مرات، وابتعد عن الأجهزة والمعادن والمغناطيس (ومنها جراب الهاتف المغناطيسي).</string>
+    <string name="adhan_log_title">سجل الأذان</string>
+    <string name="adhan_log_desc">متى كان موعد كل أذان، ومتى رنّ فعلًا</string>
+    <string name="adhan_log_empty">لم يُسجَّل أذان بعد.</string>
+    <string name="adhan_log_played">رُفع الأذان ✓</string>
+    <string name="adhan_log_late">وصل متأخرًا فظهر إشعار فقط</string>
+    <string name="adhan_log_line">الموعد %1$s · وصل %2$s (بعد %3$s ثانية) · %4$s</string>
 </resources>
