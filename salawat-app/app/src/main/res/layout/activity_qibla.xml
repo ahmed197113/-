@@ -52,6 +52,17 @@
         android:textStyle="bold"
         android:visibility="invisible" />
 
+    <Button
+        android:id="@+id/btnQiblaMap"
+        style="@style/Button.Outlined"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:text="@string/qibla_map"
+        app:icon="@drawable/ic_location" />
+
     <TextView
         android:id="@+id/textQiblaHint"
         android:layout_width="match_parent"

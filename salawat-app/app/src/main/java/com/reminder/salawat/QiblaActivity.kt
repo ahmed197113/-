@@ -52,6 +52,10 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
             }
             return
         }
+        binding.btnQiblaMap.setOnClickListener {
+            // Google's Qibla Finder: the line from here to the Ka'bah on a map, to check the needle against.
+            runCatching { startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://qiblafinder.withgoogle.com/"))) }
+        }
         val (lat, lng) = location
         qiblaBearing = bearingToKaaba(lat, lng)
         declination = GeomagneticField(lat.toFloat(), lng.toFloat(), 0f, System.currentTimeMillis()).declination
