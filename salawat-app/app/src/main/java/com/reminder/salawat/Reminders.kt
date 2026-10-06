@@ -36,6 +36,7 @@ object Reminders {
     private const val EXTRA_TYPE = "type"
     private const val EXTRA_TEXT = "text"
     private const val EXTRA_PRAYER = "prayer"
+    private const val EXTRA_AT = "at"
 
     fun isOn(context: Context, type: ReminderType) = Prefs.get(context).getBoolean("rem_${type.name}_on", type.defaultOn)
 
@@ -61,10 +62,16 @@ object Reminders {
             intent.putExtra(EXTRA_TYPE, next.type.name)
             next.text?.let { intent.putExtra(EXTRA_TEXT, it) }
             next.prayer?.let { intent.putExtra(EXTRA_PRAYER, it.name) }
+            intent.putExtra(EXTRA_AT, next.at)
         }
         val pi = PendingIntent.getBroadcast(context, REQUEST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         if (next == null) {
             am.cancel(pi)
+            return
+        }
+        // The takbir before the adhan and the iqama sound: armed like the adhan so they are never late.
+        if (next.type == ReminderType.PRE_ADHAN || next.type == ReminderType.IQAMA) {
+            PrayerScheduler.setPrecise(context, am, next.at, pi)
             return
         }
         try {
@@ -148,6 +155,10 @@ object Reminders {
     fun deliver(context: Context, intent: Intent) {
         val type = intent.getStringExtra(EXTRA_TYPE)?.let { runCatching { ReminderType.valueOf(it) }.getOrNull() } ?: return
         if (!isOn(context, type)) return
+        // The takbir and the iqama only make sense at their minute: never sound them late.
+        val at = intent.getLongExtra(EXTRA_AT, 0L)
+        if ((type == ReminderType.PRE_ADHAN || type == ReminderType.IQAMA) && at > 0 &&
+            System.currentTimeMillis() - at > 3 * 60_000L) return
         if (type == ReminderType.IQAMA) {
             val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() } ?: Prayer.DHUHR
             if (!AdhanService.startIqama(context, prayer)) postIqama(context, prayer)

@@ -156,7 +156,7 @@
 
     <string name="qibla_title">اتجاه القبلة</string>
     <string name="qibla_angle">القبلة على بُعد %1$d° من الشمال</string>
-    <string name="qibla_instructions">ضع الهاتف مسطحاً وأدِره حتى يشير السهم الذهبي إلى الأعلى. أبعده عن المعادن والمغناطيس</string>
+    <string name="qibla_instructions">ضع الهاتف مسطحًا وأدِره حتى يشير السهم الذهبي إلى الأعلى، أو أمسكه أمامك كالكاميرا. ابتعد عن المعادن والأجهزة الكهربائية، وإن لم يثبت السهم فحرّك الهاتف على شكل رقم ٨ للمعايرة.</string>
     <string name="qibla_aligned">✓ أنت تتجه نحو القبلة</string>
     <string name="qibla_no_sensor">جهازك لا يحتوي على بوصلة — اتجاه القبلة %1$d° من الشمال الجغرافي</string>
     <string name="qibla_need_location">حدّد موقعك أولاً لنعرف اتجاه القبلة من مكانك</string>
@@ -493,7 +493,7 @@
     <string name="settings_iqama_sound">صوت الإقامة</string>
     <string name="rem_minutes_after">بعد الأذان بـ%1$s</string>
     <string name="rem_pre_adhan_title">بقي %1$s على أذان %2$s</string>
-    <string name="rem_pre_adhan_text">استعد للصلاة وتوضأ</string>
+    <string name="rem_pre_adhan_text">تنبيه قبل الأذان — استعد للصلاة وتوضأ</string>
     <string name="rem_minutes_before">قبل الأذان بـ%1$s</string>
     <string name="rem_at">الساعة %1$s</string>
 
@@ -576,4 +576,5 @@
     <string name="restore_failed">هذا الملف ليس نسخة احتياطية من «رفيق المسلم»</string>
     <string name="settings_language">اللغة · Language</string>
     <string name="mushaf_font_offline">صفحات مصحف المدينة تُحمَّل مرة واحدة عند أول فتح لكل صفحة، وتعذّر التحميل الآن. يظهر النص نفسه بخط المصحف حتى يتوفر الاتصال.</string>
+    <string name="qibla_calibrate">⚠️ البوصلة تحتاج معايرة: حرّك الهاتف في الهواء على شكل رقم ٨ عدة مرات، وابتعد عن الأجهزة والمعادن والمغناطيس (ومنها جراب الهاتف المغناطيسي).</string>
 </resources>

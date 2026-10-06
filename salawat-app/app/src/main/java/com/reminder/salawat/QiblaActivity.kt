@@ -28,6 +28,10 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
     private val orientation = FloatArray(3)
     private var gravity: FloatArray? = null
     private var geomagnetic: FloatArray? = null
+    private val remapped = FloatArray(9)
+    /** Magnetometer accuracy as reported by the phone: below MEDIUM the compass needs a figure-8 calibration. */
+    private var magAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_HIGH
+    private var wasAligned = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,7 +70,11 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
         if (PrayerRepository.location(this) == null) return
         val rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         if (rotation != null) {
-            sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_UI)
+            sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_GAME)
+            // Only for its accuracy reports (calibration prompt).
+            sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+            }
         } else {
             sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
                 sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
@@ -83,20 +91,43 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
     }
 
     override fun onSensorChanged(event: SensorEvent) {
+        val usingRotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null
         when (event.sensor.type) {
             Sensor.TYPE_ROTATION_VECTOR -> SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
             Sensor.TYPE_ACCELEROMETER -> { gravity = event.values.clone(); if (!fromAccelMag()) return }
-            Sensor.TYPE_MAGNETIC_FIELD -> { geomagnetic = event.values.clone(); if (!fromAccelMag()) return }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                updateAccuracy(event.accuracy)
+                if (usingRotationVector) return
+                geomagnetic = event.values.clone(); if (!fromAccelMag()) return
+            }
             else -> return
         }
-        SensorManager.getOrientation(rotationMatrix, orientation)
+        // Held upright (screen facing you, like a camera) the flat-phone azimuth is unstable: measure the direction
+        // the back of the phone points instead. Lying flat, the top edge of the phone is the pointer.
+        val pitch = Math.toDegrees(kotlin.math.asin((-rotationMatrix[7]).coerceIn(-1f, 1f).toDouble()))
+        val matrix = if (abs(pitch) > 50) {
+            SensorManager.remapCoordinateSystem(rotationMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Z, remapped)
+            remapped
+        } else rotationMatrix
+        SensorManager.getOrientation(matrix, orientation)
         val magneticAzimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
         val trueAzimuth = (magneticAzimuth + declination + 360f) % 360f
         smoothedAzimuth = if (smoothedAzimuth.isNaN()) trueAzimuth else smoothAngle(smoothedAzimuth, trueAzimuth)
         val arrow = (qiblaBearing - smoothedAzimuth + 360f) % 360f
         binding.imageArrow.rotation = arrow
         val off = if (arrow > 180f) 360f - arrow else arrow
-        binding.textAligned.visibility = if (abs(off) < 5f) View.VISIBLE else View.INVISIBLE
+        val aligned = abs(off) < 4f
+        binding.textAligned.visibility = if (aligned) View.VISIBLE else View.INVISIBLE
+        if (aligned && !wasAligned) binding.imageArrow.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
+        wasAligned = aligned
+    }
+
+    private fun updateAccuracy(accuracy: Int) {
+        magAccuracy = accuracy
+        val needsCalibration = accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE ||
+            accuracy == SensorManager.SENSOR_STATUS_ACCURACY_LOW
+        binding.textQiblaHint.setText(if (needsCalibration) R.string.qibla_calibrate else R.string.qibla_instructions)
+        binding.textQiblaHint.setTextColor(Themes.color(this, if (needsCalibration) R.color.error_text else R.color.text_secondary_light))
     }
 
     private fun fromAccelMag(): Boolean {
@@ -105,7 +136,9 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
         return SensorManager.getRotationMatrix(rotationMatrix, null, g, m)
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        if (sensor?.type == Sensor.TYPE_MAGNETIC_FIELD) updateAccuracy(accuracy)
+    }
 
     companion object {
         private const val KAABA_LAT = 21.422487
@@ -125,7 +158,7 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
             var delta = target - current
             if (delta > 180f) delta -= 360f
             if (delta < -180f) delta += 360f
-            return (current + delta * 0.15f + 360f) % 360f
+            return (current + delta * 0.1f + 360f) % 360f
         }
     }
 }

@@ -129,7 +129,7 @@
     <string name="medinan">Medinan</string>
     <string name="qibla_title">Qibla direction</string>
     <string name="qibla_angle">The Qibla is %1$d° from north</string>
-    <string name="qibla_instructions">Lay the phone flat and turn it until the gold arrow points up. Keep it away from metal and magnets</string>
+    <string name="qibla_instructions">Lay the phone flat and turn it until the gold arrow points up, or hold it in front of you like a camera. Keep away from metal and electronics; if the arrow wanders, move the phone in a figure 8 to calibrate.</string>
     <string name="qibla_aligned">✓ You are facing the Qibla</string>
     <string name="qibla_no_sensor">Your phone has no compass — the Qibla is %1$d° from true north</string>
     <string name="qibla_need_location">Set your location first so we can find the Qibla from where you are</string>
@@ -416,7 +416,7 @@
     <string name="settings_iqama_sound">Iqama sound</string>
     <string name="rem_minutes_after">%1$s after the adhan</string>
     <string name="rem_pre_adhan_title">%1$s until the %2$s adhan</string>
-    <string name="rem_pre_adhan_text">Get ready for prayer and make wudu</string>
+    <string name="rem_pre_adhan_text">Early alert before the adhan — get ready and make wudu</string>
     <string name="rem_minutes_before">%1$s before the adhan</string>
     <string name="rem_at">At %1$s</string>
     <string name="settings_asr">Asr calculation</string>
@@ -518,4 +518,5 @@
         <item>Extra large</item>
     </string-array>
     <string name="mushaf_font_offline">Madinah Mushaf pages are downloaded once, the first time each page is opened, and the download failed just now. The same text is shown in the Mushaf font until you are online.</string>
+    <string name="qibla_calibrate">⚠️ The compass needs calibrating: wave the phone in a figure 8 a few times, away from electronics, metal and magnets (including magnetic phone cases).</string>
 </resources>

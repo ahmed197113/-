@@ -40,14 +40,27 @@ object PrayerScheduler {
             return
         }
         val pi = pendingIntent(context, next)
+        setPrecise(context, alarmManager, next.millis, pi)
+    }
+
+    /**
+     * Arms [pi] at [at] as precisely as the phone allows. The alarm-clock API is what alarm apps use: Android never
+     * defers it for battery saving (Doze, OEM "power savers"), unlike plain exact alarms, which some phones delayed
+     * by minutes — the adhan came late.
+     */
+    fun setPrecise(context: Context, alarmManager: AlarmManager, at: Long, pi: PendingIntent) {
         try {
             if (canScheduleExact(context)) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.millis, pi)
+                val show = PendingIntent.getActivity(
+                    context, REQUEST_CODE + 1, MainActivity.intent(context, MainActivity.TAB_PRAYER),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(at, show), pi)
             } else {
-                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.millis, pi)
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
             }
         } catch (_: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.millis, pi)
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi)
         }
     }
 
@@ -72,14 +85,21 @@ object PrayerScheduler {
     }
 }
 
+/** An adhan more than this late is not sounded (the prayer notice is shown instead). */
+private const val LATE_SOUND_LIMIT = 3 * 60_000L
+
 class PrayerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(raw: Context, intent: Intent) {
         val context = Lang.wrap(raw)
         val prayer = intent.getStringExtra(PrayerScheduler.EXTRA_PRAYER)?.let { runCatching { Prayer.valueOf(it) }.getOrNull() }
         val millis = intent.getLongExtra(PrayerScheduler.EXTRA_MILLIS, 0L)
         val enabled = PrayerRepository.prefs(context).getBoolean(PrayerRepository.KEY_ALERTS, true)
-        // Skip stale alarms (e.g. delivered long after the device was off).
-        if (prayer != null && enabled && System.currentTimeMillis() - millis < 30 * 60_000L) {
+        // The adhan sounds only at its time; an alarm delivered late (phone off, or held back by the system) becomes a
+        // silent notice instead of an adhan minutes after the prayer time. Very old alarms are dropped.
+        val late = System.currentTimeMillis() - millis
+        if (prayer != null && enabled && late >= LATE_SOUND_LIMIT && late < 30 * 60_000L) {
+            postPrayerNotification(context, prayer)
+        } else if (prayer != null && enabled && late < LATE_SOUND_LIMIT) {
             val adhan = AdhanCatalog.sourceFor(context, prayer)
             // The adhan plays even when notifications are blocked (the foreground service still runs; only its
             // notice is hidden) — a missing permission must never silence the adhan.
