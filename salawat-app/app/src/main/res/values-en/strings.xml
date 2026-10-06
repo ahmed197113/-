@@ -526,4 +526,5 @@
     <string name="adhan_log_late">Arrived late: notice only</string>
     <string name="adhan_log_line">Due %1$s · arrived %2$s (%3$s s later) · %4$s</string>
     <string name="qibla_map">Check on the map (Google)</string>
+    <string name="quran_text_source">Quran text: the Tanzil project, tanzil.net</string>
 </resources>

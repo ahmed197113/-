@@ -584,4 +584,5 @@
     <string name="adhan_log_late">وصل متأخرًا فظهر إشعار فقط</string>
     <string name="adhan_log_line">الموعد %1$s · وصل %2$s (بعد %3$s ثانية) · %4$s</string>
     <string name="qibla_map">تحقق على الخريطة (جوجل)</string>
+    <string name="quran_text_source">نص القرآن الكريم: مشروع تنزيل tanzil.net</string>
 </resources>

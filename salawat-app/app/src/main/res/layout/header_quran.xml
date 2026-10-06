@@ -194,4 +194,16 @@
             android:layout_weight="1"
             android:text="@string/quran_juz_list" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <!-- Required by the Tanzil terms of use: the Quran text's source, with a link. -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:autoLink="web"
+        android:gravity="center"
+        android:text="@string/quran_text_source"
+        android:textColor="@color/text_secondary_light"
+        android:textColorLink="?attr/brandAccentText"
+        android:textSize="11sp" />
 </LinearLayout>
