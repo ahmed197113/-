@@ -1,0 +1,118 @@
+rules_version = '2';
+
+// Barr — every health record lives under families/{fid}. Access is granted
+// only through families/{fid}/members/{uid}. Fields that drive billing,
+// limits, counters and computed status are written by Cloud Functions only.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+
+    function memberDoc(fid) { return /databases/$(database)/documents/families/$(fid)/members/$(uid()); }
+    function isMember(fid) { return signedIn() && exists(memberDoc(fid)); }
+    function role(fid) { return get(memberDoc(fid)).data.role; }
+    function isAdmin(fid) { return isMember(fid) && role(fid) == 'admin'; }
+    function canEdit(fid) { return isMember(fid) && role(fid) in ['admin', 'caregiver']; }
+    function isElderOf(fid, eid) {
+      return isMember(fid) && role(fid) == 'elder' && get(memberDoc(fid)).data.elderId == eid;
+    }
+    function family(fid) { return get(/databases/$(database)/documents/families/$(fid)).data; }
+    function onlyKeys(keys) { return request.resource.data.keys().hasOnly(keys); }
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      allow read: if signedIn() && uid() == userId;
+      // Created by the owner with no memberships; familyIds/elderRef are
+      // server-managed.
+      allow create: if signedIn() && uid() == userId
+        && onlyKeys(['displayName', 'accountType', 'phone', 'familyIds', 'locale', 'createdAt'])
+        && request.resource.data.accountType in ['caregiver', 'elder']
+        && request.resource.data.familyIds == []
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 60;
+      allow update: if signedIn() && uid() == userId
+        && changedOnly(['displayName', 'locale', 'lastActiveAt']);
+      allow delete: if false;
+
+      match /devices/{deviceId} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
+    }
+
+    // ---------- families ----------
+    match /families/{fid} {
+      allow read: if isMember(fid);
+      allow create, delete: if false;                 // createFamily / deleteAccount Functions
+      allow update: if isAdmin(fid) && changedOnly(['name']);
+
+      match /members/{memberId} {
+        allow read: if isMember(fid);
+        allow create: if false;                       // createFamily / claimInvites / redeemLinkCode
+        // Admins change roles (never to/from elder); anyone updates own prefs.
+        allow update: if (isAdmin(fid) && memberId != uid()
+                          && changedOnly(['role'])
+                          && request.resource.data.role in ['admin', 'caregiver', 'viewer']
+                          && resource.data.role != 'elder')
+                      || (memberId == uid() && changedOnly(['notificationPrefs', 'displayName']));
+        allow delete: if isAdmin(fid) && memberId != uid();
+      }
+
+      match /invites/{inviteId} {
+        allow read: if isMember(fid);
+        allow create: if isAdmin(fid)
+          && onlyKeys(['phone', 'role', 'status', 'createdBy', 'createdAt', 'expiresAt'])
+          && request.resource.data.role in ['admin', 'caregiver', 'viewer']
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdBy == uid()
+          && request.resource.data.phone.matches('^\\+[0-9]{8,15}$')
+          && family(fid).counts.members + family(fid).counts.invites < family(fid).limits.maxMembers;
+        allow delete: if isAdmin(fid);
+        allow update: if false;
+      }
+
+      match /elders/{eid} {
+        allow read: if isMember(fid);
+        allow create: if canEdit(fid)
+          && onlyKeys(['name', 'nickname', 'relation', 'phone', 'linkedUid',
+                       'checkinDeadline', 'createdBy', 'createdAt'])
+          && request.resource.data.linkedUid == null
+          && request.resource.data.relation in ['father', 'mother', 'grandfather', 'grandmother']
+          && family(fid).counts.elders < family(fid).limits.maxElders;
+        // Elders cannot change their own settings; status/linking are server-side.
+        allow update: if canEdit(fid)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(['linkedUid', 'status', 'lastCheckinAt', 'lastActivityAt', 'createdBy']);
+        allow delete: if isAdmin(fid);
+
+        match /checkins/{day} {
+          allow read: if isMember(fid);
+          allow create, update: if isElderOf(fid, eid)
+            && onlyKeys(['at', 'clientAt', 'source', 'by'])
+            && request.resource.data.by == uid()
+            && request.resource.data.at == request.time
+            && day.matches('^[0-9]{8}$');
+          allow delete: if false;
+        }
+
+        // Phase 2+: medications, doseLogs, sosEvents, vitals, appointments.
+        match /{sub}/{doc} {
+          allow read: if isMember(fid);
+          allow write: if canEdit(fid) && sub in ['medications', 'appointments', 'vitals'];
+        }
+      }
+
+      match /{sub}/{doc} {
+        allow read: if isMember(fid) && sub in ['timeline', 'alerts'];
+        allow write: if false;
+      }
+    }
+
+    // Server-only collections.
+    match /linkCodes/{code} { allow read, write: if false; }
+    match /subscriptions/{fid} { allow read: if isMember(fid); allow write: if false; }
+  }
+}

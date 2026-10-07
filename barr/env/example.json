@@ -1,0 +1,10 @@
+{
+  "FIREBASE_PROJECT_ID": "barr-dev",
+  "FIREBASE_SENDER_ID": "000000000000",
+  "FIREBASE_STORAGE_BUCKET": "barr-dev.appspot.com",
+  "FIREBASE_ANDROID_API_KEY": "",
+  "FIREBASE_ANDROID_APP_ID": "1:000000000000:android:xxxxxxxxxxxxxxxx",
+  "FIREBASE_IOS_API_KEY": "",
+  "FIREBASE_IOS_APP_ID": "1:000000000000:ios:xxxxxxxxxxxxxxxx",
+  "FIREBASE_IOS_BUNDLE_ID": "app.barr.dev"
+}
