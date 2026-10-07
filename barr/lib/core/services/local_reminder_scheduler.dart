@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -25,6 +24,7 @@ class LocalReminderScheduler implements ReminderScheduler {
   static const actionTaken = 'taken';
   static const actionLater = 'later';
   static const _storeKey = 'barr.scheduled_reminders.v1';
+  /// Native helpers in MainActivity.kt (lock screen, battery optimization).
   static const _lockChannel = MethodChannel('barr/lockscreen');
 
   final SharedPreferences _prefs;
@@ -190,7 +190,7 @@ class LocalReminderScheduler implements ReminderScheduler {
     return ReminderPermissions(
       notifications: await android.areNotificationsEnabled() ?? false,
       exactAlarms: await android.canScheduleExactNotifications() ?? true,
-      batteryUnrestricted: await Permission.ignoreBatteryOptimizations.isGranted,
+      batteryUnrestricted: await _isIgnoringBatteryOptimizations(),
     );
   }
 
@@ -213,7 +213,17 @@ class LocalReminderScheduler implements ReminderScheduler {
   @override
   Future<void> requestBatteryUnrestricted() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
-    await Permission.ignoreBatteryOptimizations.request();
+    try {
+      await _lockChannel.invokeMethod<void>('requestIgnoreBatteryOptimizations');
+    } catch (_) {}
+  }
+
+  Future<bool> _isIgnoringBatteryOptimizations() async {
+    try {
+      return await _lockChannel.invokeMethod<bool>('isIgnoringBatteryOptimizations') ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
