@@ -18,4 +18,11 @@ class LocalCheckinRepository implements CheckinRepository {
         final e = LocalDb.node(db, ['elders', elder.familyId, elder.elderId]);
         e['lastCheckinAt'] = now.millisecondsSinceEpoch;
       });
+
+  @override
+  Future<void> touch(ElderRef elder, {required String timezone}) => _db.mutate((db) {
+        final e = LocalDb.node(db, ['elders', elder.familyId, elder.elderId]);
+        e['lastSeenAt'] = DateTime.now().millisecondsSinceEpoch;
+        e['timezone'] = timezone;
+      });
 }

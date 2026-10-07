@@ -1345,6 +1345,288 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أدخل رقمًا صحيحًا'**
   String get invalidNumber;
+
+  /// No description provided for @urgentAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات عاجلة'**
+  String get urgentAlerts;
+
+  /// No description provided for @todayTimeline.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحداث اليوم'**
+  String get todayTimeline;
+
+  /// No description provided for @noEventsToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا أحداث بعد اليوم'**
+  String get noEventsToday;
+
+  /// No description provided for @statusGreen.
+  ///
+  /// In ar, this message translates to:
+  /// **'بخير'**
+  String get statusGreen;
+
+  /// No description provided for @statusYellow.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه'**
+  String get statusYellow;
+
+  /// No description provided for @statusRed.
+  ///
+  /// In ar, this message translates to:
+  /// **'يحتاج متابعة'**
+  String get statusRed;
+
+  /// No description provided for @alertSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} ضغط زر الطوارئ!'**
+  String alertSos(String name);
+
+  /// No description provided for @alertMissedDose.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} لم يؤكد دواء {med}'**
+  String alertMissedDose(String name, String med);
+
+  /// No description provided for @alertNoCheckin.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} لم يضغط «أنا بخير» حتى الآن'**
+  String alertNoCheckin(String name);
+
+  /// No description provided for @alertNoCheckinEscalated.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا اطمئنان من {name} منذ الصباح — اتصل به'**
+  String alertNoCheckinEscalated(String name);
+
+  /// No description provided for @alertInactivity.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا نشاط على جوال {name} منذ مدة طويلة'**
+  String alertInactivity(String name);
+
+  /// No description provided for @alertLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'دواء {med} لـ{name} قارب على النفاد'**
+  String alertLowStock(String name, String med);
+
+  /// No description provided for @tlCheckin.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} سجّل «أنا بخير»'**
+  String tlCheckin(String name);
+
+  /// No description provided for @tlDoseTaken.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} أخذ {med}'**
+  String tlDoseTaken(String name, String med);
+
+  /// No description provided for @tlDoseSnoozed.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} أجّل {med}'**
+  String tlDoseSnoozed(String name, String med);
+
+  /// No description provided for @tlDoseMissed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فات {name} دواء {med}'**
+  String tlDoseMissed(String name, String med);
+
+  /// No description provided for @tlSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} ضغط زر الطوارئ'**
+  String tlSos(String name);
+
+  /// No description provided for @tlSosResolved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الاطمئنان على {name}'**
+  String tlSosResolved(String name);
+
+  /// No description provided for @call.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصال'**
+  String get call;
+
+  /// No description provided for @sosTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'طوارئ'**
+  String get sosTitle;
+
+  /// No description provided for @sosFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} يحتاج مساعدة'**
+  String sosFrom(String name);
+
+  /// No description provided for @sosAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الساعة {time}'**
+  String sosAt(String time);
+
+  /// No description provided for @openMap.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الموقع على الخريطة'**
+  String get openMap;
+
+  /// No description provided for @noLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتوفر الموقع'**
+  String get noLocation;
+
+  /// No description provided for @locationAccuracy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدقة تقريبًا {meters} م'**
+  String locationAccuracy(int meters);
+
+  /// No description provided for @imOnIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا متابع'**
+  String get imOnIt;
+
+  /// No description provided for @followingBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتابع: {names}'**
+  String followingBy(String names);
+
+  /// No description provided for @markSafe.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الاطمئنان عليه'**
+  String get markSafe;
+
+  /// No description provided for @sosResolvedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطمأن عليه {name}'**
+  String sosResolvedBy(String name);
+
+  /// No description provided for @sosSending.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ إبلاغ أسرتك…'**
+  String get sosSending;
+
+  /// No description provided for @sosSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبلغنا أسرتك'**
+  String get sosSent;
+
+  /// No description provided for @sosSentBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتصلون بك حالًا'**
+  String get sosSentBody;
+
+  /// No description provided for @sosCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا بخير، ألغِ التنبيه'**
+  String get sosCancel;
+
+  /// No description provided for @sosSomeoneOnIt.
+  ///
+  /// In ar, this message translates to:
+  /// **'{names} يتابع حالتك الآن'**
+  String sosSomeoneOnIt(String names);
+
+  /// No description provided for @parentSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات {name}'**
+  String parentSettings(String name);
+
+  /// No description provided for @checkinDeadline.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر موعد لـ«أنا بخير»'**
+  String get checkinDeadline;
+
+  /// No description provided for @checkinDeadlineHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'إذا لم يضغط حتى هذا الوقت يصلك تنبيه، ثم تذكير أقوى بعد ساعتين.'**
+  String get checkinDeadlineHelp;
+
+  /// No description provided for @inactivityAlert.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه عدم النشاط'**
+  String get inactivityAlert;
+
+  /// No description provided for @inactivityHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه إذا لم يُفتح التطبيق على جواله لمدة:'**
+  String get inactivityHelp;
+
+  /// No description provided for @hoursN.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} ساعة'**
+  String hoursN(int n);
+
+  /// No description provided for @emergencyContacts.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرقام الطوارئ'**
+  String get emergencyContacts;
+
+  /// No description provided for @emergencyContactsHelp.
+  ///
+  /// In ar, this message translates to:
+  /// **'عند الضغط على زر الطوارئ يتصل الجوال بأول رقم. إن لم تضف أرقامًا يتصل بأول ابن.'**
+  String get emergencyContactsHelp;
+
+  /// No description provided for @addContact.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة رقم'**
+  String get addContact;
+
+  /// No description provided for @contactName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get contactName;
+
+  /// No description provided for @saved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحفظ'**
+  String get saved;
+
+  /// No description provided for @permLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع'**
+  String get permLocation;
+
+  /// No description provided for @permLocationWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'لإرسال موقعك لأسرتك عند الطوارئ فقط'**
+  String get permLocationWhy;
 }
 
 class _AppLocalizationsDelegate

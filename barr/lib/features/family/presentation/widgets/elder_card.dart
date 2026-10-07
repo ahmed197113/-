@@ -8,6 +8,9 @@ import '../../../../core/utils/clock.dart';
 import '../../../../core/utils/dates.dart';
 import '../../../../shared/domain/entities/app_user.dart';
 import '../../../../shared/domain/entities/elder.dart';
+import '../../../dashboard/data/dashboard_providers.dart';
+import '../../../dashboard/domain/alert_engine.dart';
+import '../../../dashboard/presentation/labels.dart';
 import '../../../medications/data/medication_providers.dart';
 import '../../../medications/domain/dose_schedule.dart';
 import '../l10n_labels.dart';
@@ -35,7 +38,8 @@ class ElderCard extends ConsumerWidget {
     final checkin = elder.lastCheckinAt;
     final checkedIn = checkin != null && isSameDay(checkin, now);
 
-    // Green: fine / Yellow: needs a look / Red: missed doses.
+    final dashboard = ref.watch(elderDashboardProvider(elderRef));
+    final elderStatus = dashboard?.status ?? ElderStatus.unknown;
     final Color status;
     final String statusText;
     if (!elder.isLinked) {
@@ -50,9 +54,8 @@ class ElderCard extends ConsumerWidget {
       status = BarrColors.warn;
       statusText = l.noCheckinToday;
     }
-    final overall = (adherence?.missed ?? 0) > 0
-        ? BarrColors.danger
-        : (lowStock.isNotEmpty && status == BarrColors.ok ? BarrColors.warn : status);
+    // Green: fine / Yellow: attention / Red: needs follow-up (alert engine).
+    final overall = statusColor(elderStatus, theme.colorScheme);
 
     Widget infoRow(IconData icon, Color color, String text) => Padding(
           padding: const EdgeInsets.only(top: 8),
@@ -113,7 +116,7 @@ class ElderCard extends ConsumerWidget {
                         Text(elder.displayName,
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                         Text(
-                          '${elder.relation.label(l)} · ${elder.name}',
+                          '${elder.relation.label(l)} · ${statusLabel(l, elderStatus)}',
                           style: theme.textTheme.bodySmall
                               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                         ),

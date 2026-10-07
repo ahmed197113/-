@@ -4,6 +4,8 @@ import 'package:barr/core/services/service_providers.dart';
 import 'package:barr/core/storage/prefs.dart';
 import 'package:barr/features/elder_home/presentation/screens/elder_home_screen.dart';
 import 'package:barr/features/family/presentation/screens/caregiver_home_screen.dart';
+import 'package:barr/features/sos/data/sos_providers.dart';
+import 'package:barr/features/sos/presentation/screens/sos_alert_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +32,7 @@ Future<void> pumpApp(WidgetTester tester) async {
       sharedPreferencesProvider.overrideWithValue(prefs),
       reminderSchedulerProvider.overrideWithValue(scheduler),
       ttsServiceProvider.overrideWithValue(tts),
+      locationServiceProvider.overrideWithValue(FakeLocation()),
     ],
     child: const BarrApp(),
   ));
@@ -172,6 +175,47 @@ void main() {
     await tester.tap(find.text('إغلاق'));
     await settle(tester);
     expect(find.text('سجّلت اليوم أنك بخير'), findsOneWidget);
+
+    // SOS: hold for 3 seconds → family alerted with location.
+    final sos = tester.getCenter(find.text('طوارئ'));
+    final gesture = await tester.startGesture(sos);
+    for (var i = 0; i < 35; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await gesture.up();
+    await wait(tester, 300);
+    expect(find.text('أبلغنا أسرتك'), findsOneWidget);
+
+    // Leave the alert active; switch this phone back to the caregiver.
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await settle(tester);
+    for (var i = 0; i < 7; i++) {
+      await tester.tap(find.text('أهلًا يا بابا'));
+    }
+    await settle(tester);
+    await tester.tap(find.text('تسجيل الخروج').last);
+    await wait(tester);
+    await tester.tap(find.text('التسجيل برقم الجوال'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextFormField), '0512345678');
+    await tester.tap(find.text('إرسال الرمز'));
+    await wait(tester, 500);
+    await tester.enterText(find.byType(TextField), '123456');
+    await wait(tester, 500);
+    await settle(tester, 30);
+
+    // The caregiver's dashboard opens the emergency full-screen.
+    expect(find.byType(SosAlertScreen), findsOneWidget);
+    expect(find.text('بابا يحتاج مساعدة'), findsOneWidget);
+    await tester.tap(find.text('أنا متابع'));
+    await wait(tester);
+    expect(find.text('يتابع: أحمد'), findsOneWidget);
+    await tester.tap(find.text('تم الاطمئنان عليه'));
+    await wait(tester);
+    expect(find.byType(CaregiverHomeScreen), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('تم الاطمئنان على بابا'), 200,
+        scrollable: find.byType(Scrollable).first);
+    expect(find.text('بابا ضغط زر الطوارئ'), findsOneWidget);
 
     // Unmount to dispose timers.
     await tester.pumpWidget(const SizedBox());

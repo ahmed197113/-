@@ -345,5 +345,207 @@
   "weekdayShort6": "سبت",
   "weekdayShort7": "أحد",
   "requiredField": "هذا الحقل مطلوب",
-  "invalidNumber": "أدخل رقمًا صحيحًا"
+  "invalidNumber": "أدخل رقمًا صحيحًا",
+  "urgentAlerts": "تنبيهات عاجلة",
+  "todayTimeline": "أحداث اليوم",
+  "noEventsToday": "لا أحداث بعد اليوم",
+  "statusGreen": "بخير",
+  "statusYellow": "تنبيه",
+  "statusRed": "يحتاج متابعة",
+  "alertSos": "{name} ضغط زر الطوارئ!",
+  "@alertSos": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alertMissedDose": "{name} لم يؤكد دواء {med}",
+  "@alertMissedDose": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "med": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNoCheckin": "{name} لم يضغط «أنا بخير» حتى الآن",
+  "@alertNoCheckin": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alertNoCheckinEscalated": "لا اطمئنان من {name} منذ الصباح — اتصل به",
+  "@alertNoCheckinEscalated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alertInactivity": "لا نشاط على جوال {name} منذ مدة طويلة",
+  "@alertInactivity": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "alertLowStock": "دواء {med} لـ{name} قارب على النفاد",
+  "@alertLowStock": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "med": {
+        "type": "String"
+      }
+    }
+  },
+  "tlCheckin": "{name} سجّل «أنا بخير»",
+  "@tlCheckin": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tlDoseTaken": "{name} أخذ {med}",
+  "@tlDoseTaken": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "med": {
+        "type": "String"
+      }
+    }
+  },
+  "tlDoseSnoozed": "{name} أجّل {med}",
+  "@tlDoseSnoozed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "med": {
+        "type": "String"
+      }
+    }
+  },
+  "tlDoseMissed": "فات {name} دواء {med}",
+  "@tlDoseMissed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "med": {
+        "type": "String"
+      }
+    }
+  },
+  "tlSos": "{name} ضغط زر الطوارئ",
+  "@tlSos": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tlSosResolved": "تم الاطمئنان على {name}",
+  "@tlSosResolved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "call": "اتصال",
+  "sosTitle": "طوارئ",
+  "sosFrom": "{name} يحتاج مساعدة",
+  "@sosFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sosAt": "الساعة {time}",
+  "@sosAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "openMap": "افتح الموقع على الخريطة",
+  "noLocation": "لم يتوفر الموقع",
+  "locationAccuracy": "الدقة تقريبًا {meters} م",
+  "@locationAccuracy": {
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "imOnIt": "أنا متابع",
+  "followingBy": "يتابع: {names}",
+  "@followingBy": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "markSafe": "تم الاطمئنان عليه",
+  "sosResolvedBy": "اطمأن عليه {name}",
+  "@sosResolvedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sosSending": "جارٍ إبلاغ أسرتك…",
+  "sosSent": "أبلغنا أسرتك",
+  "sosSentBody": "سيتصلون بك حالًا",
+  "sosCancel": "أنا بخير، ألغِ التنبيه",
+  "sosSomeoneOnIt": "{names} يتابع حالتك الآن",
+  "@sosSomeoneOnIt": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "parentSettings": "إعدادات {name}",
+  "@parentSettings": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "checkinDeadline": "آخر موعد لـ«أنا بخير»",
+  "checkinDeadlineHelp": "إذا لم يضغط حتى هذا الوقت يصلك تنبيه، ثم تذكير أقوى بعد ساعتين.",
+  "inactivityAlert": "تنبيه عدم النشاط",
+  "inactivityHelp": "تنبيه إذا لم يُفتح التطبيق على جواله لمدة:",
+  "hoursN": "{n} ساعة",
+  "@hoursN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "emergencyContacts": "أرقام الطوارئ",
+  "emergencyContactsHelp": "عند الضغط على زر الطوارئ يتصل الجوال بأول رقم. إن لم تضف أرقامًا يتصل بأول ابن.",
+  "addContact": "إضافة رقم",
+  "contactName": "الاسم",
+  "saved": "تم الحفظ",
+  "permLocation": "الموقع",
+  "permLocationWhy": "لإرسال موقعك لأسرتك عند الطوارئ فقط"
 }

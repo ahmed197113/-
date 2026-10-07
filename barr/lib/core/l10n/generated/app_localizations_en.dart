@@ -690,4 +690,189 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidNumber => 'Enter a valid number';
+
+  @override
+  String get urgentAlerts => 'Urgent alerts';
+
+  @override
+  String get todayTimeline => 'Today\'s events';
+
+  @override
+  String get noEventsToday => 'No events yet today';
+
+  @override
+  String get statusGreen => 'Fine';
+
+  @override
+  String get statusYellow => 'Attention';
+
+  @override
+  String get statusRed => 'Needs follow-up';
+
+  @override
+  String alertSos(String name) {
+    return '$name pressed the emergency button!';
+  }
+
+  @override
+  String alertMissedDose(String name, String med) {
+    return '$name hasn\'t confirmed $med';
+  }
+
+  @override
+  String alertNoCheckin(String name) {
+    return '$name hasn\'t checked in yet';
+  }
+
+  @override
+  String alertNoCheckinEscalated(String name) {
+    return 'No check-in from $name since morning — call them';
+  }
+
+  @override
+  String alertInactivity(String name) {
+    return 'No activity on $name\'s phone for a long time';
+  }
+
+  @override
+  String alertLowStock(String name, String med) {
+    return '$name\'s $med is running low';
+  }
+
+  @override
+  String tlCheckin(String name) {
+    return '$name checked in';
+  }
+
+  @override
+  String tlDoseTaken(String name, String med) {
+    return '$name took $med';
+  }
+
+  @override
+  String tlDoseSnoozed(String name, String med) {
+    return '$name snoozed $med';
+  }
+
+  @override
+  String tlDoseMissed(String name, String med) {
+    return '$name missed $med';
+  }
+
+  @override
+  String tlSos(String name) {
+    return '$name pressed emergency';
+  }
+
+  @override
+  String tlSosResolved(String name) {
+    return '$name confirmed safe';
+  }
+
+  @override
+  String get call => 'Call';
+
+  @override
+  String get sosTitle => 'Emergency';
+
+  @override
+  String sosFrom(String name) {
+    return '$name needs help';
+  }
+
+  @override
+  String sosAt(String time) {
+    return 'at $time';
+  }
+
+  @override
+  String get openMap => 'Open location on map';
+
+  @override
+  String get noLocation => 'Location unavailable';
+
+  @override
+  String locationAccuracy(int meters) {
+    return 'Accuracy about $meters m';
+  }
+
+  @override
+  String get imOnIt => 'I\'m on it';
+
+  @override
+  String followingBy(String names) {
+    return 'Following: $names';
+  }
+
+  @override
+  String get markSafe => 'Confirmed safe';
+
+  @override
+  String sosResolvedBy(String name) {
+    return '$name confirmed they\'re safe';
+  }
+
+  @override
+  String get sosSending => 'Notifying your family…';
+
+  @override
+  String get sosSent => 'Your family has been notified';
+
+  @override
+  String get sosSentBody => 'They will call you right away';
+
+  @override
+  String get sosCancel => 'I\'m fine, cancel the alert';
+
+  @override
+  String sosSomeoneOnIt(String names) {
+    return '$names is following up now';
+  }
+
+  @override
+  String parentSettings(String name) {
+    return '$name\'s settings';
+  }
+
+  @override
+  String get checkinDeadline => 'Check-in deadline';
+
+  @override
+  String get checkinDeadlineHelp =>
+      'If they haven\'t checked in by this time you get an alert, then a stronger one 2 hours later.';
+
+  @override
+  String get inactivityAlert => 'Inactivity alert';
+
+  @override
+  String get inactivityHelp =>
+      'Alert if the app isn\'t opened on their phone for:';
+
+  @override
+  String hoursN(int n) {
+    return '$n hours';
+  }
+
+  @override
+  String get emergencyContacts => 'Emergency numbers';
+
+  @override
+  String get emergencyContactsHelp =>
+      'On SOS the phone calls the first number. Without numbers it calls the first child.';
+
+  @override
+  String get addContact => 'Add number';
+
+  @override
+  String get contactName => 'Name';
+
+  @override
+  String get saved => 'Saved';
+
+  @override
+  String get permLocation => 'Location';
+
+  @override
+  String get permLocationWhy =>
+      'Only to send your location to your family in an emergency';
 }

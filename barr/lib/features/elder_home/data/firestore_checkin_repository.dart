@@ -28,4 +28,12 @@ class FirestoreCheckinRepository implements CheckinRepository {
           'by': _auth.currentUser?.uid,
         }).ignore();
       });
+
+  @override
+  Future<void> touch(ElderRef elder, {required String timezone}) => guardFirebase(() async {
+        _db.doc(FsPaths.elder(elder.familyId, elder.elderId)).update({
+          'lastSeenAt': FieldValue.serverTimestamp(),
+          'timezone': timezone,
+        }).ignore();
+      });
 }

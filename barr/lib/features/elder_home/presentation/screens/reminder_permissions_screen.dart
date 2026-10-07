@@ -7,6 +7,7 @@ import '../../../../core/services/reminder_scheduler.dart';
 import '../../../../core/services/service_providers.dart';
 import '../../../../core/storage/prefs.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../sos/data/sos_providers.dart';
 
 const reminderPermissionsSeenKey = 'barr.reminder_permissions_seen';
 
@@ -22,6 +23,7 @@ class ReminderPermissionsScreen extends ConsumerStatefulWidget {
 class _ReminderPermissionsScreenState extends ConsumerState<ReminderPermissionsScreen>
     with WidgetsBindingObserver {
   ReminderPermissions? _status;
+  bool? _location;
 
   @override
   void initState() {
@@ -44,7 +46,13 @@ class _ReminderPermissionsScreenState extends ConsumerState<ReminderPermissionsS
 
   Future<void> _refresh() async {
     final s = await ref.read(reminderSchedulerProvider).permissions();
-    if (mounted) setState(() => _status = s);
+    final loc = await ref.read(locationServiceProvider).hasPermission();
+    if (mounted) {
+      setState(() {
+        _status = s;
+        _location = loc;
+      });
+    }
   }
 
   Future<void> _run(Future<void> Function() request) async {
@@ -95,6 +103,12 @@ class _ReminderPermissionsScreenState extends ConsumerState<ReminderPermissionsS
                   why: l.permBatteryWhy,
                   granted: s?.batteryUnrestricted,
                   onAllow: () => _run(scheduler.requestBatteryUnrestricted),
+                ),
+                _PermissionRow(
+                  title: l.permLocation,
+                  why: l.permLocationWhy,
+                  granted: _location,
+                  onAllow: () => _run(() => ref.read(locationServiceProvider).requestPermission()),
                 ),
                 const SizedBox(height: 16),
                 FilledButton(onPressed: _finish, child: Text(l.done)),

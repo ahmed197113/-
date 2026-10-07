@@ -1,24 +1,81 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/router/app_stage.dart';
+import '../../../../core/services/push_service.dart';
+import '../../../../core/services/service_providers.dart';
 import '../../../../core/utils/phone.dart';
 import '../../../../core/widgets/demo_banner.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/skeleton.dart';
 import '../../../../shared/domain/entities/enums.dart';
 import '../../../../shared/domain/entities/family.dart';
+import '../../../auth/data/auth_providers.dart';
+import '../../../dashboard/data/dashboard_providers.dart';
+import '../../../dashboard/domain/alert_engine.dart';
+import '../../../dashboard/presentation/widgets/alerts_bar.dart';
+import '../../../dashboard/presentation/widgets/timeline_section.dart';
+import '../../../sos/domain/sos_event.dart';
 import '../../data/family_providers.dart';
 import '../l10n_labels.dart';
 import '../widgets/elder_card.dart';
 
-class CaregiverHomeScreen extends ConsumerWidget {
+class CaregiverHomeScreen extends ConsumerStatefulWidget {
   const CaregiverHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CaregiverHomeScreen> createState() => _CaregiverHomeScreenState();
+}
+
+class _CaregiverHomeScreenState extends ConsumerState<CaregiverHomeScreen> {
+  StreamSubscription<PushOpen>? _pushSub;
+
+  /// SOS events already shown full-screen in this session.
+  final _shownSos = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    final push = ref.read(pushServiceProvider);
+    _pushSub = push.opened.listen(_onPushOpened);
+    final uid = ref.read(authUidProvider).value;
+    if (uid != null) push.start(uid);
+
+    // Open a new emergency full-screen as soon as it appears.
+    ref.listenManual(familyDashboardProvider(ref.read(currentFamilyIdProvider) ?? ''), (_, next) {
+      for (final a in next?.openSos ?? const <FamilyAlert>[]) {
+        if (a.sos!.status == SosStatus.active && _shownSos.add(a.sos!.id)) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.push(Routes.sosAlert(a.elder.id, a.sos!.id));
+          });
+          break;
+        }
+      }
+    }, fireImmediately: true);
+  }
+
+  @override
+  void dispose() {
+    _pushSub?.cancel();
+    super.dispose();
+  }
+
+  void _onPushOpened(PushOpen p) {
+    if (!mounted) return;
+    if (p.type == 'sos' && p.elderId != null && p.eventId != null) {
+      _shownSos.add(p.eventId!);
+      context.push(Routes.sosAlert(p.elderId!, p.eventId!));
+    } else if (p.elderId != null) {
+      context.push(Routes.medications(p.elderId!));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final fid = ref.watch(currentFamilyIdProvider);
     if (fid == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -28,6 +85,7 @@ class CaregiverHomeScreen extends ConsumerWidget {
     final members = ref.watch(membersProvider(fid)).value ?? const <Member>[];
     final invites = ref.watch(invitesProvider(fid)).value ?? const <Invite>[];
     final role = ref.watch(myRoleProvider(fid));
+    final dashboard = ref.watch(familyDashboardProvider(fid));
 
     Future<void> showLimit(String message) => showDialog<void>(
           context: context,
@@ -82,6 +140,7 @@ class CaregiverHomeScreen extends ConsumerWidget {
               borderRadius: BorderRadius.all(Radius.circular(12)),
               child: DemoBanner(),
             ),
+            if (dashboard != null) AlertsBar(alerts: dashboard.alerts),
             _SectionTitle(l.parentsSection),
             ...eldersAsync.when(
               loading: () => const [Skeleton(height: 140)],
@@ -112,6 +171,10 @@ class CaregiverHomeScreen extends ConsumerWidget {
                       ],
                     ],
             ),
+            if ((eldersAsync.value ?? const []).isNotEmpty) ...[
+              _SectionTitle(l.todayTimeline),
+              TimelineSection(events: dashboard?.timeline ?? const []),
+            ],
             _SectionTitle(l.membersSection),
             Card(
               child: Column(

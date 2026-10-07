@@ -3,3 +3,4 @@ export { createLinkCode, redeemLinkCode } from "./linking";
 export { onCheckinWritten } from "./checkins";
 export { deleteAccount } from "./account";
 export { onMedicationWritten, onDoseLogWritten } from "./medications";
+export { onSosCreated, checkAlerts } from "./alerts";

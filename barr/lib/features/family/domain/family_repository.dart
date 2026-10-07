@@ -15,6 +15,9 @@ abstract interface class FamilyRepository {
   /// Throws [PlanLimitFailure] when the plan's elder limit is reached.
   Future<Elder> addElder(String familyId, ElderDraft draft);
 
+  /// Caregiver-controlled settings (check-in deadline, inactivity, SOS contacts).
+  Future<void> updateElderSettings(String familyId, String elderId, ElderSettings settings);
+
   /// Throws [PlanLimitFailure] when the plan's member limit is reached.
   Future<void> invite(String familyId, {required String phone, required FamilyRole role});
 }

@@ -72,7 +72,17 @@ class MedicationsScreen extends ConsumerWidget {
         );
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.medsOf(elder?.displayName ?? ''))),
+      appBar: AppBar(
+        title: Text(l.medsOf(elder?.displayName ?? '')),
+        actions: [
+          if (role.canEdit)
+            IconButton(
+              tooltip: l.parentSettings(elder?.displayName ?? ''),
+              icon: const Icon(Icons.tune_rounded),
+              onPressed: () => context.push(Routes.elderSettings(elderId)),
+            ),
+        ],
+      ),
       floatingActionButton: role.canEdit
           ? FloatingActionButton.extended(
               onPressed: addMedication,

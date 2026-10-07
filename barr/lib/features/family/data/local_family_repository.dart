@@ -93,6 +93,10 @@ class LocalFamilyRepository implements FamilyRepository {
   }
 
   @override
+  Future<void> updateElderSettings(String familyId, String elderId, ElderSettings settings) =>
+      _db.mutate((db) => LocalDb.node(db, ['elders', familyId, elderId]).addAll(settings.toMap()));
+
+  @override
   Future<void> invite(String familyId, {required String phone, required FamilyRole role}) {
     _uid;
     final id = _db.newId();

@@ -82,10 +82,13 @@ service cloud.firestore {
           && request.resource.data.linkedUid == null
           && request.resource.data.relation in ['father', 'mother', 'grandfather', 'grandmother']
           && family(fid).counts.elders < family(fid).limits.maxElders;
-        // Elders cannot change their own settings; status/linking are server-side.
-        allow update: if canEdit(fid)
+        // Elders cannot change their own settings (only the heartbeat);
+        // status/linking/activity are server-side.
+        allow update: if (canEdit(fid)
           && !request.resource.data.diff(resource.data).affectedKeys()
-               .hasAny(['linkedUid', 'status', 'lastCheckinAt', 'lastActivityAt', 'createdBy']);
+               .hasAny(['linkedUid', 'status', 'lastCheckinAt', 'lastActivityAt', 'lastSeenAt', 'createdBy']))
+          || (isElderOf(fid, eid) && changedOnly(['lastSeenAt', 'timezone'])
+              && request.resource.data.lastSeenAt == request.time);
         allow delete: if isAdmin(fid);
 
         match /checkins/{day} {
@@ -121,7 +124,24 @@ service cloud.firestore {
           allow delete: if false;
         }
 
-        // Phase 3+: sosEvents, vitals, appointments.
+        match /sosEvents/{sid} {
+          allow read: if isMember(fid);
+          allow create: if isElderOf(fid, eid)
+            && request.resource.data.keys().hasOnly(['at', 'clientAt', 'status', 'location', 'by', 'acknowledgedBy'])
+            && request.resource.data.status == 'active'
+            && request.resource.data.by == uid()
+            && request.resource.data.at == request.time;
+          // Any member can say "I'm on it"; the parent or a caregiver resolves.
+          allow update: if (isMember(fid)
+              && changedOnly(['status', 'acknowledgedBy'])
+              && request.resource.data.status == 'acknowledged')
+            || ((isElderOf(fid, eid) || canEdit(fid))
+              && changedOnly(['status', 'resolvedBy', 'resolvedAt'])
+              && request.resource.data.status == 'resolved');
+          allow delete: if false;
+        }
+
+        // Phase 4+: vitals, appointments.
         match /{sub}/{doc} {
           allow read: if isMember(fid);
           allow write: if canEdit(fid) && sub in ['appointments', 'vitals'];

@@ -79,6 +79,10 @@ class FirestoreFamilyRepository implements FamilyRepository {
       });
 
   @override
+  Future<void> updateElderSettings(String familyId, String elderId, ElderSettings settings) =>
+      guardFirebase(() => _db.doc(FsPaths.elder(familyId, elderId)).update(settings.toMap()));
+
+  @override
   Future<void> invite(String familyId, {required String phone, required FamilyRole role}) =>
       guardFirebase(() async {
         await _ensureCapacity(familyId, const ['members', 'invites'], 'maxMembers');

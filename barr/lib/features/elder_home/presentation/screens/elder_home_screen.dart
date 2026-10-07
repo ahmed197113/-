@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/l10n/generated/app_localizations.dart';
 import '../../../../core/router/app_stage.dart';
@@ -11,6 +10,7 @@ import '../../../../core/services/reminder_scheduler.dart';
 import '../../../../core/services/service_providers.dart';
 import '../../../../core/storage/prefs.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/services/device_timezone.dart';
 import '../../../../core/utils/clock.dart';
 import '../../../../core/utils/dates.dart';
 import '../../../../core/widgets/feedback.dart';
@@ -32,7 +32,7 @@ class ElderHomeScreen extends ConsumerStatefulWidget {
   ConsumerState<ElderHomeScreen> createState() => _ElderHomeScreenState();
 }
 
-class _ElderHomeScreenState extends ConsumerState<ElderHomeScreen> {
+class _ElderHomeScreenState extends ConsumerState<ElderHomeScreen> with WidgetsBindingObserver {
   /// Hidden exit for caregivers: tap the greeting 7 times.
   int _secretTaps = 0;
   StreamSubscription<String>? _openedSub;
@@ -47,13 +47,23 @@ class _ElderHomeScreenState extends ConsumerState<ElderHomeScreen> {
       if (plan != null) _syncReminders(plan);
     }, fireImmediately: true);
     _openedSub = _scheduler.doseOpened.listen(_openDose);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startup());
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startup();
+      _touch();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _openedSub?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _touch();
   }
 
   Future<void> _startup() async {
@@ -128,17 +138,14 @@ class _ElderHomeScreenState extends ConsumerState<ElderHomeScreen> {
   }
 
 
-  Future<void> _sos() async {
-    final l = AppLocalizations.of(context);
-    final kids = ref.read(myChildrenProvider).where((m) => m.phone != null).toList();
-    // Phase 3 adds the family-wide alert + location; for now call the
-    // first emergency contact directly.
-    if (kids.isEmpty) {
-      showSnack(context, l.noKidsPhones, error: true);
-      return;
-    }
-    showSnack(context, l.sosCalling(kids.first.displayName));
-    await launchUrl(Uri(scheme: 'tel', path: kids.first.phone));
+  void _sos() => context.push(Routes.elderSos);
+
+  /// Heartbeat for inactivity alerts + device timezone for server rules.
+  Future<void> _touch() async {
+    final elder = ref.read(myElderRefProvider);
+    if (elder == null) return;
+    final tz = await ref.read(deviceTimezoneProvider.future);
+    await ref.read(checkinRepositoryProvider).touch(elder, timezone: tz).catchError((Object _) {});
   }
 
   Future<void> _secretTap() async {

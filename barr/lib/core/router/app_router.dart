@@ -18,7 +18,10 @@ import '../../features/elder_linking/presentation/screens/scan_code_screen.dart'
 import '../../features/family/presentation/screens/add_elder_screen.dart';
 import '../../features/family/presentation/screens/caregiver_home_screen.dart';
 import '../../features/family/presentation/screens/create_family_screen.dart';
+import '../../features/family/presentation/screens/elder_settings_screen.dart';
 import '../../features/family/presentation/screens/invite_screen.dart';
+import '../../features/sos/presentation/screens/elder_sos_screen.dart';
+import '../../features/sos/presentation/screens/sos_alert_screen.dart';
 import '../../features/medications/presentation/screens/medication_form_screen.dart';
 import '../../features/medications/presentation/screens/medications_screen.dart';
 import '../../features/onboarding/onboarding_controller.dart';
@@ -68,6 +71,17 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, state) => LinkCodeScreen(elderId: state.pathParameters['elderId']!),
           ),
           GoRoute(
+            path: 'elder/:elderId/settings',
+            builder: (_, state) => ElderSettingsScreen(elderId: state.pathParameters['elderId']!),
+          ),
+          GoRoute(
+            path: 'elder/:elderId/sos/:eventId',
+            builder: (_, state) => SosAlertScreen(
+              elderId: state.pathParameters['elderId']!,
+              eventId: state.pathParameters['eventId']!,
+            ),
+          ),
+          GoRoute(
             path: 'elder/:elderId/meds',
             builder: (_, state) => MedicationsScreen(elderId: state.pathParameters['elderId']!),
             routes: [
@@ -98,6 +112,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: 'kids', builder: (_, _) => const CallKidsScreen()),
           GoRoute(path: 'meds', builder: (_, _) => const ElderMedsScreen()),
           GoRoute(path: 'permissions', builder: (_, _) => const ReminderPermissionsScreen()),
+          GoRoute(path: 'sos', builder: (_, _) => const ElderSosScreen()),
           GoRoute(
             path: 'dose/:doseId',
             builder: (_, state) => DoseAlarmScreen(doseId: state.pathParameters['doseId']!),

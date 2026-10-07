@@ -42,6 +42,8 @@ abstract final class Routes {
   static const invite = '/home/invite';
   static const settings = '/home/settings';
   static String linkElder(String elderId) => '/home/elder/$elderId/link';
+  static String elderSettings(String elderId) => '/home/elder/$elderId/settings';
+  static String sosAlert(String elderId, String eventId) => '/home/elder/$elderId/sos/$eventId';
   static String medications(String elderId) => '/home/elder/$elderId/meds';
   static String newMedication(String elderId) => '/home/elder/$elderId/meds/new';
   static String editMedication(String elderId, String medId) => '/home/elder/$elderId/meds/$medId/edit';
@@ -51,6 +53,7 @@ abstract final class Routes {
   static const elderKids = '/elder/home/kids';
   static const elderMeds = '/elder/home/meds';
   static const elderPermissions = '/elder/home/permissions';
+  static const elderSos = '/elder/home/sos';
   static String elderDose(String doseId) => '/elder/home/dose/$doseId';
 }
 

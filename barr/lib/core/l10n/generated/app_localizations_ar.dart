@@ -685,4 +685,187 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get invalidNumber => 'أدخل رقمًا صحيحًا';
+
+  @override
+  String get urgentAlerts => 'تنبيهات عاجلة';
+
+  @override
+  String get todayTimeline => 'أحداث اليوم';
+
+  @override
+  String get noEventsToday => 'لا أحداث بعد اليوم';
+
+  @override
+  String get statusGreen => 'بخير';
+
+  @override
+  String get statusYellow => 'تنبيه';
+
+  @override
+  String get statusRed => 'يحتاج متابعة';
+
+  @override
+  String alertSos(String name) {
+    return '$name ضغط زر الطوارئ!';
+  }
+
+  @override
+  String alertMissedDose(String name, String med) {
+    return '$name لم يؤكد دواء $med';
+  }
+
+  @override
+  String alertNoCheckin(String name) {
+    return '$name لم يضغط «أنا بخير» حتى الآن';
+  }
+
+  @override
+  String alertNoCheckinEscalated(String name) {
+    return 'لا اطمئنان من $name منذ الصباح — اتصل به';
+  }
+
+  @override
+  String alertInactivity(String name) {
+    return 'لا نشاط على جوال $name منذ مدة طويلة';
+  }
+
+  @override
+  String alertLowStock(String name, String med) {
+    return 'دواء $med لـ$name قارب على النفاد';
+  }
+
+  @override
+  String tlCheckin(String name) {
+    return '$name سجّل «أنا بخير»';
+  }
+
+  @override
+  String tlDoseTaken(String name, String med) {
+    return '$name أخذ $med';
+  }
+
+  @override
+  String tlDoseSnoozed(String name, String med) {
+    return '$name أجّل $med';
+  }
+
+  @override
+  String tlDoseMissed(String name, String med) {
+    return 'فات $name دواء $med';
+  }
+
+  @override
+  String tlSos(String name) {
+    return '$name ضغط زر الطوارئ';
+  }
+
+  @override
+  String tlSosResolved(String name) {
+    return 'تم الاطمئنان على $name';
+  }
+
+  @override
+  String get call => 'اتصال';
+
+  @override
+  String get sosTitle => 'طوارئ';
+
+  @override
+  String sosFrom(String name) {
+    return '$name يحتاج مساعدة';
+  }
+
+  @override
+  String sosAt(String time) {
+    return 'الساعة $time';
+  }
+
+  @override
+  String get openMap => 'افتح الموقع على الخريطة';
+
+  @override
+  String get noLocation => 'لم يتوفر الموقع';
+
+  @override
+  String locationAccuracy(int meters) {
+    return 'الدقة تقريبًا $meters م';
+  }
+
+  @override
+  String get imOnIt => 'أنا متابع';
+
+  @override
+  String followingBy(String names) {
+    return 'يتابع: $names';
+  }
+
+  @override
+  String get markSafe => 'تم الاطمئنان عليه';
+
+  @override
+  String sosResolvedBy(String name) {
+    return 'اطمأن عليه $name';
+  }
+
+  @override
+  String get sosSending => 'جارٍ إبلاغ أسرتك…';
+
+  @override
+  String get sosSent => 'أبلغنا أسرتك';
+
+  @override
+  String get sosSentBody => 'سيتصلون بك حالًا';
+
+  @override
+  String get sosCancel => 'أنا بخير، ألغِ التنبيه';
+
+  @override
+  String sosSomeoneOnIt(String names) {
+    return '$names يتابع حالتك الآن';
+  }
+
+  @override
+  String parentSettings(String name) {
+    return 'إعدادات $name';
+  }
+
+  @override
+  String get checkinDeadline => 'آخر موعد لـ«أنا بخير»';
+
+  @override
+  String get checkinDeadlineHelp =>
+      'إذا لم يضغط حتى هذا الوقت يصلك تنبيه، ثم تذكير أقوى بعد ساعتين.';
+
+  @override
+  String get inactivityAlert => 'تنبيه عدم النشاط';
+
+  @override
+  String get inactivityHelp => 'تنبيه إذا لم يُفتح التطبيق على جواله لمدة:';
+
+  @override
+  String hoursN(int n) {
+    return '$n ساعة';
+  }
+
+  @override
+  String get emergencyContacts => 'أرقام الطوارئ';
+
+  @override
+  String get emergencyContactsHelp =>
+      'عند الضغط على زر الطوارئ يتصل الجوال بأول رقم. إن لم تضف أرقامًا يتصل بأول ابن.';
+
+  @override
+  String get addContact => 'إضافة رقم';
+
+  @override
+  String get contactName => 'الاسم';
+
+  @override
+  String get saved => 'تم الحفظ';
+
+  @override
+  String get permLocation => 'الموقع';
+
+  @override
+  String get permLocationWhy => 'لإرسال موقعك لأسرتك عند الطوارئ فقط';
 }

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:barr/features/sos/domain/location_service.dart';
+import 'package:barr/features/sos/domain/sos_event.dart';
 
 import 'package:barr/core/services/reminder_scheduler.dart';
 import 'package:barr/core/services/tts_service.dart';
@@ -49,4 +51,16 @@ class FakeTts implements TtsService {
 
   @override
   Future<void> stop() async {}
+}
+
+class FakeLocation implements LocationService {
+  @override
+  Future<GeoFix?> current({Duration timeout = const Duration(seconds: 8)}) async =>
+      const GeoFix(lat: 24.7136, lng: 46.6753, accuracy: 12);
+
+  @override
+  Future<bool> hasPermission() async => true;
+
+  @override
+  Future<bool> requestPermission() async => true;
 }

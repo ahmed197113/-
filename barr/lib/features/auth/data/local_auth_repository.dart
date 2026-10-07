@@ -54,7 +54,7 @@ class LocalAuthRepository implements AuthRepository {
         final family = LocalDb.read(db, ['families', fid]);
         if (family?['ownerUid'] == uid) {
           // Owner deletes the whole family space.
-          for (final col in ['families', 'members', 'invites', 'elders', 'checkins', 'medications', 'doseLogs']) {
+          for (final col in ['families', 'members', 'invites', 'elders', 'checkins', 'medications', 'doseLogs', 'sosEvents']) {
             LocalDb.node(db, [col]).remove(fid);
           }
           for (final other in LocalDb.node(db, ['users']).values.whereType<Map>()) {
