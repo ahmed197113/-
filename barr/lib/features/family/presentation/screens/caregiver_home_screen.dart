@@ -106,6 +106,7 @@ class CaregiverHomeScreen extends ConsumerWidget {
                         ElderCard(
                           elder: e,
                           onLink: () => context.push(Routes.linkElder(e.id)),
+                          onOpen: () => context.push(Routes.medications(e.id)),
                         ),
                         const SizedBox(height: 12),
                       ],

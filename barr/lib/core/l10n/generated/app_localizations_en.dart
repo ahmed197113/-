@@ -405,4 +405,289 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cameraPermissionRationale =>
       'We need the camera only to scan the link code.';
+
+  @override
+  String get medsTitle => 'Medicines';
+
+  @override
+  String medsOf(String name) {
+    return '$name\'s medicines';
+  }
+
+  @override
+  String get addMedication => 'Add medicine';
+
+  @override
+  String get editMedication => 'Edit medicine';
+
+  @override
+  String get deleteMedication => 'Delete medicine';
+
+  @override
+  String get deleteMedicationConfirm =>
+      'Reminders for this medicine will stop. Are you sure?';
+
+  @override
+  String get medName => 'Medicine name';
+
+  @override
+  String get medDose => 'Dose';
+
+  @override
+  String get medDoseHint => 'e.g. 1 tablet, 5 ml';
+
+  @override
+  String get medPhoto => 'Box photo';
+
+  @override
+  String get takePhoto => 'Camera';
+
+  @override
+  String get pickPhoto => 'Gallery';
+
+  @override
+  String get medTimes => 'Dose times';
+
+  @override
+  String get addTime => 'Add time';
+
+  @override
+  String get timesRequired => 'Add at least one time';
+
+  @override
+  String get freqOnce => 'Once daily';
+
+  @override
+  String get freqTwice => 'Twice';
+
+  @override
+  String get freqThrice => '3 times';
+
+  @override
+  String get medDays => 'Days';
+
+  @override
+  String get everyDay => 'Every day';
+
+  @override
+  String get medDuration => 'Duration';
+
+  @override
+  String get ongoing => 'Ongoing';
+
+  @override
+  String untilDate(String date) {
+    return 'Until $date';
+  }
+
+  @override
+  String get chooseEndDate => 'Choose end date';
+
+  @override
+  String get mealInstruction => 'Instructions';
+
+  @override
+  String get mealNone => 'None';
+
+  @override
+  String get mealBefore => 'Before meal';
+
+  @override
+  String get mealAfter => 'After meal';
+
+  @override
+  String get mealWith => 'With meal';
+
+  @override
+  String get mealBeforeSleep => 'Before sleep';
+
+  @override
+  String get medNotes => 'Notes';
+
+  @override
+  String get stockSection => 'Stock';
+
+  @override
+  String get stockQty => 'Units available';
+
+  @override
+  String get perDose => 'Units per dose';
+
+  @override
+  String get stockLow => 'Running low';
+
+  @override
+  String stockDaysLeft(int days) {
+    return 'Enough for $days days';
+  }
+
+  @override
+  String get illBuyIt => 'I\'ll buy it';
+
+  @override
+  String buyerClaimed(String name) {
+    return '$name will buy it';
+  }
+
+  @override
+  String get cancelClaim => 'Cancel';
+
+  @override
+  String get freePlanMedsLimit =>
+      'The free plan supports 3 medicines. The Family plan is coming soon.';
+
+  @override
+  String get noMedsTitle => 'No medicines yet';
+
+  @override
+  String get noMedsBody =>
+      'Add your parent\'s medicines to send voice and photo reminders on time, even offline.';
+
+  @override
+  String get todaySchedule => 'Today\'s schedule';
+
+  @override
+  String get allMeds => 'All medicines';
+
+  @override
+  String medsToday(int taken, int due) {
+    return 'Medicines today: $taken of $due';
+  }
+
+  @override
+  String get noDosesToday => 'No doses scheduled today';
+
+  @override
+  String get doseTaken => 'Taken';
+
+  @override
+  String get doseMissed => 'Missed';
+
+  @override
+  String get doseSnoozed => 'Snoozed';
+
+  @override
+  String get doseUpcoming => 'Upcoming';
+
+  @override
+  String get doseDue => 'Due now';
+
+  @override
+  String get doseSkipped => 'Skipped';
+
+  @override
+  String get markTaken => 'Mark as taken';
+
+  @override
+  String get takenIt => 'Taken';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get nextDose => 'Next medicine';
+
+  @override
+  String nextDoseAt(String name, String time) {
+    return 'Next: $name at $time';
+  }
+
+  @override
+  String get allDosesDone => 'All medicines taken today';
+
+  @override
+  String get doseTimeNow => 'Medicine time';
+
+  @override
+  String doseSpeech(String name, String dose, String instruction) {
+    return '$name. $dose. $instruction';
+  }
+
+  @override
+  String get doseSpeechIntro => 'It\'s time for your medicine';
+
+  @override
+  String get takenThanks => 'Well done, stay healthy';
+
+  @override
+  String get laterOk => 'We\'ll remind you in 10 minutes';
+
+  @override
+  String reminderTitle(String name) {
+    return 'Medicine time: $name';
+  }
+
+  @override
+  String reminderBody(String dose) {
+    return '$dose — tap \"Taken\" after you take it';
+  }
+
+  @override
+  String get listen => 'Listen';
+
+  @override
+  String get permsTitle => 'Let\'s set up medicine reminders';
+
+  @override
+  String get permsBody =>
+      'So the alarm rings on time, even when the phone is locked or offline, we need:';
+
+  @override
+  String get permNotifications => 'Notifications';
+
+  @override
+  String get permNotificationsWhy => 'To show the medicine reminder';
+
+  @override
+  String get permExactAlarms => 'Exact alarms';
+
+  @override
+  String get permExactAlarmsWhy => 'To ring exactly on time';
+
+  @override
+  String get permBattery => 'Background activity';
+
+  @override
+  String get permBatteryWhy => 'So battery saving doesn\'t stop reminders';
+
+  @override
+  String get allow => 'Allow';
+
+  @override
+  String get allowed => 'Done';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String parentDetails(String name) {
+    return '$name\'s details';
+  }
+
+  @override
+  String get weekdayShort1 => 'Mon';
+
+  @override
+  String get weekdayShort2 => 'Tue';
+
+  @override
+  String get weekdayShort3 => 'Wed';
+
+  @override
+  String get weekdayShort4 => 'Thu';
+
+  @override
+  String get weekdayShort5 => 'Fri';
+
+  @override
+  String get weekdayShort6 => 'Sat';
+
+  @override
+  String get weekdayShort7 => 'Sun';
+
+  @override
+  String get requiredField => 'This field is required';
+
+  @override
+  String get invalidNumber => 'Enter a valid number';
 }

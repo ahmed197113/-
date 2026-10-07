@@ -8,6 +8,9 @@ import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/phone_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/elder_home/presentation/screens/call_kids_screen.dart';
+import '../../features/elder_home/presentation/screens/dose_alarm_screen.dart';
+import '../../features/elder_home/presentation/screens/elder_meds_screen.dart';
+import '../../features/elder_home/presentation/screens/reminder_permissions_screen.dart';
 import '../../features/elder_home/presentation/screens/elder_home_screen.dart';
 import '../../features/elder_linking/presentation/screens/elder_link_screen.dart';
 import '../../features/elder_linking/presentation/screens/link_code_screen.dart';
@@ -16,6 +19,8 @@ import '../../features/family/presentation/screens/add_elder_screen.dart';
 import '../../features/family/presentation/screens/caregiver_home_screen.dart';
 import '../../features/family/presentation/screens/create_family_screen.dart';
 import '../../features/family/presentation/screens/invite_screen.dart';
+import '../../features/medications/presentation/screens/medication_form_screen.dart';
+import '../../features/medications/presentation/screens/medications_screen.dart';
 import '../../features/onboarding/onboarding_controller.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/settings/settings_screen.dart';
@@ -62,6 +67,23 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'elder/:elderId/link',
             builder: (_, state) => LinkCodeScreen(elderId: state.pathParameters['elderId']!),
           ),
+          GoRoute(
+            path: 'elder/:elderId/meds',
+            builder: (_, state) => MedicationsScreen(elderId: state.pathParameters['elderId']!),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (_, state) => MedicationFormScreen(elderId: state.pathParameters['elderId']!),
+              ),
+              GoRoute(
+                path: ':medId/edit',
+                builder: (_, state) => MedicationFormScreen(
+                  elderId: state.pathParameters['elderId']!,
+                  medicationId: state.pathParameters['medId'],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       GoRoute(
@@ -72,7 +94,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.elderHome,
         builder: (_, _) => const ElderHomeScreen(),
-        routes: [GoRoute(path: 'kids', builder: (_, _) => const CallKidsScreen())],
+        routes: [
+          GoRoute(path: 'kids', builder: (_, _) => const CallKidsScreen()),
+          GoRoute(path: 'meds', builder: (_, _) => const ElderMedsScreen()),
+          GoRoute(path: 'permissions', builder: (_, _) => const ReminderPermissionsScreen()),
+          GoRoute(
+            path: 'dose/:doseId',
+            builder: (_, state) => DoseAlarmScreen(doseId: state.pathParameters['doseId']!),
+          ),
+        ],
       ),
     ],
   );

@@ -10,6 +10,7 @@ class Family {
     this.plan = FamilyPlan.free,
     this.maxElders = PlanLimits.freeMaxElders,
     this.maxMembers = PlanLimits.freeMaxMembers,
+    this.maxMedications = PlanLimits.freeMaxMedications,
   });
 
   final String id;
@@ -21,6 +22,9 @@ class Family {
   /// Non-elder members (caregivers + viewers), invites included.
   final int maxMembers;
 
+  /// Across all parents in the family.
+  final int maxMedications;
+
   factory Family.fromMap(String id, Map<String, dynamic> m) {
     final limits = Map<String, dynamic>.from((m['limits'] as Map?) ?? const {});
     return Family(
@@ -30,6 +34,8 @@ class Family {
       plan: FamilyPlan.parse(m['plan'] as String?),
       maxElders: (limits['maxElders'] as num?)?.toInt() ?? PlanLimits.freeMaxElders,
       maxMembers: (limits['maxMembers'] as num?)?.toInt() ?? PlanLimits.freeMaxMembers,
+      maxMedications:
+          (limits['maxMedications'] as num?)?.toInt() ?? PlanLimits.freeMaxMedications,
     );
   }
 
@@ -37,7 +43,11 @@ class Family {
         'name': name,
         'ownerUid': ownerUid,
         'plan': plan.name,
-        'limits': {'maxElders': maxElders, 'maxMembers': maxMembers},
+        'limits': {
+          'maxElders': maxElders,
+          'maxMembers': maxMembers,
+          'maxMedications': maxMedications,
+        },
       };
 }
 

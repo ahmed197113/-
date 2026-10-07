@@ -98,10 +98,33 @@ service cloud.firestore {
           allow delete: if false;
         }
 
-        // Phase 2+: medications, doseLogs, sosEvents, vitals, appointments.
+        match /medications/{mid} {
+          allow read: if isMember(fid);
+          allow create: if canEdit(fid)
+            && family(fid).counts.medications < family(fid).limits.maxMedications
+            && request.resource.data.name is string
+            && request.resource.data.times is list
+            && request.resource.data.times.size() <= 12;
+          allow update: if canEdit(fid);
+          allow delete: if canEdit(fid);
+        }
+
+        // Parent confirms doses; caregivers may confirm on their behalf.
+        match /doseLogs/{doseId} {
+          allow read: if isMember(fid);
+          allow create, update: if (isElderOf(fid, eid) || canEdit(fid))
+            && request.resource.data.keys().hasOnly(
+                 ['medId', 'scheduledAt', 'status', 'actedAt', 'source', 'by', 'snoozeCount'])
+            && request.resource.data.status in ['taken', 'snoozed', 'skipped']
+            && request.resource.data.by == uid()
+            && doseId.matches('^[0-9]{8}_.+_[0-9]{4}$');
+          allow delete: if false;
+        }
+
+        // Phase 3+: sosEvents, vitals, appointments.
         match /{sub}/{doc} {
           allow read: if isMember(fid);
-          allow write: if canEdit(fid) && sub in ['medications', 'appointments', 'vitals'];
+          allow write: if canEdit(fid) && sub in ['appointments', 'vitals'];
         }
       }
 

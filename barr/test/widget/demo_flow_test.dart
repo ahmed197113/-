@@ -1,5 +1,6 @@
 import 'package:barr/app.dart';
 import 'package:barr/core/config/app_config.dart';
+import 'package:barr/core/services/service_providers.dart';
 import 'package:barr/core/storage/prefs.dart';
 import 'package:barr/features/elder_home/presentation/screens/elder_home_screen.dart';
 import 'package:barr/features/family/presentation/screens/caregiver_home_screen.dart';
@@ -9,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../helpers/fakes.dart';
+
 /// Pumps frames without waiting for infinite animations (spinners, skeletons).
 Future<void> settle(WidgetTester tester, [int frames = 20]) async {
   for (var i = 0; i < frames; i++) {
@@ -16,12 +19,17 @@ Future<void> settle(WidgetTester tester, [int frames = 20]) async {
   }
 }
 
+late FakeReminderScheduler scheduler;
+late FakeTts tts;
+
 Future<void> pumpApp(WidgetTester tester) async {
   final prefs = await SharedPreferences.getInstance();
   await tester.pumpWidget(ProviderScope(
     overrides: [
       appConfigProvider.overrideWithValue(const AppConfig(flavor: Flavor.dev)),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      reminderSchedulerProvider.overrideWithValue(scheduler),
+      ttsServiceProvider.overrideWithValue(tts),
     ],
     child: const BarrApp(),
   ));
@@ -31,7 +39,16 @@ Future<void> pumpApp(WidgetTester tester) async {
 void main() {
   setUpAll(() => initializeDateFormatting());
 
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    scheduler = FakeReminderScheduler();
+    tts = FakeTts();
+  });
+
+  Future<void> wait(WidgetTester tester, [int ms = 200]) async {
+    await tester.runAsync(() => Future<void>.delayed(Duration(milliseconds: ms)));
+    await settle(tester);
+  }
 
   testWidgets('caregiver signs up, adds a parent and sets up the parent device', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
@@ -90,6 +107,28 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await settle(tester);
 
+    // Link screen opens; go back and add a medicine first.
+    expect(find.text('تجهيز هذا الجوال لوالدي الآن'), findsOneWidget);
+    await tester.tap(find.byType(BackButton).last);
+    await settle(tester);
+    await tester.tap(find.text('بابا'));
+    await settle(tester);
+    expect(find.text('لا توجد أدوية بعد'), findsOneWidget);
+    await tester.tap(find.text('إضافة دواء').first);
+    await settle(tester);
+    final medFields = find.byType(TextFormField);
+    await tester.enterText(medFields.at(0), 'جلوكوفاج');
+    await tester.enterText(medFields.at(1), 'حبة واحدة');
+    await tester.scrollUntilVisible(find.text('حفظ'), 200, scrollable: find.ancestor(of: medFields.at(0), matching: find.byType(Scrollable)).first);
+    await tester.tap(find.text('حفظ'));
+    await wait(tester);
+    expect(find.text('جلوكوفاج'), findsWidgets);
+    expect(find.text('جدول اليوم'), findsOneWidget);
+    await tester.tap(find.byType(BackButton).last);
+    await settle(tester);
+    await tester.tap(find.text('ربط جهاز الوالد'));
+    await wait(tester);
+
     // Link screen shows a 6-digit code; use Setup Mode on this device.
     expect(find.text('تجهيز هذا الجوال لوالدي الآن'), findsOneWidget);
     await tester.tap(find.text('تجهيز هذا الجوال لوالدي الآن'));
@@ -98,12 +137,32 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await settle(tester, 30);
 
-    // Parent's simplified home.
+    // First launch on the parent's phone explains reminder permissions.
+    expect(find.text('لنجهّز تذكيرات الدواء'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('تم'), 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('تم'));
+    await settle(tester);
+
+    // Parent's simplified home; reminders were scheduled locally.
     expect(find.byType(ElderHomeScreen), findsOneWidget);
+    expect(scheduler.synced.last, isNotEmpty);
+    expect(scheduler.synced.last.first.title, contains('جلوكوفاج'));
     expect(find.text('أهلًا يا بابا'), findsOneWidget);
     for (final label in ['أدويتي اليوم', 'أنا بخير', 'اتصل بأولادي', 'طوارئ']) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
+
+    // Medicines: take the current dose.
+    await tester.tap(find.text('أدويتي اليوم'));
+    await wait(tester);
+    expect(tts.spoken.last, contains('جلوكوفاج'));
+    await tester.tap(find.text('أخذته').first);
+    await wait(tester);
+    expect(scheduler.cancelled, hasLength(1));
+    expect(tts.spoken.last, 'أحسنت، الله يعطيك العافية');
+    await tester.tap(find.byType(BackButtonIcon).last);
+    await settle(tester);
 
     // "I'm fine" check-in.
     await tester.tap(find.text('أنا بخير'));

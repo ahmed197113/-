@@ -10,6 +10,7 @@ abstract final class BarrColors {
   static const ok = Color(0xFF2E7D32);
   static const warn = Color(0xFFF9A825);
   static const danger = Color(0xFFC62828);
+  static const attention = Color(0xFFB45309);
 }
 
 abstract final class AppTheme {

@@ -11,35 +11,42 @@
   "save": "حفظ",
   "close": "إغلاق",
   "optional": "اختياري",
-
   "onboarding1Title": "اطمئن على والديك كل يوم",
   "onboarding1Body": "مهما بعدت المسافة، تبقى قريبًا. ضغطة واحدة من والدك تخبرك أنه بخير.",
   "onboarding2Title": "لا دواء يُنسى بعد اليوم",
   "onboarding2Body": "تذكير واضح بالصوت والصورة على جوال والدك، ويصلك إشعار إن فاته دواء.",
   "onboarding3Title": "رعاية يتقاسمها الإخوة",
   "onboarding3Body": "عائلة واحدة، ومهام واضحة، وكل الإخوة على اطلاع. البرّ مسؤولية مشتركة.",
-
   "welcomeTitle": "أهلًا بك في برّ",
   "welcomeSubtitle": "رعاية الوالدين، بقلب واحد",
   "welcomeStartWithPhone": "التسجيل برقم الجوال",
   "welcomeHaveLinkCode": "أنا الأب/الأم ومعي رمز من أولادي",
-
   "phoneTitle": "رقم جوالك",
   "phoneSubtitle": "سنرسل لك رمز تحقق برسالة نصية",
   "phoneHint": "05xxxxxxxx",
   "phoneInvalid": "رقم الجوال غير صحيح",
   "sendCode": "إرسال الرمز",
-
   "otpTitle": "رمز التحقق",
   "otpSentTo": "أرسلنا رمزًا من 6 أرقام إلى {phone}",
-  "@otpSentTo": {"placeholders": {"phone": {"type": "String"}}},
+  "@otpSentTo": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
   "otpInvalidLength": "أدخل الرمز كاملًا (6 أرقام)",
   "verify": "تحقق",
   "resendCode": "إعادة إرسال الرمز",
   "resendIn": "إعادة الإرسال بعد {seconds} ث",
-  "@resendIn": {"placeholders": {"seconds": {"type": "int"}}},
+  "@resendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "demoOtpHint": "وضع التجربة: الرمز هو 123456",
-
   "accountTypeTitle": "من أنت؟",
   "accountTypeSubtitle": "نختار لك الواجهة المناسبة",
   "accountTypeCaregiver": "أنا ابن / ابنة",
@@ -48,13 +55,11 @@
   "accountTypeElderDesc": "واجهة بسيطة بأزرار كبيرة",
   "yourName": "اسمك",
   "nameRequired": "اكتب اسمك من فضلك",
-
   "createFamilyTitle": "أنشئ مساحة عائلتك",
   "createFamilySubtitle": "مساحة خاصة تجمعك بوالديك وإخوتك",
   "familyNameLabel": "اسم العائلة",
   "familyNameHint": "مثال: عائلة أبو محمد",
   "createFamily": "إنشاء العائلة",
-
   "myFamily": "عائلتي",
   "parentsSection": "الوالدان",
   "membersSection": "أفراد العائلة",
@@ -65,20 +70,23 @@
   "linked": "مرتبط",
   "notLinked": "لم يُربط جهازه",
   "checkedInToday": "اطمأننا عليه اليوم {time}",
-  "@checkedInToday": {"placeholders": {"time": {"type": "String"}}},
+  "@checkedInToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "noCheckinToday": "لم يسجّل «أنا بخير» اليوم",
   "linkDevice": "ربط جهاز الوالد",
-
   "relationFather": "الأب",
   "relationMother": "الأم",
   "relationGrandfather": "الجد",
   "relationGrandmother": "الجدة",
-
   "roleAdmin": "مدير العائلة",
   "roleCaregiver": "مقدّم رعاية",
   "roleViewer": "مشاهد فقط",
   "roleElder": "والد",
-
   "addParentTitle": "إضافة والد",
   "parentName": "الاسم",
   "parentNickname": "كيف تناديه؟",
@@ -87,18 +95,34 @@
   "parentPhone": "رقم جواله",
   "freePlanEldersLimit": "الخطة المجانية تتيح متابعة والد واحد. ستتوفر خطة العائلة قريبًا لمتابعة أكثر من والد.",
   "freePlanMembersLimit": "الخطة المجانية تتيح فردين من العائلة. ستتوفر خطة العائلة قريبًا لإضافة كل الإخوة.",
-
   "linkTitle": "ربط جهاز {name}",
-  "@linkTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@linkTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "linkInstructions": "على جوال والدك: افتح «برّ» واختر «معي رمز من أولادي»، ثم امسح الرمز أو اكتب الأرقام.",
   "linkExpiresIn": "ينتهي الرمز بعد {minutes} دقيقة",
-  "@linkExpiresIn": {"placeholders": {"minutes": {"type": "int"}}},
+  "@linkExpiresIn": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "linkExpired": "انتهت صلاحية الرمز",
   "newCode": "رمز جديد",
   "setupThisDevice": "تجهيز هذا الجوال لوالدي الآن",
   "setupThisDeviceConfirm": "سيُسجَّل خروجك من هذا الجوال، ويتحوّل إلى جوال {name} بالواجهة المبسطة. هل أنت متأكد؟",
-  "@setupThisDeviceConfirm": {"placeholders": {"name": {"type": "String"}}},
-
+  "@setupThisDeviceConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "inviteTitle": "دعوة فرد من العائلة",
   "inviteBody": "عندما يسجّل برقم الجوال هذا، ينضم إلى العائلة تلقائيًا.",
   "memberPhone": "رقم الجوال",
@@ -106,15 +130,19 @@
   "sendInvite": "إرسال الدعوة",
   "inviteSent": "أُرسلت الدعوة",
   "pendingInvite": "بانتظار التسجيل",
-
   "elderLinkTitle": "اكتب الرمز",
   "elderLinkSubtitle": "الرمز من 6 أرقام، تجده عند ابنك أو ابنتك",
   "scanCode": "امسح الرمز بالكاميرا",
   "linkNow": "ربط",
   "scanTitle": "وجّه الكاميرا نحو الرمز",
-
   "elderGreeting": "أهلًا يا {name}",
-  "@elderGreeting": {"placeholders": {"name": {"type": "String"}}},
+  "@elderGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "myMedsToday": "أدويتي اليوم",
   "imFine": "أنا بخير",
   "callMyKids": "اتصل بأولادي",
@@ -125,8 +153,13 @@
   "medsComingSoon": "سيضيف أولادك أدويتك هنا قريبًا",
   "noKidsPhones": "لا توجد أرقام لأولادك بعد",
   "sosCalling": "جارٍ الاتصال بـ {name}",
-  "@sosCalling": {"placeholders": {"name": {"type": "String"}}},
-
+  "@sosCalling": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "settings": "الإعدادات",
   "signOut": "تسجيل الخروج",
   "deleteAccount": "حذف الحساب وكل البيانات",
@@ -135,7 +168,6 @@
   "disclaimer": "«برّ» للمساعدة والتذكير فقط، ولا يغني عن استشارة الطبيب أو الاتصال بالإسعاف (997) في الحالات الطارئة.",
   "demoModeBanner": "وضع التجربة: البيانات محفوظة على هذا الجهاز فقط",
   "exitDemoTitle": "الخروج من هذا الحساب؟",
-
   "errorNetwork": "لا يوجد اتصال بالإنترنت. تحقق من الشبكة وحاول مرة أخرى.",
   "errorUnknown": "حدث خطأ غير متوقع. حاول مرة أخرى.",
   "errorInvalidOtp": "رمز التحقق غير صحيح",
@@ -144,6 +176,174 @@
   "errorPermissionDenied": "ليست لديك صلاحية لهذا الإجراء",
   "errorPlanLimit": "وصلت إلى حد الخطة المجانية",
   "errorSessionExpired": "انتهت الجلسة، سجّل الدخول مرة أخرى",
-
-  "cameraPermissionRationale": "نحتاج الكاميرا لمسح رمز الربط فقط."
+  "cameraPermissionRationale": "نحتاج الكاميرا لمسح رمز الربط فقط.",
+  "medsTitle": "الأدوية",
+  "medsOf": "أدوية {name}",
+  "@medsOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addMedication": "إضافة دواء",
+  "editMedication": "تعديل الدواء",
+  "deleteMedication": "حذف الدواء",
+  "deleteMedicationConfirm": "سيتوقف تذكير هذا الدواء. هل أنت متأكد؟",
+  "medName": "اسم الدواء",
+  "medDose": "الجرعة",
+  "medDoseHint": "مثال: حبة واحدة، 5 مل",
+  "medPhoto": "صورة العلبة",
+  "takePhoto": "تصوير",
+  "pickPhoto": "من المعرض",
+  "medTimes": "مواعيد الجرعات",
+  "addTime": "إضافة موعد",
+  "timesRequired": "أضف موعدًا واحدًا على الأقل",
+  "freqOnce": "مرة يوميًا",
+  "freqTwice": "مرتين",
+  "freqThrice": "3 مرات",
+  "medDays": "الأيام",
+  "everyDay": "كل يوم",
+  "medDuration": "المدة",
+  "ongoing": "مستمر",
+  "untilDate": "حتى {date}",
+  "@untilDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseEndDate": "اختر تاريخ الانتهاء",
+  "mealInstruction": "التعليمات",
+  "mealNone": "بدون",
+  "mealBefore": "قبل الأكل",
+  "mealAfter": "بعد الأكل",
+  "mealWith": "مع الأكل",
+  "mealBeforeSleep": "قبل النوم",
+  "medNotes": "ملاحظات",
+  "stockSection": "المخزون",
+  "stockQty": "الكمية المتوفرة",
+  "perDose": "عدد الوحدات في كل جرعة",
+  "stockLow": "قارب على النفاد",
+  "stockDaysLeft": "يكفي {days} يوم",
+  "@stockDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "illBuyIt": "سأشتريه أنا",
+  "buyerClaimed": "{name} سيشتريه",
+  "@buyerClaimed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelClaim": "إلغاء",
+  "freePlanMedsLimit": "الخطة المجانية تتيح 3 أدوية. ستتوفر خطة العائلة قريبًا لإضافة أدوية بلا حد.",
+  "noMedsTitle": "لا توجد أدوية بعد",
+  "noMedsBody": "أضف أدوية والدك لتصله تذكيرات بالصوت والصورة في مواعيدها، حتى بدون إنترنت.",
+  "todaySchedule": "جدول اليوم",
+  "allMeds": "كل الأدوية",
+  "medsToday": "الأدوية اليوم: {taken} من {due}",
+  "@medsToday": {
+    "placeholders": {
+      "taken": {
+        "type": "int"
+      },
+      "due": {
+        "type": "int"
+      }
+    }
+  },
+  "noDosesToday": "لا أدوية مجدولة اليوم",
+  "doseTaken": "أُخذ",
+  "doseMissed": "فات",
+  "doseSnoozed": "أُجّل",
+  "doseUpcoming": "قادم",
+  "doseDue": "حان وقته",
+  "doseSkipped": "تُرك",
+  "markTaken": "تأكيد أنه أُخذ",
+  "takenIt": "أخذته",
+  "later": "لاحقًا",
+  "nextDose": "الدواء القادم",
+  "nextDoseAt": "التالي: {name} الساعة {time}",
+  "@nextDoseAt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "allDosesDone": "أخذت كل أدويتك اليوم",
+  "doseTimeNow": "حان وقت الدواء",
+  "doseSpeech": "{name}. {dose}. {instruction}",
+  "@doseSpeech": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "dose": {
+        "type": "String"
+      },
+      "instruction": {
+        "type": "String"
+      }
+    }
+  },
+  "doseSpeechIntro": "حان وقت دوائك",
+  "takenThanks": "أحسنت، الله يعطيك العافية",
+  "laterOk": "سنذكّرك بعد 10 دقائق",
+  "reminderTitle": "حان وقت دوائك: {name}",
+  "@reminderTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderBody": "{dose} — اضغط «أخذته» بعد تناوله",
+  "@reminderBody": {
+    "placeholders": {
+      "dose": {
+        "type": "String"
+      }
+    }
+  },
+  "listen": "اسمع",
+  "permsTitle": "لنجهّز تذكيرات الدواء",
+  "permsBody": "حتى يرنّ المنبّه في وقته حتى لو كان الجوال مقفلًا أو بدون إنترنت، نحتاج الأذونات التالية:",
+  "permNotifications": "الإشعارات",
+  "permNotificationsWhy": "لعرض تذكير الدواء على الشاشة",
+  "permExactAlarms": "المنبّهات الدقيقة",
+  "permExactAlarmsWhy": "ليرنّ التذكير في موعده بالضبط",
+  "permBattery": "العمل في الخلفية",
+  "permBatteryWhy": "حتى لا يوقف نظام توفير البطارية التذكيرات",
+  "allow": "سماح",
+  "allowed": "تم",
+  "done": "تم",
+  "parentDetails": "تفاصيل {name}",
+  "@parentDetails": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "weekdayShort1": "إثنين",
+  "weekdayShort2": "ثلاثاء",
+  "weekdayShort3": "أربعاء",
+  "weekdayShort4": "خميس",
+  "weekdayShort5": "جمعة",
+  "weekdayShort6": "سبت",
+  "weekdayShort7": "أحد",
+  "requiredField": "هذا الحقل مطلوب",
+  "invalidNumber": "أدخل رقمًا صحيحًا"
 }

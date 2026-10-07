@@ -3,7 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>نحتاج الكاميرا لمسح رمز ربط جهاز الوالد.</string>
+	<string>نحتاج الكاميرا لمسح رمز الربط وتصوير علب الأدوية.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>لاختيار صورة علبة الدواء.</string>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ar</string>

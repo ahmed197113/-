@@ -6,6 +6,7 @@ abstract final class PlanLimits {
   static const freeMaxMedications = 3;
   static const premiumMaxElders = 10;
   static const premiumMaxMembers = 20;
+  static const premiumMaxMedications = 1000;
 
   static const linkCodeValidity = Duration(minutes: 15);
 }

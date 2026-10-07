@@ -21,4 +21,6 @@ abstract final class FsPaths {
   static String elders(String fid) => 'families/$fid/elders';
   static String elder(String fid, String eid) => 'families/$fid/elders/$eid';
   static String checkins(String fid, String eid) => 'families/$fid/elders/$eid/checkins';
+  static String medications(String fid, String eid) => 'families/$fid/elders/$eid/medications';
+  static String doseLogs(String fid, String eid) => 'families/$fid/elders/$eid/doseLogs';
 }

@@ -400,4 +400,289 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cameraPermissionRationale => 'نحتاج الكاميرا لمسح رمز الربط فقط.';
+
+  @override
+  String get medsTitle => 'الأدوية';
+
+  @override
+  String medsOf(String name) {
+    return 'أدوية $name';
+  }
+
+  @override
+  String get addMedication => 'إضافة دواء';
+
+  @override
+  String get editMedication => 'تعديل الدواء';
+
+  @override
+  String get deleteMedication => 'حذف الدواء';
+
+  @override
+  String get deleteMedicationConfirm =>
+      'سيتوقف تذكير هذا الدواء. هل أنت متأكد؟';
+
+  @override
+  String get medName => 'اسم الدواء';
+
+  @override
+  String get medDose => 'الجرعة';
+
+  @override
+  String get medDoseHint => 'مثال: حبة واحدة، 5 مل';
+
+  @override
+  String get medPhoto => 'صورة العلبة';
+
+  @override
+  String get takePhoto => 'تصوير';
+
+  @override
+  String get pickPhoto => 'من المعرض';
+
+  @override
+  String get medTimes => 'مواعيد الجرعات';
+
+  @override
+  String get addTime => 'إضافة موعد';
+
+  @override
+  String get timesRequired => 'أضف موعدًا واحدًا على الأقل';
+
+  @override
+  String get freqOnce => 'مرة يوميًا';
+
+  @override
+  String get freqTwice => 'مرتين';
+
+  @override
+  String get freqThrice => '3 مرات';
+
+  @override
+  String get medDays => 'الأيام';
+
+  @override
+  String get everyDay => 'كل يوم';
+
+  @override
+  String get medDuration => 'المدة';
+
+  @override
+  String get ongoing => 'مستمر';
+
+  @override
+  String untilDate(String date) {
+    return 'حتى $date';
+  }
+
+  @override
+  String get chooseEndDate => 'اختر تاريخ الانتهاء';
+
+  @override
+  String get mealInstruction => 'التعليمات';
+
+  @override
+  String get mealNone => 'بدون';
+
+  @override
+  String get mealBefore => 'قبل الأكل';
+
+  @override
+  String get mealAfter => 'بعد الأكل';
+
+  @override
+  String get mealWith => 'مع الأكل';
+
+  @override
+  String get mealBeforeSleep => 'قبل النوم';
+
+  @override
+  String get medNotes => 'ملاحظات';
+
+  @override
+  String get stockSection => 'المخزون';
+
+  @override
+  String get stockQty => 'الكمية المتوفرة';
+
+  @override
+  String get perDose => 'عدد الوحدات في كل جرعة';
+
+  @override
+  String get stockLow => 'قارب على النفاد';
+
+  @override
+  String stockDaysLeft(int days) {
+    return 'يكفي $days يوم';
+  }
+
+  @override
+  String get illBuyIt => 'سأشتريه أنا';
+
+  @override
+  String buyerClaimed(String name) {
+    return '$name سيشتريه';
+  }
+
+  @override
+  String get cancelClaim => 'إلغاء';
+
+  @override
+  String get freePlanMedsLimit =>
+      'الخطة المجانية تتيح 3 أدوية. ستتوفر خطة العائلة قريبًا لإضافة أدوية بلا حد.';
+
+  @override
+  String get noMedsTitle => 'لا توجد أدوية بعد';
+
+  @override
+  String get noMedsBody =>
+      'أضف أدوية والدك لتصله تذكيرات بالصوت والصورة في مواعيدها، حتى بدون إنترنت.';
+
+  @override
+  String get todaySchedule => 'جدول اليوم';
+
+  @override
+  String get allMeds => 'كل الأدوية';
+
+  @override
+  String medsToday(int taken, int due) {
+    return 'الأدوية اليوم: $taken من $due';
+  }
+
+  @override
+  String get noDosesToday => 'لا أدوية مجدولة اليوم';
+
+  @override
+  String get doseTaken => 'أُخذ';
+
+  @override
+  String get doseMissed => 'فات';
+
+  @override
+  String get doseSnoozed => 'أُجّل';
+
+  @override
+  String get doseUpcoming => 'قادم';
+
+  @override
+  String get doseDue => 'حان وقته';
+
+  @override
+  String get doseSkipped => 'تُرك';
+
+  @override
+  String get markTaken => 'تأكيد أنه أُخذ';
+
+  @override
+  String get takenIt => 'أخذته';
+
+  @override
+  String get later => 'لاحقًا';
+
+  @override
+  String get nextDose => 'الدواء القادم';
+
+  @override
+  String nextDoseAt(String name, String time) {
+    return 'التالي: $name الساعة $time';
+  }
+
+  @override
+  String get allDosesDone => 'أخذت كل أدويتك اليوم';
+
+  @override
+  String get doseTimeNow => 'حان وقت الدواء';
+
+  @override
+  String doseSpeech(String name, String dose, String instruction) {
+    return '$name. $dose. $instruction';
+  }
+
+  @override
+  String get doseSpeechIntro => 'حان وقت دوائك';
+
+  @override
+  String get takenThanks => 'أحسنت، الله يعطيك العافية';
+
+  @override
+  String get laterOk => 'سنذكّرك بعد 10 دقائق';
+
+  @override
+  String reminderTitle(String name) {
+    return 'حان وقت دوائك: $name';
+  }
+
+  @override
+  String reminderBody(String dose) {
+    return '$dose — اضغط «أخذته» بعد تناوله';
+  }
+
+  @override
+  String get listen => 'اسمع';
+
+  @override
+  String get permsTitle => 'لنجهّز تذكيرات الدواء';
+
+  @override
+  String get permsBody =>
+      'حتى يرنّ المنبّه في وقته حتى لو كان الجوال مقفلًا أو بدون إنترنت، نحتاج الأذونات التالية:';
+
+  @override
+  String get permNotifications => 'الإشعارات';
+
+  @override
+  String get permNotificationsWhy => 'لعرض تذكير الدواء على الشاشة';
+
+  @override
+  String get permExactAlarms => 'المنبّهات الدقيقة';
+
+  @override
+  String get permExactAlarmsWhy => 'ليرنّ التذكير في موعده بالضبط';
+
+  @override
+  String get permBattery => 'العمل في الخلفية';
+
+  @override
+  String get permBatteryWhy => 'حتى لا يوقف نظام توفير البطارية التذكيرات';
+
+  @override
+  String get allow => 'سماح';
+
+  @override
+  String get allowed => 'تم';
+
+  @override
+  String get done => 'تم';
+
+  @override
+  String parentDetails(String name) {
+    return 'تفاصيل $name';
+  }
+
+  @override
+  String get weekdayShort1 => 'إثنين';
+
+  @override
+  String get weekdayShort2 => 'ثلاثاء';
+
+  @override
+  String get weekdayShort3 => 'أربعاء';
+
+  @override
+  String get weekdayShort4 => 'خميس';
+
+  @override
+  String get weekdayShort5 => 'جمعة';
+
+  @override
+  String get weekdayShort6 => 'سبت';
+
+  @override
+  String get weekdayShort7 => 'أحد';
+
+  @override
+  String get requiredField => 'هذا الحقل مطلوب';
+
+  @override
+  String get invalidNumber => 'أدخل رقمًا صحيحًا';
 }

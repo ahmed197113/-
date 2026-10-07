@@ -42,10 +42,16 @@ abstract final class Routes {
   static const invite = '/home/invite';
   static const settings = '/home/settings';
   static String linkElder(String elderId) => '/home/elder/$elderId/link';
+  static String medications(String elderId) => '/home/elder/$elderId/meds';
+  static String newMedication(String elderId) => '/home/elder/$elderId/meds/new';
+  static String editMedication(String elderId, String medId) => '/home/elder/$elderId/meds/$medId/edit';
   static const elderLink = '/elder/link';
   static const elderScan = '/elder/link/scan';
   static const elderHome = '/elder/home';
   static const elderKids = '/elder/home/kids';
+  static const elderMeds = '/elder/home/meds';
+  static const elderPermissions = '/elder/home/permissions';
+  static String elderDose(String doseId) => '/elder/home/dose/$doseId';
 }
 
 /// Pure redirect logic: keeps the user inside the routes their stage allows.
