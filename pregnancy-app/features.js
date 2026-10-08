@@ -185,6 +185,31 @@ const babyAge = () => {
 };
 const todayLog = arr => arr.filter(x => iso(new Date(x.t)) === iso(today()));
 
+/* ---------- نصيحة كل يوم (daily.js) ---------- */
+// اليوم الحالي من 280، وover = تجاوزت موعد الولادة
+const dailyNow = () => { const n = status().days + 1; return { d: Math.min(280, Math.max(1, n)), over: n > 280 }; };
+const firstSentence = t => t.split(/(?<=[.؟!])\s+/)[0];
+const dailyShare = x => `💡 ${x.title}\n${x.text}${x.act ? `\n✅ ${x.act}` : ''}\n\nمن تطبيق ${APP_NAME}`;
+
+// كارت الرئيسية (أثناء الحمل)
+function dailyHomeCard() {
+  const dn = dailyNow(), dx = DAILY[dn.d - 1];
+  return `<div class="card tip-card tap" data-sub="daily"><span class="big-ic">💡</span><div class="grow">
+    <small class="muted">نصيحة اليوم · اليوم ${dn.d} من 280</small><b style="display:block">${dx.title}</b>
+    <div class="muted">${firstSentence(dx.text)}</div></div><span class="chev">‹</span></div>`;
+}
+
+function dailyCard(x, over) {
+  const [ic, cat] = DAILY_CATS[x.cat], done = !!S.dailyDone[x.d], fav = !!S.dailyFav[x.d];
+  return `<div class="card daily-card"><span class="chip">${ic} ${cat}</span>
+    <h2>${x.title}</h2><p>${x.text}</p>
+    ${over && x.d === 280 ? '<p><b>طفلك على وشك الوصول 💗</b></p>' : ''}</div>
+  ${x.act ? `<div class="card ${done ? 'done-card' : ''}"><h3 style="margin-top:0">✅ مهمة اليوم</h3><p>${x.act}</p>
+    <button class="btn ${done ? 'ghost' : ''} block" id="dDone">${done ? '✓ عملتها' : 'عملتها'}</button></div>` : ''}
+  <div class="row" style="margin-bottom:14px"><button class="btn ghost grow" id="dFav">${fav ? '❤️ محفوظة' : '🤍 حفظ'}</button>
+    <a class="btn ghost grow center" target="_blank" rel="noopener" href="${waLink(dailyShare(x))}">💬 واتساب</a></div>`;
+}
+
 /* ---------- إضافات الصفحة الرئيسية (الحمل) ---------- */
 function homeExtras(st) {
   const t = iso(today());
@@ -266,6 +291,19 @@ function viewBabyHub() {
 
 /* ---------- الشاشات الفرعية الجديدة ---------- */
 Object.assign(SUBVIEWS, {
+  daily() {
+    const now = dailyNow(), sel = Math.min(280, Math.max(1, route.dd || now.d)), favs = Object.keys(S.dailyFav).filter(k => S.dailyFav[k]).map(Number).sort((a, b) => a - b);
+    const tabs = `<div class="seg big" id="dailySeg"><button data-dtab="day" class="${route.tab !== 'fav' ? 'on' : ''}">💡 نصيحة اليوم</button><button data-dtab="fav" class="${route.tab === 'fav' ? 'on' : ''}">❤️ المحفوظة (${favs.length})</button></div>`;
+    if (route.tab === 'fav') return tabs + (favs.length ? `<div class="card group">${favs.map(d => `<div class="nav-row" data-dday="${d}"><span class="ic">${DAILY_CATS[DAILY[d - 1].cat][0]}</span><div class="grow"><b>${DAILY[d - 1].title}</b><div class="muted">اليوم ${d} · الأسبوع ${Math.ceil(d / 7)}</div></div><span class="chev">‹</span></div>`).join('')}</div>`
+      : '<p class="muted center">لم تحفظي نصائح بعد. اضغطي 🤍 حفظ على أي نصيحة لتجديها هنا.</p>');
+    const x = DAILY[sel - 1], locked = sel > now.d;
+    const nav = `<div class="row" style="align-items:center;margin-bottom:12px"><button class="btn ghost sm" id="dPrev" ${sel <= 1 ? 'disabled' : ''}>→ السابق</button>
+      <div class="grow center"><b>اليوم ${sel} من 280</b><div class="muted">الأسبوع ${Math.ceil(sel / 7)}${sel === now.d ? ' · اليوم' : ''}</div></div>
+      <button class="btn ghost sm" id="dNext" ${sel >= 280 ? 'disabled' : ''}>التالي ←</button></div>`;
+    return tabs + nav + (locked ? `<div class="card center locked-card"><div class="big-ic">🔒</div><h3>${x.title}</h3>
+      <p class="muted">تُفتح بعد ${sel - now.d === 1 ? 'يوم واحد' : sel - now.d === 2 ? 'يومين' : `${sel - now.d} أيام`} 💗</p></div>` : dailyCard(x, now.over))
+      + (sel !== now.d ? '<button class="btn ghost block" id="dToday">العودة لنصيحة اليوم</button>' : '');
+  },
   assist() { return viewAssist(); },
 
   checkin() {
@@ -589,6 +627,15 @@ function communityTeaser() {
 
 function featBind() {
   const on = (id, fn, ev = 'onclick') => { const el = $(id); if (el) el[ev] = fn; };
+  // نصيحة كل يوم
+  const dGo = d => { route.dd = Math.min(280, Math.max(1, d)); route.tab = 'day'; history.replaceState(route, ''); render(false); };
+  app.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => { route.tab = b.dataset.dtab; history.replaceState(route, ''); render(false); });
+  app.querySelectorAll('[data-dday]').forEach(b => b.onclick = () => dGo(+b.dataset.dday));
+  on('#dPrev', () => dGo((route.dd || dailyNow().d) - 1));
+  on('#dNext', () => dGo((route.dd || dailyNow().d) + 1));
+  on('#dToday', () => dGo(dailyNow().d));
+  on('#dDone', () => { const d = route.dd || dailyNow().d; S.dailyDone[d] = !S.dailyDone[d]; if (!S.dailyDone[d]) delete S.dailyDone[d]; save(); render(false); });
+  on('#dFav', () => { const d = route.dd || dailyNow().d; if (S.dailyFav[d]) delete S.dailyFav[d]; else S.dailyFav[d] = true; save(); toast(S.dailyFav[d] ? 'تم الحفظ ❤️' : 'أُزيلت من المحفوظة'); render(false); });
   cmBind();
   app.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { route.as = b.dataset.as; history.replaceState(route, ''); render(false); });
   app.querySelectorAll('[data-go-cm]').forEach(b => b.onclick = () => { route = { view: 'assist', as: 'cm' }; history.pushState(route, ''); render(); });

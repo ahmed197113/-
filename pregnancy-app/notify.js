@@ -1,4 +1,4 @@
-/* نبضٌ صغير — إشعار مع بداية كل أسبوع حمل (وكل شهر من عمر الطفل)، وتذكيرات يومية (الدواء، الماء)
+/* نبضٌ صغير — إشعار مع بداية كل أسبوع حمل (وكل شهر من عمر الطفل)، ونصيحة كل يوم، وتذكيرات يومية (الدواء، الماء)
    في تطبيق الأندرويد: إشعارات محلية مجدولة على الجهاز نفسه (بدون إنترنت وبدون خادم).
    في المتصفح: رسالة ترحيب داخل التطبيق عند فتحه في أسبوع جديد. */
 'use strict';
@@ -46,9 +46,26 @@ const Notify = (() => {
     return list.filter(n => n.at.getTime() > now + 60e3);
   }
 
+  // نصيحة كل يوم أثناء الحمل: 14 يوماً قادمة، ids من 3000، وتتوقف بعد تسجيل الولادة
+  function tips(now) {
+    const list = [], c = S.dailyTip || {};
+    if (!c.on || S.baby || !S.profile || typeof DAILY === 'undefined') return list;
+    const t0 = new Date(now); t0.setHours(0, 0, 0, 0);
+    const start = addDays(calcDue(S.profile), -280);
+    let m = hm(c.time); if (m == null) m = 9 * 60;
+    for (let d = 0; d < DAYS; d++) {
+      const day = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate() + d), n = diffDays(day, start) + 1;
+      if (n < 1 || n > 280) continue;
+      // يوم بداية أسبوع جديد فيه إشعار أسبوعي في العاشرة: النصيحة بعده بنصف ساعة حتى لا يتزامنا
+      const mm = m === HOUR * 60 && n % 7 === 1 && S.notify !== false ? m + 30 : m;
+      list.push({ id: 3000 + d, at: atMin(day, mm), title: 'نصيحة اليوم 💡', body: DAILY[n - 1].hook, extra: { view: 'more', sub: 'daily', d: n } });
+    }
+    return list.filter(x => x.at.getTime() > now + 60e3);
+  }
+
   function plan(nowMs = Date.now()) {
     const list = [], now = nowMs + 60e3;
-    if (S.notify === false) return reminders(nowMs);
+    if (S.notify === false) return tips(nowMs).concat(reminders(nowMs));
     if (S.baby && S.baby.date) {
       const b = new Date(S.baby.date), name = S.baby.name || 'طفلك';
       for (let m = 1; m <= 24; m++) {
@@ -69,7 +86,7 @@ const Notify = (() => {
           body: short((hasSize ? `${name} الآن بحجم ${x.size}. ` : '') + (x.baby.find(t => !/طوله|وزنه/.test(t)) || x.baby[0]), 150), extra: { view: 'weeks', week: w } });
       }
     }
-    return list.concat(reminders(nowMs));
+    return list.concat(tips(nowMs), reminders(nowMs));
   }
 
   async function sync(ask = false) {
@@ -92,7 +109,7 @@ const Notify = (() => {
     const LN = plugin(); if (!LN) return;
     LN.addListener('localNotificationActionPerformed', a => {
       const x = (a.notification && a.notification.extra) || {};
-      route = { view: x.view || 'home' }; if (x.sub) route.sub = x.sub; if (x.week) route.week = x.week; if (x.bm != null) { route.sub = 'bguide'; route.bm = x.bm; }
+      route = { view: x.view || 'home' }; if (x.sub) route.sub = x.sub; if (x.d) route.dd = x.d; if (x.week) route.week = x.week; if (x.bm != null) { route.sub = 'bguide'; route.bm = x.bm; }
       history.replaceState(route, ''); render();
     });
   }

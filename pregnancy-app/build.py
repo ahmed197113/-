@@ -7,7 +7,7 @@ ph = open(d + 'photos.js', encoding='utf-8').read()
 old = "const src = w => `images/week-${String(Math.min(LAST, Math.max(1, w))).padStart(2, '0')}.webp`;"
 assert old in ph
 ph = ph.replace(old, "const IMG = " + imgs + ";\n  const src = w => IMG[Math.min(LAST, Math.max(1, w))];")
-for f in ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'app.js', 'features.js', 'community.js', 'account.js', 'notify.js']:
+for f in ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'daily.js', 'config.js', 'app.js', 'features.js', 'community.js', 'account.js', 'notify.js']:
     h = h.replace(f'<script src="{f}"></script>', '<script>\n' + open(d + f, encoding='utf-8').read() + '\n</script>')
 h = h.replace('<script src="photos.js"></script>', '<script>\n' + ph + '\n</script>')
 fc = open(d + 'fonts.css', encoding='utf-8').read()

@@ -542,3 +542,13 @@ details.more-tools[open] > :not(summary) { animation: softIn .35s cubic-bezier(.
 @media (prefers-reduced-motion: reduce) { #app > *, .soft, details.more-tools[open] > * { animation: none !important; } }
 
 .app-logo { display: block; width: 72px; height: 72px; margin: 14px auto 6px; border-radius: 18px; box-shadow: 0 8px 24px rgba(250,26,127,.28); }
+
+/* نصيحة كل يوم */
+.daily-card h2 { margin: 10px 0 8px; }
+.daily-card p { margin: 0 0 6px; line-height: 1.8; }
+.daily-card .chip { display: inline-block; font-size: .82rem; padding: 4px 12px; border-radius: 999px; background: var(--card-2); border: 1px solid var(--border); }
+.locked-card .big-ic { font-size: 2rem; }
+.locked-card h3 { margin: 8px 0 4px; }
+.done-card { border-color: color-mix(in srgb, #4caf7d 55%, var(--border)); }
+.tip-card.tap { cursor: pointer; align-items: center; }
+.daily-card .chip { cursor: default; }

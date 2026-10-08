@@ -9,7 +9,8 @@ const defaults = () => ({
   weights: [], kicks: [], contractions: [], appts: [], journal: [],
   bag: {}, water: {}, vitamins: {}, favNames: [], done: {}, theme: 'dark',
   labs: [], checks: [], med: {}, letters: [], baby: null, feeds: [], diapers: [], sleeps: [], growth: [],
-  vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: [], voted: {}
+  vax: {}, miles: {}, recovery: {}, moodChecks: [], chat: [], voted: {},
+  dailyDone: {}, dailyFav: {}, dailyTip: { on: true, time: '09:00' } // نصيحة كل يوم: إشعارها مفعّل للمستخدمات الجديدات فقط
 });
 
 let S = load();
@@ -17,7 +18,11 @@ let route = { view: 'home', sub: null, week: null };
 let timers = [];
 
 function load() {
-  try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); }
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY)) || {};
+    if (d.profile && !d.dailyTip) d.dailyTip = { on: false, time: '09:00' }; // المستخدمات الحاليات: الإشعار اختياري
+    return Object.assign(defaults(), d);
+  }
   catch { return defaults(); }
 }
 function save() {
@@ -103,7 +108,7 @@ const TOOLS = [
   ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن أم لا؟'], ['album', '📸', 'ألبوم رحلتي'],
   ['born', '🎉', 'وُلد طفلي'], ['feeds', '🍼', 'الرضاعة'], ['diapers', '💧', 'الحفاضات'], ['sleep', '😴', 'نوم الطفل'], ['growth', '📈', 'نمو الطفل'],
   ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل'],
-  ['account', '☁️', 'حسابي'], ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
+  ['account', '☁️', 'حسابي'], ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['daily', '💡', 'نصيحة كل يوم'], ['momguide', '🌷', 'صحتك بعد الولادة']
 ];
 const APP_NAME = 'نبضٌ صغير';
 
@@ -338,6 +343,7 @@ function viewHome() {
   ${hero(sel)}
   ${weekStrip(sel, st)}
   ${progressCard(st)}
+  ${dailyHomeCard()}
   <div class="card nav-row" data-week="${sel}"><span class="ic">${w.emoji}</span><div class="grow"><b>${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</b><div class="muted">${w.baby[0]}</div></div><span class="chev">‹</span></div>
   ${badLabs || (tr && tr.lvl >= 2) ? `<button class="alert-line" data-sub="${badLabs ? 'labs' : 'checkin'}">${badLabs ? `🧪 ${badLabs} تحليل يحتاج انتباهك` : `${tr.ic} ${tr.title}`} ‹</button>` : ''}
   ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:6px auto;color:var(--gold)">🎉 وُلد طفلي؟</button>` : ''}
@@ -470,6 +476,8 @@ function viewMore() {
   </div>
   <div class="set-block"><h3>🔔 الإشعارات</h3>
     <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
+    ${S.baby ? '' : `<label class="check"><input type="checkbox" id="dailyTipOn" ${S.dailyTip?.on ? 'checked' : ''}><span>💡 نصيحة كل يوم</span></label>
+    ${S.dailyTip?.on ? `<label class="f">وقت الإشعار<input type="time" class="input" id="dailyTipTime" value="${esc(S.dailyTip.time || '09:00')}"></label>` : ''}`}
     ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
   ${viewReminders()}
   <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
@@ -496,6 +504,8 @@ function viewReminders() {
 function bindReminders() {
   const on = (id, fn, ev = 'onclick') => { const el = $(id); if (el) el[ev] = fn; };
   const upd = async (f, again = true) => { const r = Notify.rem(); f(r); S.reminders = r; save(); if (again) render(false); await Notify.sync(true); };
+  on('#dailyTipOn', async e => { S.dailyTip = { time: '09:00', ...S.dailyTip, on: e.target.checked }; save(); render(false); await Notify.sync(e.target.checked); }, 'onchange');
+  on('#dailyTipTime', e => { if (!e.target.value) return; S.dailyTip = { ...S.dailyTip, time: e.target.value }; save(); Notify.sync(false); }, 'onchange');
   on('#remMedOn', e => upd(r => { r.med.on = e.target.checked; }), 'onchange');
   on('#remWaterOn', e => upd(r => { r.water.on = e.target.checked; }), 'onchange');
   on('#remMedName', e => upd(r => { r.med.name = e.target.value.trim().slice(0, 30); }, false), 'onchange');
