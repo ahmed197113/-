@@ -7,7 +7,19 @@ require __DIR__ . '/lib.php';
 $dev = device();
 $in = input();
 $mode = $in['mode'] ?? 'chat';
-if (!in_array($mode, ['chat', 'labs', 'report'], true)) out(['error' => 'bad_mode'], 400);
+if (!in_array($mode, ['chat', 'labs', 'report', 'test'], true)) out(['error' => 'bad_mode'], 400);
+
+/* فحص المساعد (للإدارة فقط): يجرب كل نموذج برسالة قصيرة ويرجع رمز Gemini ورسالته، لمعرفة سبب «مشغول» */
+if ($mode === 'test') {
+  if ($CFG['admin_token'] === 'CHANGE-ME-LONG-RANDOM' || !hash_equals((string)$CFG['admin_token'], (string)($in['admin'] ?? ''))) { sleep(2); out(['error' => 'forbidden'], 403); }
+  $body = ['contents' => [['role' => 'user', 'parts' => [['text' => 'قولي: تمام']]]], 'generationConfig' => ['maxOutputTokens' => 20]];
+  $report = [];
+  foreach (llm_models() as $model) {
+    [$code, $res] = gemini_call($model, $body);
+    $report[] = ['model' => $model, 'http' => $code, 'ok' => $code === 200, 'message' => $res['error']['message'] ?? null, 'status' => $res['error']['status'] ?? null];
+  }
+  out(['models' => $report]);
+}
 
 /* الإبلاغ عن رد من المساعد: يُحفظ للمراجعة في صفحة الإشراف ولا يُرسل لـ Gemini */
 if ($mode === 'report') {

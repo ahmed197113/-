@@ -10,6 +10,8 @@ return [
   // مفتاح Gemini المجاني من aistudio.google.com ← Get API key
   'gemini_key' => 'AIza...',
   'model'      => 'gemini-flash-latest',
+  // نماذج بديلة تُجرب تلقائياً إذا كان الأساسي مشغولاً (429/503)
+  'fallback_models' => ['gemini-flash-lite-latest'],
 
   // حدود الاستخدام اليومية لكل جهاز (لحماية الرصيد)
   'ai_daily_chat' => 30,

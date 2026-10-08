@@ -21,9 +21,12 @@ const { WEEKS, WEEK_MORE } = run(Date.now());
 const names = WEEKS.map(w => w.size);
 ok(new Set(names).size === names.length, 'duplicate size names: ' + names.filter((n, i) => names.indexOf(n) !== i));
 WEEKS.forEach(w => (WEEK_MORE[w.w]?.baby || []).forEach(t => { const m = t.match(/\(بحجم ([^)]+)\)/); if (m) ok(m[1] === w.size, `week ${w.w}: "${m[1]}" != "${w.size}"`); }));
-// تكرار الإيموجي مسموح فقط لنفس الثمرة (الكلمة الأولى من الاسم واحدة)
-const byEm = {}; WEEKS.forEach(w => (byEm[w.emoji] = byEm[w.emoji] || []).push(w));
-Object.entries(byEm).forEach(([e, l]) => { const roots = new Set(l.map(w => w.size.split(' ')[0])); ok(roots.size === 1, `emoji ${e} on different items: ${l.map(w => w.w + ':' + w.size)}`); });
+// تنوع الأشكال: لا يتكرر نفس الإيموجي في أسبوعين متتاليين
+WEEKS.forEach((w, i) => i && ok(w.emoji !== WEEKS[i - 1].emoji, `weeks ${w.w - 1}/${w.w} same emoji ${w.emoji}`));
+// جملة «بحجم …» في نصيحة اليوم الأول من كل أسبوع تطابق WEEKS
+const DAILY = vm.runInContext('DAILY', (() => { const c = {}; vm.createContext(c); vm.runInContext(rd('daily.js') + '\nthis.DAILY = DAILY;', c); return c; })());
+DAILY.filter(x => x.cat === 'baby').forEach(x => { const m = x.hook.match(/بحجم ([^،]+)،/), w = WEEKS[Math.ceil(x.d / 7) - 1];
+  if (m) ok(m[1] === w.size || ['حبة ', 'ثمرة '].some(p => m[1] === p + w.size) || m[1].startsWith(w.size), `day ${x.d}: hook size "${m[1]}" != week ${w.w} "${w.size}"`); });
 // 2) الجدولة
 const NOW = new Date(2026, 9, 8, 8, 0).getTime(); // 8 أكتوبر 2026، 8 صباحاً
 const lmp = '2026-05-01';

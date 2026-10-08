@@ -20,6 +20,11 @@
    - SPF: سجل TXT على اسم الدومين، وقيمته من Site Tools ← Email ← Authentication ← SPF.
    - DKIM: سجل TXT باسم `default._domainkey.<الدومين>`، وقيمته من Site Tools ← Email ← Authentication ← DKIM.
 8. أرسلي رابط `https://دومينك/nabd-api` ليوضع في `config.js` داخل التطبيق.
+9. **إذا قال المساعد «مشغول الآن»:** معناها أن Gemini رد بـ 429 (تجاوز حد الخطة المجانية) أو 503 (النموذج مزدحم). السيرفر يجرّب تلقائياً النماذج البديلة في `fallback_models` داخل `config.php` (الافتراضي `gemini-flash-lite-latest`).
+   لمعرفة السبب بالضبط أرسلي POST إلى `ai.php` بالمحتوى `{"mode":"test","admin":"<admin_token>"}`؛ يرجع لكل نموذج رمز HTTP ورسالة Google.
+   - `429` مع `RESOURCE_EXHAUSTED`: انتهت حصة اليوم المجانية للمفتاح؛ انتظري للغد، أو فعّلي الفوترة في Google AI Studio، أو غيّري `model` لنموذج حصته أكبر.
+   - `400`/`403`: المفتاح خطأ أو غير مفعّل؛ أنشئي مفتاحاً جديداً من aistudio.google.com.
+   - `404`: اسم النموذج غير موجود؛ غيّري `model`.
 
 ## تحديث سيرفر قائم (إضافة الحساب)
 إن كان السيرفر يعمل من قبل: ارفعي `account.php` الجديد إلى `nabd-api`، وأعيدي Import لملف `schema.sql` (آمن، ينشئ الجداول الجديدة فقط)، وأضيفي `mail_from` إلى `config.php` كما في الخطوة 7.

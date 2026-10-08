@@ -84,6 +84,31 @@ function clean(string $s, int $max, bool $multiline = false): string {
   return mb_substr(trim($s ?? ''), 0, $max);
 }
 
+/* النماذج بالترتيب: 'model' ثم 'fallback_models' من config.php */
+function llm_models(): array {
+  global $CFG;
+  $list = array_merge([$CFG['model'] ?? 'gemini-flash-latest'], (array)($CFG['fallback_models'] ?? ['gemini-flash-lite-latest']));
+  return array_values(array_unique(array_filter($list, 'is_string')));
+}
+
+/* طلب واحد إلى Gemini: يرجع [رمز HTTP، الرد بعد فك JSON، النص الخام] */
+function gemini_call(string $model, array $body): array {
+  global $CFG;
+  $base = $CFG['api_base'] ?? 'https://generativelanguage.googleapis.com/v1beta/models/';
+  $ch = curl_init($base . rawurlencode($model) . ':generateContent');
+  curl_setopt_array($ch, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_TIMEOUT => 90,
+    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'x-goog-api-key: ' . $CFG['gemini_key']],
+    CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_UNICODE),
+  ]);
+  $raw = curl_exec($ch);
+  $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return [$code, is_string($raw) ? json_decode($raw, true) : null, $raw];
+}
+
 /* استدعاء نموذج Google Gemini (الخطة المجانية) — يرجع النص أو ينهي الطلب برسالة خطأ مناسبة.
    $messages: [['role' => 'user'|'assistant', 'content' => نص أو [['type'=>'text'|'image', ...]]]] */
 function llm(string $system, array $messages, int $maxTokens): string {
@@ -102,22 +127,19 @@ function llm(string $system, array $messages, int $maxTokens): string {
     'contents' => $contents,
     'generationConfig' => ['maxOutputTokens' => $maxTokens],
   ];
-  $model = $CFG['model'] ?? 'gemini-flash-latest';
-  $base = $CFG['api_base'] ?? 'https://generativelanguage.googleapis.com/v1beta/models/';
-  $ch = curl_init($base . rawurlencode($model) . ':generateContent');
-  curl_setopt_array($ch, [
-    CURLOPT_POST => true,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 90,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'x-goog-api-key: ' . $CFG['gemini_key']],
-    CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_UNICODE),
-  ]);
-  $raw = curl_exec($ch);
-  $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
-  $res = is_string($raw) ? json_decode($raw, true) : null;
+  // النموذج الأساسي ثم البدائل: عند الضغط (429) أو الانشغال (503) نجرب النموذج التالي بدل إظهار «مشغول» مباشرة
+  $code = 0; $res = null;
+  foreach (llm_models() as $i => $model) {
+    for ($try = 0; $try < 2; $try++) {
+      [$code, $res, $raw] = gemini_call($model, $body);
+      if ($code === 200 && is_array($res)) break 2;
+      error_log('nabd ai error ' . $model . ' ' . $code . ' ' . substr((string)$raw, 0, 500));
+      if ($code !== 503) break; // 503 مؤقت غالباً: إعادة واحدة بعد ثانية
+      sleep(1);
+    }
+    if (!in_array($code, [429, 503], true)) break; // خطأ آخر (مفتاح، طلب) لن يحله نموذج بديل
+  }
   if ($code !== 200 || !is_array($res)) {
-    error_log('nabd ai error ' . $code . ' ' . substr((string)$raw, 0, 500));
     $busy = in_array($code, [429, 503], true);
     out(['error' => $busy ? 'busy' : 'upstream', 'text' => $busy ? 'المساعد مشغول الآن، جرّبي بعد دقيقة.' : 'تعذّر الوصول للمساعد الآن.'], 502);
   }
