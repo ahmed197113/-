@@ -7,7 +7,21 @@ require __DIR__ . '/lib.php';
 $dev = device();
 $in = input();
 $mode = $in['mode'] ?? 'chat';
-if (!in_array($mode, ['chat', 'labs'], true)) out(['error' => 'bad_mode'], 400);
+if (!in_array($mode, ['chat', 'labs', 'report'], true)) out(['error' => 'bad_mode'], 400);
+
+/* الإبلاغ عن رد من المساعد: يُحفظ للمراجعة في صفحة الإشراف ولا يُرسل لـ Gemini */
+if ($mode === 'report') {
+  $reasons = ['معلومة طبية خاطئة', 'محتوى غير لائق', 'أخرى'];
+  $reason = clean((string)($in['reason'] ?? ''), 40);
+  if (!in_array($reason, $reasons, true)) $reason = 'أخرى';
+  $answer = clean((string)($in['answer'] ?? ''), 8000, true);
+  if ($answer === '') out(['error' => 'empty'], 400);
+  if (!bump("air:$dev", 20)) out(['error' => 'rate_limited', 'text' => 'وصلتِ للحد اليومي للبلاغات، جرّبي غداً.'], 429);
+  ai_reports_table();
+  db()->prepare('INSERT INTO ai_reports (dev, question, answer, reason, note, t) VALUES (?,?,?,?,?,?)')
+    ->execute([$dev, clean((string)($in['question'] ?? ''), 2000, true), $answer, $reason, clean((string)($in['note'] ?? ''), 500, true), (int)round(microtime(true) * 1000)]);
+  out(['ok' => true]);
+}
 if (banned($dev)) out(['error' => 'banned'], 403);
 $limit = $mode === 'labs' ? (int)$CFG['ai_daily_labs'] : (int)$CFG['ai_daily_chat'];
 if (!bump("ip:" . client_ip(), (int)$CFG['ai_daily_ip']) || !bump("$mode:$dev", $limit)) {

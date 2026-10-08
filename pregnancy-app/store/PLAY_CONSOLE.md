@@ -53,6 +53,30 @@
 
 لا يجمع: الموقع، جهات الاتصال، الرسائل، الملفات، التقويم، معرّف الإعلانات، بيانات مالية، سجل التصفح.
 
+## المحتوى المولَّد بالذكاء الاصطناعي (AI-generated content)
+- التطبيق فيه مساعد ذكي («نبض — رفيقتك الذكية») يعمل بنموذج **Gemini** من Google عبر سيرفرنا (`server/api/ai.php`)، للتثقيف الصحي وشرح التحاليل فقط، مع تنبيه طبي ظاهر تحت المحادثة.
+- **الإبلاغ داخل التطبيق:** تحت كل رد من المساعد زر «🚩 إبلاغ» تختار فيه المستخدمة السبب (معلومة طبية خاطئة / محتوى غير لائق / أخرى) مع ملاحظة اختيارية، دون مغادرة التطبيق. البلاغ يُحفظ على السيرفر (جدول `ai_reports`) ولا يُرسل إلى Gemini، ويظهر في صفحة الإشراف `admin.php` للمراجعة. الحد الأقصى 20 بلاغاً يومياً لكل جهاز.
+- **النسخ الاحتياطي مقفول:** `android:allowBackup="false"` و`android:fullBackupContent="false"` في ملف التطبيق، فلا تُنسخ بيانات الحمل الصحية تلقائياً إلى Google Drive.
+- روابط **سياسة الخصوصية** و**حذف الحساب والبيانات** موجودة داخل التطبيق في صفحة «المزيد» وصفحة الحساب، وتفتح في المتصفح.
+
+## خطوات مفتاح الرفع (Upload key)
+1. أنشئي المفتاح مرة واحدة (يحتاج Java/JDK مثبّتاً). استخدمي **كلمة سر واحدة** للمفتاح والـ store:
+   ```
+   keytool -genkeypair -v -keystore nabd-upload.jks -alias nabd-upload -keyalg RSA -keysize 2048 -validity 10000
+   ```
+2. حوّليه إلى Base64 على ويندوز بإحدى الطريقتين:
+   - موجه الأوامر: `certutil -encode nabd-upload.jks out.txt` ثم افتحي `out.txt` واحذفي سطري `-----BEGIN CERTIFICATE-----` و`-----END CERTIFICATE-----`.
+   - PowerShell:
+     ```
+     [Convert]::ToBase64String([IO.File]::ReadAllBytes("nabd-upload.jks")) | Out-File b64.txt
+     ```
+3. في GitHub: المستودع ← **Settings** ← **Secrets and variables** ← **Actions** ← **New repository secret**، وأضيفي:
+   - `PLAY_KEYSTORE_B64` = محتوى ملف Base64 كاملاً.
+   - `PLAY_KEYSTORE_PASSWORD` = كلمة السر (نفسها للمفتاح والـ store).
+4. بعدها أي تشغيل لـ workflow «Build Android APK» يُخرج ملف AAB موقّعاً (artifact باسم `nabd-google-play-aab`).
+
+> ⚠️ ملف `nabd-upload.jks` **لا يُرفع أبداً على المستودع**. احتفظي بنسخة منه (ومن كلمة السر) خارج المستودع في مكان آمن، مثل فلاشة أو تخزين سحابي خاص؛ فقدانه يعني طلب إعادة تعيين مفتاح الرفع من Google.
+
 ## الأذونات في ملف التطبيق
 `INTERNET`، `POST_NOTIFICATIONS` (إشعارات محلية)، `RECEIVE_BOOT_COMPLETED` و`WAKE_LOCK` (لإعادة جدولة الإشعارات بعد إعادة التشغيل). أُزيل `SCHEDULE_EXACT_ALARM` عمداً، ولا يُستخدم `USE_EXACT_ALARM`، فلا يلزم تصريح المنبّهات الدقيقة.
 

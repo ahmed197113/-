@@ -1,7 +1,10 @@
 """يُعدّل مشروع أندرويد المولَّد (npx cap add android) قبل البناء:
    - رقم الإصدار: versionCode يزيد مع كل بناء (شرط Google Play)، وversionName من VERSION.
    - إزالة إذن SCHEDULE_EXACT_ALARM الذي تضيفه إضافة الإشعارات: Google Play يطلب له تصريحاً خاصاً
-     ولا يحتاجه التطبيق (إشعار أسبوعي لا يحتاج دقة الدقيقة)."""
+     ولا يحتاجه التطبيق (إشعار أسبوعي لا يحتاج دقة الدقيقة).
+   - قفل النسخ الاحتياطي التلقائي لأندرويد: android:allowBackup="false" وandroid:fullBackupContent="false"
+     على <application>، حتى لا تُنسخ بيانات الحمل الصحية إلى Google Drive أو تُنقل بين الأجهزة دون علم المستخدمة.
+   السكربت idempotent: تشغيله أكثر من مرة لا يكرر التعديلات."""
 import os, re, sys
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -23,5 +26,11 @@ if 'xmlns:tools' not in m:
 rm = '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />'
 if rm not in m:
     m = m.replace('</manifest>', f'    {rm}\n</manifest>')
+for attr, val in (('android:allowBackup', 'false'), ('android:fullBackupContent', 'false')):
+    app = re.search(r'<application\b[^>]*>', m).group(0)
+    if f'{attr}="{val}"' in app:
+        continue
+    fixed = re.sub(rf'\s+{attr}="[^"]*"', '', app).replace('<application', f'<application\n        {attr}="{val}"', 1)
+    m = m.replace(app, fixed, 1)
 open(manifest, 'w').write(m)
-print(f'version {name} ({code}); exact-alarm permission removed')
+print(f'version {name} ({code}); exact-alarm permission removed; backup disabled')
