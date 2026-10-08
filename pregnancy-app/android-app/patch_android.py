@@ -30,7 +30,7 @@ for attr, val in (('android:allowBackup', 'false'), ('android:fullBackupContent'
     app = re.search(r'<application\b[^>]*>', m).group(0)
     if f'{attr}="{val}"' in app:
         continue
-    fixed = re.sub(rf'\s{attr}="[^"]*"', '', app).replace('<application', f'<application\n        {attr}="{val}"', 1)
+    fixed = re.sub(rf'\s+{attr}="[^"]*"', '', app).replace('<application', f'<application\n        {attr}="{val}"', 1)
     m = m.replace(app, fixed, 1)
 open(manifest, 'w').write(m)
 print(f'version {name} ({code}); exact-alarm permission removed; backup disabled')
