@@ -146,11 +146,16 @@ class CompassView @JvmOverloads constructor(context: Context, attrs: AttributeSe
     private fun drawCardinals(canvas: Canvas, cx: Float, cy: Float, r: Float) {
         val names = if (arabic) listOf("ش", "ق", "ج", "غ") else listOf("N", "E", "S", "W")
         text.textSize = r * 0.12f
+        val dialTurn = if (staticMode) 0f else -heading
         names.forEachIndexed { i, n ->
-            canvas.save()
-            canvas.rotate(i * 90f, cx, cy)
+            // Placed around the dial, but each letter stays upright on the screen.
+            val a = Math.toRadians((i * 90).toDouble())
+            val x = cx + (r * 0.64f * kotlin.math.sin(a)).toFloat()
+            val y = cy - (r * 0.64f * kotlin.math.cos(a)).toFloat()
             text.color = if (i == 0) 0xFFF1D98B.toInt() else 0xFFFFFFFF.toInt()
-            canvas.drawText(n, cx, cy - r * 0.62f, text)
+            canvas.save()
+            canvas.rotate(-dialTurn, x, y)
+            canvas.drawText(n, x, y + text.textSize * 0.36f, text)
             canvas.restore()
         }
     }
@@ -198,11 +203,11 @@ class CompassView @JvmOverloads constructor(context: Context, attrs: AttributeSe
         p.maskFilter = BlurMaskFilter(r * 0.03f, BlurMaskFilter.Blur.NORMAL)
         canvas.drawPath(needlePath(cx + r * 0.015f, cy + r * 0.02f, tip, tail, w), p)
         p.maskFilter = null
-        // gold half towards the Qibla, light half behind
-        p.shader = LinearGradient(cx - w, 0f, cx + w, 0f, intArrayOf(0xFFF1D98B.toInt(), gold, 0xFFB8921F.toInt()), null, Shader.TileMode.CLAMP)
-        val front = Path().apply { moveTo(cx, tip); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
-        canvas.drawPath(front, p)
-        p.shader = null
+        // gold half towards the Qibla (lit side and shaded side), light half behind
+        p.color = 0xFFE9C55A.toInt()
+        canvas.drawPath(Path().apply { moveTo(cx, tip); lineTo(cx, cy); lineTo(cx - w, cy); close() }, p)
+        p.color = 0xFFC79A22.toInt()
+        canvas.drawPath(Path().apply { moveTo(cx, tip); lineTo(cx + w, cy); lineTo(cx, cy); close() }, p)
         p.color = if (glow) 0xFFF1D98B.toInt() else 0xFFE8EFEE.toInt()
         val back = Path().apply { moveTo(cx, tail); lineTo(cx + w, cy); lineTo(cx - w, cy); close() }
         canvas.drawPath(back, p)
