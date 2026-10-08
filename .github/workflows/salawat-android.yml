@@ -69,7 +69,9 @@ jobs:
             echo "== Signing certificate =="
             keytool -printcert -jarfile "$AAB" | grep -E "Owner|SHA256"
           } | tee "$REPORT"
-          if grep -qi BATTERY "$RUNNER_TEMP/manifest.xml"; then
+          echo "== Lines mentioning 'battery' (WorkManager's BatteryNotLow/BatteryCharging proxies are not permissions) ==" | tee -a "$REPORT"
+          grep -i battery "$RUNNER_TEMP/manifest.xml" | sed 's/^ *//' | tee -a "$REPORT" || true
+          if grep -q 'permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS' "$RUNNER_TEMP/manifest.xml"; then
             echo "::error::REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is in the bundle"; exit 1
           fi
           for forbidden in ACCESS_FINE_LOCATION ACCESS_BACKGROUND_LOCATION USE_EXACT_ALARM; do

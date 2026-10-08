@@ -74,7 +74,9 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
         val degrees = qiblaBearing.roundToInt()
         binding.textQiblaAngle.text = if (hasCompass()) getString(R.string.qibla_angle, degrees)
         else getString(R.string.qibla_no_sensor, degrees)
-        if (!hasCompass()) binding.imageArrow.rotation = qiblaBearing
+        styleCompass()
+        binding.imageArrow.qibla = qiblaBearing
+        if (!hasCompass()) binding.imageArrow.staticMode = true
     }
 
     private fun hasCompass() =
@@ -129,13 +131,25 @@ class QiblaActivity : LocalizedActivity(), SensorEventListener, PermissionHost {
         val magneticAzimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
         val trueAzimuth = (magneticAzimuth + declination + 360f) % 360f
         smoothedAzimuth = if (smoothedAzimuth.isNaN()) trueAzimuth else smoothAngle(smoothedAzimuth, trueAzimuth)
-        val arrow = (qiblaBearing - smoothedAzimuth + userOffset + 720f) % 360f
-        binding.imageArrow.rotation = arrow
-        val off = if (arrow > 180f) 360f - arrow else arrow
-        val aligned = abs(off) < 4f
+        // The user's calibration turns the phone's heading, so dial, Ka'bah and needle all move together.
+        binding.imageArrow.heading = (smoothedAzimuth - userOffset + 360f) % 360f
+        val aligned = binding.imageArrow.aligned
         binding.textAligned.visibility = if (aligned) View.VISIBLE else View.INVISIBLE
         if (aligned && !wasAligned) binding.imageArrow.performHapticFeedback(android.view.HapticFeedbackConstants.CONFIRM)
         wasAligned = aligned
+    }
+
+    private fun styleCompass() {
+        fun attr(id: Int): Int {
+            val tv = android.util.TypedValue()
+            theme.resolveAttribute(id, tv, true)
+            return if (tv.resourceId != 0) getColor(tv.resourceId) else tv.data
+        }
+        binding.imageArrow.brand = attr(R.attr.brandPrimary)
+        binding.imageArrow.brandDark = attr(R.attr.brandDark)
+        binding.imageArrow.gold = Themes.color(this, R.color.gold)
+        binding.imageArrow.textColor = Themes.color(this, R.color.text_primary_light)
+        binding.imageArrow.surface = Themes.color(this, R.color.card_light)
     }
 
     private fun nudge(degrees: Float) {
