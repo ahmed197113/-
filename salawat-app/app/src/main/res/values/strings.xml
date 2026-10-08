@@ -230,11 +230,11 @@
     <string name="perm_alarm_title">السماح بالمنبهات الدقيقة</string>
     <string name="perm_alarm_text">ليرفع الأذان في وقت الصلاة بالضبط دون تأخير، اسمح للتطبيق بضبط المنبهات الدقيقة.</string>
     <string name="perm_battery_title">ليصلك الأذان في وقته 🕌</string>
-    <string name="perm_battery_text">اسمح لـ«رفيق المسلم» أن يرفع الأذان ويرسل الأذكار في وقتها حتى لو كان التطبيق مغلقًا.\n\nسيظهر لك بعدها سؤال من الهاتف، اختر «السماح». التطبيق يعمل لحظة الأذان والتذكير فقط، ولا يؤثر على هاتفك.</string>
+    <string name="perm_battery_text">الأذان مضبوط بمنبّه دقيق يعمل حتى والهاتف في وضع توفير الطاقة.\n\nلو لاحظت أن الأذان يتأخر على هاتفك: افتح الإعدادات، واختر «رفيق المسلم»، ثم اجعله «غير مقيّد» أو «بدون تحسين».</string>
     <string name="settings_battery">الأذان والأذكار في وقتها</string>
     <string name="settings_battery_on">مُفعّل ✓</string>
-    <string name="settings_battery_off">غير مُفعّل — اضغط ليصلك الأذان في وقته</string>
-    <string name="perm_open_battery">فتح إعدادات البطارية</string>
+    <string name="settings_battery_off">قد يتأخر الأذان على بعض الهواتف — اضغط لفتح إعدادات البطارية</string>
+    <string name="perm_open_battery">فتح الإعدادات</string>
     <string name="perm_allow">متابعة</string>
     <string name="perm_later">لاحقاً</string>
     <string name="location_off_title">خدمة الموقع متوقفة</string>
@@ -591,4 +591,7 @@
     <string name="qibla_adjust_right">تدوير السهم لليمين</string>
     <string name="memorize_needs_ayah_reciter">التكرار للحفظ يحتاج قارئًا مسجّلًا آية بآية. اختر قارئًا آخر (القارئ إسلام صبحي متاح بتلاوة السورة كاملة فقط).</string>
     <string name="quran_audio_error_surah">تعذّر تشغيل السورة: تأكد من الاتصال بالإنترنت. (بعض السور غير متوفرة بصوت القارئ إسلام صبحي)</string>
+    <string name="privacy_policy">سياسة الخصوصية</string>
+    <string name="privacy_policy_desc">كيف نتعامل مع بياناتك (لا نجمع بيانات شخصية)</string>
+    <string name="contact_us">تواصل معنا</string>
 </resources>

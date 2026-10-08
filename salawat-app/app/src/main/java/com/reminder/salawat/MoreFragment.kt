@@ -53,6 +53,12 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
                 )
             )
         }
+        Ui.row(about, R.drawable.ic_settings, getString(R.string.privacy_policy), getString(R.string.privacy_policy_desc)) {
+            openLink(context, Uri.parse(PRIVACY_URL))
+        }
+        Ui.row(about, R.drawable.ic_bell, getString(R.string.contact_us), CONTACT_EMAIL) {
+            openLink(context, Uri.parse("mailto:$CONTACT_EMAIL"))
+        }
         val version = context.packageManager.getPackageInfo(context.packageName, 0).versionName
         Ui.row(about, R.drawable.ic_heart, getString(R.string.more_about), getString(R.string.more_about_desc, version)) {
             AlertDialog.Builder(context)
@@ -64,6 +70,17 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
     }
 
     companion object {
+        const val PRIVACY_URL = "https://apps.khatta.net/rafiq/privacy-policy.html"
+        const val CONTACT_EMAIL = "support@khatta.net"
+
+        private fun openLink(context: Context, uri: Uri) {
+            try {
+                context.startActivity(Intent(if (uri.scheme == "mailto") Intent.ACTION_SENDTO else Intent.ACTION_VIEW, uri))
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(context, uri.toString().removePrefix("mailto:"), Toast.LENGTH_LONG).show()
+            }
+        }
+
         fun openMosques(context: Context) {
             try {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(Lang.pick("مسجد", "mosque")))))

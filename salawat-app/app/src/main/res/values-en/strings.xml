@@ -194,11 +194,11 @@
     <string name="perm_alarm_title">Allow exact alarms</string>
     <string name="perm_alarm_text">To call the adhan at the exact prayer time without delay, allow the app to set exact alarms.</string>
     <string name="perm_battery_title">Get the adhan on time 🕌</string>
-    <string name="perm_battery_text">Allow Rafiq Al-Muslim to call the adhan and send azkar on time, even when the app is closed.\n\nYour phone will ask you next — choose “Allow”. The app only runs at adhan and reminder times and doesn\'t affect your phone.</string>
+    <string name="perm_battery_text">The adhan is set with a precise alarm that works even in battery saving.\n\nIf the adhan is ever late on your phone: open the settings, choose Rafiq Al-Muslim, and set it to “Unrestricted” or “Don\'t optimise”.</string>
     <string name="settings_battery">Adhan and azkar on time</string>
     <string name="settings_battery_on">On ✓</string>
-    <string name="settings_battery_off">Off — tap so the adhan comes on time</string>
-    <string name="perm_open_battery">Open battery settings</string>
+    <string name="settings_battery_off">The adhan may be late on some phones — tap to open battery settings</string>
+    <string name="perm_open_battery">Open settings</string>
     <string name="perm_allow">Continue</string>
     <string name="perm_later">Later</string>
     <string name="location_off_title">Location services are off</string>
@@ -533,4 +533,7 @@
     <string name="qibla_adjust_right">Turn the arrow right</string>
     <string name="memorize_needs_ayah_reciter">Repeating needs a reciter recorded ayah by ayah. Choose another reciter (Islam Sobhi is available as whole surahs only).</string>
     <string name="quran_audio_error_surah">Couldn\'t play the surah: check your connection. (A few surahs aren\'t available in Islam Sobhi\'s voice.)</string>
+    <string name="privacy_policy">Privacy policy</string>
+    <string name="privacy_policy_desc">How we handle your data (no personal data collected)</string>
+    <string name="contact_us">Contact us</string>
 </resources>

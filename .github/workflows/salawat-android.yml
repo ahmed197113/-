@@ -48,21 +48,54 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease bundleRelease
-          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Rafiq-v7.0.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/Rafiq-v7.0.aab"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Rafiq-v7.0.1.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/Rafiq-v7.0.1.aab"
+
+      - name: Verify the bundle (permissions and signing key)
+        env:
+          HAS_KEY: ${{ secrets.SIGNING_KEYSTORE_BASE64 != '' }}
+        run: |
+          AAB="$RUNNER_TEMP/Rafiq-v7.0.1.aab"
+          REPORT="$RUNNER_TEMP/verify-report.txt"
+          curl -sSL -o "$RUNNER_TEMP/bundletool.jar" https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle "$AAB" > "$RUNNER_TEMP/manifest.xml"
+          {
+            echo "== Permissions in the bundle =="
+            grep -o 'android:name="android.permission[^"]*"' "$RUNNER_TEMP/manifest.xml" | sort -u
+            echo
+            echo "== versionCode / versionName =="
+            grep -o 'android:versionCode="[^"]*"\|android:versionName="[^"]*"' "$RUNNER_TEMP/manifest.xml"
+            echo
+            echo "== Signing certificate =="
+            keytool -printcert -jarfile "$AAB" | grep -E "Owner|SHA256"
+          } | tee "$REPORT"
+          if grep -qi BATTERY "$RUNNER_TEMP/manifest.xml"; then
+            echo "::error::REQUEST_IGNORE_BATTERY_OPTIMIZATIONS is in the bundle"; exit 1
+          fi
+          for forbidden in ACCESS_FINE_LOCATION ACCESS_BACKGROUND_LOCATION USE_EXACT_ALARM; do
+            if grep -q "permission.$forbidden\"" "$RUNNER_TEMP/manifest.xml"; then echo "::error::$forbidden is in the bundle"; exit 1; fi
+          done
+          if [ "$HAS_KEY" = "true" ]; then
+            keytool -printcert -jarfile "$AAB" | grep -q "SHA256: 61:46:8A:90:83:F7:5C:C0" \
+              || { echo "::error::The bundle is not signed with the Rafiq upload key (61:46:8A:90:83:F7:5C:C0...)"; exit 1; }
+            echo "Upload key OK" | tee -a "$REPORT"
+          else
+            echo "::warning::Signing secrets missing: this bundle is NOT signed with the upload key and must not be uploaded to Google Play." | tee -a "$REPORT"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Rafiq-v7.0-apk
-          path: ${{ runner.temp }}/Rafiq-v7.0.apk
+          name: Rafiq-v7.0.1-apk
+          path: ${{ runner.temp }}/Rafiq-v7.0.1.apk
 
       - name: Publish APK as a pre-release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: salawat-v7.0-build${{ github.run_number }}
-          name: رفيق المسلم v7.0 (build ${{ github.run_number }})
+          tag_name: salawat-v7.0.1-build${{ github.run_number }}
+          name: رفيق المسلم v7.0.1 (build ${{ github.run_number }})
           target_commitish: ${{ github.sha }}
           prerelease: true
           files: |
-            ${{ runner.temp }}/Rafiq-v7.0.apk
-            ${{ runner.temp }}/Rafiq-v7.0.aab
+            ${{ runner.temp }}/Rafiq-v7.0.1.apk
+            ${{ runner.temp }}/Rafiq-v7.0.1.aab
+            ${{ runner.temp }}/verify-report.txt

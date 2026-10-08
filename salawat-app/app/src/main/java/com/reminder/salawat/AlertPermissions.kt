@@ -12,8 +12,8 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Everything the adhan and reminders need to fire on time, asked for in one pass: notifications (Android 13+),
- * exact alarms (Android 12, where it is a user setting) and leaving the app out of battery optimisation, so
- * the phone's power saving never delays or swallows an adhan. Each step explains itself before opening settings.
+ * exact alarms (Android 12+, where it is a user setting) and, optionally, a pointer to the battery settings for
+ * phones whose power saving is aggressive. Each step explains itself before opening settings.
  */
 object AlertPermissions {
     private const val KEY_BATTERY_ASKED = "battery_opt_asked"
@@ -46,19 +46,17 @@ object AlertPermissions {
         val prefs = Prefs.get(activity)
         if (ignoresBatteryOptimizations(activity) || prefs.getBoolean(KEY_BATTERY_ASKED, false)) return next()
         prefs.edit().putBoolean(KEY_BATTERY_ASKED, true).apply()
-        dialog(activity, R.string.perm_battery_title, R.string.perm_battery_text, R.string.perm_allow, {
+        dialog(activity, R.string.perm_battery_title, R.string.perm_battery_text, R.string.perm_open_battery, {
             requestBatteryExemption(activity)
         }, next)
     }
 
-    /** The system's one-tap "let this app run in the background" prompt; falls back to the settings list. */
-    @SuppressLint("BatteryLife")
-    fun requestBatteryExemption(activity: AppCompatActivity) {
-        val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + activity.packageName))
-        runCatching { activity.startActivity(direct) }.onFailure {
-            open(activity, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        }
-    }
+    /**
+     * Opens the phone's battery-optimisation settings list, where the user can set the app to "unrestricted"
+     * themselves. The app never asks for the exemption directly (Play policy reserves that permission for other
+     * kinds of apps); the adhan is armed with setAlarmClock, which fires in Doze anyway.
+     */
+    fun requestBatteryExemption(activity: AppCompatActivity) = open(activity, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
 
     private fun dialog(activity: AppCompatActivity, title: Int, text: Int, positive: Int, onPositive: () -> Unit, next: () -> Unit) {
         if (activity.isFinishing) return next()
