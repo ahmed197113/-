@@ -141,7 +141,8 @@ function viewAccount() {
     <p class="muted">بياناتك وتحاليلك وصورك تُحفظ تلقائياً في حسابك. لو غيّرتِ جوالك ثبّتي التطبيق وسجّلي الدخول بنفس الإيميل لتعود كما هي.</p>
     <button class="btn block" id="accSync">🔄 احفظي الآن</button>
     <button class="btn ghost block" id="accOut" style="margin-top:8px">تسجيل الخروج</button>
-    <button class="btn danger block" id="accDel" style="margin-top:8px">حذف حسابي وبياناتي من السيرفر</button></div>`;
+    <button class="btn danger block" id="accDel" style="margin-top:8px">حذف حسابي وبياناتي من السيرفر</button>
+    <p class="muted center" style="margin:8px 0 0;font-size:.85rem"><a href="https://nabd.khatta.net/privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></p></div>`;
   if (route.mail) return `<div class="card"><h3 style="margin-top:0">📩 أدخلي الرمز</h3>
     <p>أرسلنا رمزاً من 6 أرقام إلى <b dir="ltr">${esc(route.mail)}</b>. إن لم يصل خلال دقيقة افحصي مجلد الرسائل غير المرغوب فيها (Spam).</p>
     <input class="input" id="accCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" dir="ltr" style="text-align:center;font-size:1.4rem;letter-spacing:.4em">

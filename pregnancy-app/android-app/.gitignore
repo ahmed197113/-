@@ -1,3 +1,7 @@
 node_modules/
 www/
 android/
+*.jks
+*.keystore.b64
+b64.txt
+out.txt

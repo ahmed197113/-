@@ -16,6 +16,7 @@ $ok = !empty($_SESSION['nabd_admin']);
 $pdo = $ok ? new PDO($CFG['db_dsn'], $CFG['db_user'] ?? null, $CFG['db_pass'] ?? null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]) : null;
 
 if ($ok && isset($_POST['do']) && hash_equals($_SESSION['csrf'], (string)($_POST['csrf'] ?? ''))) {
+  if ($_POST['do'] === 'aidel') { $pdo->prepare('DELETE FROM ai_reports WHERE id = ?')->execute([(int)$_POST['id']]); header('Location: admin.php'); exit; }
   $t = $_POST['t'] === 'q' ? 'questions' : 'answers'; $id = (int)$_POST['id'];
   if ($_POST['do'] === 'hide') $pdo->prepare("UPDATE $t SET hidden = 1 WHERE id = ?")->execute([$id]);
   if ($_POST['do'] === 'show') $pdo->prepare("UPDATE $t SET hidden = 0, reports = 0 WHERE id = ?")->execute([$id]);
@@ -44,6 +45,8 @@ foreach (['q' => 'questions', 'a' => 'answers'] as $k => $t) {
   $sql = "SELECT id, dev, reports, hidden, " . ($k === 'q' ? 'title, body' : "'' AS title, body") . ", t FROM $t WHERE reports > 0 OR hidden = 1 ORDER BY reports DESC, t DESC LIMIT 100";
   foreach ($pdo->query($sql) as $r) $rows[] = $r + ['k' => $k];
 }
+$aiRows = [];
+try { $aiRows = $pdo->query('SELECT id, dev, question, answer, reason, note, t FROM ai_reports ORDER BY t DESC LIMIT 100')->fetchAll(); } catch (PDOException $e) {} // الجدول يُنشأ مع أول بلاغ
 $stats = $pdo->query('SELECT (SELECT COUNT(*) FROM questions) q, (SELECT COUNT(*) FROM answers) a, (SELECT COUNT(*) FROM bans) b')->fetch();
 ?>
 <h1>إشراف نبضٌ صغير</h1>
@@ -57,5 +60,15 @@ $stats = $pdo->query('SELECT (SELECT COUNT(*) FROM questions) q, (SELECT COUNT(*
 <form method="post"><input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>"><input type="hidden" name="t" value="<?= $r['k'] ?>"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
 <?php if ($r['hidden']): ?><button name="do" value="show">إظهار (سليم)</button><?php else: ?><button name="do" value="hide">إخفاء</button><?php endif; ?>
 <button class="d" name="do" value="ban" onclick="return confirm('حظر صاحب هذا المحتوى وإخفاء كل ما كتبه؟')">حظر الكاتب</button></form></div>
+<?php endforeach; ?>
+<h2>بلاغات ردود المساعد الذكي</h2>
+<?php if (!$aiRows) echo '<p class="m">لا توجد بلاغات على المساعد 🎉</p>'; ?>
+<?php foreach ($aiRows as $r): ?>
+<div class="c"><b>بلاغ #<?= (int)$r['id'] ?></b> <span class="m">· <?= $h($r['reason']) ?> · <?= $h(gmdate('Y-m-d H:i', intdiv((int)$r['t'], 1000))) ?> UTC · جهاز <?= $h(substr($r['dev'], 0, 10)) ?>…</span>
+<?php if ($r['note'] !== ''): ?><div class="m">ملاحظة: <?= nl2br($h($r['note'])) ?></div><?php endif; ?>
+<?php if ($r['question'] !== ''): ?><div><b>السؤال:</b> <?= nl2br($h($r['question'])) ?></div><?php endif; ?>
+<div><b>رد المساعد:</b> <?= nl2br($h($r['answer'])) ?></div>
+<form method="post"><input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+<button name="do" value="aidel">تمت المراجعة (حذف البلاغ)</button></form></div>
 <?php endforeach; endif; ?>
 </body></html>

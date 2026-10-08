@@ -475,6 +475,10 @@ function viewMore() {
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
   <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
   </details>
+  <div class="card group">
+    <a class="nav-row" href="https://nabd.khatta.net/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:none"><span class="ic">🔒</span><div class="grow"><b>سياسة الخصوصية</b></div><span class="chev">‹</span></a>
+    <a class="nav-row" href="https://nabd.khatta.net/delete-account.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:none"><span class="ic">🗑️</span><div class="grow"><b>حذف الحساب والبيانات</b></div><span class="chev">‹</span></a>
+  </div>
   <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
 }
 

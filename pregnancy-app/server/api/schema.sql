@@ -38,6 +38,17 @@ CREATE TABLE IF NOT EXISTS reports (
   t BIGINT NOT NULL,
   UNIQUE KEY one_report (ref, dev)
 ) DEFAULT CHARSET=utf8mb4;
+-- بلاغات ردود المساعد الذكي (المحتوى المولَّد بالذكاء الاصطناعي)
+CREATE TABLE IF NOT EXISTS ai_reports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  dev VARCHAR(64) NOT NULL,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  reason VARCHAR(40) NOT NULL,
+  note VARCHAR(500) NOT NULL DEFAULT '',
+  t BIGINT NOT NULL,
+  INDEX (t)
+) DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS bans (
   dev VARCHAR(64) PRIMARY KEY,
   t BIGINT NOT NULL

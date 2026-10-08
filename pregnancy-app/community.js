@@ -230,7 +230,7 @@ function cmBind() {
     S.voted[aid] = 1; save(); b.disabled = true;
     try { await CM.store.helpful(route.qid, aid); await CM.loadAnswers(route.qid, true); } catch { toast('تعذّر التسجيل'); }
   });
-  app.querySelectorAll('[data-report]').forEach(b => b.onclick = async () => {
+  app.querySelectorAll('[data-report^="q:"], [data-report^="a:"]').forEach(b => b.onclick = async () => {
     try { await CM.store.report({ ref: b.dataset.report, by: CM.uid || S.devId || 'anon', t: Date.now() }); toast('شكراً، سنراجع البلاغ'); b.disabled = true; } catch { toast('تعذّر الإبلاغ'); }
   });
   on('#qDel', confirmTap('#qDel', async () => {

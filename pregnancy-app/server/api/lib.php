@@ -70,6 +70,14 @@ function bump(string $key, int $limit): bool {
   return true;
 }
 
+/* جدول بلاغات ردود المساعد — يُنشأ تلقائياً أول مرة (موجود أيضاً في schema.sql) */
+function ai_reports_table(): void {
+  db()->exec("CREATE TABLE IF NOT EXISTS ai_reports (
+    id INT AUTO_INCREMENT PRIMARY KEY, dev VARCHAR(64) NOT NULL, question TEXT NOT NULL, answer TEXT NOT NULL,
+    reason VARCHAR(40) NOT NULL, note VARCHAR(500) NOT NULL DEFAULT '', t BIGINT NOT NULL, INDEX (t)
+  ) DEFAULT CHARSET=utf8mb4");
+}
+
 function clean(string $s, int $max, bool $multiline = false): string {
   $s = strip_tags($s);
   $s = $multiline ? preg_replace(["/[ \t]+/u", "/\n{3,}/u"], [' ', "\n\n"], str_replace("\r", '', $s)) : preg_replace('/\s+/u', ' ', $s);

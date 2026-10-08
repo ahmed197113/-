@@ -537,7 +537,7 @@ function viewAssistAI() {
     : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
     <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق. المساعد الذكي الكامل متاح داخل نسخة Claude.'}</div></div></div></div>
-    <div id="chat">${chat.length ? chat.map(m => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
+    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>${m.role === 'assistant' && !m.reported && Server.on() ? `<button class="link ai-report" data-report="${i}" style="align-self:flex-end;padding:0;font-size:.8rem">🚩 إبلاغ</button>` : ''}`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
     <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف ${emergencyNo()}.</p></div>`;
@@ -603,6 +603,30 @@ function featBind() {
   on('#askForm', e => { e.preventDefault(); ask($('#askQ').value.trim()); }, 'onsubmit');
   app.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => ask(b.dataset.sug));
   on('#chatClear', confirmTap('#chatClear', () => { S.chat = []; save(); render(false); }));
+  // الإبلاغ عن رد من المساعد (سياسة Google Play للمحتوى المولَّد بالذكاء الاصطناعي)
+  app.querySelectorAll('#chat [data-report]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.report, m = S.chat[i];
+    if (!m || m.role !== 'assistant' || m.reported || b.nextElementSibling?.classList.contains('ai-report-form')) return;
+    const f = document.createElement('div');
+    f.className = 'card ai-report-form'; f.style.cssText = 'align-self:stretch;margin:0';
+    f.innerHTML = `<b>سبب الإبلاغ</b>
+      <div class="chips" style="margin:8px 0">${['معلومة طبية خاطئة', 'محتوى غير لائق', 'أخرى'].map(r => `<button class="chip" type="button" data-rr="${r}">${r}</button>`).join('')}</div>
+      <input class="input" id="rNote" maxlength="500" placeholder="ملاحظة (اختياري)">
+      <div class="row" style="margin-top:8px"><button class="btn sm" type="button" id="rSend">إرسال البلاغ</button><button class="btn sm ghost" type="button" id="rCancel">إلغاء</button></div>`;
+    b.after(f);
+    f.querySelectorAll('[data-rr]').forEach(c => c.onclick = () => { f.querySelectorAll('[data-rr]').forEach(x => x.classList.remove('on')); c.classList.add('on'); });
+    f.querySelector('#rCancel').onclick = () => f.remove();
+    f.querySelector('#rSend').onclick = async e => {
+      const reason = f.querySelector('[data-rr].on')?.dataset.rr;
+      if (!reason) return toast('اختاري سبب الإبلاغ');
+      const prev = S.chat.slice(0, i).reverse().find(x => x.role === 'user');
+      e.target.disabled = true;
+      try {
+        await Server.call('ai.php', { mode: 'report', question: prev ? prev.content : '', answer: m.content, reason, note: f.querySelector('#rNote').value.trim() });
+        m.reported = true; save(); toast('شكراً، وصلنا بلاغك'); render(false);
+      } catch (err) { e.target.disabled = false; toast(err.text || 'تعذّر إرسال البلاغ'); }
+    };
+  });
 
   // الفحص اليومي
   app.querySelectorAll('[data-csym]').forEach(b => b.onclick = () => b.classList.toggle('on'));

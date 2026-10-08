@@ -2072,6 +2072,10 @@ function viewMore() {
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
   <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
   </details>
+  <div class="card group">
+    <a class="nav-row" href="https://nabd.khatta.net/privacy.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:none"><span class="ic">🔒</span><div class="grow"><b>سياسة الخصوصية</b></div><span class="chev">‹</span></a>
+    <a class="nav-row" href="https://nabd.khatta.net/delete-account.html" target="_blank" rel="noopener" style="color:inherit;text-decoration:none"><span class="ic">🗑️</span><div class="grow"><b>حذف الحساب والبيانات</b></div><span class="chev">‹</span></a>
+  </div>
   <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
 }
 
@@ -2977,7 +2981,7 @@ function viewAssistAI() {
     : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
     <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق. المساعد الذكي الكامل متاح داخل نسخة Claude.'}</div></div></div></div>
-    <div id="chat">${chat.length ? chat.map(m => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
+    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>${m.role === 'assistant' && !m.reported && Server.on() ? `<button class="link ai-report" data-report="${i}" style="align-self:flex-end;padding:0;font-size:.8rem">🚩 إبلاغ</button>` : ''}`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
     <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف ${emergencyNo()}.</p></div>`;
@@ -3043,6 +3047,30 @@ function featBind() {
   on('#askForm', e => { e.preventDefault(); ask($('#askQ').value.trim()); }, 'onsubmit');
   app.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => ask(b.dataset.sug));
   on('#chatClear', confirmTap('#chatClear', () => { S.chat = []; save(); render(false); }));
+  // الإبلاغ عن رد من المساعد (سياسة Google Play للمحتوى المولَّد بالذكاء الاصطناعي)
+  app.querySelectorAll('#chat [data-report]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.report, m = S.chat[i];
+    if (!m || m.role !== 'assistant' || m.reported || b.nextElementSibling?.classList.contains('ai-report-form')) return;
+    const f = document.createElement('div');
+    f.className = 'card ai-report-form'; f.style.cssText = 'align-self:stretch;margin:0';
+    f.innerHTML = `<b>سبب الإبلاغ</b>
+      <div class="chips" style="margin:8px 0">${['معلومة طبية خاطئة', 'محتوى غير لائق', 'أخرى'].map(r => `<button class="chip" type="button" data-rr="${r}">${r}</button>`).join('')}</div>
+      <input class="input" id="rNote" maxlength="500" placeholder="ملاحظة (اختياري)">
+      <div class="row" style="margin-top:8px"><button class="btn sm" type="button" id="rSend">إرسال البلاغ</button><button class="btn sm ghost" type="button" id="rCancel">إلغاء</button></div>`;
+    b.after(f);
+    f.querySelectorAll('[data-rr]').forEach(c => c.onclick = () => { f.querySelectorAll('[data-rr]').forEach(x => x.classList.remove('on')); c.classList.add('on'); });
+    f.querySelector('#rCancel').onclick = () => f.remove();
+    f.querySelector('#rSend').onclick = async e => {
+      const reason = f.querySelector('[data-rr].on')?.dataset.rr;
+      if (!reason) return toast('اختاري سبب الإبلاغ');
+      const prev = S.chat.slice(0, i).reverse().find(x => x.role === 'user');
+      e.target.disabled = true;
+      try {
+        await Server.call('ai.php', { mode: 'report', question: prev ? prev.content : '', answer: m.content, reason, note: f.querySelector('#rNote').value.trim() });
+        m.reported = true; save(); toast('شكراً، وصلنا بلاغك'); render(false);
+      } catch (err) { e.target.disabled = false; toast(err.text || 'تعذّر إرسال البلاغ'); }
+    };
+  });
 
   // الفحص اليومي
   app.querySelectorAll('[data-csym]').forEach(b => b.onclick = () => b.classList.toggle('on'));
@@ -3307,7 +3335,8 @@ function viewAccount() {
     <p class="muted">بياناتك وتحاليلك وصورك تُحفظ تلقائياً في حسابك. لو غيّرتِ جوالك ثبّتي التطبيق وسجّلي الدخول بنفس الإيميل لتعود كما هي.</p>
     <button class="btn block" id="accSync">🔄 احفظي الآن</button>
     <button class="btn ghost block" id="accOut" style="margin-top:8px">تسجيل الخروج</button>
-    <button class="btn danger block" id="accDel" style="margin-top:8px">حذف حسابي وبياناتي من السيرفر</button></div>`;
+    <button class="btn danger block" id="accDel" style="margin-top:8px">حذف حسابي وبياناتي من السيرفر</button>
+    <p class="muted center" style="margin:8px 0 0;font-size:.85rem"><a href="https://nabd.khatta.net/privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></p></div>`;
   if (route.mail) return `<div class="card"><h3 style="margin-top:0">📩 أدخلي الرمز</h3>
     <p>أرسلنا رمزاً من 6 أرقام إلى <b dir="ltr">${esc(route.mail)}</b>. إن لم يصل خلال دقيقة افحصي مجلد الرسائل غير المرغوب فيها (Spam).</p>
     <input class="input" id="accCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" dir="ltr" style="text-align:center;font-size:1.4rem;letter-spacing:.4em">
@@ -3602,7 +3631,7 @@ function cmBind() {
     S.voted[aid] = 1; save(); b.disabled = true;
     try { await CM.store.helpful(route.qid, aid); await CM.loadAnswers(route.qid, true); } catch { toast('تعذّر التسجيل'); }
   });
-  app.querySelectorAll('[data-report]').forEach(b => b.onclick = async () => {
+  app.querySelectorAll('[data-report^="q:"], [data-report^="a:"]').forEach(b => b.onclick = async () => {
     try { await CM.store.report({ ref: b.dataset.report, by: CM.uid || S.devId || 'anon', t: Date.now() }); toast('شكراً، سنراجع البلاغ'); b.disabled = true; } catch { toast('تعذّر الإبلاغ'); }
   });
   on('#qDel', confirmTap('#qDel', async () => {
