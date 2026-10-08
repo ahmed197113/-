@@ -73,12 +73,12 @@ Server.sample.json = async (prompt, opts = {}) => {
 };
 
 /* ---------- المساعد الذكي ---------- */
-const AI = { sample: null, images: false };
+const AI = { sample: null, images: false, chat: false }; // chat: المحادثة الذكية (داخل نسخة Claude فقط) — غير ذلك إجابات محفوظة
 AI.ready = (async () => {
   try {
     if (window.claude && window.claude.use) {
       AI.sample = await window.claude.use('sample');
-      if (AI.sample) { const l = await AI.sample.limits().catch(() => null); AI.images = !!(l && l.images); }
+      if (AI.sample) { AI.chat = true; const l = await AI.sample.limits().catch(() => null); AI.images = !!(l && l.images); }
     }
   } catch { AI.sample = null; }
   if (!AI.sample && Server.on()) { AI.sample = Server.sample; AI.images = true; }
@@ -573,8 +573,8 @@ function viewAssistAI() {
   const sug = S.baby ? ['طفلي يبكي كثيراً في الليل', 'متى أبدأ الأكل الصلب؟', 'حرارة 38 لطفل عمره شهران', 'كيف أعرف أن الرضاعة كافية؟']
     : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
-    <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق. المساعد الذكي الكامل متاح داخل نسخة Claude.'}</div></div></div></div>
-    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>${m.role === 'assistant' && !m.reported && Server.on() ? `<button class="link ai-report" data-report="${i}" style="align-self:flex-end;padding:0;font-size:.8rem">🚩 إبلاغ</button>` : ''}`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
+    <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.chat ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'إجابات موثوقة جاهزة لأكثر أسئلة الحوامل والأمهات. لو سؤالك مش موجود اسألي مجتمع الأمهات أو طبيبك.'}</div></div></div></div>
+    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>${m.miss && i === chat.length - 1 ? `<button class="btn ghost sm" data-askcm="${i}" style="align-self:flex-start">👩‍👩‍👧 اسألي مجتمع الأمهات</button>` : ''}${m.role === 'assistant' && m.ai && !m.reported && Server.on() ? `<button class="link ai-report" data-report="${i}" style="align-self:flex-end;padding:0;font-size:.8rem">🚩 إبلاغ</button>` : ''}`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
     <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف ${emergencyNo()}.</p></div>`;
@@ -587,18 +587,19 @@ async function ask(q) {
   route.q = ''; render(false);
   const box = $('#chat'), b = document.createElement('div');
   b.className = 'bubble assistant'; b.textContent = 'نبض تفكر…'; box.appendChild(b); b.scrollIntoView({ block: 'end' });
-  let text = '';
-  if (AI.sample) {
+  let text = '', miss = false, ai = false;
+  if (AI.sample && AI.chat) {
+    ai = true;
     const turns = [{ role: 'user', content: `${AI_RULES}\n\nبيانات المستخدمة:\n${contextText()}\n\n(ابدئي المحادثة)` }, { role: 'assistant', content: 'تمام، أنا جاهزة.' }, ...S.chat.slice(-10)];
     try {
       const r = await AI.sample(turns, { cache: false, onText: ({ text: t }) => { b.textContent = t; } });
       text = r.text;
     } catch (e) {
-      text = e.code === 'not_granted' ? offlineAnswer(q) : (e.text || 'تعذّر الوصول للمساعد الآن. ') + (e.code === 'rate_limited' ? 'جرّبي بعد قليل.' : '');
-      if (e.code === 'not_granted') AI.sample = null;
+      ai = false; ({ text, miss } = savedAnswer(q));
+      if (e.code === 'not_granted') AI.chat = false;
     }
-  } else text = offlineAnswer(q);
-  S.chat.push({ role: 'assistant', content: text }); save();
+  } else ({ text, miss } = savedAnswer(q));
+  S.chat.push({ role: 'assistant', content: text, ...(ai ? { ai: true } : {}), ...(miss ? { miss: true } : {}) }); save();
   askBusy = false; render(false);
   const c = $('#chat'); if (c && c.lastElementChild) c.lastElementChild.scrollIntoView({ block: 'end' });
 }
@@ -648,6 +649,10 @@ function featBind() {
   on('#homeAsk', e => { e.preventDefault(); const q = $('#homeAskQ').value.trim(); if (!q) return; go('assist'); ask(q); }, 'onsubmit');
   on('#askForm', e => { e.preventDefault(); ask($('#askQ').value.trim()); }, 'onsubmit');
   app.querySelectorAll('[data-sug]').forEach(b => b.onclick = () => ask(b.dataset.sug));
+  app.querySelectorAll('[data-askcm]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.askcm, prev = S.chat.slice(0, i).reverse().find(x => x.role === 'user');
+    route = { view: 'assist', as: 'cm', sub: 'cnew', draft: { title: prev ? prev.content.slice(0, 120) : '' } }; history.pushState(route, ''); render();
+  });
   on('#chatClear', confirmTap('#chatClear', () => { S.chat = []; save(); render(false); }));
   // الإبلاغ عن رد من المساعد (سياسة Google Play للمحتوى المولَّد بالذكاء الاصطناعي)
   app.querySelectorAll('#chat [data-report]').forEach(b => b.onclick = () => {

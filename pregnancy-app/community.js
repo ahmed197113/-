@@ -110,8 +110,9 @@ const myStage0 = () => {
 };
 const myCat = () => S.baby ? 'baby' : ['t1', 't2', 't3'][status().tri - 1];
 const timeAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'الآن' : m < 60 ? `منذ ${m} د` : m < 1440 ? `منذ ${Math.floor(m / 60)} س` : `منذ ${Math.floor(m / 1440)} يوم`; };
-const author = x => x.ai ? 'نبض ✨' : x.anon ? 'أم مجهولة' : (x.nick || 'أم');
-const avatar = x => `<span class="av ${x.ai ? 'ai' : ''}">${x.ai ? '✨' : x.anon ? '🤍' : esc((x.nick || 'أ').trim()[0])}</span>`;
+const author = x => x.team ? 'فريق نبض 💗' : x.ai ? 'نبض ✨' : x.anon ? 'أم مجهولة' : (x.nick || 'أم');
+const avatar = x => `<span class="av ${x.ai || x.team ? 'ai' : ''}">${x.team ? '💗' : x.ai ? '✨' : x.anon ? '🤍' : esc((x.nick || 'أ').trim()[0])}</span>`;
+const subline = x => x.team ? (x.title ? 'سؤال شائع يصلنا كثيراً' : 'رد فريق نبض') : x.ai ? 'إجابة ذكية للتثقيف' : (x.stage || '');
 function checkText(t, min, max) {
   if (t.length < min) return `اكتبي ${min} حروف على الأقل`;
   if (t.length > max) return `النص طويل (الحد ${max} حرف)`;
@@ -137,7 +138,7 @@ function viewCommunity() {
     ${CM.err ? `<div class="card warn-card">${CM.err}</div>` : ''}
     ${!CM.loaded && !CM.err ? '<p class="muted center">جاري التحميل…</p>' : list.length ? list.map(x => `
       <div class="card q-card" data-qid="${esc(x.id)}">
-        <div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
+        <div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(subline(x))} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
         <h3 style="margin:10px 0 4px">${esc(x.title)}</h3><p class="muted clamp">${esc(x.body)}</p>
         <div class="q-foot"><span>💬 ${x.ac || 0} ${x.ac === 1 ? 'رد' : 'ردود'}</span>${URGENT_RE.test(x.title + x.body) ? '<span class="st-chip" style="--c:#ef5350">قد تكون حالة طارئة</span>' : ''}</div>
       </div>`).join('') : `<div class="card center"><div style="font-size:2.4rem">🌸</div><p>${q || f !== 'all' || tab !== 'all' ? 'لا توجد أسئلة مطابقة.' : 'كوني أول من يسأل في المجتمع!'}</p></div>`}
@@ -163,14 +164,14 @@ Object.assign(SUBVIEWS, {
     if (!x) { CM.load(); return '<p class="muted center">جاري التحميل…</p>'; }
     if (CM.ans[x.id] === undefined) CM.loadAnswers(x.id);
     const ans = CM.ans[x.id], hasAi = (ans || []).some(a => a.ai);
-    const sorted = (ans || []).slice().sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
+    const sorted = (ans || []).slice().sort((a, b) => ((b.team || 0) - (a.team || 0)) || (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
     return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).</div></div>` : ''}
-      <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
+      <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(subline(x))} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
         <h2 style="margin:12px 0 6px">${esc(x.title)}</h2><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
         <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : `<button class="link" data-report="q:${esc(x.id)}">🚩 إبلاغ</button>`}</div></div>
-      ${!hasAi && AI.sample && ans ? '<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">✨ اطلبي رأي نبض في هذا السؤال</button>' : ''}
+      ${!hasAi && AI.chat && ans ? '<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">✨ اطلبي رأي نبض في هذا السؤال</button>' : ''}
       <h3>${ans ? `${ans.length} ${ans.length === 1 ? 'رد' : 'ردود'}` : 'جاري تحميل الردود…'}</h3>
-      ${sorted.map(a => `<div class="card a-card ${a.ai ? 'ai' : ''}"><div class="q-head">${avatar(a)}<div class="grow"><b>${esc(author(a))}</b><div class="muted">${a.ai ? 'إجابة ذكية للتثقيف' : esc(a.stage || '')} · ${timeAgo(a.t)}</div></div></div>
+      ${sorted.map(a => `<div class="card a-card ${a.ai ? 'ai' : ''}"><div class="q-head">${avatar(a)}<div class="grow"><b>${esc(author(a))}</b><div class="muted">${esc(subline(a))} · ${timeAgo(a.t)}</div></div></div>
         <p style="white-space:pre-wrap;margin:10px 0 6px">${esc(a.body)}</p>
         <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>👍 مفيد ${a.hp || 0}</button>${a.ai ? '' : `<button class="link" data-report="a:${esc(x.id)}/${esc(a.id)}">🚩 إبلاغ</button>`}</div></div>`).join('')}
       ${CM.canWrite === false ? '' : `<div class="card"><b>اكتبي ردك</b>
@@ -204,7 +205,7 @@ function cmBind() {
     const nick = $('#nNick').value.trim(), anon = $('#nAnon').checked, title = $('#nTitle').value.trim(), body = $('#nBody').value.trim();
     route.draft = { title, body, anon, cat: $('#nCat').value };
     if (!anon && nick.length < 2) return toast('اكتبي اسماً للمجتمع أو اختاري بدون اسم');
-    const err = checkText(title, 8, 120) || checkText(body, 10, 1500) || (BLOCK_RE.test(nick) ? 'الاسم غير مسموح' : '');
+    const err = checkText(title, 8, 120) || checkText(body, 10, 1500) || (BLOCK_RE.test(nick) || /نبض/.test(nick) ? 'الاسم غير مسموح' : '');
     if (err) return toast(err);
     if (nick) { S.nick = nick; save(); }
     const btn = $('#nPost'); btn.disabled = true; btn.textContent = 'جاري النشر…';

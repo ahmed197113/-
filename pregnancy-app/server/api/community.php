@@ -5,6 +5,8 @@ require __DIR__ . '/lib.php';
 
 const BLOCK_RE = '/(https?:\/\/|www\.)|(\d[\s-]?){8,}/u';
 const HIDE_AT = 3; // يُخفى المحتوى تلقائياً بعد 3 بلاغات
+const TEAM = 'nabd-team'; // منشورات «فريق نبض» الرسمية (تُضاف من phpMyAdmin)
+function nick_of(array $in): string { $n = clean((string)($in['nick'] ?? ''), 40); return preg_match('/نبض/u', $n) ? '' : $n; }
 
 $dev = device();
 $in = input();
@@ -14,11 +16,11 @@ $writes = ['add', 'answer', 'helpful', 'report', 'remove', 'ai_answer'];
 if (in_array($act, $writes, true) && banned($dev)) out(['error' => 'banned'], 403);
 
 function qrow(array $r, string $dev): array {
-  return ['id' => (string)$r['id'], 'uid' => $r['dev'] === $dev ? 'me' : '', 'nick' => $r['anon'] ? '' : $r['nick'], 'anon' => (bool)$r['anon'],
+  return ['id' => (string)$r['id'], 'uid' => $r['dev'] === $dev ? 'me' : '', 'team' => $r['dev'] === TEAM, 'nick' => $r['anon'] ? '' : $r['nick'], 'anon' => (bool)$r['anon'],
     'cat' => $r['cat'], 'title' => $r['title'], 'body' => $r['body'], 'stage' => $r['stage'], 't' => (int)$r['t'], 'ac' => (int)$r['ac']];
 }
 function arow(array $r, string $dev): array {
-  return ['id' => (string)$r['id'], 'uid' => $r['ai'] ? 'ai' : ($r['dev'] === $dev ? 'me' : ''), 'ai' => (bool)$r['ai'], 'nick' => $r['ai'] ? 'نبض' : ($r['anon'] ? '' : $r['nick']),
+  return ['id' => (string)$r['id'], 'uid' => $r['ai'] ? 'ai' : ($r['dev'] === $dev ? 'me' : ''), 'ai' => (bool)$r['ai'], 'team' => $r['dev'] === TEAM, 'nick' => $r['ai'] ? 'نبض' : ($r['anon'] ? '' : $r['nick']),
     'anon' => (bool)$r['anon'], 'body' => $r['body'], 'stage' => $r['stage'], 't' => (int)$r['t'], 'hp' => (int)$r['hp']];
 }
 function question(int $id): array {
@@ -42,7 +44,7 @@ switch ($act) {
     if (preg_match(BLOCK_RE, $title . ' ' . $body)) out(['error' => 'blocked', 'text' => 'ممنوع وضع روابط أو أرقام هواتف'], 400);
     if (!bump("q:$dev", 10)) out(['error' => 'rate_limited'], 429);
     $pdo->prepare('INSERT INTO questions (dev, nick, anon, cat, title, body, stage, t, ip) VALUES (?,?,?,?,?,?,?,?,?)')
-      ->execute([$dev, clean((string)($in['nick'] ?? ''), 40), empty($in['anon']) ? 0 : 1, preg_replace('/[^a-z0-9]/', '', (string)($in['cat'] ?? 'other')) ?: 'other',
+      ->execute([$dev, nick_of($in), empty($in['anon']) ? 0 : 1, preg_replace('/[^a-z0-9]/', '', (string)($in['cat'] ?? 'other')) ?: 'other',
         $title, $body, clean((string)($in['stage'] ?? ''), 80), now_ms(), client_ip()]);
     out(['id' => (string)$pdo->lastInsertId()]);
 
@@ -59,7 +61,7 @@ switch ($act) {
     if (preg_match(BLOCK_RE, $body)) out(['error' => 'blocked', 'text' => 'ممنوع وضع روابط أو أرقام هواتف'], 400);
     if (!bump("a:$dev", 40)) out(['error' => 'rate_limited'], 429);
     $pdo->prepare('INSERT INTO answers (qid, dev, nick, anon, ai, body, stage, t, ip) VALUES (?,?,?,?,0,?,?,?,?)')
-      ->execute([$q['id'], $dev, clean((string)($in['nick'] ?? ''), 40), empty($in['anon']) ? 0 : 1, $body, clean((string)($in['stage'] ?? ''), 80), now_ms(), client_ip()]);
+      ->execute([$q['id'], $dev, nick_of($in), empty($in['anon']) ? 0 : 1, $body, clean((string)($in['stage'] ?? ''), 80), now_ms(), client_ip()]);
     $pdo->prepare('UPDATE questions SET ac = ac + 1 WHERE id = ?')->execute([$q['id']]);
     out(['ok' => true]);
 
