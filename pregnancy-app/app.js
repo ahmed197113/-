@@ -471,11 +471,40 @@ function viewMore() {
   <div class="set-block"><h3>🔔 الإشعارات</h3>
     <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
     ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
+  ${viewReminders()}
   <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
   <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
   </details>
   <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
+}
+
+// التذكيرات اليومية (تُجدول في notify.js)
+function viewReminders() {
+  const r = Notify.rem(), sel = (id, v, opts) => `<select class="input" id="${id}">${opts.map(([k, t]) => `<option value="${k}" ${String(v) === String(k) ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
+  return `<div class="set-block"><h3>⏰ تذكيرات يومية</h3>
+    <label class="check"><input type="checkbox" id="remMedOn" ${r.med.on ? 'checked' : ''}><span>💊 تذكير الدواء/الفيتامين</span></label>
+    ${r.med.on ? `<label class="f">اسم الدواء (اختياري)<input class="input" id="remMedName" maxlength="30" placeholder="الفيتامين" value="${esc(r.med.name)}"></label>
+      <div class="row" style="flex-wrap:wrap">${r.med.times.map((t, i) => `<span class="row" style="gap:4px"><input type="time" class="input" data-medtime="${i}" value="${esc(t)}"><button class="btn ghost sm" data-medrm="${i}" aria-label="حذف الوقت">✕</button></span>`).join('')}
+      ${r.med.times.length < 3 ? '<button class="btn ghost sm" id="remMedAdd">＋ إضافة وقت</button>' : ''}</div>
+      ${r.med.times.length ? '' : '<p class="muted" style="margin:4px 0 0">اختاري وقتاً ليبدأ التذكير.</p>'}` : ''}
+    <label class="check"><input type="checkbox" id="remWaterOn" ${r.water.on ? 'checked' : ''}><span>💧 شرب الماء</span></label>
+    ${r.water.on ? `<div class="grid2"><label class="f">من<input type="time" class="input" id="remWaterFrom" value="${esc(r.water.from)}"></label><label class="f">إلى<input type="time" class="input" id="remWaterTo" value="${esc(r.water.to)}"></label></div>
+      <label class="f">كل${sel('remWaterEvery', r.water.every, [[2, 'ساعتين'], [3, '3 ساعات']])}</label>` : ''}
+    ${Notify.native() ? '' : '<p class="muted" style="margin:0">التذكيرات تعمل في تطبيق الموبايل.</p>'}</div>`;
+}
+function bindReminders() {
+  const on = (id, fn, ev = 'onclick') => { const el = $(id); if (el) el[ev] = fn; };
+  const upd = async (f, again = true) => { const r = Notify.rem(); f(r); S.reminders = r; save(); if (again) render(false); await Notify.sync(true); };
+  on('#remMedOn', e => upd(r => { r.med.on = e.target.checked; }), 'onchange');
+  on('#remWaterOn', e => upd(r => { r.water.on = e.target.checked; }), 'onchange');
+  on('#remMedName', e => upd(r => { r.med.name = e.target.value.trim().slice(0, 30); }, false), 'onchange');
+  on('#remMedAdd', () => upd(r => { if (r.med.times.length < 3) r.med.times.push(r.med.times.length ? '21:00' : '09:00'); }));
+  app.querySelectorAll('[data-medtime]').forEach(el => el.onchange = () => upd(r => { if (el.value) r.med.times[+el.dataset.medtime] = el.value; }, false));
+  app.querySelectorAll('[data-medrm]').forEach(el => el.onclick = () => upd(r => { r.med.times.splice(+el.dataset.medrm, 1); }));
+  on('#remWaterFrom', e => upd(r => { if (e.target.value) r.water.from = e.target.value; }, false), 'onchange');
+  on('#remWaterTo', e => upd(r => { if (e.target.value) r.water.to = e.target.value; }, false), 'onchange');
+  on('#remWaterEvery', e => upd(r => { r.water.every = +e.target.value; }, false), 'onchange');
 }
 
 /* ---------- الشاشات الفرعية ---------- */
@@ -484,7 +513,7 @@ const SUBVIEWS = {
     const s = S._kick;
     const hist = S.kicks.slice(-10).reverse();
     return `<div class="card center">
-      <p class="muted">ابدئي العدّ في وقت يكون فيه الجنين نشطاً (بعد الأكل عادة)، واستلقي على جانبك الأيسر. الهدف: 10 حركات خلال ساعتين.</p>
+      <p class="muted">استلقي على أحد جانبيك في وقت يكون فيه نشطاً عادةً. تعرّفي على نمط حركته المعتاد؛ بعض الأطباء يستخدمون 10 حركات خلال ساعتين كمرجع.</p>
       ${s ? `<div id="kickTime" class="muted">00:00</div>` : ''}
       <button class="counter-big" id="kickBtn">${s ? s.count : '▶'}<small>${s ? 'اضغطي عند كل حركة' : 'ابدئي العدّ'}</small></button>
       ${s ? `<div class="row" style="justify-content:center"><button class="btn ghost" id="kickUndo">تراجع</button><button class="btn" id="kickStop">إنهاء وحفظ</button></div>` : ''}
@@ -492,7 +521,7 @@ const SUBVIEWS = {
     <div class="card"><h3>السجل</h3>${hist.length ? `<table class="t"><tr><th>التاريخ</th><th>الحركات</th><th>المدة</th></tr>
       ${hist.map(k => `<tr><td>${fmtShort.format(new Date(k.at))} ${new Date(k.at).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}</td><td>${k.count}</td><td>${Math.round(k.sec / 60)} د</td></tr>`).join('')}</table>`
       : '<p class="muted">لا توجد جلسات بعد.</p>'}</div>
-    <div class="card warn-card"><b>⚠️ راجعي الطبيب</b> إذا لم تشعري بـ10 حركات خلال ساعتين، أو لاحظتِ انخفاضاً واضحاً في نشاط الجنين المعتاد.</div>`;
+    <div class="card warn-card"><b>⚠️ اتصلي بالطبيب أو المستشفى فوراً</b> (لا تنتظري للغد) إذا قلت حركته أو تغير نمطها أو توقفت.</div>`;
   },
 
   contractions() {
@@ -603,7 +632,7 @@ const SUBVIEWS = {
     const t = iso(today()), n = S.water[t] || 0;
     const days = Array.from({ length: 7 }, (_, i) => addDays(today(), i - 6));
     return `<div class="card center"><h2>💧 ${n} / 10 أكواب</h2>
-      <p class="muted">اشربي 8–12 كوباً يومياً (نحو 2.5–3 لترات). الماء يقلل الإمساك والتهاب المسالك والتورم.</p>
+      <p class="muted">اشربي 8–12 كوباً يومياً (نحو 2–3 لترات). الماء يقلل الإمساك والتهاب المسالك والتورم.</p>
       <div class="water">${Array.from({ length: 12 }, (_, i) => `<button data-cup="${i + 1}" class="${i < n ? 'on' : ''}">🥛</button>`).join('')}</div></div>
       <div class="card"><h3>آخر 7 أيام</h3><div class="row" style="align-items:flex-end;height:120px;gap:6px">
       ${days.map(d => { const v = S.water[iso(d)] || 0; return `<div class="grow center"><div style="height:${Math.min(100, v * 9)}px;background:linear-gradient(var(--primary-2),var(--primary));border-radius:8px 8px 2px 2px"></div><small>${v}</small><br><small class="muted">${fmtShort.format(d).split(' ')[0]}</small></div>`; }).join('')}
@@ -733,6 +762,7 @@ function bind() {
   on('#resetBtn', confirmTap('#resetBtn', async () => { if (Account.state().token) await Account.logout(); S = defaults(); save(); route = { view: 'home' }; render(); }));
   on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
+  bindReminders();
 
   if (route.sub === 'profile') bindSetup();
 

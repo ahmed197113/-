@@ -507,8 +507,7 @@ Object.assign(SUBVIEWS, {
 
 function partnerMsg(st, pt, w) {
   return `💗 تحديث الأسبوع ${st.week} من رحلتنا
-👶 طفلنا الآن بحجم ${w.size} (${w.len}، ${w.wt})
-✨ ${w.baby[0]}
+${w.w >= 3 ? `👶 طفلنا الآن بحجم ${w.size} (${w.len}، ${w.wt})\n` : ''}✨ ${w.baby[0]}
 🤰 ما أشعر به: ${pt.feel}
 🙏 تستطيع أن تساعدني في:
 ${pt.help.map(h => '• ' + h).join('\n')}
