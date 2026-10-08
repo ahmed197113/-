@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/pagerRoot"
+    android:background="@color/page_background"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/brandDark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/back"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="@color/on_brand" />
+
+        <TextView
+            android:id="@+id/textPageTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="2"
+            android:textAppearance="@style/Text.TitleSmall"
+            android:textColor="@color/on_brand" />
+
+        <ImageButton
+            android:id="@+id/btnIndex"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/quran_index"
+            android:src="@drawable/ic_apps"
+            app:tint="@color/on_brand" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/brandPrimary"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <Button
+            android:id="@+id/btnReciter"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="start|center_vertical"
+            android:maxLines="1"
+            android:textColor="@color/on_brand"
+            app:icon="@drawable/ic_volume"
+            app:iconTint="@color/gold_light" />
+
+        <Button
+            android:id="@+id/btnFontSmaller"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/quran_font_smaller"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            android:text="أ-"
+            android:textColor="@color/gold_light" />
+
+        <Button
+            android:id="@+id/btnFontBigger"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/quran_font_bigger"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            android:text="أ+"
+            android:textColor="@color/gold_light" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnReadingMode"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/settings_reading_mode"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            app:icon="@drawable/ic_moon"
+            app:iconTint="@color/gold_light" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnHide"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/memorize_hide"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            app:icon="@drawable/ic_visibility_off"
+            app:iconTint="@color/gold_light" />
+
+        <Button
+            android:id="@+id/btnPlayPage"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/quran_play_page"
+            android:textColor="?attr/brandDark"
+            app:backgroundTint="@color/gold_light" />
+    </LinearLayout>
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layoutDirection="rtl" />
+
+    <LinearLayout
+        android:id="@+id/playerBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/brandDark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textNowPlaying"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="@android:color/white"
+            android:textSize="13sp" />
+
+        <ProgressBar
+            android:id="@+id/progressAudio"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSleep"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/sleep_timer"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            app:icon="@drawable/ic_timer"
+            app:iconTint="@color/gold_light" />
+
+        <Button
+            android:id="@+id/btnStop"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/quran_stop"
+            android:textColor="@color/gold_light" />
+    </LinearLayout>
+</LinearLayout>

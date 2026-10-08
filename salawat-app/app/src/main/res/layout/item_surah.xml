@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/textSurahNumber"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_number_badge"
+        android:gravity="center"
+        android:textAppearance="@style/Text.LabelLarge"
+        android:textColor="?attr/brandAccentText" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textSurahName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/kfgqpc_hafs"
+            app:fontFamily="@font/kfgqpc_hafs"
+            android:textColor="@color/text_primary_light"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/textSurahMeta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/Text.BodySmall"
+            android:textColor="@color/text_secondary_light" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textSurahPage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Text.LabelMedium"
+        android:textColor="?attr/brandAccentText" />
+</LinearLayout>

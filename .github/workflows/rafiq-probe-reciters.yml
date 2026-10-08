@@ -1,0 +1,27 @@
+name: Rafiq probe reciters
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/probe_reciters.py"
+      - ".github/workflows/rafiq-probe-reciters.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/probe_reciters.py "$RUNNER_TEMP/reciters-report.txt"
+      - if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-reciters-probe
+          name: Reciter source probe
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/reciters-report.txt

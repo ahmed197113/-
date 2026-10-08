@@ -1,0 +1,26 @@
+name: Rafiq probe itqan-quran.com
+
+on:
+  push:
+    paths:
+      - "salawat-app/tools/probe_itqan.py"
+      - ".github/workflows/rafiq-probe-itqan.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 salawat-app/tools/probe_itqan.py "$RUNNER_TEMP/i"
+      - if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rafiq-itqan-probe-${{ github.run_number }}
+          name: itqan-quran.com probe ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: ${{ runner.temp }}/i/*
