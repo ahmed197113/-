@@ -31,7 +31,12 @@ const ClaudeStore = {
     if (d.exists) await ref.update({ hp: (d.data().hp || 0) + 1 });
   },
   async report(r) { await CM.db.collection('reports').add(r); },
-  async remove(qid) { await CM.db.doc(`community/${qid}`).delete(); }
+  async remove(qid) { await CM.db.doc(`community/${qid}`).delete(); },
+  async removeAnswer(qid, aid) {
+    await CM.db.doc(`community/${qid}/answers/${aid}`).delete();
+    const q = await CM.db.doc(`community/${qid}`).get();
+    if (q.exists) await CM.db.doc(`community/${qid}`).update({ ac: Math.max(0, ((q.data().ac) || 0) - 1) });
+  }
 };
 
 /* ---------- المحوّل: Supabase (النسخة المستقلة) ---------- */
@@ -48,7 +53,8 @@ const SupaStore = {
   async answer(qid, a) { await this.req('answers', { method: 'POST', body: JSON.stringify({ ...a, qid }) }); await this.req('rpc/inc_answers', { method: 'POST', body: JSON.stringify({ q: qid }) }); },
   helpful(qid, aid) { return this.req('rpc/inc_helpful', { method: 'POST', body: JSON.stringify({ a: aid }) }); },
   report(r) { return this.req('reports', { method: 'POST', body: JSON.stringify(r) }); },
-  remove(qid) { return this.req(`questions?id=eq.${encodeURIComponent(qid)}&uid=eq.${encodeURIComponent(CM.uid)}`, { method: 'DELETE' }); }
+  remove(qid) { return this.req(`questions?id=eq.${encodeURIComponent(qid)}&uid=eq.${encodeURIComponent(CM.uid)}`, { method: 'DELETE' }); },
+  removeAnswer(qid, aid) { return this.req(`answers?id=eq.${encodeURIComponent(aid)}&uid=eq.${encodeURIComponent(CM.uid)}`, { method: 'DELETE' }); }
 };
 
 /* ---------- المحوّل: سيرفرك الخاص (server/api/community.php) ---------- */
@@ -61,6 +67,7 @@ const ServerStore = {
   helpful(qid, aid) { return this.c('helpful', { aid }); },
   report(r) { return this.c('report', { ref: r.ref }); },
   remove(qid) { return this.c('remove', { qid }); },
+  removeAnswer(qid, aid) { return this.c('remove_answer', { qid, aid }); },
   aiAnswer(qid) { return this.c('ai_answer', { qid }); }
 };
 
@@ -179,7 +186,7 @@ Object.assign(SUBVIEWS, {
       <h3>${ans ? `${ans.length} ${ans.length === 1 ? 'رد' : 'ردود'}` : 'جاري تحميل الردود…'}</h3>
       ${sorted.map(a => `<div class="card a-card ${a.ai ? 'ai' : ''}"><div class="q-head">${avatar(a)}<div class="grow"><b>${esc(author(a))}</b><div class="muted">${a.ai ? 'إجابة ذكية للتثقيف' : esc(a.stage || '')} · ${timeAgo(a.t)}</div></div></div>
         <p style="white-space:pre-wrap;margin:10px 0 6px">${esc(a.body)}</p>
-        <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>👍 مفيد ${a.hp || 0}</button>${modBtns(a, `a:${esc(x.id)}/${esc(a.id)}`)}</div></div>`).join('')}
+        <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>👍 مفيد ${a.hp || 0}</button>${!a.ai && a.uid && a.uid === CM.uid ? `<button class="link" data-del-ans="${esc(a.id)}">🗑️ حذف ردي</button>` : modBtns(a, `a:${esc(x.id)}/${esc(a.id)}`)}</div></div>`).join('')}
       ${CM.canWrite === false ? '' : `<div class="card"><b>اكتبي ردك</b>
         <textarea class="input" id="aBody" rows="3" maxlength="1000" placeholder="شاركي تجربتك بلطف…"></textarea>
         <label class="check"><input type="checkbox" id="aAnon"><span>رد بدون اسم 🤍</span></label>
@@ -244,6 +251,11 @@ function cmBind() {
   app.querySelectorAll('[data-block]').forEach(b => b.onclick = confirmTap(b, () => {
     S.blocked = [...new Set([...(S.blocked || []), b.dataset.block])]; save();
     toast('تم الحظر — لن يظهر لكِ محتوى هذا الشخص'); if (route.sub === 'cq' && isBlocked(CM.qs.find(q => q.id === route.qid) || {})) history.back(); else render(false);
+  }));
+  app.querySelectorAll('[data-del-ans]').forEach(b => b.onclick = confirmTap(b, async () => {
+    const x = CM.qs.find(q => q.id === route.qid); b.disabled = true;
+    try { await CM.store.removeAnswer(route.qid, b.dataset.delAns); if (x) x.ac = Math.max(0, (x.ac || 0) - 1); toast('تم حذف ردك'); await CM.loadAnswers(route.qid, true); }
+    catch { b.disabled = false; toast('تعذّر الحذف'); }
   }));
   on('#qDel', confirmTap('#qDel', async () => {
     try { await CM.store.remove(route.qid); CM.qs = CM.qs.filter(q => q.id !== route.qid); toast('تم الحذف'); history.back(); } catch { toast('تعذّر الحذف'); }

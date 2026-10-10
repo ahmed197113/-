@@ -10,7 +10,7 @@ $dev = device();
 $in = input();
 $act = $in['action'] ?? 'list';
 $pdo = db();
-$writes = ['add', 'answer', 'helpful', 'report', 'remove', 'ai_answer', 'ai_report'];
+$writes = ['add', 'answer', 'helpful', 'report', 'remove', 'remove_answer', 'ai_answer', 'ai_report'];
 if (in_array($act, $writes, true) && banned($dev)) out(['error' => 'banned'], 403);
 
 // معرّف مجهول ثابت لصاحب المحتوى، يُستخدم للحظر دون كشف معرّف الجهاز
@@ -98,6 +98,12 @@ switch ($act) {
     if ($text === '' || !bump("air:$dev", 20)) out(['ok' => true]);
     $pdo->prepare('INSERT INTO ai_reports (dev, text, t) VALUES (?,?,?)')->execute([$dev, $text, now_ms()]);
     out(['ok' => true]);
+
+  case 'remove_answer':
+    $s = $pdo->prepare('DELETE FROM answers WHERE id = ? AND qid = ? AND dev = ? AND ai = 0');
+    $s->execute([(int)($in['aid'] ?? 0), (int)($in['qid'] ?? 0), $dev]);
+    if ($s->rowCount()) $pdo->prepare('UPDATE questions SET ac = CASE WHEN ac > 0 THEN ac - 1 ELSE 0 END WHERE id = ?')->execute([(int)($in['qid'] ?? 0)]);
+    out(['ok' => (bool)$s->rowCount()]);
 
   case 'remove':
     $qid = (int)($in['qid'] ?? 0);
