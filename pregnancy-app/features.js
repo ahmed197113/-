@@ -536,8 +536,8 @@ function viewAssistAI() {
   const sug = S.baby ? ['طفلي يبكي كثيراً في الليل', 'متى أبدأ الأكل الصلب؟', 'حرارة 38 لطفل عمره شهران', 'كيف أعرف أن الرضاعة كافية؟']
     : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
-    <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق. المساعد الذكي الكامل متاح داخل نسخة Claude.'}</div></div></div></div>
-    <div id="chat">${chat.length ? chat.map(m => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
+    <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق.'}</div></div></div></div>
+    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}${m.role === 'assistant' ? `<button class="link flag" data-flag="${i}" ${m.flagged ? 'disabled' : ''}>${m.flagged ? 'تم الإبلاغ' : '🚩 إبلاغ عن الرد'}</button>` : ''}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
     <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف ${emergencyNo()}.</p></div>`;
@@ -627,6 +627,13 @@ function featBind() {
     const pref = t0.glu && gluUnit() === 'mmol' ? t0.alt[0] : t0.u;
     u.innerHTML = [t0.u, ...(t0.alt ? [t0.alt[0]] : [])].map(x => `<option ${x === pref ? 'selected' : ''}>${x}</option>`).join(''); };
   on('#lK', fillUnits, 'onchange'); fillUnits();
+  // الإبلاغ عن رد غير مناسب من المساعد الذكي (سياسة Google Play للمحتوى المولَّد بالذكاء الاصطناعي)
+  app.querySelectorAll('[data-flag]').forEach(b => b.onclick = async () => {
+    const m = S.chat[+b.dataset.flag]; if (!m || m.flagged) return;
+    m.flagged = true; save(); b.disabled = true; b.textContent = 'تم الإبلاغ';
+    if (Server.on()) Server.call('community.php', { action: 'ai_report', text: m.content.slice(0, 2000) }).catch(() => {});
+    toast('شكراً، سنراجع هذا الرد');
+  });
   on('#labPhoto', e => { const f = e.target.files[0]; if (f) readLabPhoto(f); }, 'onchange');
   on('#pendSave', () => {
     const keep = [...app.querySelectorAll('[data-pend]')].filter(c => c.checked).map(c => route.pending[+c.dataset.pend]);

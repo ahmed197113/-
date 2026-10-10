@@ -138,7 +138,10 @@ function render(scroll = true) {
     lastDepth = depth; lastView = route.view;
   }
   const prevStrip = $('#strip') ? $('#strip').scrollLeft : null, prevY = window.scrollY;
+  // رسم أحدث يلغي أي انتقال متأخر يحمل محتوى قديماً
+  const seq = ++renderSeq;
   const swap = () => {
+    if (seq !== renderSeq) return;
     app.innerHTML = html; bind();
     if (weekChanged && !REDUCED) {
       app.querySelector('.hero-stage')?.classList.add('swap');
@@ -158,7 +161,7 @@ function render(scroll = true) {
   }
   lastKey = key; lastWeek = route.week; lastInner = inner;
 }
-let lastKey = '', lastWeek, lastInner, lastDepth = 0, lastView = 'home';
+let lastKey = '', lastWeek, lastInner, lastDepth = 0, lastView = 'home', renderSeq = 0;
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------- الإعداد ---------- */
@@ -673,7 +676,7 @@ function weightChart(ws, pre, rng, st) {
 function confirmTap(sel, fn) {
   let armed = false;
   return () => {
-    const b = $(sel);
+    const b = typeof sel === 'string' ? $(sel) : sel;
     if (armed) return fn();
     armed = true; const old = b.textContent; b.textContent = 'اضغطي مرة أخرى للتأكيد';
     setTimeout(() => { armed = false; if (b.isConnected) b.textContent = old; }, 3000);

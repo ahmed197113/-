@@ -111,6 +111,14 @@ const myCat = () => S.baby ? 'baby' : ['t1', 't2', 't3'][status().tri - 1];
 const timeAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'الآن' : m < 60 ? `منذ ${m} د` : m < 1440 ? `منذ ${Math.floor(m / 60)} س` : `منذ ${Math.floor(m / 1440)} يوم`; };
 const author = x => x.ai ? 'نبض ✨' : x.anon ? 'أم مجهولة' : (x.nick || 'أم');
 const avatar = x => `<span class="av ${x.ai ? 'ai' : ''}">${x.ai ? '✨' : x.anon ? '🤍' : esc((x.nick || 'أ').trim()[0])}</span>`;
+// الحظر: تخفي المستخدمة محتوى شخص معيّن عن نفسها
+const authorKey = x => x.ai ? '' : (x.au || (x.uid && x.uid !== 'me' ? x.uid : ''));
+const isBlocked = x => { const k = authorKey(x); return !!k && (S.blocked || []).includes(k); };
+const rulesBox = () => S.cmRules ? '' : `<div class="card"><b>قواعد المجتمع</b><ul class="list"><li>الاحترام أولاً — لا تنمّر ولا أحكام.</li><li>لا أرقام هواتف ولا روابط ولا إعلانات.</li><li>التجارب الشخصية لا تغني عن الطبيب.</li><li>في الطوارئ لا تنتظري الردود — اذهبي للمستشفى.</li><li>يمكنك الإبلاغ عن أي محتوى مسيء أو حظر صاحبه، ونراجع البلاغات ونحذف المخالف.</li></ul>
+  <label class="check"><input type="checkbox" id="cmRulesOk"><span>قرأت قواعد المجتمع وأوافق عليها</span></label></div>`;
+const rulesOk = () => { if (S.cmRules) return true; if ($('#cmRulesOk') && $('#cmRulesOk').checked) { S.cmRules = true; save(); return true; } toast('وافقي على قواعد المجتمع أولاً'); return false; };
+const modBtns = (x, ref) => x.uid && x.uid === CM.uid ? '' : `<button class="link" data-report="${ref}">🚩 إبلاغ</button>${authorKey(x) ? `<button class="link" data-block="${esc(authorKey(x))}">🚫 حظر</button>` : ''}`;
+
 function checkText(t, min, max) {
   if (t.length < min) return `اكتبي ${min} حروف على الأقل`;
   if (t.length > max) return `النص طويل (الحد ${max} حرف)`;
@@ -124,7 +132,7 @@ function viewCommunity() {
     <p style="margin:6px 0 0">${window.claude ? 'المجتمع يحتاج تسجيل الدخول وصلاحية المشاركة في هذه الصفحة.' : 'المجتمع يتفعّل بعد ربط سيرفر التطبيق (راجعي ملف COMMUNITY.md).'}</p></div>`;
   CM.load();
   const f = route.cf || 'all', q = (route.cq || '').trim(), tab = route.ct || 'all';
-  let list = CM.qs.filter(x => (f === 'all' || x.cat === f) && (!q || (x.title + ' ' + x.body).includes(q)));
+  let list = CM.qs.filter(x => !isBlocked(x) && (f === 'all' || x.cat === f) && (!q || (x.title + ' ' + x.body).includes(q)));
   if (tab === 'mine') list = list.filter(x => x.uid === CM.uid);
   if (tab === 'open') list = list.filter(x => !x.ac);
   return `
@@ -153,8 +161,8 @@ Object.assign(SUBVIEWS, {
       <label class="f">التفاصيل<textarea id="nBody" rows="5" maxlength="1500" placeholder="اكتبي التفاصيل حتى تستطيع الأمهات مساعدتك">${esc(d.body || '')}</textarea></label>
       <div id="nWarn"></div>
       <p class="muted" style="margin:0 0 10px">سيظهر مع سؤالك: «${esc(myStage())}»</p>
-      <button class="btn block" id="nPost">نشر السؤال</button></div>
-      <div class="card"><b>قواعد المجتمع</b><ul class="list"><li>الاحترام أولاً — لا تنمّر ولا أحكام.</li><li>لا أرقام هواتف ولا روابط ولا إعلانات.</li><li>التجارب الشخصية لا تغني عن الطبيب.</li><li>في الطوارئ لا تنتظري الردود — اذهبي للمستشفى.</li></ul></div>`;
+      ${rulesBox()}
+      <button class="btn block" id="nPost">نشر السؤال</button></div>`;
   },
 
   cq() {
@@ -162,19 +170,20 @@ Object.assign(SUBVIEWS, {
     if (!x) { CM.load(); return '<p class="muted center">جاري التحميل…</p>'; }
     if (CM.ans[x.id] === undefined) CM.loadAnswers(x.id);
     const ans = CM.ans[x.id], hasAi = (ans || []).some(a => a.ai);
-    const sorted = (ans || []).slice().sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
+    const sorted = (ans || []).filter(a => !isBlocked(a)).sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
     return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).</div></div>` : ''}
       <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
         <h2 style="margin:12px 0 6px">${esc(x.title)}</h2><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
-        <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : `<button class="link" data-report="q:${esc(x.id)}">🚩 إبلاغ</button>`}</div></div>
+        <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : modBtns(x, `q:${esc(x.id)}`)}</div></div>
       ${!hasAi && AI.sample && ans ? '<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">✨ اطلبي رأي نبض في هذا السؤال</button>' : ''}
       <h3>${ans ? `${ans.length} ${ans.length === 1 ? 'رد' : 'ردود'}` : 'جاري تحميل الردود…'}</h3>
       ${sorted.map(a => `<div class="card a-card ${a.ai ? 'ai' : ''}"><div class="q-head">${avatar(a)}<div class="grow"><b>${esc(author(a))}</b><div class="muted">${a.ai ? 'إجابة ذكية للتثقيف' : esc(a.stage || '')} · ${timeAgo(a.t)}</div></div></div>
         <p style="white-space:pre-wrap;margin:10px 0 6px">${esc(a.body)}</p>
-        <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>👍 مفيد ${a.hp || 0}</button>${a.ai ? '' : `<button class="link" data-report="a:${esc(x.id)}/${esc(a.id)}">🚩 إبلاغ</button>`}</div></div>`).join('')}
+        <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>👍 مفيد ${a.hp || 0}</button>${modBtns(a, `a:${esc(x.id)}/${esc(a.id)}`)}</div></div>`).join('')}
       ${CM.canWrite === false ? '' : `<div class="card"><b>اكتبي ردك</b>
         <textarea class="input" id="aBody" rows="3" maxlength="1000" placeholder="شاركي تجربتك بلطف…"></textarea>
         <label class="check"><input type="checkbox" id="aAnon"><span>رد بدون اسم 🤍</span></label>
+        ${rulesBox()}
         <button class="btn block" id="aPost">إرسال الرد</button></div>`}`;
   }
 });
@@ -198,6 +207,7 @@ function cmBind() {
   on('#cmRefresh', () => { CM.load(true); toast('جاري التحديث…'); });
   on('#nBody', e => { const w = $('#nWarn'); if (w) w.innerHTML = URGENT_RE.test(e.target.value) ? '<div class="card lv-danger" style="margin-bottom:10px">🚨 يبدو أنها قد تكون حالة طارئة — لا تنتظري الردود، اذهبي للطوارئ أو كلمي طبيبك الآن.</div>' : ''; }, 'oninput');
   on('#nPost', async () => {
+    if (!rulesOk()) return;
     const nick = $('#nNick').value.trim(), anon = $('#nAnon').checked, title = $('#nTitle').value.trim(), body = $('#nBody').value.trim();
     route.draft = { title, body, anon, cat: $('#nCat').value };
     if (!anon && nick.length < 2) return toast('اكتبي اسماً للمجتمع أو اختاري بدون اسم');
@@ -213,6 +223,7 @@ function cmBind() {
     } catch (e) { btn.disabled = false; btn.textContent = 'نشر السؤال'; toast(e && e.code === 'quota_exceeded' ? 'المجتمع ممتلئ حالياً' : (e && e.text) || 'تعذّر النشر — تأكدي من الاتصال'); }
   });
   on('#aPost', async () => {
+    if (!rulesOk()) return;
     const body = $('#aBody').value.trim(), anon = $('#aAnon').checked, err = checkText(body, 3, 1000);
     if (err) return toast(err);
     if (!anon && !S.nick) { route.draftA = body; return toast('اختاري اسماً من «اطرحي سؤالاً» أو رد بدون اسم'); }
@@ -230,6 +241,10 @@ function cmBind() {
   app.querySelectorAll('[data-report]').forEach(b => b.onclick = async () => {
     try { await CM.store.report({ ref: b.dataset.report, by: CM.uid || S.devId || 'anon', t: Date.now() }); toast('شكراً، سنراجع البلاغ'); b.disabled = true; } catch { toast('تعذّر الإبلاغ'); }
   });
+  app.querySelectorAll('[data-block]').forEach(b => b.onclick = confirmTap(b, () => {
+    S.blocked = [...new Set([...(S.blocked || []), b.dataset.block])]; save();
+    toast('تم الحظر — لن يظهر لكِ محتوى هذا الشخص'); if (route.sub === 'cq' && isBlocked(CM.qs.find(q => q.id === route.qid) || {})) history.back(); else render(false);
+  }));
   on('#qDel', confirmTap('#qDel', async () => {
     try { await CM.store.remove(route.qid); CM.qs = CM.qs.filter(q => q.id !== route.qid); toast('تم الحذف'); history.back(); } catch { toast('تعذّر الحذف'); }
   }));

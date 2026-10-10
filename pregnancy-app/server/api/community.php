@@ -10,15 +10,17 @@ $dev = device();
 $in = input();
 $act = $in['action'] ?? 'list';
 $pdo = db();
-$writes = ['add', 'answer', 'helpful', 'report', 'remove', 'ai_answer'];
+$writes = ['add', 'answer', 'helpful', 'report', 'remove', 'ai_answer', 'ai_report'];
 if (in_array($act, $writes, true) && banned($dev)) out(['error' => 'banned'], 403);
 
+// معرّف مجهول ثابت لصاحب المحتوى، يُستخدم للحظر دون كشف معرّف الجهاز
+function au(string $dev): string { return substr(hash('sha256', $dev . '|nabd-author'), 0, 16); }
 function qrow(array $r, string $dev): array {
-  return ['id' => (string)$r['id'], 'uid' => $r['dev'] === $dev ? 'me' : '', 'nick' => $r['anon'] ? '' : $r['nick'], 'anon' => (bool)$r['anon'],
+  return ['id' => (string)$r['id'], 'uid' => $r['dev'] === $dev ? 'me' : '', 'au' => au($r['dev']), 'nick' => $r['anon'] ? '' : $r['nick'], 'anon' => (bool)$r['anon'],
     'cat' => $r['cat'], 'title' => $r['title'], 'body' => $r['body'], 'stage' => $r['stage'], 't' => (int)$r['t'], 'ac' => (int)$r['ac']];
 }
 function arow(array $r, string $dev): array {
-  return ['id' => (string)$r['id'], 'uid' => $r['ai'] ? 'ai' : ($r['dev'] === $dev ? 'me' : ''), 'ai' => (bool)$r['ai'], 'nick' => $r['ai'] ? 'نبض' : ($r['anon'] ? '' : $r['nick']),
+  return ['id' => (string)$r['id'], 'uid' => $r['ai'] ? 'ai' : ($r['dev'] === $dev ? 'me' : ''), 'au' => $r['ai'] ? '' : au($r['dev']), 'ai' => (bool)$r['ai'], 'nick' => $r['ai'] ? 'نبض' : ($r['anon'] ? '' : $r['nick']),
     'anon' => (bool)$r['anon'], 'body' => $r['body'], 'stage' => $r['stage'], 't' => (int)$r['t'], 'hp' => (int)$r['hp']];
 }
 function question(int $id): array {
@@ -89,6 +91,12 @@ switch ($act) {
     catch (PDOException $e) { out(['ok' => true]); } // بلاغ مكرر
     [$table, $id] = $ref[0] === 'q' ? ['questions', (int)substr($ref, 2)] : ['answers', (int)explode('/', $ref)[1]];
     $pdo->prepare("UPDATE $table SET reports = reports + 1, hidden = CASE WHEN reports + 1 >= " . HIDE_AT . " THEN 1 ELSE hidden END WHERE id = ?")->execute([$id]);
+    out(['ok' => true]);
+
+  case 'ai_report':
+    $text = clean((string)($in['text'] ?? ''), 2000, true);
+    if ($text === '' || !bump("air:$dev", 20)) out(['ok' => true]);
+    $pdo->prepare('INSERT INTO ai_reports (dev, text, t) VALUES (?,?,?)')->execute([$dev, $text, now_ms()]);
     out(['ok' => true]);
 
   case 'remove':

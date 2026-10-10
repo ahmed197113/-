@@ -44,6 +44,7 @@ foreach (['q' => 'questions', 'a' => 'answers'] as $k => $t) {
   $sql = "SELECT id, dev, reports, hidden, " . ($k === 'q' ? 'title, body' : "'' AS title, body") . ", t FROM $t WHERE reports > 0 OR hidden = 1 ORDER BY reports DESC, t DESC LIMIT 100";
   foreach ($pdo->query($sql) as $r) $rows[] = $r + ['k' => $k];
 }
+$aiReports = $pdo->query('SELECT id, text, t FROM ai_reports ORDER BY t DESC LIMIT 50')->fetchAll();
 $stats = $pdo->query('SELECT (SELECT COUNT(*) FROM questions) q, (SELECT COUNT(*) FROM answers) a, (SELECT COUNT(*) FROM bans) b')->fetch();
 ?>
 <h1>إشراف نبضٌ صغير</h1>
@@ -57,5 +58,10 @@ $stats = $pdo->query('SELECT (SELECT COUNT(*) FROM questions) q, (SELECT COUNT(*
 <form method="post"><input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>"><input type="hidden" name="t" value="<?= $r['k'] ?>"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
 <?php if ($r['hidden']): ?><button name="do" value="show">إظهار (سليم)</button><?php else: ?><button name="do" value="hide">إخفاء</button><?php endif; ?>
 <button class="d" name="do" value="ban" onclick="return confirm('حظر صاحب هذا المحتوى وإخفاء كل ما كتبه؟')">حظر الكاتب</button></form></div>
+<?php endforeach; ?>
+<h2>بلاغات عن ردود المساعد الذكي</h2>
+<?php if (!$aiReports) echo '<p class="m">لا توجد بلاغات.</p>'; ?>
+<?php foreach ($aiReports as $r): ?>
+<div class="c"><span class="m">#<?= (int)$r['id'] ?> · <?= $h(date('Y-m-d H:i', intdiv((int)$r['t'], 1000))) ?></span><div><?= nl2br($h($r['text'])) ?></div></div>
 <?php endforeach; endif; ?>
 </body></html>

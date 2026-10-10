@@ -542,3 +542,4 @@ details.more-tools[open] > :not(summary) { animation: softIn .35s cubic-bezier(.
 @media (prefers-reduced-motion: reduce) { #app > *, .soft, details.more-tools[open] > * { animation: none !important; } }
 
 .app-logo { display: block; width: 72px; height: 72px; margin: 14px auto 6px; border-radius: 18px; box-shadow: 0 8px 24px rgba(250,26,127,.28); }
+.bubble .flag { display: block; margin-top: 6px; font-size: .75rem; opacity: .7; }
