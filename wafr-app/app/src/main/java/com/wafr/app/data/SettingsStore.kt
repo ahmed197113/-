@@ -43,6 +43,8 @@ data class Settings(
     val rushBest: Int = 0,
     val catcherBest: Int = 0,
     val monthBest: Int = 0,
+    /** When the user accepted the privacy notice (0 = not yet). */
+    val privacyAcceptedAt: Long = 0,
 )
 
 class SettingsStore(private val context: Context) {
@@ -70,6 +72,7 @@ class SettingsStore(private val context: Context) {
         val rushBest = intPreferencesKey("rush_best")
         val catcherBest = intPreferencesKey("catcher_best")
         val monthBest = intPreferencesKey("month_best")
+        val privacy = longPreferencesKey("privacy_accepted_at")
     }
 
     val flow: Flow<Settings> = context.dataStore.data.map { currentFrom(it) }
@@ -102,6 +105,7 @@ class SettingsStore(private val context: Context) {
             p[K.rushBest] = s.rushBest
             p[K.catcherBest] = s.catcherBest
             p[K.monthBest] = s.monthBest
+            p[K.privacy] = s.privacyAcceptedAt
         }
     }
 
@@ -131,6 +135,7 @@ class SettingsStore(private val context: Context) {
             rushBest = p[K.rushBest] ?: d.rushBest,
             catcherBest = p[K.catcherBest] ?: d.catcherBest,
             monthBest = p[K.monthBest] ?: d.monthBest,
+            privacyAcceptedAt = p[K.privacy] ?: d.privacyAcceptedAt,
         )
     }
 }

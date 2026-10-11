@@ -67,9 +67,12 @@ fun fixExact(context: Context) {
     if (Build.VERSION.SDK_INT >= 31) open(context, Intent(AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
 }
 
-@android.annotation.SuppressLint("BatteryLife")
-fun fixBattery(context: Context) =
-    open(context, Intent(AndroidSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}")))
+/**
+ * Opens the system's battery-optimization list, where the user picks "Don't optimize" for the app.
+ * The one-tap exemption dialog needs REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, which Google Play
+ * restricts to apps whose core function breaks without it, so the app does not declare it.
+ */
+fun fixBattery(context: Context) = open(context, Intent(AndroidSettings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
 
 /** Re-reads the system state every time the screen resumes (after the user returns from Settings). */
 @Composable
@@ -97,8 +100,14 @@ fun ReliabilityCard(settings: Settings) {
         }
         Spacer(Modifier.height(8.dp))
         CheckRow(r.notifications, "الإشعارات مسموحة", "بدونها لا يصلك أي تذكير") { fixNotifications(context) }
-        CheckRow(r.exact, "منبّهات دقيقة", "ليصلك التذكير في موعده تماماً") { fixExact(context) }
-        CheckRow(r.battery, "مستثنى من توفير البطارية", "يمنع النظام من إيقاف التذكير في الخلفية") { fixBattery(context) }
+        CheckRow(
+            r.exact, "منبّهات دقيقة",
+            if (r.exact) "يصلك التذكير في موعده تماماً" else "بدونها يعمل التذكير أيضاً، لكن قد يتأخر قليلاً حين يكون الهاتف خاملاً",
+        ) { fixExact(context) }
+        CheckRow(
+            r.battery, "مستثنى من توفير البطارية",
+            if (r.battery) "لن يوقف النظام التذكير في الخلفية" else "اختر «وَفْر» من القائمة ثم «عدم التحسين» (اختياري)",
+        ) { fixBattery(context) }
         Spacer(Modifier.height(6.dp))
         Text(
             "💡 في هواتف شاومي وهواوي وأوبو: فعّل أيضاً «التشغيل التلقائي» لتطبيق وَفْر من إعدادات الهاتف.",

@@ -26,40 +26,61 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Decode signing key
+      # The Play upload key lives only in repository secrets (see wafr-app/store/SIGNING.md).
+      - name: Decode upload key
         env:
           KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-            echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.p12"
+            echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/upload.p12" >> "$GITHUB_ENV"
+            echo "SIGNED=true" >> "$GITHUB_ENV"
           else
-            echo "::warning::SIGNING_KEYSTORE_BASE64 secret not set; release APK is signed with the runner's debug key."
+            echo "SIGNED=false" >> "$GITHUB_ENV"
+            echo "::warning::Signing secrets are not set: this build is signed with the CI debug key and cannot be uploaded to Google Play."
           fi
 
-      - name: Build release APK
+      - name: Unit tests, release APK and Play bundle (AAB)
         env:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon testDebugUnitTest assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Wafr-v2.0.apk"
+          ./gradlew --no-daemon testDebugUnitTest assembleRelease bundleRelease
+          version=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/Wafr-v$version.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/Wafr-v$version.aab"
+
+      - name: Show signing certificate (compare with your upload key)
+        run: |
+          echo "versionName=$VERSION versionCode=$((GITHUB_RUN_NUMBER + 100)) signed-with-upload-key=$SIGNED"
+          keytool -printcert -jarfile "$RUNNER_TEMP/Wafr-v$VERSION.aab" | grep -E "Owner|SHA256" || true
+
+      - name: Show final permissions and target SDK (for the Play declarations)
+        run: |
+          aapt2="$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)/aapt2"
+          "$aapt2" dump permissions "$RUNNER_TEMP/Wafr-v$VERSION.apk"
+          "$aapt2" dump badging "$RUNNER_TEMP/Wafr-v$VERSION.apk" | grep -E "^package:|targetSdkVersion|sdkVersion"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Wafr-v2.0-apk
-          path: ${{ runner.temp }}/Wafr-v2.0.apk
+          name: Wafr-v${{ env.VERSION }}-build${{ github.run_number }}${{ env.SIGNED == 'true' && '' || '-UNSIGNED-debugkey' }}
+          path: |
+            ${{ runner.temp }}/Wafr-v${{ env.VERSION }}.apk
+            ${{ runner.temp }}/Wafr-v${{ env.VERSION }}.aab
 
       - name: Publish APK as a pre-release
+        if: env.SIGNED == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: wafr-v2.0-build${{ github.run_number }}
-          name: وَفْر v2.0 (build ${{ github.run_number }})
+          tag_name: wafr-v${{ env.VERSION }}-build${{ github.run_number }}
+          name: وَفْر v${{ env.VERSION }} (build ${{ github.run_number }})
           target_commitish: ${{ github.sha }}
           prerelease: true
           body: |
-            وَفْر — تطبيق إدارة الميزانية الشهرية.
-            حمّل ملف Wafr-v2.0.apk من الأسفل وثبّته على هاتفك (اسمح بالتثبيت من مصادر غير معروفة).
-          files: ${{ runner.temp }}/Wafr-v2.0.apk
+            وَفْر — مصاريفك وميزانيتك الشهرية.
+            للتجربة المباشرة: حمّل Wafr-v${{ env.VERSION }}.apk وثبّته (اسمح بالتثبيت من مصادر غير معروفة).
+            ملف AAB الخاص بـ Google Play موجود في Artifacts الخاصة بهذا التشغيل في GitHub Actions.
+          files: ${{ runner.temp }}/Wafr-v${{ env.VERSION }}.apk

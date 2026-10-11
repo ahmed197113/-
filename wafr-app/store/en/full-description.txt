@@ -1,0 +1,47 @@
+Wafr is a monthly budget planner and expense tracker built for Arabic speakers. It helps you see where your salary goes and save more every month. No account, no phone number, no ads, and your data stays on your phone.
+
+Note: the app's interface is in Arabic (right-to-left).
+
+💭 A spending reminder that asks before you forget
+Every few hours Wafr asks: "Did you spend anything?" Type "25 coffee" right in the notification without opening the app. Wafr reads the amount and picks the category. You choose the interval and quiet hours.
+
+🛍️ Needs vs wants
+Every expense is marked as a need or a want, so at the end of the month you know exactly how much went to wants and how much you could have saved. Put impulse buys on a 48-hour "think about it" list. Most of them fade away.
+
+🎯 A clear monthly budget
+• "Allowed today": one daily number that adjusts as you spend.
+• Category limits with instant alerts at 80% and when you go over.
+• Start your month on your payday.
+• Fixed bills (rent, internet, installments) reserved from your budget, with due-date reminders.
+
+🧭 Salary planner
+Enter your paycheck and pick a well-known rule: 50/30/20 budget, the six-jars system, or "pay yourself first". Wafr splits your salary into category limits in one tap.
+
+⚡ Log an expense in 3 seconds
+• Quick Settings tile in the notification shade.
+• Home-screen widgets in two sizes.
+• An ongoing notification showing what's left today.
+• A fast keypad and suggestions from your frequent expenses.
+
+📊 History and insights
+Full history by month, year or any custom range, category breakdowns, your share of wants, a discipline score and an evening summary.
+
+🎮 Learn money skills by playing
+Six short financial literacy games in Arabic:
+• Freedom Race, inspired by "Rich Dad Poor Dad".
+• A Month in Your Life, a swipe game balancing money and happiness.
+• Wealth Catcher, a 2D arcade game.
+• Needs or Wants?, a 30-second speed challenge.
+• Money Quiz, with an explanation after every answer.
+• Time Machine, a compound interest simulator.
+
+🔒 Private by design
+• No account, no ads, no tracking.
+• Everything is stored only on your phone.
+• Backup to a file you control, and easy restore on a new phone.
+• Export to Excel (CSV).
+• "Delete all my data" in one tap.
+
+🌙 Dark and light themes, large-font friendly. Supports SAR, AED, EGP, KWD, QAR, BHD, OMR, JOD, IQD, USD, EUR and more.
+
+💚 Our promise: everything that is free in Wafr today stays free.

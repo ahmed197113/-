@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -296,6 +298,10 @@ private val monthEvents = listOf(
     MonthCard("🔧", "عطل في السيارة", "إصلاح طارئ لا مفرّ منه.", 600, -5, -20, true, fine = 900),
 )
 
+/** A drag past a quarter of the card, or a quick flick in the same direction, decides the card. */
+internal fun isMonthSwipe(dx: Float, width: Float, velocityX: Float): Boolean =
+    abs(dx) > width * 0.25f || (abs(dx) > width * 0.08f && abs(velocityX) > 1200f && velocityX * dx > 0)
+
 @Composable
 fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit, onBest: (Int) -> Unit) {
     val c = Mz.colors
@@ -399,7 +405,36 @@ fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit,
             return@Column
         }
         val card = deck[i]
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+        // The gesture is read on this stationary box, not on the card: the card moves and rotates
+        // under the finger, and measuring drags inside that moving layer lost swipes (and in RTL the
+        // mirrored offset pushed the card the opposite way). A fast flick also counts as a swipe.
+        Box(
+            Modifier.fillMaxWidth().weight(1f).pointerInput(i) {
+                val tracker = VelocityTracker()
+                detectDragGestures(
+                    onDragStart = { tracker.resetTracking() },
+                    onDragEnd = {
+                        val v = dragX
+                        val w = size.width.toFloat()
+                        val fling = tracker.calculateVelocity().x
+                        scope.launch {
+                            if (isMonthSwipe(v, w, fling)) {
+                                animate(v, if (v > 0) w * 1.5f else -w * 1.5f, animationSpec = tween(160)) { x, _ -> dragX = x }
+                                decide(v > 0)
+                            } else {
+                                animate(v, 0f, animationSpec = tween(180)) { x, _ -> dragX = x }
+                            }
+                        }
+                    },
+                    onDragCancel = { dragX = 0f },
+                ) { change, amount ->
+                    change.consume()
+                    tracker.addPosition(change.uptimeMillis, change.position)
+                    dragX += amount.x
+                }
+            },
+            contentAlignment = Alignment.Center,
+        ) {
             // next card peeking behind
             deck.getOrNull(i + 1)?.let {
                 Box(Modifier.fillMaxWidth(0.9f).height(300.dp).offset(y = 14.dp).clip(RoundedCornerShape(30.dp)).background(c.card.copy(alpha = 0.6f)))
@@ -407,28 +442,12 @@ fun MonthSwipeGame(best: Int, contentPadding: PaddingValues, onBack: () -> Unit,
             val color = if (card.need) c.need else if (card.gift) c.good else c.want
             Column(
                 Modifier.fillMaxWidth().height(330.dp)
-                    .offset { IntOffset(dragX.roundToInt(), 0) }
+                    // absoluteOffset: the card follows the finger in screen terms, whatever the layout direction.
+                    .absoluteOffset { IntOffset(dragX.roundToInt(), 0) }
                     .graphicsLayer { rotationZ = dragX / 40f }
                     .clip(RoundedCornerShape(30.dp))
                     .background(Brush.linearGradient(listOf(color.copy(alpha = 0.30f), c.card)))
                     .border(2.dp, color.copy(alpha = 0.8f), RoundedCornerShape(30.dp))
-                    .pointerInput(i) {
-                        detectDragGestures(
-                            onDragEnd = {
-                                val v = dragX
-                                val w = size.width.toFloat()
-                                scope.launch {
-                                    if (abs(v) > w * 0.25f) {
-                                        animate(v, if (v > 0) w * 1.5f else -w * 1.5f, animationSpec = tween(160)) { x, _ -> dragX = x }
-                                        decide(v > 0)
-                                    } else {
-                                        animate(v, 0f, animationSpec = tween(180)) { x, _ -> dragX = x }
-                                    }
-                                }
-                            },
-                            onDragCancel = { dragX = 0f },
-                        ) { change, amount -> change.consume(); dragX += amount.x }
-                    }
                     .padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,

@@ -7,9 +7,11 @@ import com.wafr.app.domain.Snapshot
 import com.wafr.app.domain.toMillis
 import com.wafr.app.notify.Notifications
 import com.wafr.app.notify.Refresher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
@@ -159,6 +161,17 @@ class Repository(private val context: Context) {
     suspend fun allExpenses(): List<Expense> = db.expenses().allOnce()
 
     suspend fun wipeExpenses() { db.expenses().clear(); changed() }
+
+    /**
+     * "Delete all my data": every table and every setting, including the privacy acceptance,
+     * so the app returns to its first-launch state. Nothing is stored anywhere else.
+     */
+    suspend fun wipeEverything() {
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        settingsStore.update { Settings() }
+        ensureSeeded()
+        changed()
+    }
 
     // ---- Backup ----
     suspend fun exportJson(): String {
