@@ -96,8 +96,8 @@ CM.load = async (force) => {
   CM.loading = true; CM.err = '';
   try {
     CM.qs = await CM.store.list();
-    // أسئلة البداية: تُضاف مرة واحدة إن كان المجتمع فارغاً (السيرفر يضيفها بنفسه)
-    if (!CM.qs.length && CM.mode === 'claude' && CM.canWrite !== false) { await seedClaude(); CM.qs = await CM.store.list(); }
+    // أسئلة البداية: تُضاف مرة واحدة فقط (السيرفر يضيفها بنفسه)
+    if (CM.mode === 'claude' && CM.canWrite !== false && !CM.qs.some(q => q.team) && await seedClaude()) CM.qs = await CM.store.list();
     CM.loaded = true;
   }
   catch (e) { CM.err = 'تعذّر تحميل المجتمع الآن. حاولي مرة أخرى.'; }
@@ -106,7 +106,7 @@ CM.load = async (force) => {
 };
 async function seedClaude() {
   const meta = CM.db.doc('community_meta/seed');
-  if ((await meta.get()).exists) return;
+  if ((await meta.get()).exists) return false;
   await meta.set({ t: Date.now() });
   const now = Date.now();
   for (const [i, s] of CM_SEED.entries()) {
@@ -114,6 +114,7 @@ async function seedClaude() {
     const id = await ClaudeStore.add({ uid: 'team', team: true, nick: 'فريق نبض', anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t, ac: 1 });
     await CM.db.collection(`community/${id}/answers`).add({ uid: 'ai', ai: true, nick: 'نبض', body: s.answer, t: t + 1000, hp: 0 });
   }
+  return true;
 }
 CM.loadAnswers = async (qid, force) => {
   if (!force && CM.ans[qid]) return;

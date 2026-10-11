@@ -34,8 +34,8 @@ function now_ms(): int { return (int)round(microtime(true) * 1000); }
 
 switch ($act) {
   case 'list':
-    // أسئلة البداية من «فريق نبض»: مرة واحدة فقط عندما يكون المجتمع فارغاً
-    if (!(int)$pdo->query('SELECT COUNT(*) FROM questions')->fetchColumn() && bump('seeded:v1', 1) && is_file(__DIR__ . '/seed.json')) {
+    // أسئلة البداية من «فريق نبض»: تُضاف مرة واحدة فقط
+    if (is_file(__DIR__ . '/seed.json') && bump('seeded:v1', 1)) {
       $now = now_ms();
       $seed = json_decode((string)file_get_contents(__DIR__ . '/seed.json'), true) ?: [];
       foreach ($seed as $i => $s) {
