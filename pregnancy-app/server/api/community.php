@@ -16,7 +16,7 @@ if (in_array($act, $writes, true) && banned($dev)) out(['error' => 'banned'], 40
 // معرّف مجهول ثابت لصاحب المحتوى، يُستخدم للحظر دون كشف معرّف الجهاز
 function au(string $dev): string { return substr(hash('sha256', $dev . '|nabd-author'), 0, 16); }
 function qrow(array $r, string $dev): array {
-  return ['id' => (string)$r['id'], 'uid' => $r['dev'] === $dev ? 'me' : '', 'au' => au($r['dev']), 'nick' => $r['anon'] ? '' : $r['nick'], 'anon' => (bool)$r['anon'],
+  return ['id' => (string)$r['id'], 'uid' => $r['dev'] === $dev ? 'me' : '', 'team' => $r['dev'] === 'team', 'au' => $r['dev'] === 'team' ? '' : au($r['dev']), 'nick' => $r['anon'] ? '' : $r['nick'], 'anon' => (bool)$r['anon'],
     'cat' => $r['cat'], 'title' => $r['title'], 'body' => $r['body'], 'stage' => $r['stage'], 't' => (int)$r['t'], 'ac' => (int)$r['ac']];
 }
 function arow(array $r, string $dev): array {
@@ -34,6 +34,18 @@ function now_ms(): int { return (int)round(microtime(true) * 1000); }
 
 switch ($act) {
   case 'list':
+    // أسئلة البداية من «فريق نبض»: مرة واحدة فقط عندما يكون المجتمع فارغاً
+    if (!(int)$pdo->query('SELECT COUNT(*) FROM questions')->fetchColumn() && bump('seeded:v1', 1) && is_file(__DIR__ . '/seed.json')) {
+      $now = now_ms();
+      $seed = json_decode((string)file_get_contents(__DIR__ . '/seed.json'), true) ?: [];
+      foreach ($seed as $i => $s) {
+        $t = $now - (count($seed) - $i) * 60000;
+        $pdo->prepare('INSERT INTO questions (dev, nick, anon, cat, title, body, stage, t, ac) VALUES (?,?,0,?,?,?,?,?,1)')
+          ->execute(['team', 'فريق نبض', $s['cat'], $s['title'], $s['body'], $s['stage'], $t]);
+        $pdo->prepare('INSERT INTO answers (qid, dev, nick, anon, ai, body, stage, t) VALUES (?,?,?,0,1,?,?,?)')
+          ->execute([$pdo->lastInsertId(), 'ai', 'نبض', $s['answer'], '', $t + 1000]);
+      }
+    }
     $rows = $pdo->query('SELECT * FROM questions WHERE hidden = 0 ORDER BY t DESC LIMIT 300')->fetchAll();
     out(['items' => array_map(fn($r) => qrow($r, $dev), $rows)]);
 

@@ -94,11 +94,27 @@ CM.ready = (async () => {
 CM.load = async (force) => {
   if (!CM.mode || CM.loading || (CM.loaded && !force)) return;
   CM.loading = true; CM.err = '';
-  try { CM.qs = await CM.store.list(); CM.loaded = true; }
+  try {
+    CM.qs = await CM.store.list();
+    // أسئلة البداية: تُضاف مرة واحدة إن كان المجتمع فارغاً (السيرفر يضيفها بنفسه)
+    if (!CM.qs.length && CM.mode === 'claude' && CM.canWrite !== false) { await seedClaude(); CM.qs = await CM.store.list(); }
+    CM.loaded = true;
+  }
   catch (e) { CM.err = 'تعذّر تحميل المجتمع الآن. حاولي مرة أخرى.'; }
   CM.loading = false;
   if (route.view === 'assist' || route.sub === 'cq' || route.view === 'home') render(false);
 };
+async function seedClaude() {
+  const meta = CM.db.doc('community_meta/seed');
+  if ((await meta.get()).exists) return;
+  await meta.set({ t: Date.now() });
+  const now = Date.now();
+  for (const [i, s] of CM_SEED.entries()) {
+    const t = now - (CM_SEED.length - i) * 60000;
+    const id = await ClaudeStore.add({ uid: 'team', team: true, nick: 'فريق نبض', anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t, ac: 1 });
+    await CM.db.collection(`community/${id}/answers`).add({ uid: 'ai', ai: true, nick: 'نبض', body: s.answer, t: t + 1000, hp: 0 });
+  }
+}
 CM.loadAnswers = async (qid, force) => {
   if (!force && CM.ans[qid]) return;
   CM.ans[qid] = CM.ans[qid] || null;
@@ -116,10 +132,10 @@ const myStage0 = () => {
 };
 const myCat = () => S.baby ? 'baby' : ['t1', 't2', 't3'][status().tri - 1];
 const timeAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'الآن' : m < 60 ? `منذ ${m} د` : m < 1440 ? `منذ ${Math.floor(m / 60)} س` : `منذ ${Math.floor(m / 1440)} يوم`; };
-const author = x => x.ai ? 'نبض ✨' : x.anon ? 'أم مجهولة' : (x.nick || 'أم');
-const avatar = x => `<span class="av ${x.ai ? 'ai' : ''}">${x.ai ? '✨' : x.anon ? '🤍' : esc((x.nick || 'أ').trim()[0])}</span>`;
+const author = x => x.ai ? 'نبض ✨' : x.team ? 'فريق نبض 💗' : x.anon ? 'أم مجهولة' : (x.nick || 'أم');
+const avatar = x => `<span class="av ${x.ai || x.team ? 'ai' : ''}">${x.ai ? '✨' : x.team ? '💗' : x.anon ? '🤍' : esc((x.nick || 'أ').trim()[0])}</span>`;
 // الحظر: تخفي المستخدمة محتوى شخص معيّن عن نفسها
-const authorKey = x => x.ai ? '' : (x.au || (x.uid && x.uid !== 'me' ? x.uid : ''));
+const authorKey = x => x.ai || x.team ? '' : (x.au || (x.uid && x.uid !== 'me' ? x.uid : ''));
 const isBlocked = x => { const k = authorKey(x); return !!k && (S.blocked || []).includes(k); };
 const rulesBox = () => S.cmRules ? '' : `<div class="card"><b>قواعد المجتمع</b><ul class="list"><li>الاحترام أولاً — لا تنمّر ولا أحكام.</li><li>لا أرقام هواتف ولا روابط ولا إعلانات.</li><li>التجارب الشخصية لا تغني عن الطبيب.</li><li>في الطوارئ لا تنتظري الردود — اذهبي للمستشفى.</li><li>يمكنك الإبلاغ عن أي محتوى مسيء أو حظر صاحبه، ونراجع البلاغات ونحذف المخالف.</li></ul>
   <label class="check"><input type="checkbox" id="cmRulesOk"><span>قرأت قواعد المجتمع وأوافق عليها</span></label></div>`;
