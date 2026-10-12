@@ -166,7 +166,14 @@ shot 22-insights 1
 if adb shell dumpsys alarm | grep -q "$pkg"; then pass "check-in alarm armed after onboarding"; else fail "check-in alarm armed after onboarding"; fi
 adb shell am broadcast -n "$pkg/$cls.notify.CheckInAlarmReceiver" -a com.wafr.app.CHECKIN_ALARM
 sleep 3
-if adb shell dumpsys notification --noredact | grep -q "pkg=$pkg user=UserHandle{0} id=1001"; then pass "alarm fire posts the check-in notification"; else fail "alarm fire posts the check-in notification"; fi
+# Quiet hours default to 23:00-08:00: inside them the reminder must stay silent (and still re-arm).
+hour=$(adb shell date +%H | tr -d '\r'); hour=$((10#$hour))
+if adb shell dumpsys notification --noredact | grep -q "pkg=$pkg user=UserHandle{0} id=1001"; then posted=1; else posted=0; fi
+if [ $hour -ge 23 ] || [ $hour -lt 8 ]; then
+  if [ $posted = 0 ]; then pass "alarm fire respects quiet hours (device hour $hour: no notification)"; else fail "alarm fire respects quiet hours (device hour $hour)"; fi
+else
+  if [ $posted = 1 ]; then pass "alarm fire posts the check-in notification (device hour $hour)"; else fail "alarm fire posts the check-in notification (device hour $hour)"; fi
+fi
 if adb shell dumpsys alarm | grep -q "$pkg"; then pass "alarm re-armed for the next 5 hours"; else fail "alarm re-armed for the next 5 hours"; fi
 adb shell dumpsys alarm | grep -B2 -A6 "$pkg" | head -40 > "$out/alarms.txt"
 
@@ -307,7 +314,8 @@ adb shell settings put system font_scale 1.3
 sleep 2
 start --es tab HOME; sleep 3
 shot 82-home-font-130 1
-check "home readable at 130% font" "مسموح لك اليوم"
+# By now the test has overspent today, so the hero shows either label.
+check "home readable at 130% font" "لك اليوم\|حد اليوم"
 adb shell settings put system font_scale 1.0
 sleep 2
 

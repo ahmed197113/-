@@ -42,7 +42,14 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           working-directory: wafr-app
           script: ./tools/screenshots.sh "$RUNNER_TEMP/shots"
+      - name: Keep screenshots and report as a run artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-shots-${{ github.run_number }}
+          path: ${{ runner.temp }}/shots/
       - name: Publish screenshots
+        continue-on-error: true
         if: always()
         uses: softprops/action-gh-release@v2
         with:
