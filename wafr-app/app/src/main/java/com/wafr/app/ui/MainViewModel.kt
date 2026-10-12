@@ -105,4 +105,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun wipe() = viewModelScope.launch { repo.wipeExpenses() }
+
+    fun wipeEverything() = viewModelScope.launch {
+        repo.wipeEverything()
+        ReminderScheduler.apply(getApplication(), repo.settingsStore.current())
+    }
+
+    fun acceptPrivacy() = viewModelScope.launch {
+        repo.settingsStore.update { it.copy(privacyAcceptedAt = System.currentTimeMillis()) }
+    }
 }

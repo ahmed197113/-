@@ -57,7 +57,11 @@ import com.wafr.app.ui.components.parseAmount
 import com.wafr.app.ui.theme.Mz
 
 @Composable
-fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAskNotifications: () -> Unit) {
+fun OnboardingScreen(
+    onFinish: (transform: (Settings) -> Settings) -> Unit,
+    onAskNotifications: () -> Unit,
+    onAcceptPrivacy: () -> Unit,
+) {
     val c = Mz.colors
     var step by rememberSaveable { mutableIntStateOf(0) }
     var name by rememberSaveable { mutableStateOf("") }
@@ -96,7 +100,9 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             Feature("🎯", "المسموح لك اليوم", "رقم واحد واضح يوميّاً، وتنبيه فوري عند تجاوز ميزانية أي بند.")
                             Feature("🧭", "مخطط الراتب", "قل لي راتبك وأوزّعه لك حسب قواعد كتب الثراء.")
                             Feature("🎲", "العب وتعلّم", "لعبة «سباق الحرية» المستوحاة من «الأب الغني والأب الفقير».")
-                            Feature("🔒", "خصوصية تامة", "بياناتك على جهازك فقط. بلا إعلانات ولا اشتراكات.")
+                            Feature("🔒", "خصوصية تامة", "بياناتك على جهازك فقط. بلا حساب ولا إعلانات ولا تتبّع.")
+                            Spacer(Modifier.height(12.dp))
+                            PrivacyNotice()
                         }
                         1 -> {
                             Title("لنتعرّف 👋", "سنخصّص وَفْر لك في أقل من دقيقة.")
@@ -156,7 +162,7 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             val ctx = androidx.compose.ui.platform.LocalContext.current
                             val r = com.wafr.app.ui.components.rememberReliability()
                             if (!r.exact) TextButton(onClick = { com.wafr.app.ui.components.fixExact(ctx) }) { Text("⏰ اسمح بالمنبّهات الدقيقة (ليصل التذكير في موعده)") }
-                            if (!r.battery) TextButton(onClick = { com.wafr.app.ui.components.fixBattery(ctx) }) { Text("🔋 استثنِ وَفْر من توفير البطارية (حتى لا يتوقف)") }
+                            if (!r.battery) TextButton(onClick = { com.wafr.app.ui.components.fixBattery(ctx) }) { Text("🔋 استثنِ وَفْر من توفير البطارية (اختياري)") }
                         }
                     }
                 }
@@ -166,6 +172,7 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                 Spacer(Modifier.weight(1f))
                 Button(
                     onClick = {
+                        if (step == 0) onAcceptPrivacy()
                         if (step < 3) step++ else onFinish { s ->
                             s.copy(
                                 onboarded = true, userName = name.trim(), currency = currency,
@@ -175,9 +182,28 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                         }
                     },
                     shape = RoundedCornerShape(16.dp), modifier = Modifier.height(52.dp),
-                ) { Text(if (step < 3) "التالي" else "انطلق 🚀", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 18.dp)) }
+                ) { Text(if (step == 0) "أوافق وأتابع" else if (step < 3) "التالي" else "انطلق 🚀", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 18.dp)) }
             }
         }
+    }
+}
+
+/** What the app does with data, shown before the user starts. Accepting is recorded with a timestamp. */
+@Composable
+private fun PrivacyNotice() {
+    val c = Mz.colors
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    GlassCard(Modifier.fillMaxWidth()) {
+        Text("🔐 قبل أن نبدأ: خصوصيتك", fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "• لا نطلب حساباً ولا رقم جوال، ولا نجمع أي بيانات عنك.\n" +
+                "• كل ما تسجّله يبقى على هاتفك، ولا يُرسل إلى أي خادم لنا. (إن كان النسخ الاحتياطي لهاتفك مفعّلاً لدى Google فقد يشمله.)\n" +
+                "• تستطيع تصدير بياناتك أو حذفها كلها في أي وقت من الإعدادات.",
+            style = MaterialTheme.typography.bodySmall, color = c.muted,
+        )
+        TextButton(onClick = { openPrivacyPolicy(ctx) }) { Text("اقرأ سياسة الخصوصية كاملة") }
+        Text("بالضغط على «أوافق وأتابع» فأنت توافق على سياسة الخصوصية.", style = MaterialTheme.typography.bodySmall, color = c.muted)
     }
 }
 

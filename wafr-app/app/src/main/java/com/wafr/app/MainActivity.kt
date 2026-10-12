@@ -75,6 +75,7 @@ class MainActivity : ComponentActivity() {
                                     askNotifications()
                                 },
                                 onAskNotifications = { askNotifications() },
+                                onAcceptPrivacy = { vm.acceptPrivacy() },
                             )
                             else -> WafrRoot(vm, nav.value)
                         }

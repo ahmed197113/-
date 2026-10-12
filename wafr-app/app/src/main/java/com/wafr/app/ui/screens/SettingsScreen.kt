@@ -71,6 +71,17 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 
+/** The hosted copy of store/privacy-policy.html (GitHub Pages). */
+const val PRIVACY_URL = "https://ahmed197113.github.io/-/privacy/"
+
+fun openPrivacyPolicy(context: Context) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(PRIVACY_URL)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    } catch (_: Exception) {
+        Toast.makeText(context, PRIVACY_URL, Toast.LENGTH_LONG).show()
+    }
+}
+
 val currencies = listOf("ر.س", "د.إ", "ج.م", "د.ك", "ر.ق", "د.ب", "ر.ع", "د.أ", "د.ع", "ل.س", "د.م", "د.ج", "د.ت", "$", "€")
 
 fun requestTile(context: Context) {
@@ -104,6 +115,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
     val scope = rememberCoroutineScope()
     var editName by remember { mutableStateOf(false) }
     var confirmWipe by remember { mutableStateOf(false) }
+    var confirmWipeAll by remember { mutableStateOf(false) }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) scope.launch {
             val ok = runCatching {
@@ -223,12 +235,16 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
                     restoreLauncher.launch(arrayOf("application/json", "*/*"))
                 }
                 Hairline()
-                ActionRow("🗑️", "حذف كل المصاريف", "لا يمكن التراجع") { confirmWipe = true }
+                ActionRow("🗑️", "حذف كل المصاريف", "تبقى الفئات والأهداف والإعدادات — لا يمكن التراجع") { confirmWipe = true }
+                Hairline()
+                ActionRow("⛔", "حذف كل بياناتي", "يمسح كل شيء ويعيد التطبيق كأنه مثبّت للتو") { confirmWipeAll = true }
+                Hairline()
+                ActionRow("📄", "سياسة الخصوصية", "ما نجمعه (لا شيء) وكيف تُحفظ بياناتك") { openPrivacyPolicy(context) }
             }
         }
         item {
             Text(
-                "وَفْر 2.0 — من المستقبل، لتبني ثروتك اليوم 🚀",
+                "وَفْر ${com.wafr.app.BuildConfig.VERSION_NAME} — من المستقبل، لتبني ثروتك اليوم 🚀",
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp), color = c.muted, fontSize = 12.sp,
             )
         }
@@ -242,6 +258,15 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
             text = { OutlinedTextField(name, { name = it }, singleLine = true, shape = RoundedCornerShape(16.dp)) },
             confirmButton = { TextButton(onClick = { vm.updateSettings { it.copy(userName = name.trim()) }; editName = false }) { Text("حفظ") } },
             dismissButton = { TextButton(onClick = { editName = false }) { Text("إلغاء") } },
+        )
+    }
+    if (confirmWipeAll) {
+        AlertDialog(
+            onDismissRequest = { confirmWipeAll = false },
+            title = { Text("حذف كل بياناتك؟") },
+            text = { Text("ستُحذف كل المصاريف والفئات والأهداف والفواتير والإعدادات من هذا الهاتف نهائياً. احفظ نسخة احتياطية أولاً إن أردت الاحتفاظ بها.") },
+            confirmButton = { TextButton(onClick = { vm.wipeEverything(); confirmWipeAll = false; onBack() }) { Text("احذف كل شيء", color = c.danger) } },
+            dismissButton = { TextButton(onClick = { confirmWipeAll = false }) { Text("إلغاء") } },
         )
     }
     if (confirmWipe) {

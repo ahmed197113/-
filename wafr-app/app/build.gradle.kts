@@ -5,37 +5,34 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-// Release signing comes from environment variables (GitHub Actions secrets);
-// without them the release build falls back to the debug key.
+// Release signing comes only from environment variables (GitHub Actions secrets) holding the
+// Play upload key. No key lives in the repository. Without the secrets the release build is
+// signed with the debug key so CI still produces a testable APK, but that build can't go to Play.
 val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
 android {
+    // Kotlin classes stay in com.wafr.app. The Play identity is new because com.wafr.app was
+    // tied to the signing key that leaked with the public repository.
     namespace = "com.wafr.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.wafr.app"
+        // Fixed forever once the first build is uploaded to Google Play.
+        applicationId = "com.wafr.budget"
         minSdk = 26
         targetSdk = 36
-        // Always increasing so every CI build installs as an update over the previous one.
+        // Strictly increasing on every CI build, as Play requires for each upload.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 100
-        versionName = "2.1"
+        versionName = "1.0.0"
     }
 
     signingConfigs {
-        // One fixed key for every build, so new versions install as updates and keep the user's data.
-        create("release") {
-            if (keystorePath != null) {
+        if (keystorePath != null) {
+            create("upload") {
                 storeFile = file(keystorePath)
                 storePassword = System.getenv("SIGNING_STORE_PASSWORD")
                 keyAlias = System.getenv("SIGNING_KEY_ALIAS")
                 keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-            } else {
-                storeFile = file("signing/wafr-release.p12")
-                storeType = "pkcs12"
-                storePassword = "wafr-release-2026"
-                keyAlias = "wafr"
-                keyPassword = "wafr-release-2026"
             }
         }
     }
@@ -45,7 +42,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -90,7 +87,6 @@ dependencies {
     ksp("androidx.room:room-compiler:2.6.1")
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.glance:glance-appwidget:1.1.1")

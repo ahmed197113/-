@@ -1,0 +1,39 @@
+# Publishes wafr-app/store/privacy-policy.html at https://ahmed197113.github.io/-/privacy/
+# One-time setup: repository Settings → Pages → Source: "GitHub Actions", then run this workflow.
+name: Wafr privacy policy (GitHub Pages)
+
+on:
+  push:
+    paths:
+      - "wafr-app/store/privacy-policy.html"
+      - ".github/workflows/wafr-privacy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}privacy/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site
+        run: |
+          mkdir -p site/privacy
+          cp wafr-app/store/privacy-policy.html site/privacy/index.html
+          cp wafr-app/store/privacy-policy.html site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

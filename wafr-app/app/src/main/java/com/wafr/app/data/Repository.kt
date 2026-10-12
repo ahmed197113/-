@@ -7,9 +7,11 @@ import com.wafr.app.domain.Snapshot
 import com.wafr.app.domain.toMillis
 import com.wafr.app.notify.Notifications
 import com.wafr.app.notify.Refresher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
@@ -160,6 +162,17 @@ class Repository(private val context: Context) {
 
     suspend fun wipeExpenses() { db.expenses().clear(); changed() }
 
+    /**
+     * "Delete all my data": every table and every setting, including the privacy acceptance,
+     * so the app returns to its first-launch state. Nothing is stored anywhere else.
+     */
+    suspend fun wipeEverything() {
+        withContext(Dispatchers.IO) { db.clearAllTables() }
+        settingsStore.update { Settings() }
+        ensureSeeded()
+        changed()
+    }
+
     // ---- Backup ----
     suspend fun exportJson(): String {
         val root = JSONObject()
@@ -280,18 +293,18 @@ class Repository(private val context: Context) {
         var d = start
         var i = 0
         val list = mutableListOf<Expense>()
-        while (!d.isAfter(today)) {
-            repeat(if (d == today) 2 else 1 + (d.dayOfMonth % 2)) {
-                val (cat, amount, note) = rows[i % rows.size]
-                val category = cats[cat]
-                list += Expense(
-                    amount = amount, categoryId = c(cat), isNeed = category?.defaultNeed ?: true, note = note,
-                    timestamp = d.toMillis() + (9 + (i * 3) % 12) * 3_600_000L,
-                )
-                i++
-            }
+        // One purchase a day keeps the demo month on budget, so "allowed today" stays positive.
+        while (d.isBefore(today)) {
+            val (cat, amount, note) = rows[i % rows.size]
+            val category = cats[cat]
+            list += Expense(
+                amount = amount, categoryId = c(cat), isNeed = category?.defaultNeed ?: true, note = note,
+                timestamp = d.toMillis() + (9 + (i * 3) % 12) * 3_600_000L,
+            )
+            i++
             d = d.plusDays(1)
         }
+        list += Expense(amount = 1800L, categoryId = c("مطاعم وقهوة"), isNeed = false, note = "قهوة", timestamp = today.toMillis() + 9 * 3_600_000L)
         db.expenses().insertAll(list)
         db.goals().insert(Goal(name = "صندوق الطوارئ", emoji = "🛟", target = 2000000, saved = 850000))
         db.goals().insert(Goal(name = "رحلة الصيف", emoji = "✈️", target = 800000, saved = 210000))

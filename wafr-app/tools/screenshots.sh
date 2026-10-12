@@ -6,7 +6,9 @@ out="$1"
 mkdir -p "$out"
 report="$out/report.txt"
 : > "$report"
-pkg=com.wafr.app
+pkg=com.wafr.budget
+# Kotlin classes keep the com.wafr.app package; only the application id changed.
+cls=com.wafr.app
 apk=app/build/outputs/apk/debug/app-debug.apk
 fails=0
 
@@ -14,7 +16,7 @@ shot() {
   sleep "${2:-3}"
   adb exec-out screencap -p > "$out/$1.png"
 }
-start() { adb shell am start -W -n "$pkg/.MainActivity" "$@" >/dev/null; }
+start() { adb shell am start -W -n "$pkg/$cls.MainActivity" "$@" >/dev/null; }
 swipe_up() { adb shell input swipe 540 1700 540 800 350; sleep 1; }
 dump() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb exec-out cat /sdcard/ui.xml; }
 # Taps the first on-screen element whose text/content-desc matches $1 (exact first, then contains).
@@ -81,7 +83,10 @@ adb logcat -c
 start
 shot 01-onboarding-welcome 6
 check "onboarding welcome visible" "ميزانيتك من المستقبل"
-tap_text "التالي"
+scroll_tap "قبل أن نبدأ" >/dev/null || true
+check "privacy notice before start" "سياسة الخصوصية"
+shot 01b-onboarding-privacy 1
+tap_text "أوافق وأتابع"
 tap_text "اسمك (اختياري)" && adb shell input text "Ahmed"
 hide_kb
 tap_text "دخلك الشهري (اختياري)" && adb shell input text "9000"
@@ -140,9 +145,9 @@ start --es tab HOME; sleep 2
 shot 13-home-after-adds 2
 
 # ---- 4. Reply from the 5-hour check-in notification (simulated inline reply)
-adb shell am broadcast -n "$pkg/.notify.ActionReceiver" -a com.wafr.app.ENTRY --ez need false --ei origin 1001 --es debug_text "'40 coffee'"
+adb shell am broadcast -n "$pkg/$cls.notify.ActionReceiver" -a com.wafr.app.ENTRY --ez need false --ei origin 1001 --es debug_text "'40 coffee'"
 sleep 3
-adb shell dumpsys notification --noredact | grep -A2 "pkg=com.wafr.app" > "$out/notifications-after-reply.txt"
+adb shell dumpsys notification --noredact | grep -A2 "pkg=$pkg" > "$out/notifications-after-reply.txt"
 start --es tab HISTORY
 sleep 3
 check "notification reply logged (40)" "-40"
@@ -158,15 +163,22 @@ check "analytics toggle" "مؤشر الانضباط"
 shot 22-insights 1
 
 # ---- 4b. Regular reminders: alarm armed, fires, re-arms itself
-if adb shell dumpsys alarm | grep -q "com.wafr.app"; then pass "check-in alarm armed after onboarding"; else fail "check-in alarm armed after onboarding"; fi
-adb shell am broadcast -n "$pkg/.notify.CheckInAlarmReceiver" -a com.wafr.app.CHECKIN_ALARM
+if adb shell dumpsys alarm | grep -q "$pkg"; then pass "check-in alarm armed after onboarding"; else fail "check-in alarm armed after onboarding"; fi
+adb shell am broadcast -n "$pkg/$cls.notify.CheckInAlarmReceiver" -a com.wafr.app.CHECKIN_ALARM
 sleep 3
-if adb shell dumpsys notification --noredact | grep -q "pkg=com.wafr.app user=UserHandle{0} id=1001"; then pass "alarm fire posts the check-in notification"; else fail "alarm fire posts the check-in notification"; fi
-if adb shell dumpsys alarm | grep -q "com.wafr.app"; then pass "alarm re-armed for the next 5 hours"; else fail "alarm re-armed for the next 5 hours"; fi
-adb shell dumpsys alarm | grep -B2 -A6 "com.wafr.app" | head -40 > "$out/alarms.txt"
+# Quiet hours default to 23:00-08:00: inside them the reminder must stay silent (and still re-arm).
+hour=$(adb shell date +%H | tr -d '\r'); hour=$((10#$hour))
+if adb shell dumpsys notification --noredact | grep -q "pkg=$pkg user=UserHandle{0} id=1001"; then posted=1; else posted=0; fi
+if [ $hour -ge 23 ] || [ $hour -lt 8 ]; then
+  if [ $posted = 0 ]; then pass "alarm fire respects quiet hours (device hour $hour: no notification)"; else fail "alarm fire respects quiet hours (device hour $hour)"; fi
+else
+  if [ $posted = 1 ]; then pass "alarm fire posts the check-in notification (device hour $hour)"; else fail "alarm fire posts the check-in notification (device hour $hour)"; fi
+fi
+if adb shell dumpsys alarm | grep -q "$pkg"; then pass "alarm re-armed for the next 5 hours"; else fail "alarm re-armed for the next 5 hours"; fi
+adb shell dumpsys alarm | grep -B2 -A6 "$pkg" | head -40 > "$out/alarms.txt"
 
 # ---- 5. "No spending" answer
-adb shell am broadcast -n "$pkg/.notify.ActionReceiver" -a com.wafr.app.NONE
+adb shell am broadcast -n "$pkg/$cls.notify.ActionReceiver" -a com.wafr.app.NONE
 sleep 2
 echo "PASS  'no spend' broadcast handled (crash check at end)" >> "$report"
 
@@ -193,16 +205,16 @@ shot 33-editor-overlimit 1
 tap_text "سجّل"
 sleep 3
 adb shell dumpsys notification --noredact > "$out/notif-dump.txt"
-if grep -q "pkg=com.wafr.app user=UserHandle{0} id=40" "$out/notif-dump.txt"; then echo "PASS  over-limit notification posted" >> "$report"; else echo "FAIL  over-limit notification posted" >> "$report"; fails=$((fails+1)); fi
+if grep -q "pkg=$pkg user=UserHandle{0} id=40" "$out/notif-dump.txt"; then echo "PASS  over-limit notification posted" >> "$report"; else echo "FAIL  over-limit notification posted" >> "$report"; fails=$((fails+1)); fi
 adb shell cmd statusbar expand-notifications
 sleep 3
 adb exec-out screencap -p > "$out/34-notification-shade.png"
 adb shell cmd statusbar collapse
 
 # ---- 7. Quick Settings tile → floating quick add
-adb shell cmd statusbar add-tile "$pkg/.tile.QuickAddTileService" || true
+adb shell cmd statusbar add-tile "$pkg/$cls.tile.QuickAddTileService" || true
 sleep 2
-adb shell cmd statusbar click-tile "$pkg/.tile.QuickAddTileService" || true
+adb shell cmd statusbar click-tile "$pkg/$cls.tile.QuickAddTileService" || true
 sleep 4
 shot 40-tile-quick-add 1
 check "tile opens quick add" "مصروف جديد"
@@ -215,7 +227,7 @@ adb exec-out screencap -p > "$out/41-quick-settings.png"
 adb shell cmd statusbar collapse
 
 # ---- 8. Home-screen widgets (rendered from the real Glance widget code)
-adb shell am start -W -n "$pkg/.WidgetPreviewActivity" >/dev/null
+adb shell am start -W -n "$pkg/$cls.WidgetPreviewActivity" >/dev/null
 sleep 8
 shot 50-widgets 1
 check "widget renders allowance" "اليوم"
@@ -229,6 +241,9 @@ swipe_up; swipe_up; shot 63-insights-scroll 1
 start --es tab PLAN; shot 65-plan 3
 start --es overlay SETTINGS; shot 64-settings 3
 check "settings reliability card" "موثوقية الإشعارات"
+scroll_tap "حذف كل بياناتي" >/dev/null && tap_text "إلغاء" >/dev/null
+check "settings offers delete-all" "حذف كل بياناتي"
+check "settings links privacy policy" "سياسة الخصوصية"
 
 # ---- 10. Games
 start --es tab GAME; sleep 3
@@ -281,12 +296,61 @@ in_back
 tap_text "شهر في حياتك"; sleep 2
 tap_text "ابدأ الشهر"; sleep 2
 shot 76-month 0
-for n in 1 2 3; do
-  if has_text "رائع"; then tap_text "رائع"; else adb shell input swipe 300 1100 950 1100 200; fi
-  sleep 1
+# Each step must advance the card counter: slow drag right, slow drag left, fast short flick.
+month_ok=1
+step=1
+for gesture in "300 1100 950 1100 300" "900 1100 250 1100 300" "400 1100 700 1100 90"; do
+  if has_text "رائع"; then tap_text "رائع"; else adb shell input swipe $gesture; fi
+  sleep 1.5
+  step=$((step+1))
+  if has_text "الموقف $step من"; then echo "INFO  month swipe '$gesture' -> card $step" >> "$report"
+  else echo "INFO  month swipe '$gesture' did not advance to card $step" >> "$report"; month_ok=0; fi
 done
 shot 77-month-after 0
-check "month game advances" "الموقف 4"
+if [ $month_ok = 1 ]; then pass "month game: every swipe (slow, reverse, fast flick) advances one card"; else fail "month game: every swipe (slow, reverse, fast flick) advances one card"; fi
+
+# ---- 11d. Largest common font size: home still shows today's allowance
+adb shell settings put system font_scale 1.3
+sleep 2
+start --es tab HOME; sleep 3
+shot 82-home-font-130 1
+# By now the test has overspent today, so the hero shows either label.
+check "home readable at 130% font" "لك اليوم\|حد اليوم"
+adb shell settings put system font_scale 1.0
+sleep 2
+
+# ---- 11e. Delete all my data returns the app to first launch
+start --es overlay SETTINGS; sleep 2
+scroll_tap "حذف كل بياناتي"
+sleep 1
+tap_text "احذف كل شيء"
+sleep 4
+start; sleep 3
+check "delete-all returns to welcome + privacy" "أوافق وأتابع"
+shot 83-after-delete-all 1
+
+# ---- 11f. Store screenshots with a realistic demo month (dark theme, default font)
+adb shell am force-stop $pkg
+# A real user would have granted these from the reliability card; grant them so the shots show the normal home.
+adb shell appops set $pkg SCHEDULE_EXACT_ALARM allow || true
+adb shell dumpsys deviceidle whitelist +$pkg || true
+start --ez demo true; sleep 6
+start --es tab HOME; shot store-01-home 3
+adb shell am force-stop $pkg; start --es tab HOME --ez notify true; sleep 3
+adb shell cmd statusbar expand-notifications; sleep 3
+adb exec-out screencap -p > "$out/store-02-notification.png"
+adb shell cmd statusbar collapse
+start --es tab HOME; sleep 2
+tap_text "إضافة مصروف"; sleep 2
+keys 3 5
+tap_text "كمالي"; sleep 1
+shot store-03-editor 1
+adb shell input keyevent 4; sleep 1
+start --es overlay PLANNER; shot store-04-planner 3
+start --es tab INSIGHTS; shot store-05-insights 3
+start --es tab PLAN; shot store-06-plan 3
+start --es tab GAME; shot store-07-games 3
+adb shell am start -W -n "$pkg/$cls.WidgetPreviewActivity" >/dev/null; shot store-08-widgets 8
 
 # ---- 12. Crash check
 adb logcat -d > "$out/logcat.txt"
