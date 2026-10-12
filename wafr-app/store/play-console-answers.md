@@ -70,6 +70,9 @@
 | `USE_EXACT_ALARM` | **غير مستخدم عمداً** | Play يقصره على تطبيقات المنبّه والمؤقت والتقويم |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | **أُزيل** | التطبيق يفتح قائمة إعدادات البطارية بدلاً منه، دون إذن |
 | `POST_NOTIFICATIONS`، `RECEIVE_BOOT_COMPLETED`، `WAKE_LOCK` | لا | أذونات عادية |
+| `ACCESS_NETWORK_STATE`، `FOREGROUND_SERVICE` | لا | تضيفها مكتبة WorkManager تلقائياً. التطبيق لا يتصل بالإنترنت ولا يشغّل خدمة أمامية. لا يوجد أي إذن `FOREGROUND_SERVICE_*` بنوع محدد، فلا يظهر نموذج «الخدمات الأمامية» |
+
+القائمة النهائية للأذونات تطبعها خطوة «Show final permissions» في سجل البناء. في بناء 13 كانت: الإشعارات، والتشغيل بعد الإقلاع، والمنبّه الدقيق، و`WAKE_LOCK`، و`ACCESS_NETWORK_STATE`، و`FOREGROUND_SERVICE`. وأُزيلت مكتبة البصمة غير المستخدمة مع إذنيها.
 
 ### تبرير المنبّه الدقيق
 
