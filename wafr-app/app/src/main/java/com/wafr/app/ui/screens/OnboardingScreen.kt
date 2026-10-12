@@ -57,10 +57,10 @@ import com.wafr.app.ui.components.parseAmount
 import com.wafr.app.ui.theme.Mz
 
 @Composable
-fun OnboardingScreen(\r
-    onFinish: (transform: (Settings) -> Settings) -> Unit,\r
-    onAskNotifications: () -> Unit,\r
-    onAcceptPrivacy: () -> Unit,\r
+fun OnboardingScreen(
+    onFinish: (transform: (Settings) -> Settings) -> Unit,
+    onAskNotifications: () -> Unit,
+    onAcceptPrivacy: () -> Unit,
 ) {
     val c = Mz.colors
     var step by rememberSaveable { mutableIntStateOf(0) }
