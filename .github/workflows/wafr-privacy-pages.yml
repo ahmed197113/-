@@ -3,6 +3,10 @@
 name: Wafr privacy policy (GitHub Pages)
 
 on:
+  push:
+    paths:
+      - "wafr-app/store/privacy-policy.html"
+      - ".github/workflows/wafr-privacy-pages.yml"
   workflow_dispatch:
 
 permissions:
