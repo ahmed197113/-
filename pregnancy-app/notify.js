@@ -46,7 +46,7 @@ const Notify = (() => {
       if (perm !== 'granted') return false;
       const list = plan();
       if (list.length) await LN.schedule({ notifications: list.map(n => ({ id: n.id, title: n.title, body: n.body, extra: n.extra,
-        schedule: { at: n.at, allowWhileIdle: true }, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
+        schedule: { at: n.at, allowWhileIdle: true }, isExactNotification: false, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
       return true;
     } catch (e) { console.warn('notify', e); return false; }
   }

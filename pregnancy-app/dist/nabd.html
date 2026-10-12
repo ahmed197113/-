@@ -3298,6 +3298,13 @@ const SupaStore = {
   removeAnswer(qid, aid) { return this.req(`answers?id=eq.${encodeURIComponent(aid)}&uid=eq.${encodeURIComponent(CM.uid)}`, { method: 'DELETE' }); }
 };
 
+/* ---------- بدون اتصال بالسيرفر: أسئلة «فريق نبض» للقراءة فقط ---------- */
+const LocalStore = {
+  async list() { return CM_SEED.map((s, i) => ({ id: 's' + i, uid: 'team', team: true, nick: 'فريق نبض', anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t: Date.now() - (CM_SEED.length - i) * 864e5, ac: 1 })); },
+  async answers(qid) { const s = CM_SEED[+qid.slice(1)]; return s ? [{ id: qid + 'a', uid: 'ai', ai: true, nick: 'نبض', body: s.answer, t: Date.now(), hp: 0 }] : []; },
+  async helpful() {}
+};
+
 /* ---------- المحوّل: سيرفرك الخاص (server/api/community.php) ---------- */
 const ServerStore = {
   c: (action, body = {}) => Server.call('community.php', { action, ...body }),
@@ -3329,6 +3336,7 @@ CM.ready = (async () => {
     if (!S.devId) { S.devId = 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36); save(); }
     CM.store = SupaStore; CM.mode = 'supabase'; CM.uid = S.devId; CM.canWrite = true;
   }
+  if (!CM.mode) { CM.store = LocalStore; CM.mode = 'local'; CM.canWrite = false; }
   if (route.view === 'assist' || route.sub === 'cq' || route.view === 'home') render(false);
 })();
 
@@ -3382,7 +3390,7 @@ const isBlocked = x => { const k = authorKey(x); return !!k && (S.blocked || [])
 const rulesBox = () => S.cmRules ? '' : `<div class="card"><b>قواعد المجتمع</b><ul class="list"><li>الاحترام أولاً — لا تنمّر ولا أحكام.</li><li>لا أرقام هواتف ولا روابط ولا إعلانات.</li><li>التجارب الشخصية لا تغني عن الطبيب.</li><li>في الطوارئ لا تنتظري الردود — اذهبي للمستشفى.</li><li>يمكنك الإبلاغ عن أي محتوى مسيء أو حظر صاحبه، ونراجع البلاغات ونحذف المخالف.</li></ul>
   <label class="check"><input type="checkbox" id="cmRulesOk"><span>قرأت قواعد المجتمع وأوافق عليها</span></label></div>`;
 const rulesOk = () => { if (S.cmRules) return true; if ($('#cmRulesOk') && $('#cmRulesOk').checked) { S.cmRules = true; save(); return true; } toast('وافقي على قواعد المجتمع أولاً'); return false; };
-const modBtns = (x, ref) => x.uid && x.uid === CM.uid ? '' : `<button class="link" data-report="${ref}">🚩 إبلاغ</button>${authorKey(x) ? `<button class="link" data-block="${esc(authorKey(x))}">🚫 حظر</button>` : ''}`;
+const modBtns = (x, ref) => CM.mode === 'local' || (x.uid && x.uid === CM.uid) ? '' : `<button class="link" data-report="${ref}">🚩 إبلاغ</button>${authorKey(x) ? `<button class="link" data-block="${esc(authorKey(x))}">🚫 حظر</button>` : ''}`;
 
 function checkText(t, min, max) {
   if (t.length < min) return `اكتبي ${min} حروف على الأقل`;
@@ -3393,8 +3401,6 @@ function checkText(t, min, max) {
 
 /* ---------- الشاشات ---------- */
 function viewCommunity() {
-  if (!CM.mode) return `<div class="card hero-soft"><h2 style="margin:0">👩‍👩‍👧 مجتمع الأمهات</h2>
-    <p style="margin:6px 0 0">${window.claude ? 'المجتمع يحتاج تسجيل الدخول وصلاحية المشاركة في هذه الصفحة.' : 'المجتمع يتفعّل بعد ربط سيرفر التطبيق (راجعي ملف COMMUNITY.md).'}</p></div>`;
   CM.load();
   const f = route.cf || 'all', q = (route.cq || '').trim(), tab = route.ct || 'all';
   let list = CM.qs.filter(x => !isBlocked(x) && (f === 'all' || x.cat === f) && (!q || (x.title + ' ' + x.body).includes(q)));
@@ -3402,7 +3408,7 @@ function viewCommunity() {
   if (tab === 'open') list = list.filter(x => !x.ac);
   return `
     <div class="row" style="margin-bottom:10px"><button class="btn grow" data-sub="cnew" ${CM.canWrite === false ? 'disabled' : ''}>✍️ اطرحي سؤالاً</button><button class="btn ghost" id="cmRefresh" aria-label="تحديث">🔄</button></div>
-    ${CM.canWrite === false ? '<p class="muted">يمكنك القراءة فقط في هذه الصفحة.</p>' : ''}
+    ${CM.mode === 'local' ? '<p class="muted">أسئلة شائعة من فريق نبض 💗 — المشاركة بأسئلتك وردودك تتفعّل قريباً.</p>' : CM.canWrite === false ? '<p class="muted">يمكنك القراءة فقط في هذه الصفحة.</p>' : ''}
     <input class="input" id="cmQ" placeholder="ابحثي في أسئلة الأمهات…" value="${esc(q)}" style="margin:0 0 10px">
     <div class="seg">${[['all', 'الكل'], ['open', 'بدون رد'], ['mine', 'أسئلتي']].map(([k, v]) => `<button data-ct="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div>
     <div class="cat-strip">${CATS.map(([k, v]) => `<button class="chip ${f === k ? 'on' : ''}" data-cf="${k}">${v}</button>`).join('')}</div>
@@ -3571,7 +3577,7 @@ const Notify = (() => {
       if (perm !== 'granted') return false;
       const list = plan();
       if (list.length) await LN.schedule({ notifications: list.map(n => ({ id: n.id, title: n.title, body: n.body, extra: n.extra,
-        schedule: { at: n.at, allowWhileIdle: true }, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
+        schedule: { at: n.at, allowWhileIdle: true }, isExactNotification: false, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
       return true;
     } catch (e) { console.warn('notify', e); return false; }
   }
