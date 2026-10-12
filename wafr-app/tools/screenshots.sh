@@ -331,6 +331,9 @@ shot 83-after-delete-all 1
 
 # ---- 11f. Store screenshots with a realistic demo month (dark theme, default font)
 adb shell am force-stop $pkg
+# A real user would have granted these from the reliability card; grant them so the shots show the normal home.
+adb shell appops set $pkg SCHEDULE_EXACT_ALARM allow || true
+adb shell dumpsys deviceidle whitelist +$pkg || true
 start --ez demo true; sleep 6
 start --es tab HOME; shot store-01-home 3
 adb shell am force-stop $pkg; start --es tab HOME --ez notify true; sleep 3

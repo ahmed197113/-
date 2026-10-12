@@ -293,18 +293,18 @@ class Repository(private val context: Context) {
         var d = start
         var i = 0
         val list = mutableListOf<Expense>()
-        while (!d.isAfter(today)) {
-            repeat(if (d == today) 2 else 1 + (d.dayOfMonth % 2)) {
-                val (cat, amount, note) = rows[i % rows.size]
-                val category = cats[cat]
-                list += Expense(
-                    amount = amount, categoryId = c(cat), isNeed = category?.defaultNeed ?: true, note = note,
-                    timestamp = d.toMillis() + (9 + (i * 3) % 12) * 3_600_000L,
-                )
-                i++
-            }
+        // One purchase a day keeps the demo month on budget, so "allowed today" stays positive.
+        while (d.isBefore(today)) {
+            val (cat, amount, note) = rows[i % rows.size]
+            val category = cats[cat]
+            list += Expense(
+                amount = amount, categoryId = c(cat), isNeed = category?.defaultNeed ?: true, note = note,
+                timestamp = d.toMillis() + (9 + (i * 3) % 12) * 3_600_000L,
+            )
+            i++
             d = d.plusDays(1)
         }
+        list += Expense(amount = 1800L, categoryId = c("مطاعم وقهوة"), isNeed = false, note = "قهوة", timestamp = today.toMillis() + 9 * 3_600_000L)
         db.expenses().insertAll(list)
         db.goals().insert(Goal(name = "صندوق الطوارئ", emoji = "🛟", target = 2000000, saved = 850000))
         db.goals().insert(Goal(name = "رحلة الصيف", emoji = "✈️", target = 800000, saved = 210000))
