@@ -448,7 +448,7 @@ function viewGuide() {
 function viewMore() {
   const st = status();
   return `${viewGuide()}
-  <details class="card group more-tools"><summary><b>⚙️ الإعدادات والنسخ الاحتياطي</b></summary>
+  <details class="card group more-tools" id="setDetails" ${route.setOpen ? 'open' : ''}><summary><b>⚙️ الإعدادات والإشعارات</b></summary>
   <div class="set-block"><h3>👤 بيانات الحمل</h3>
     <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
@@ -461,6 +461,13 @@ function viewMore() {
   </div>
   <div class="set-block"><h3>🔔 الإشعارات</h3>
     <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
+    ${S.notify === false ? '' : (r => `
+    <label class="check"><input type="checkbox" data-rem="tip" ${r.tip ? 'checked' : ''}><span>💡 معلومة يومية (9 صباحاً)</span></label>
+    <label class="check"><input type="checkbox" data-rem="water" ${r.water ? 'checked' : ''}><span>💧 تذكير بشرب الماء (من 10 صباحاً حتى 6 مساءً كل ساعتين)</span></label>
+    <label class="check"><input type="checkbox" data-rem="vit" ${r.vit ? 'checked' : ''}><span>💊 تذكير الفيتامين أو الدواء يومياً</span></label>
+    ${r.vit ? `<label class="f" style="margin:4px 0 8px">موعد التذكير<input type="time" id="remVitTime" value="${esc(r.vitTime)}"></label>` : ''}
+    <button class="btn ghost block" id="notifyTest">🔔 جرّبي إشعاراً الآن</button>
+    <p class="muted" style="margin:8px 0 0">إن لم تصلك الإشعارات: من إعدادات الجهاز اسمحي للتطبيق بالإشعارات، وأوقفي «تحسين البطارية» له.</p>`)(Notify.rem())}
     ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
   <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
     ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
@@ -722,7 +729,11 @@ function bind() {
       .catch(() => toast('ملف غير صالح'));
   }, 'onchange');
   on('#resetBtn', confirmTap('#resetBtn', () => { S = defaults(); save(); route = { view: 'home' }; render(); }));
-  on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
+  on('#setDetails', e => { route.setOpen = e.target.open; history.replaceState(route, ''); }, 'ontoggle');
+  app.querySelectorAll('[data-rem]').forEach(c => c.onchange = async () => { S.reminders = { ...Notify.rem(), [c.dataset.rem]: c.checked }; save(); render(false); const ok = await Notify.sync(true); toast(ok ? 'تم حفظ التذكيرات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
+  on('#remVitTime', async e => { S.reminders = { ...Notify.rem(), vitTime: e.target.value || '10:00' }; save(); await Notify.sync(false); toast('تم ضبط موعد التذكير ⏰'); }, 'onchange');
+  on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
+  on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); render(false); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
 
   if (route.sub === 'profile') bindSetup();

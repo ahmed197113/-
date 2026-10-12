@@ -1,4 +1,4 @@
-/* نبضٌ صغير — إشعار مع بداية كل أسبوع حمل (وكل شهر من عمر الطفل)
+/* نبضٌ صغير — إشعار مع بداية كل أسبوع حمل (وكل شهر من عمر الطفل)، ومعلومة يومية، وتذكير بالماء والفيتامين/الدواء
    في تطبيق الأندرويد: إشعارات محلية مجدولة على الجهاز نفسه (بدون إنترنت وبدون خادم).
    في المتصفح: رسالة ترحيب داخل التطبيق عند فتحه في أسبوع جديد. */
 'use strict';
@@ -8,6 +8,9 @@ const Notify = (() => {
   const HOUR = 10; // العاشرة صباحاً
   const short = (t, n = 110) => (t || '').length > n ? t.slice(0, n - 1).trim() + '…' : (t || '');
   const at = d => { const x = new Date(d); x.setHours(HOUR, 0, 0, 0); return x; };
+  const WATER_HOURS = [10, 12, 14, 16, 18];
+  const TIP_DAYS = 14; // تُجدول معلومات الأيام القادمة وتتجدد عند كل فتح للتطبيق
+  const rem = () => ({ tip: true, water: true, vit: true, vitTime: '10:00', ...(S.reminders || {}) });
   const months = m => m === 1 ? 'شهراً واحداً' : m === 2 ? 'شهرين' : m <= 10 ? `${m} أشهر` : `${m} شهراً`;
 
   function plan() {
@@ -35,6 +38,34 @@ const Notify = (() => {
     return list;
   }
 
+  // معلومة اليوم: من نصائح ومعلومات أسبوع الحمل في ذلك اليوم، أو من نصائح الطفل بعد الولادة
+  function tipFor(day) {
+    if (S.baby) return DAILY_TIPS[((diffDays(day, new Date(2024, 0, 1)) % DAILY_TIPS.length) + DAILY_TIPS.length) % DAILY_TIPS.length];
+    const st = status(), w = Math.min(40, Math.max(1, Math.floor(diffDays(day, st.start) / 7) + 1)), x = WEEKS[w - 1];
+    const pool = [...x.tips, ...x.baby.filter(t => !/طوله|وزنه/.test(t))];
+    return pool.length ? pool[diffDays(day, st.start) % pool.length] : '';
+  }
+
+  function daily() {
+    const r = rem(), list = [], now = Date.now() + 60e3;
+    if (r.tip && (S.profile || S.baby)) {
+      for (let i = 0; i < TIP_DAYS; i++) {
+        const d = new Date(); d.setDate(d.getDate() + i); d.setHours(9, 0, 0, 0);
+        if (d.getTime() <= now) continue;
+        const t = tipFor(d); if (!t) continue;
+        list.push({ id: 3000 + i, schedule: { at: d, allowWhileIdle: true }, title: '💡 معلومة اليوم', body: short(t, 160), extra: { view: S.baby ? 'home' : 'weeks' } });
+      }
+    }
+    if (r.water) WATER_HOURS.forEach(h => list.push({ id: 4000 + h, schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
+      title: '💧 وقت كوب ماء', body: 'كوب ماء الآن يساعدك على النشاط ويقلل الإمساك والتورم.', extra: { view: 'track' } }));
+    if (r.vit) {
+      const [hh, mm] = (r.vitTime || '10:00').split(':').map(Number);
+      list.push({ id: 4100, schedule: { on: { hour: hh || 0, minute: mm || 0 }, allowWhileIdle: true }, title: '💊 موعد الفيتامين أو الدواء',
+        body: 'لا تنسي الفيتامين أو الدواء حسب وصف طبيبك، ثم سجّليه في «صحتي» ✅', extra: { view: 'track' } });
+    }
+    return list;
+  }
+
   async function sync(ask = false) {
     const LN = plugin(); if (!LN) return false;
     try {
@@ -44,9 +75,9 @@ const Notify = (() => {
       let perm = (await LN.checkPermissions()).display;
       if (perm !== 'granted' && ask) perm = (await LN.requestPermissions()).display;
       if (perm !== 'granted') return false;
-      const list = plan();
+      const list = [...plan().map(n => ({ ...n, schedule: { at: n.at, allowWhileIdle: true } })), ...daily()];
       if (list.length) await LN.schedule({ notifications: list.map(n => ({ id: n.id, title: n.title, body: n.body, extra: n.extra,
-        schedule: { at: n.at, allowWhileIdle: true }, isExactNotification: false, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
+        schedule: n.schedule, isExactNotification: false, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' })) });
       return true;
     } catch (e) { console.warn('notify', e); return false; }
   }
@@ -68,5 +99,16 @@ const Notify = (() => {
     if (S.seenWeek !== w) { S.seenWeek = w; save(); }
   }
 
-  return { native: () => !!plugin(), sync, listen, greet, start() { listen(); greet(); sync(false); } };
+  // إشعار تجريبي بعد ثوانٍ للتأكد أن الإشعارات تصل على هذا الجهاز
+  async function test() {
+    const LN = plugin(); if (!LN) return 'web';
+    let perm = (await LN.checkPermissions()).display;
+    if (perm !== 'granted') perm = (await LN.requestPermissions()).display;
+    if (perm !== 'granted') return 'denied';
+    await LN.schedule({ notifications: [{ id: 9999, title: '🔔 الإشعارات تعمل', body: 'هكذا ستصلك تذكيرات نبض الصغير 💗', schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
+      isExactNotification: false, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' }] });
+    return 'ok';
+  }
+
+  return { native: () => !!plugin(), sync, listen, greet, test, rem, start() { listen(); greet(); sync(false); } };
 })();
