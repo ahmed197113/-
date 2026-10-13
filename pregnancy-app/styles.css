@@ -216,14 +216,15 @@ select option { background: var(--card-solid); color: var(--text); }
 .slide { flex: 0 0 100%; scroll-snap-align: center; display: grid; place-items: center; padding: 14px 16px 14px; position: relative; }
 .photo { position: relative; width: min(320px, 78vw); aspect-ratio: 1; max-width: 100%; border-radius: 50%; }
 .photo img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: inherit; }
-.photo.round { overflow: hidden; }
-.photo.square { border-radius: 28px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border-strong); width: min(340px, 86vw); }
+.photo.round img { border-radius: 0; object-fit: contain; transform: scale(1.06); filter: drop-shadow(0 14px 34px rgb(255 45 141 / .28)); }
+.photo.square { border-radius: 28px; overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border-strong); width: min(340px, 86vw);
+  background: radial-gradient(circle at 50% 45%, rgb(255 45 141 / .16), transparent 70%), var(--card-solid); }
+.photo.square img { object-fit: contain; }
 .photo-labels { position: absolute; inset: 0; width: 100%; height: 100%; font-family: var(--font); }
 .halo { position: relative; border-radius: 50%; }
 .halo::before { content: ''; position: absolute; inset: -8%; border-radius: 50%; z-index: -1;
   background: conic-gradient(from 200deg, transparent 0 30%, rgb(196 92 255 / .55) 45%, rgb(255 45 141 / .7) 62%, rgb(79 216 240 / .45) 78%, transparent 92%);
   filter: blur(22px); opacity: .85; animation: spin 18s linear infinite; }
-.halo .photo { box-shadow: 0 0 0 1px rgb(255 255 255 / .14), 0 0 60px rgb(255 45 141 / .25); }
 /* مدارات حول الصورة */
 .orbit { position: absolute; inset: -7%; width: 114%; height: 114%; pointer-events: none; overflow: visible; }
 .orbit .o1 { transform-origin: 50% 50%; animation: spin 40s linear infinite; }
@@ -251,10 +252,8 @@ select option { background: var(--card-solid); color: var(--text); }
 .slide-cap { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); font-size: .8rem; color: #fff; background: rgb(0 0 0 / .5); padding: 3px 12px; border-radius: 99px; white-space: nowrap; backdrop-filter: blur(6px); }
 /* الوضع الفاتح: حواف الصورة تذوب في الخلفية */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .halo .photo { -webkit-mask-image: radial-gradient(circle, #000 56%, transparent 70%); mask-image: radial-gradient(circle, #000 56%, transparent 70%); box-shadow: none; }
   :root:not([data-theme="dark"]) .halo::before { opacity: .4; }
 }
-:root[data-theme="light"] .halo .photo { -webkit-mask-image: radial-gradient(circle, #000 56%, transparent 70%); mask-image: radial-gradient(circle, #000 56%, transparent 70%); box-shadow: none; }
 :root[data-theme="light"] .halo::before { opacity: .4; }
 
 /* ================= شريط الأسابيع ================= */
@@ -366,7 +365,7 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 .tl-item.now .dot { background: var(--bg); border-color: var(--primary); box-shadow: 0 0 0 6px rgb(255 45 141 / .25); }
 .tl-item .card { margin-bottom: 0; cursor: pointer; }
 .tl-item.now .card { border: 1px solid var(--primary); box-shadow: 0 0 24px rgb(255 45 141 / .2); }
-.tl-thumb { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-strong); }
+.tl-thumb { width: 56px; height: 56px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 4px 10px rgb(255 45 141 / .25)); }
 .tl-tri { position: relative; margin: 18px -26px 12px 0; padding: 14px 16px; border-radius: 20px; color: #fff; text-shadow: 0 1px 3px rgb(60 0 30 / .35); }
 .tl-tri h3 { margin: 0; }
 
@@ -379,7 +378,7 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .welcome { text-align: center; padding-top: 6px; }
-.welcome .photo { margin: 0 auto 6px; width: min(240px, 66vw); border-radius: 50%; overflow: hidden; box-shadow: 0 0 60px rgb(255 45 141 / .3); }
+.welcome .photo { margin: 0 auto 6px; width: min(240px, 66vw); }
 .disclaimer { font-size: .78rem; color: var(--muted); text-align: center; margin: 16px 0; }
 .app-logo { display: block; width: 72px; height: 72px; margin: 14px auto 6px; border-radius: 20px; box-shadow: 0 10px 30px rgb(255 45 141 / .4); }
 
