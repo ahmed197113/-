@@ -7,7 +7,7 @@ ph = open(d + 'photos.js', encoding='utf-8').read()
 old = "const src = w => `images/week-${String(Math.min(LAST, Math.max(1, w))).padStart(2, '0')}.webp`;"
 assert old in ph
 ph = ph.replace(old, "const IMG = " + imgs + ";\n  const src = w => IMG[Math.min(LAST, Math.max(1, w))];")
-for f in ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'app.js', 'features.js', 'community_seed.js', 'community.js', 'notify.js']:
+for f in ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'icons.js', 'app.js', 'features.js', 'community_seed.js', 'community.js', 'notify.js']:
     h = h.replace(f'<script src="{f}"></script>', '<script>\n' + open(d + f, encoding='utf-8').read() + '\n</script>')
 h = h.replace('<script src="photos.js"></script>', '<script>\n' + ph + '\n</script>')
 fc = open(d + 'fonts.css', encoding='utf-8').read()
@@ -16,6 +16,8 @@ h = h.replace('<link rel="stylesheet" href="fonts.css">', '<style>\n' + fc + '</
 h = h.replace('<link rel="stylesheet" href="styles.css">', '<style>\n' + open(d + 'styles.css', encoding='utf-8').read() + '\n</style>')
 icon = 'data:image/svg+xml;base64,' + base64.b64encode(open(d + 'icons/icon.svg', 'rb').read()).decode()
 h = h.replace('icons/icon.svg', icon)
+# رقم النسخة الظاهر في «عن التطبيق» = نفس رقم نسخة أندرويد
+h = h.replace('__APP_VERSION__', '1.2.' + os.environ.get('GITHUB_RUN_NUMBER', '0'))
 h = re.sub(r'\s*<link rel="manifest"[^>]*>', '', h)
 # نسخة السيرفر من أسئلة البداية (نفس المحتوى)
 import json

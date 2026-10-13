@@ -68,19 +68,54 @@ function toast(msg) {
   clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
+// المظهر: السمة، حجم الخط، تقليل الحركة، ولون شريط الحالة في تطبيق الموبايل
 function applyTheme() {
   const root = document.documentElement;
   if (S.theme === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', S.theme);
   const dark = S.theme === 'dark' || (S.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-  $('#themeBtn').textContent = dark ? '☀️' : '🌙';
+  root.style.fontSize = { l: '112.5%', xl: '125%' }[S.textSize] || '';
+  if (S.motion === 'reduce') root.dataset.motion = 'reduce'; else delete root.dataset.motion;
+  REDUCED = REDUCED_OS || S.motion === 'reduce';
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#070a1a' : '#f6f3fa');
+  Native.statusBar(dark);
 }
-$('#themeBtn').onclick = () => {
-  const dark = document.documentElement.getAttribute('data-theme') === 'dark' ||
-    (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-  S.theme = dark ? 'light' : 'dark'; save(); applyTheme();
+$('#setBtn').innerHTML = icon('settings');
+$('#setBtn').onclick = () => { if (route.sub !== 'settings') go(route.view, 'settings'); };
+
+/* ---------- أدوات أندرويد (Capacitor) — كلها اختيارية وتعمل بدونها في المتصفح ---------- */
+const Native = {
+  p: n => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.[n],
+  tap() { try { Native.p('Haptics')?.impact({ style: 'LIGHT' }); } catch {} },
+  statusBar(dark) {
+    const sb = Native.p('StatusBar'); if (!sb) return;
+    try { sb.setStyle({ style: dark ? 'DARK' : 'LIGHT' }); sb.setBackgroundColor?.({ color: dark ? '#070a1a' : '#f6f3fa' }).catch?.(() => {}); } catch {}
+  },
+  // حفظ ملف ومشاركته (Drive، واتساب، البريد…) عبر نافذة المشاركة في الجهاز
+  async shareFile(name, text, title) {
+    const fs = Native.p('Filesystem'), sh = Native.p('Share');
+    if (!fs || !sh) return false;
+    const r = await fs.writeFile({ path: name, data: text, directory: 'CACHE', encoding: 'utf8' });
+    await sh.share({ title, files: [r.uri], dialogTitle: title });
+    return true;
+  },
+  async shareText(title, text, url) {
+    const sh = Native.p('Share');
+    if (sh) { await sh.share({ title, text, url, dialogTitle: title }); return true; }
+    if (navigator.share) { await navigator.share({ title, text, url }); return true; }
+    return false;
+  }
 };
 
-document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => go(b.dataset.view));
+// الأرقام العربية الهندية (١٢٣) عند اختيارها من الإعدادات — تُطبَّق على النصوص المعروضة فقط
+const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+function localizeDigits(root) {
+  if (S.digits !== 'ar' || !root) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => /[0-9]/.test(n.nodeValue) && !n.parentElement.closest('input,textarea,script,style,select') ? 1 : 2 });
+  const list = []; while (w.nextNode()) list.push(w.currentNode);
+  list.forEach(n => { n.nodeValue = n.nodeValue.replace(/[0-9]/g, d => AR_DIGITS[d]); });
+}
+
+document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => { Native.tap(); go(b.dataset.view); });
 $('#backBtn').onclick = () => history.back();
 window.addEventListener('popstate', e => { route = e.state || { view: 'home' }; render(false); });
 
@@ -100,27 +135,31 @@ const TOOLS = [
   ['partner', '💑', 'شاركي زوجك'], ['ramadan', '🌙', 'الصيام في الحمل'], ['localfood', '🍲', 'آمن أم لا؟'], ['album', '📸', 'ألبوم رحلتي'],
   ['born', '🎉', 'وُلد طفلي'], ['feeds', '🍼', 'الرضاعة'], ['diapers', '💧', 'الحفاضات'], ['sleep', '😴', 'نوم الطفل'], ['growth', '📈', 'نمو الطفل'],
   ['vaccines', '💉', 'التطعيمات'], ['miles', '⭐', 'مراحل النمو'], ['momcare', '🤱', 'صحتي بعد الولادة'], ['babywarn', '🚨', 'طوارئ الطفل'],
-  ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
+  ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة'],
+  ['settings', '⚙️', 'الإعدادات'], ['about', 'ℹ️', 'عن التطبيق']
 ];
 const APP_NAME = 'نبضٌ صغير';
+const APP_VERSION = '__APP_VERSION__'.startsWith('__') ? '1.2' : '__APP_VERSION__';
+const STORE_URL = 'https://play.google.com/store/apps/details?id=app.nabd.pregnancy';
 
 function render(scroll = true) {
   timers.forEach(clearInterval); timers = [];
   applyTheme();
   const tab = $('#tabbar');
   if (!S.profile) {
-    tab.hidden = true; $('#backBtn').hidden = true; $('#title').textContent = `${APP_NAME} 💗`;
+    tab.hidden = true; $('#backBtn').hidden = true; $('#setBtn').hidden = true; $('#title').textContent = APP_NAME;
     app.innerHTML = viewSetup(true); bindSetup(); return;
   }
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
+  $('#setBtn').hidden = route.sub === 'settings' || route.sub === 'about';
   const titles = { home: fmtDayMonth.format(today()), weeks: S.baby ? 'طفلي' : route.mode === 'map' ? 'خارطة الرحلة' : 'أسبوعاً بأسبوع', assist: route.as === 'cm' ? 'مجتمع الأمهات' : 'اسألي نبض ✨', track: 'صحتي', more: 'المزيد' };
   const wkBtn = tab.querySelector('[data-view=weeks] .lbl'); if (wkBtn) wkBtn.textContent = S.baby ? 'طفلي' : 'رحلتي';
   let html;
   if (route.sub) {
     const t = TOOLS.find(x => x[0] === route.sub);
-    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (route.sub === 'profile' ? 'بيانات الحمل' : APP_NAME);
+    $('#title').textContent = t ? t[2] : (route.sub === 'profile' ? 'بيانات الحمل' : APP_NAME);
     html = route.sub === 'profile' ? viewSetup(false) : (SUBVIEWS[route.sub] || (() => ''))();
   } else {
     $('#title').textContent = titles[route.view];
@@ -142,7 +181,7 @@ function render(scroll = true) {
   const seq = ++renderSeq;
   const swap = () => {
     if (seq !== renderSeq) return;
-    app.innerHTML = html; bind();
+    app.innerHTML = html; bind(); localizeDigits(app); localizeDigits($('#title'));
     if (weekChanged && !REDUCED) {
       app.querySelector('.hero-stage')?.classList.add('swap');
       const strip = $('#strip'), s = strip && strip.querySelector('.sel');
@@ -162,7 +201,8 @@ function render(scroll = true) {
   lastKey = key; lastWeek = route.week; lastInner = inner;
 }
 let lastKey = '', lastWeek, lastInner, lastDepth = 0, lastView = 'home', renderSeq = 0;
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const REDUCED_OS = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let REDUCED = REDUCED_OS;
 
 /* ---------- الإعداد ---------- */
 // تخمين البلد من لغة الجهاز (مثل ar-SA)
@@ -273,12 +313,16 @@ function hero(sel) {
        <div class="float-chip chip-bl"><span class="ic pink">${ICON.ruler}</span><div><small>الطول</small><b>${w.len}</b></div></div>`;
   return `<div class="hero-stage">
     <div class="carousel" id="car">
-      <div class="slide"><div class="halo">${Photos.figure(sel, { cls: 'round' })}</div>${chips}<span class="size-tag">${w.emoji} بحجم ${w.size}</span></div>
+      <div class="slide"><div class="halo">${ORBIT}${Photos.figure(sel, { cls: 'round' })}</div>${chips}<span class="size-tag">${w.emoji} بحجم ${w.size}</span></div>
       <div class="slide">${Photos.figure(sel, { labels: true, cls: 'square' })}<span class="slide-cap">الأسبوع ${sel} · أسماء الأجزاء</span></div>
     </div>
     <div class="dots" id="dots"><i class="${route.slide ? '' : 'on'}"></i><i class="${route.slide ? 'on' : ''}"></i></div>
   </div>`;
 }
+// مداران رفيعان يدوران ببطء حول صورة الجنين، مع نقطتين مضيئتين
+const ORBIT = `<svg class="orbit" viewBox="0 0 100 100" aria-hidden="true">
+  <g class="o1"><circle cx="50" cy="50" r="48.5" fill="none" stroke="var(--primary)" stroke-opacity=".35" stroke-width=".35" stroke-dasharray="1 2.2"/><circle cx="50" cy="1.5" r="1.1" fill="var(--primary)"/></g>
+  <g class="o2"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--cyan)" stroke-opacity=".25" stroke-width=".3" stroke-dasharray="14 6 2 6"/><circle cx="96" cy="50" r=".9" fill="var(--cyan)"/></g></svg>`;
 // بطاقات الأسابيع: رقم الأسبوع ورمز حجم الجنين
 function tiles(items, sel, cur, attr, unit, icon) {
   return `<div class="week-strip tiles" id="strip">${items.map(n => `<button ${attr}="${n}" class="${n === sel ? 'sel' : ''} ${n === cur ? 'cur' : ''}" aria-label="${unit} ${n}">
@@ -301,7 +345,7 @@ function progressCard(st) {
   const months = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع'];
   return `<div class="card meet-card">
     <svg class="meet-ring" viewBox="0 0 128 128" role="img" aria-label="أتممتِ ${Math.round(st.pct * 100)}% من الحمل">
-      <defs><linearGradient id="mr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--rose)"/><stop offset="1" stop-color="var(--gold)"/></linearGradient></defs>
+      <defs><linearGradient id="mr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2d8d"/><stop offset=".6" stop-color="#c45cff"/><stop offset="1" stop-color="#4fd8f0"/></linearGradient></defs>
       <circle cx="64" cy="64" r="${r}" fill="none" stroke="var(--track)" stroke-width="9"/>
       <circle cx="64" cy="64" r="${r}" fill="none" stroke="url(#mr)" stroke-width="9" stroke-linecap="round"
         stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 64 64)" style="--c:${C.toFixed(1)}" class="meet-arc"/>
@@ -312,6 +356,7 @@ function progressCard(st) {
       <span class="kicker">الأسبوع ${st.week} · اليوم ${ORD[st.extra]}</span>
       <b class="meet-big">${TRIMESTERS[st.tri - 1].name}</b>
       <span class="muted">موعد اللقاء ${fmtShort.format(st.due)}</span>
+      <div class="meet-stats"><span>${Math.round(st.pct * 100)}% من الرحلة</span><span>الشهر ${months[st.month - 1]}</span></div>
     </div>
   </div>`;
 }
@@ -413,7 +458,10 @@ function viewRoadmap() {
 }
 
 /* ---------- متابعتي ودليلي وحسابي ---------- */
-const navRow = (k, sub) => { const [, ic, name] = TOOLS.find(t => t[0] === k); return `<div class="nav-row" data-sub="${k}"><span class="ic">${ic}</span><div class="grow"><b>${name}</b>${sub ? `<div class="muted">${sub}</div>` : ''}</div><span class="chev">‹</span></div>`; };
+// أيقونة الأداة: خطية ملوّنة إن وُجدت، وإلا الرمز التعبيري
+const toolIc = (k, em) => ICONS[k] ? `<span class="ic t-${ICON_TONE[k] || 'rose'}">${icon(k)}</span>` : `<span class="ic">${em}</span>`;
+const CHEV = `<span class="chev">${icon('chevron')}</span>`;
+const navRow = (k, sub) => { const [, ic, name] = TOOLS.find(t => t[0] === k); return `<div class="nav-row" data-sub="${k}">${toolIc(k, ic)}<div class="grow"><b>${name}</b>${sub ? `<div class="muted">${sub}</div>` : ''}</div>${CHEV}</div>`; };
 const group = (title, rows) => `<div class="card group"><h3>${title}</h3>${rows.join('')}</div>`;
 
 function viewTrack() {
@@ -440,44 +488,118 @@ function viewTrack() {
   <details class="card group more-tools"><summary><b>أدوات أخرى</b><span class="muted">${extra.length}</span></summary>${extra.join('')}</details>`;
 }
 
-function viewGuide() {
-  const rows = ['warnings', 'tests', 'localfood', 'food', 'ramadan', 'exercise', 'names', 'postpartum', 'faq', 'calc', 'born'];
-  return `<div class="card group">${rows.map(k => navRow(k, '')).join('')}</div>`;
-}
+// شبكة أدوات بأيقونات ملوّنة
+const hub = keys => `<div class="hub">${keys.map(k => { const [, ic, name] = TOOLS.find(t => t[0] === k); return `<button data-sub="${k}">${toolIc(k, ic)}<span>${name}</span></button>`; }).join('')}</div>`;
 
 function viewMore() {
-  const st = status();
-  return `${viewGuide()}
-  <details class="card group more-tools" id="setDetails" ${route.setOpen ? 'open' : ''}><summary><b>⚙️ الإعدادات والإشعارات</b></summary>
-  <div class="set-block"><h3>👤 بيانات الحمل</h3>
-    <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
-    <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
-  <div class="set-block"><h3>💾 النسخ الاحتياطي</h3>
-    <p class="muted">بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.</p>
-    <div class="row"><button class="btn grow" id="exportBtn">⬇️ تصدير</button>
-      <label class="btn ghost grow center" style="cursor:pointer">⬆️ استيراد ملف<input type="file" id="importFile" accept=".json" hidden></label></div>
-    <textarea id="backupBox" class="input" rows="4" placeholder="أو الصقي هنا نص النسخة الاحتياطية" dir="ltr" style="margin-top:10px"></textarea>
-    <button class="btn ghost sm" id="pasteImport" style="margin-top:6px">استيراد من النص الملصق</button>
+  const st = status(), p = S.profile;
+  const who = p.name ? `أهلاً ${esc(p.name)}` : 'أهلاً بكِ';
+  const line = S.baby ? `${esc(S.baby.name || 'طفلك')} · عمره ${babyAge()}` : `الأسبوع ${st.week} · ${TRIMESTERS[st.tri - 1].name}`;
+  const guide = S.baby ? ['bguide', 'vaccines', 'growth', 'miles', 'babywarn', 'momguide', 'faq', 'names', 'localfood']
+    : ['warnings', 'tests', 'food', 'localfood', 'ramadan', 'exercise', 'names', 'postpartum', 'faq'];
+  return `
+  <div class="card me-card"><div class="me-av">${p.name ? esc(p.name.trim()[0]) : icon('heart')}</div>
+    <div class="grow"><h2>${who}</h2><div class="muted">${line}</div></div>
+    <button class="icon-btn" data-sub="profile" aria-label="تعديل البيانات">${icon('cnew')}</button></div>
+  <div class="sec-title">الدليل</div>
+  ${hub(guide)}
+  <div class="sec-title">أدوات</div>
+  ${hub(S.baby ? ['feeds', 'sleep', 'album'] : ['calc', 'album', 'born'])}
+  <div class="set-group">
+    <button class="set-row" data-sub="settings"><span class="ic t-violet">${icon('settings')}</span><span class="txt"><b>الإعدادات</b><small>الإشعارات، المظهر، الخصوصية، النسخ الاحتياطي</small></span>${CHEV}</button>
+    <button class="set-row" data-sub="about"><span class="ic t-cyan">${icon('info')}</span><span class="txt"><b>عن ${APP_NAME}</b><small>الخصوصية، قيّمي التطبيق، شاركيه مع صديقة</small></span>${CHEV}</button>
   </div>
-  <div class="set-block"><h3>🔔 الإشعارات</h3>
-    <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
-    ${S.notify === false ? '' : (r => `
-    <label class="check"><input type="checkbox" data-rem="tip" ${r.tip ? 'checked' : ''}><span>💡 معلومة يومية (9 صباحاً)</span></label>
-    <label class="check"><input type="checkbox" data-rem="water" ${r.water ? 'checked' : ''}><span>💧 تذكير بشرب الماء (من 10 صباحاً حتى 6 مساءً كل ساعتين)</span></label>
-    <label class="check"><input type="checkbox" data-rem="vit" ${r.vit ? 'checked' : ''}><span>💊 تذكير الفيتامين أو الدواء يومياً</span></label>
-    ${r.vit ? `<label class="f" style="margin:4px 0 8px">موعد التذكير<input type="time" id="remVitTime" value="${esc(r.vitTime)}"></label>` : ''}
-    <button class="btn ghost block" id="notifyTest">🔔 جرّبي إشعاراً الآن</button>
-    <p class="muted" style="margin:8px 0 0">إن لم تصلك الإشعارات: من إعدادات الجهاز اسمحي للتطبيق بالإشعارات، وأوقفي «تحسين البطارية» له.</p>`)(Notify.rem())}
-    ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
-  <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
-    ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
-  <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
-  </details>
-  <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
+  <div class="card warn-card" style="margin-top:14px"><a class="sos" href="tel:${emergencyNo()}"><span class="ic">${icon('babywarn')}</span>
+    <span class="grow"><b>طوارئ؟ اتصلي بالإسعاف</b><div class="muted">${countryOf(S.country).n}</div></span><b class="num">${emergencyNo()}</b></a></div>
+  <p class="disclaimer">المعلومات للتثقيف العام ولا تغني عن استشارة طبيبك المختص.</p>`;
+}
+
+/* ---------- الإعدادات ---------- */
+const sw = (id, on, attr = '') => `<label class="switch"><input type="checkbox" ${id ? `id="${id}"` : ''} ${attr} ${on ? 'checked' : ''}><i></i></label>`;
+const setRow = (ic, tone, title, small, ctrl, extra = '') => `<div class="set-row ${extra}"><span class="ic t-${tone}">${icon(ic)}</span><span class="txt"><b>${title}</b>${small ? `<small>${small}</small>` : ''}</span>${ctrl}</div>`;
+const pills = (id, opts, cur) => `<div class="pills" id="${id}">${opts.map(([k, v]) => `<button data-v="${k}" class="${cur === k ? 'on' : ''}">${v}</button>`).join('')}</div>`;
+
+function viewSettings() {
+  const st = status(), r = Notify.rem(), nOn = S.notify !== false;
+  const c = countryOf(S.country);
+  return `
+  <div class="sec-title">الحساب</div>
+  <div class="set-group">
+    <button class="set-row" data-sub="profile"><span class="ic t-rose">${icon('profile')}</span><span class="txt"><b>${S.baby ? 'بيانات الحمل والولادة' : 'بيانات الحمل'}</b><small>موعد الولادة ${fmtDate.format(st.due)}</small></span>${CHEV}</button>
+    ${setRow('globe', 'cyan', 'البلد', 'لرقم الإسعاف ووحدات التحاليل', `<select id="setCountry">${COUNTRIES.map(x => `<option value="${x.c}" ${x.c === c.c ? 'selected' : ''}>${x.f} ${x.n}</option>`).join('')}</select>`)}
+  </div>
+
+  <div class="sec-title">الإشعارات</div>
+  <div class="set-group">
+    ${setRow('bell', 'rose', 'إشعارات نبض', S.baby ? 'كل شهر جديد من عمر طفلك' : 'مع بداية كل أسبوع حمل جديد', sw('notifyOn', nOn))}
+    ${nOn ? `
+    ${setRow('bulb', 'amber', 'معلومة اليوم', 'كل صباح الساعة 9', sw('', r.tip, 'data-rem="tip"'), 'sub')}
+    ${setRow('drop', 'cyan', 'تذكير شرب الماء', 'كل ساعتين من 10 صباحاً حتى 6 مساءً', sw('', r.water, 'data-rem="water"'), 'sub')}
+    ${setRow('pill', 'violet', 'تذكير الفيتامين أو الدواء', 'يومياً في الموعد الذي تختارينه', sw('', r.vit, 'data-rem="vit"'), 'sub')}
+    ${r.vit ? setRow('contractions', 'gray', 'موعد التذكير', '', `<input type="time" id="remVitTime" value="${esc(r.vitTime)}">`, 'sub') : ''}
+    <details class="help-box"><summary>لا تصلك الإشعارات؟</summary><div class="set-inline">
+      <p>اسمحي لـ«${APP_NAME}» بالإشعارات من إعدادات الجهاز، وأوقفي «تحسين البطارية» له حتى تصلك التذكيرات في موعدها.</p>
+      <button class="btn ghost block" id="notifyTest">${'أرسلي إشعاراً تجريبياً'}</button></div></details>` : ''}
+  </div>
+
+  <div class="sec-title">المظهر</div>
+  <div class="set-group">
+    ${setRow('palette', 'violet', 'السمة', '', pills('themeSeg', [['auto', icon('auto')], ['light', icon('sun')], ['dark', icon('moon')]], S.theme || 'dark'))}
+    ${setRow('text', 'cyan', 'حجم الخط', '', pills('sizeSeg', [['m', 'عادي'], ['l', 'كبير'], ['xl', 'أكبر']], S.textSize || 'm'))}
+    ${setRow('hash', 'amber', 'شكل الأرقام', '', pills('digSeg', [['en', '123'], ['ar', '١٢٣']], S.digits || 'en'))}
+    ${setRow('motion', 'mint', 'تقليل الحركة', 'إيقاف المؤثرات المتحركة', sw('motionOn', S.motion === 'reduce'))}
+  </div>
+
+  <div class="sec-title">الوحدات</div>
+  <div class="set-group">
+    ${setRow('tests', 'violet', 'وحدة سكر الدم', '', pills('gluSeg', [['mg', 'mg/dL'], ['mmol', 'mmol/L']], gluUnit()))}
+  </div>
+
+  <div class="sec-title">الخصوصية والأمان</div>
+  <div class="set-group">
+    ${setRow('lock', 'rose', 'قفل التطبيق', 'رمز من 4 أرقام عند فتح التطبيق', sw('lockOn', !!S.lock?.h))}
+    ${S.lock?.h ? `<button class="set-row indent" id="lockChange"><span class="txt"><b>تغيير الرمز</b></span>${CHEV}</button>` : ''}
+    ${setRow('shield', 'mint', 'بياناتك على جهازك فقط', 'بدون حساب وبدون إعلانات. لا نرسل بياناتك لأي جهة.', '')}
+  </div>
+
+  <div class="sec-title">النسخ الاحتياطي</div>
+  <div class="set-group">
+    <button class="set-row" id="exportBtn"><span class="ic t-cyan">${icon('backup')}</span><span class="txt"><b>حفظ نسخة احتياطية</b><small>احفظيها في Drive أو أرسليها لنفسك${S.lastBackup ? ` · آخر نسخة ${fmtShort.format(new Date(S.lastBackup))}` : ''}</small></span>${CHEV}</button>
+    <label class="set-row tap"><span class="ic t-violet">${icon('restore')}</span><span class="txt"><b>استعادة نسخة</b><small>من ملف نسخة احتياطية سابقة</small></span>${CHEV}<input type="file" id="importFile" accept=".json,application/json" hidden></label>
+  </div>
+
+  <div class="sec-title">منطقة الخطر</div>
+  <div class="set-group">
+    <button class="set-row danger" id="resetBtn"><span class="ic t-red">${icon('trash')}</span><span class="txt"><b>حذف جميع البيانات</b><small>لا يمكن التراجع عن هذا</small></span></button>
+  </div>
+  <p class="disclaimer">${APP_NAME} · الإصدار ${APP_VERSION}</p>`;
+}
+
+function viewAbout() {
+  return `<div class="card center hero-soft"><img class="about-logo" src="icons/icon.svg" alt="">
+    <h2 style="margin:0">${APP_NAME}</h2><p class="muted" style="margin:4px 0 0">رفيقتك من أول أسبوع حمل حتى عامَي طفلك الأوّلين</p>
+    <span class="badge soft" style="margin-top:10px">الإصدار ${APP_VERSION}</span></div>
+  <div class="set-group">
+    <button class="set-row" id="rateApp"><span class="ic t-amber">${icon('star')}</span><span class="txt"><b>قيّمي التطبيق</b><small>رأيك يساعدنا ويساعد أمهات أخريات</small></span>${CHEV}</button>
+    <button class="set-row" id="shareApp"><span class="ic t-rose">${icon('share')}</span><span class="txt"><b>شاركي التطبيق مع صديقة</b></span>${CHEV}</button>
+    ${window.NABD_CONFIG?.supportEmail ? `<a class="set-row" href="mailto:${esc(NABD_CONFIG.supportEmail)}" style="text-decoration:none"><span class="ic t-cyan">${icon('mail')}</span><span class="txt"><b>تواصلي معنا</b></span>${CHEV}</a>` : ''}
+  </div>
+  <div class="sec-title">الخصوصية</div>
+  <div class="card"><ul class="list">
+    <li>كل بياناتك (الحمل، التحاليل، الصور، اليوميات) محفوظة على جهازك فقط.</li>
+    <li>لا يوجد حساب، ولا إعلانات، ولا تتبّع.</li>
+    <li>عند سؤال «نبض» يُرسل سؤالك مع ملخص حملك (الأسبوع والتحاليل) بدون اسمك، لتكون الإجابة مناسبة لكِ.</li>
+    <li>في مجتمع الأمهات يُنشر ما تكتبينه باللقب الذي تختارينه، أو بدون اسم.</li>
+    <li>يمكنك حذف كل بياناتك في أي وقت من الإعدادات.</li></ul>
+    ${window.NABD_CONFIG?.privacyUrl ? `<a class="btn ghost block center" target="_blank" rel="noopener" href="${esc(NABD_CONFIG.privacyUrl)}" style="margin-top:10px">سياسة الخصوصية كاملة</a>` : ''}</div>
+  <div class="card"><h3>تنبيه طبي</h3><p class="muted" style="margin:0">المعلومات في ${APP_NAME} للتثقيف العام، ومراجَعة من مصادر طبية موثوقة، لكنها لا تغني عن طبيبك. في الطوارئ اتصلي بالإسعاف (${emergencyNo()}).</p></div>
+  <p class="disclaimer">صُنع بحب للأمهات العربيات 💗</p>`;
 }
 
 /* ---------- الشاشات الفرعية ---------- */
 const SUBVIEWS = {
+  settings: () => viewSettings(),
+  about: () => viewAbout(),
   kicks() {
     const s = S._kick;
     const hist = S.kicks.slice(-10).reverse();
@@ -708,33 +830,45 @@ function bind() {
   on('#waterPlus', () => { S.water[t] = (S.water[t] || 0) + 1; save(); render(false); });
   on('#waterMinus', () => { S.water[t] = Math.max(0, (S.water[t] || 0) - 1); save(); render(false); });
 
-  // المزيد
-  on('#exportBtn', () => {
-    const json = JSON.stringify(S, null, 2);
+  // الإعدادات
+  on('#exportBtn', async () => {
+    const json = JSON.stringify(S, null, 2), name = `nabd-backup-${t}.json`;
+    const done = () => { S.lastBackup = Date.now(); save(); render(false); };
+    try { if (await Native.shareFile(name, json, 'نسخة نبض الاحتياطية')) return done(); } catch (e) { if (/cancel/i.test(e?.message || '')) return; }
     try {
-      const blob = new Blob([json], { type: 'application/json' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rihlati-backup-${t}.json`; a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    } catch {}
-    const box = $('#backupBox'); box.hidden = false; box.value = json; box.select();
-    navigator.clipboard?.writeText(json).then(() => toast('تم نسخ النسخة الاحتياطية 📋'), () => {});
-  });
-  on('#pasteImport', () => {
-    try { const d = JSON.parse($('#backupBox').value); if (!d.profile) throw 0; S = Object.assign(defaults(), d); save(); toast('تم الاستيراد ✅'); render(); }
-    catch { toast('النص غير صالح'); }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('تم حفظ النسخة الاحتياطية ✅'); done();
+    } catch { toast('تعذّر حفظ النسخة، حاولي مرة أخرى'); }
   });
   on('#importFile', e => {
     const f = e.target.files[0]; if (!f) return;
-    f.text().then(txt => { const d = JSON.parse(txt); if (!d.profile) throw 0; S = Object.assign(defaults(), d); save(); toast('تم الاستيراد ✅'); render(); })
-      .catch(() => toast('ملف غير صالح'));
+    f.text().then(txt => { const d = JSON.parse(txt); if (!d.profile) throw 0; S = Object.assign(defaults(), d); save(); toast('تمت استعادة بياناتك ✅'); route = { view: 'home' }; history.replaceState(route, ''); render(); Notify.sync(false); })
+      .catch(() => toast('هذا الملف ليس نسخة احتياطية من نبض'));
   }, 'onchange');
-  on('#resetBtn', confirmTap('#resetBtn', () => { S = defaults(); save(); route = { view: 'home' }; render(); }));
-  on('#setDetails', e => { route.setOpen = e.target.open; history.replaceState(route, ''); }, 'ontoggle');
-  app.querySelectorAll('[data-rem]').forEach(c => c.onchange = async () => { S.reminders = { ...Notify.rem(), [c.dataset.rem]: c.checked }; save(); render(false); const ok = await Notify.sync(true); toast(ok ? 'تم حفظ التذكيرات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
+  on('#resetBtn', confirmTap('#resetBtn .txt b', () => { S = defaults(); save(); route = { view: 'home' }; history.replaceState(route, ''); render(); Notify.sync(false); }));
+  const notifyMsg = ok => ok ? 'تم حفظ التذكيرات 🔔' : 'اسمحي لنبض بالإشعارات من إعدادات الجهاز';
+  app.querySelectorAll('[data-rem]').forEach(c => c.onchange = async () => { S.reminders = { ...Notify.rem(), [c.dataset.rem]: c.checked }; save(); render(false); if (Notify.native()) toast(notifyMsg(await Notify.sync(true))); });
   on('#remVitTime', async e => { S.reminders = { ...Notify.rem(), vitTime: e.target.value || '10:00' }; save(); await Notify.sync(false); toast('تم ضبط موعد التذكير ⏰'); }, 'onchange');
-  on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
-  on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); render(false); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
-  app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
+  on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي لنبض بالإشعارات من إعدادات الجهاز' : 'الإشعارات تعمل في تطبيق الموبايل'); });
+  on('#notifyOn', async e => { S.notify = e.target.checked; save(); render(false); const ok = await Notify.sync(true); if (!S.notify) toast('تم إيقاف الإشعارات'); else if (Notify.native()) toast(notifyMsg(ok)); }, 'onchange');
+  on('#setCountry', e => { S.country = e.target.value; save(); toast(`رقم الإسعاف: ${emergencyNo()}`); render(false); }, 'onchange');
+  const pick = (id, fn) => app.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => { Native.tap(); fn(b.dataset.v); save(); render(false); });
+  pick('themeSeg', v => { S.theme = v; });
+  pick('sizeSeg', v => { S.textSize = v; });
+  pick('digSeg', v => { S.digits = v; });
+  pick('gluSeg', v => { S.gluUnit = v; });
+  on('#motionOn', e => { S.motion = e.target.checked ? 'reduce' : ''; save(); render(false); }, 'onchange');
+  on('#lockOn', e => {
+    if (e.target.checked) { e.target.checked = false; Lock.setup(ok => { if (ok) toast('تم تفعيل قفل التطبيق 🔒'); render(false); }); }
+    else Lock.verify(ok => { if (ok) { delete S.lock; save(); toast('تم إيقاف القفل'); } render(false); });
+  }, 'onchange');
+  on('#lockChange', () => Lock.verify(ok => ok && Lock.setup(ok2 => { if (ok2) toast('تم تغيير الرمز'); render(false); })));
+  on('#rateApp', () => { window.open(STORE_URL, '_blank'); });
+  on('#shareApp', async () => {
+    const text = `أستخدم تطبيق «${APP_NAME}» لمتابعة الحمل أسبوعاً بأسبوع وصحة طفلي، بالعربي وبدون إعلانات 💗`;
+    try { if (await Native.shareText(APP_NAME, text, STORE_URL)) return; } catch { return; }
+    navigator.clipboard?.writeText(`${text}\n${STORE_URL}`).then(() => toast('تم نسخ رابط التطبيق 📋'), () => {});
+  });
 
   if (route.sub === 'profile') bindSetup();
 
@@ -833,8 +967,67 @@ function bind() {
   featBind();
 }
 
+/* ---------- قفل التطبيق برمز من 4 أرقام ----------
+   قفل خصوصية على الجهاز نفسه (يُحفظ بصمة الرمز فقط، وليس الرمز). */
+const Lock = (() => {
+  const el = () => $('#lock');
+  // بصمة ثابتة للرمز (cyrb53) مع ملح خاص بالجهاز
+  const hash = s => { let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (const ch of s) { const c = ch.charCodeAt(0); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36); };
+  const salt = () => S.lock?.s || (S.lock = { ...(S.lock || {}), s: Math.random().toString(36).slice(2) }).s;
+  let mode = null, buf = '', first = null, cb = null, forgot = false;
+  const TITLES = { unlock: 'أدخلي رمز الدخول', verify: 'أدخلي الرمز الحالي', setup: 'اختاري رمزاً من 4 أرقام' };
+  function draw(msg = '', shake = false) {
+    const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, 'del'];
+    el().innerHTML = `<div class="lock-box"><img src="icons/icon.svg" alt="">
+      <h2>${forgot ? 'نسيتِ الرمز؟' : first && mode === 'setup' ? 'أعيدي إدخال الرمز للتأكيد' : TITLES[mode]}</h2>
+      ${forgot ? `<p>لحماية خصوصيتك لا يمكن فتح التطبيق بدون الرمز. يمكنك حذف كل البيانات والبدء من جديد، أو استعادة نسخة احتياطية بعدها.</p>
+        <button class="btn danger block" id="lkWipe" style="margin-top:22px">حذف البيانات والبدء من جديد</button><button class="link" id="lkBack">رجوع</button>` : `
+      <p>${msg}</p>
+      <div class="pin-dots ${shake ? 'shake' : ''}">${[0, 1, 2, 3].map(i => `<i class="${i < buf.length ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="keypad">${keys.map(k => k === '' ? '<button class="blank" tabindex="-1"></button>' : k === 'del' ? `<button class="del" data-k="del" aria-label="مسح">⌫</button>` : `<button data-k="${k}">${S.digits === 'ar' ? AR_DIGITS[k] : k}</button>`).join('')}</div>
+      <button class="link" id="${mode === 'unlock' ? 'lkForgot' : 'lkCancel'}">${mode === 'unlock' ? 'نسيتِ الرمز؟' : 'إلغاء'}</button>`}</div>`;
+    el().querySelectorAll('[data-k]').forEach(b => b.onclick = () => key(b.dataset.k));
+    const on = (id, fn) => { const b = el().querySelector(id); if (b) b.onclick = fn; };
+    on('#lkForgot', () => { forgot = true; draw(); });
+    on('#lkBack', () => { forgot = false; draw(); });
+    on('#lkCancel', () => close(false));
+    on('#lkWipe', confirmTap(el().querySelector('#lkWipe'), () => { S = defaults(); save(); route = { view: 'home' }; history.replaceState(route, ''); close(true); render(); }));
+  }
+  function key(k) {
+    Native.tap();
+    if (k === 'del') { buf = buf.slice(0, -1); return draw(); }
+    if (buf.length >= 4) return;
+    buf += k; draw();
+    if (buf.length < 4) return;
+    setTimeout(() => {
+      if (mode === 'setup') {
+        if (!first) { first = buf; buf = ''; return draw(); }
+        if (first === buf) { const s = salt(); S.lock = { s, h: hash(s + buf) }; save(); return close(true); }
+        first = null; buf = ''; return draw('الرمزان غير متطابقين، حاولي من جديد', true);
+      }
+      if (hash(S.lock.s + buf) === S.lock.h) return close(true);
+      buf = ''; draw('الرمز غير صحيح', true);
+      if (navigator.vibrate) navigator.vibrate(120);
+    }, 140);
+  }
+  function open(m, done) { mode = m; buf = ''; first = null; forgot = false; cb = done; el().hidden = false; draw(); }
+  function close(ok) { el().hidden = true; el().innerHTML = ''; mode = null; const f = cb; cb = null; f && f(ok); }
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) hiddenAt = Date.now();
+    else if (S.lock?.h && !mode && hiddenAt && Date.now() - hiddenAt > 60000) open('unlock');
+  });
+  return {
+    setup: done => open('setup', done),
+    verify: done => open('verify', done),
+    start() { if (S.lock?.h) open('unlock'); }
+  };
+})();
+
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); });
+window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Lock.start(); Notify.start(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});

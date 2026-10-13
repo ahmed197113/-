@@ -4,5 +4,7 @@
 window.NABD_CONFIG = {
   apiBase: '', // مثال: https://example.com/nabd-api
   supabaseUrl: '',
-  supabaseKey: ''
+  supabaseKey: '',
+  privacyUrl: '', // رابط سياسة الخصوصية على موقعك (يظهر في «عن التطبيق»)
+  supportEmail: '' // بريد الدعم (اختياري)
 };

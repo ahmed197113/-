@@ -5,7 +5,7 @@ run = int(os.environ.get('GITHUB_RUN_NUMBER', '1'))
 
 g = open(os.path.join(d, 'build.gradle'), encoding='utf-8').read()
 g = re.sub(r'versionCode \d+', f'versionCode {run + 100}', g)
-g = re.sub(r'versionName "[^"]*"', f'versionName "1.1.{run}"', g)
+g = re.sub(r'versionName "[^"]*"', f'versionName "1.2.{run}"', g)
 if os.environ.get('NABD_UPLOAD_KEYSTORE_FILE'):
     signing = '''    signingConfigs {
         release {

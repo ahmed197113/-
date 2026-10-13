@@ -138,8 +138,8 @@ function offlineAnswer(q) {
     ...LAB_TESTS.map(t => ({ t: t.n, a: t.about }))
   ].map(x => ({ ...x, sc: score(x.t) * 2 + score(x.a) })).filter(x => x.sc > 0).sort((a, b) => b.sc - a.sc).slice(0, 3);
   let out = urgent.length ? '🚨 ما ذكرتِه قد يكون علامة خطر — توجهي للطوارئ أو كلمي طبيبك الآن.\n\n' : '';
-  out += pool.length ? pool.map(x => `• ${x.t}\n${x.a}`).join('\n\n') : 'لم أجد إجابة جاهزة لسؤالك. جرّبي كلمات أبسط، أو تصفحي «دليلي»، أو اسألي طبيبك.';
-  return out + '\n\n(وضع بدون اتصال: إجابات من دليل التطبيق)';
+  out += pool.length ? pool.map(x => `• ${x.t}\n${x.a}`).join('\n\n') : 'لم أجد إجابة لسؤالك في دليل نبض. جرّبي كلمات أبسط، أو اسألي طبيبك.';
+  return out;
 }
 
 /* ---------- فحص الخطر ---------- */
@@ -536,7 +536,7 @@ function viewAssistAI() {
   const sug = S.baby ? ['طفلي يبكي كثيراً في الليل', 'متى أبدأ الأكل الصلب؟', 'حرارة 38 لطفل عمره شهران', 'كيف أعرف أن الرضاعة كافية؟']
     : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
-    <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق.'}</div></div></div></div>
+    <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'اسأليني عن حملك وأعراضك وأكلك، وأجيبك من دليل نبض.'}</div></div></div></div>
     <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}${m.role === 'assistant' ? `<button class="link flag" data-flag="${i}" ${m.flagged ? 'disabled' : ''}>${m.flagged ? 'تم الإبلاغ' : '🚩 إبلاغ عن الرد'}</button>` : ''}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
