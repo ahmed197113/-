@@ -30,7 +30,6 @@ function question(int $id): array {
   if (!$q) out(['error' => 'not_found'], 404);
   return $q;
 }
-function now_ms(): int { return (int)round(microtime(true) * 1000); }
 
 switch ($act) {
   case 'list':

@@ -20,13 +20,17 @@ function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); }
   catch { return defaults(); }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
+function save() {
+  S._mt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
+  if (typeof Account !== 'undefined') Account.dirty();
+  if (typeof Widget !== 'undefined') Widget.sync();
+}
 
 /* ---------- أدوات التاريخ ---------- */
-const fmt = new Intl.DateTimeFormat('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const fmtShort = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'short' });
-let fmtHijri;
-try { fmtHijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { fmtHijri = null; }
+// كل التواريخ المعروضة تتبع إعداد التقويم (ميلادي / هجري أم القرى)
+const fmt = Cal.fmt({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const fmtShort = Cal.fmt({ day: 'numeric', month: 'short' });
 
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -103,15 +107,16 @@ const TOOLS = [
   ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
 ];
 const APP_NAME = 'نبضٌ صغير';
+const EXTRA_TITLES = { profile: 'بيانات الحمل', favs: '💗 المفضلة', account: '☁️ حسابي' };
 
+let booted = false; // لا رسم قبل تحميل كل الملفات
 function render(scroll = true) {
+  if (!booted) return;
   timers.forEach(clearInterval); timers = [];
   applyTheme();
   const tab = $('#tabbar');
-  if (!S.profile) {
-    tab.hidden = true; $('#backBtn').hidden = true; $('#title').textContent = `${APP_NAME} 💗`;
-    app.innerHTML = viewSetup(true); bindSetup(); return;
-  }
+  if (!S.profile || S.onb) { tab.hidden = true; Onb.render(); return; }
+  document.body.classList.remove('onb-mode');
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
@@ -120,7 +125,7 @@ function render(scroll = true) {
   let html;
   if (route.sub) {
     const t = TOOLS.find(x => x[0] === route.sub);
-    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (route.sub === 'profile' ? 'بيانات الحمل' : APP_NAME);
+    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (EXTRA_TITLES[route.sub] || APP_NAME);
     html = route.sub === 'profile' ? viewSetup(false) : (SUBVIEWS[route.sub] || (() => ''))();
   } else {
     $('#title').textContent = titles[route.view];
@@ -197,16 +202,30 @@ function viewSetup(first) {
   </div>
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
+// حدود التواريخ المنطقية لكل طريقة حساب
+const dateBounds = method => method === 'due' ? [iso(addDays(today(), -21)), iso(addDays(today(), 300))] : [iso(addDays(today(), -300)), iso(today())];
+// حقل تاريخ: عجلة هجرية عند اختيار التقويم الهجري، وإلا حقل التاريخ المعتاد
+function dateField(id, label, value, method) {
+  const [min, max] = dateBounds(method);
+  if (Cal.mode() !== 'hijri') return `<label class="f">${label}<input id="${id}" type="date" min="${min}" max="${max}" value="${esc(value)}"></label>`;
+  const v = value || (method === 'due' ? iso(addDays(today(), 200)) : iso(addDays(today(), -60)));
+  return `<div class="f">${label}<div class="wheel" data-wheel="${id}" data-min="${min}" data-max="${max}"></div><input type="hidden" id="${id}" value="${esc(v)}"></div>`;
+}
 function setupFields(p) {
-  const t = iso(today());
   switch (p.method) {
-    case 'lmp': return `<label class="f">أول يوم في آخر دورة شهرية<input id="s_lmp" type="date" max="${t}" value="${esc(p.lmp)}"></label>
+    case 'lmp': return `${dateField('s_lmp', 'أول يوم في آخر دورة شهرية', p.lmp, 'lmp')}
       <label class="f">متوسط طول الدورة (أيام)<input id="s_cycle" type="number" min="20" max="45" value="${esc(p.cycle || 28)}"></label>`;
-    case 'conception': return `<label class="f">تاريخ الإخصاب / الإباضة<input id="s_conc" type="date" max="${t}" value="${esc(p.conception)}"></label>`;
-    case 'ivf': return `<label class="f">تاريخ إرجاع الأجنة<input id="s_ivf" type="date" max="${t}" value="${esc(p.ivf)}"></label>
+    case 'conception': return dateField('s_conc', 'تاريخ الإخصاب / الإباضة', p.conception, 'conception');
+    case 'ivf': return `${dateField('s_ivf', 'تاريخ إرجاع الأجنة', p.ivf, 'ivf')}
       <label class="f">عمر الجنين عند الإرجاع<select id="s_ivfday">${[3, 5, 6].map(d => `<option value="${d}" ${+p.ivfDay === d ? 'selected' : ''}>اليوم ${d}</option>`).join('')}</select></label>`;
-    case 'due': return `<label class="f">موعد الولادة المتوقع<input id="s_due" type="date" value="${esc(p.due)}"></label>`;
+    case 'due': return dateField('s_due', 'موعد الولادة المتوقع', p.due, 'due');
   }
+}
+function mountWheels(root, onChange) {
+  root.querySelectorAll('[data-wheel]').forEach(el => {
+    const inp = document.getElementById(el.dataset.wheel);
+    datePicker(el, { cal: 'hijri', value: inp.value, min: el.dataset.min, max: el.dataset.max, onChange: v => { inp.value = v; onChange(); } });
+  });
 }
 function readSetup() {
   const p = { ...(S.profile || {}) };
@@ -230,8 +249,7 @@ function bindSetup() {
     const bad = st.left < -21 || st.left > 300;
     box.style.display = 'block';
     box.innerHTML = bad ? `<b style="color:var(--warn)">⚠️ التاريخ غير منطقي، تأكدي منه.</b>` :
-      `<div class="muted">موعد الولادة المتوقع</div><h2 style="margin:4px 0">${fmt.format(st.due)}</h2>
-       ${fmtHijri ? `<div class="muted">${fmtHijri.format(st.due)}</div>` : ''}
+      `<div class="muted">موعد الولادة المتوقع</div><h3 style="margin:4px 0">${Cal.both(st.due)}</h3>
        <div class="badge" style="margin-top:6px">أنتِ في الأسبوع ${st.week}</div>`;
   };
   document.querySelectorAll('#s_method button').forEach(b => b.onclick = () => {
@@ -239,16 +257,18 @@ function bindSetup() {
     b.classList.add('on');
     $('#s_fields').innerHTML = setupFields({ ...(S.profile || {}), method: b.dataset.m });
     $('#s_fields').querySelectorAll('input,select').forEach(i => i.oninput = preview);
+    mountWheels($('#s_fields'), preview);
     preview();
   });
   app.querySelectorAll('input,select').forEach(i => i.oninput = preview);
+  mountWheels(app, preview);
   preview();
   $('#s_save').onclick = () => {
     const p = readSetup();
     if (!p) return toast('أدخلي التاريخ أولاً');
     const old = S.profile; S.profile = p; const st = status();
     if (st.left < -21 || st.left > 300) { S.profile = old; return toast('التاريخ غير صحيح'); }
-    save(); toast('تم الحفظ ✅'); Notify.sync(true);
+    save(); toast('تم الحفظ ✅'); Notify.sync(false);
     if (!old) { route = { view: 'home' }; history.replaceState(route, ''); render(); } else history.back();
   };
 }
@@ -258,25 +278,40 @@ const ICON = {
   scale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 10a5 5 0 0 1 8 0M12 10l2-2"/></svg>',
   ruler: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m3 16 13-13 5 5L8 21zM7 12l2 2M10 9l2 2M13 6l2 2"/></svg>',
   seed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="10" r="6"/><path d="M12 16v5M9 21h6M10 9.5a2 2 0 0 1 2-2"/></svg>',
-  baby: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 11h.01M15 11h.01M9.5 15a3.5 3.5 0 0 0 5 0M12 3c-1.2 1.8-.4 3.2 1.4 3.2"/></svg>'
+  baby: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 11h.01M15 11h.01M9.5 15a3.5 3.5 0 0 0 5 0M12 3c-1.2 1.8-.4 3.2 1.4 3.2"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>'
 };
 const ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع'];
-const fmtDayMonth = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long' });
-const fmtDate = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDayMonth = Cal.fmt({ day: 'numeric', month: 'long' });
+const fmtDate = Cal.fmt({ day: 'numeric', month: 'long', year: 'numeric' });
 const wd = (n) => `${Math.floor(n / 7)} أسبوعاً و ${n % 7} ${n % 7 === 1 ? 'يوم' : 'أيام'}`;
+const MONTHS_ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع'];
+// العدد مع المعدود بعربية صحيحة: 1 أسبوع، أسبوعان، 3 أسابيع، 11 أسبوعاً
+const arCount = (n, one, two, few, many) => n <= 0 ? '' : n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`;
+const arWeeks = n => arCount(n, 'أسبوع واحد', 'أسبوعان', 'أسابيع', 'أسبوعاً');
+const arDays = n => arCount(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً');
+// مدة بالأسابيع والأيام: «32 أسبوعاً و3 أيام»
+const weeksDays = n => { const w = Math.floor(n / 7), d = n % 7; return w && d ? `${arWeeks(w)} و${arDays(d)}` : w ? arWeeks(w) : d ? arDays(d) : 'اليوم'; };
+// الوزن بالغرام حتى 999 غ ثم بالكيلو بمنزلة عشرية واحدة
+const wtLabel = t => { const m = /^([\d.]+)\s*(كغ|غ)$/.exec(t || ''); if (!m) return t; const g = m[2] === 'كغ' ? +m[1] * 1000 : +m[1]; return g < 1000 ? `${Math.round(g)} غ` : `${(Math.round(g / 100) / 10).toFixed(1)} كغ`; };
 
 function hero(sel) {
   const w = WEEKS[sel - 1];
   const chips = w.wt === '—'
     ? `<div class="float-chip chip-bl"><span class="ic pink">${ICON.seed}</span><div><small>المرحلة</small><b>${w.size}</b></div></div>`
-    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${w.wt}</b></div></div>
+    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${wtLabel(w.wt)}</b></div></div>
        <div class="float-chip chip-bl"><span class="ic pink">${ICON.ruler}</span><div><small>الطول</small><b>${w.len}</b></div></div>`;
+  // الشريحة الثالثة: داخل الرحم (تظهر فقط عند توفر صورة القطاع لهذا الأسبوع)
+  const womb = Photos.womb(sel), n = womb ? 3 : 2, cur = Math.min(route.slide || 0, n - 1);
   return `<div class="hero-stage">
     <div class="carousel" id="car">
       <div class="slide"><div class="halo">${Photos.figure(sel, { cls: 'round' })}</div>${chips}<span class="size-tag">${w.emoji} بحجم ${w.size}</span></div>
       <div class="slide">${Photos.figure(sel, { labels: true, cls: 'square' })}<span class="slide-cap">الأسبوع ${sel} · أسماء الأجزاء</span></div>
+      ${womb ? `<div class="slide">${womb}<span class="slide-cap">داخل الرحم · الأسبوع ${sel}</span></div>` : ''}
     </div>
-    <div class="dots" id="dots"><i class="${route.slide ? '' : 'on'}"></i><i class="${route.slide ? 'on' : ''}"></i></div>
+    <button class="share-btn" data-share="${sel}" aria-label="شاركي الأسبوع ${sel}">${ICON.share}<span>شاركي</span></button>
+    <div class="dots" id="dots">${Array.from({ length: n }, (_, i) => `<i class="${i === cur ? 'on' : ''}"></i>`).join('')}</div>
   </div>`;
 }
 // بطاقات الأسابيع: رقم الأسبوع ورمز حجم الجنين
@@ -311,9 +346,20 @@ function progressCard(st) {
     <div class="meet-info">
       <span class="kicker">الأسبوع ${st.week} · اليوم ${ORD[st.extra]}</span>
       <b class="meet-big">${TRIMESTERS[st.tri - 1].name}</b>
-      <span class="muted">موعد اللقاء ${fmtShort.format(st.due)}</span>
+      <span class="meet-month">الشهر ${MONTHS_ORD[st.month - 1]}</span>
+      <span class="muted">اللقاء ${fmtShort.format(st.due)}</span>
     </div>
-  </div>`;
+  </div>
+  <div class="grid2 span-cards">
+    <div class="card mini"><small>مضى من الحمل</small><b>${weeksDays(Math.min(st.days, 280))}</b></div>
+    <div class="card mini"><small>${st.left >= 0 ? 'تبقّى للولادة' : 'تجاوزتِ الموعد بـ'}</small><b>${weeksDays(Math.abs(st.left))}</b></div>
+  </div>
+  <div class="card journey">
+    <div class="progress"><i style="width:${(st.pct * 100).toFixed(1)}%"></i></div>
+    <div class="journey-ends"><span><small>بداية الحمل</small><b>${fmtShort.format(st.start)}</b></span><span><small>الولادة</small><b>${fmtShort.format(st.due)}</b></span></div>
+  </div>
+  ${st.left >= 0 && st.left <= 28 ? `<div class="card countdown" id="countdown" data-due="${st.due.getTime()}"><small>العدّ التنازلي للقاء 💗</small>
+    <div class="cd-row">${[['d', 'يوم'], ['h', 'ساعة'], ['m', 'دقيقة'], ['s', 'ثانية']].map(([k, l]) => `<div><b data-cd="${k}">--</b><small>${l}</small></div>`).join('')}</div></div>` : ''}`;
 }
 
 function viewHome() {
@@ -329,6 +375,8 @@ function viewHome() {
   const next = nextAppt ? { ic: '🩺', t: nextAppt.title, d: fmtShort.format(parse(nextAppt.date)), sub: 'appts' }
     : nextTest ? { ic: '🔬', t: nextTest.title, d: `الأسبوع ${nextTest.from}${nextTest.to !== nextTest.from ? '–' + nextTest.to : ''}`, sub: 'tests' } : null;
   return `
+  ${S.news12 ? '' : `<div class="card news-card"><span class="big-ic">✨</span><div class="grow"><b>جديد في نبض</b><div class="muted">التقويم الهجري، وحفظ بياناتك على السحابة، والمفضلة 💗</div>
+    <button class="btn sm" id="newsGo" style="margin-top:8px">اكتشفي</button></div><button class="icon-btn sm" id="newsX" aria-label="إغلاق">✕</button></div>`}
   ${hero(sel)}
   ${weekStrip(sel, st)}
   ${progressCard(st)}
@@ -367,7 +415,7 @@ function viewWeeks() {
   <div class="card">
     ${!items.length ? '<p class="muted">لا توجد مهام خاصة لهذا الأسبوع.</p>' : sec === 'todo'
       ? items.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')
-      : `<ul class="list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`}
+      : `<ul class="list fav-list">${items.map((i, k) => `<li><span>${i}</span>${favBtn({ id: `w${sel}.${sec}.${k}`, type: sec === 'tips' ? 'tip' : 'week', text: i, week: sel, sec })}</li>`).join('')}</ul>`}
   </div>
   <div class="row">
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
@@ -442,7 +490,12 @@ function viewTrack() {
 
 function viewGuide() {
   const rows = ['warnings', 'tests', 'localfood', 'food', 'ramadan', 'exercise', 'names', 'postpartum', 'faq', 'calc', 'born'];
-  return `<div class="card group">${rows.map(k => navRow(k, '')).join('')}</div>`;
+  const nf = (S.favorites || []).length, acc = Account.user();
+  const mine = `<div class="card group">
+    <div class="nav-row" data-sub="favs"><span class="ic">💗</span><div class="grow"><b>المفضلة</b><div class="muted">${nf ? `${nf} محفوظة` : 'احفظي المعلومات والنصائح والردود بلمسة قلب'}</div></div><span class="chev">‹</span></div>
+    ${Account.available() || acc ? `<div class="nav-row" data-sub="account"><span class="ic">☁️</span><div class="grow"><b>حسابي</b><div class="muted">${acc ? esc(acc.email || acc.name || '') : 'اختياري: نسخة احتياطية تلقائية على السحابة'}</div></div><span class="chev">‹</span></div>` : ''}
+  </div>`;
+  return `${mine}<div class="card group">${rows.map(k => navRow(k, '')).join('')}</div>`;
 }
 
 function viewMore() {
@@ -450,8 +503,11 @@ function viewMore() {
   return `${viewGuide()}
   <details class="card group more-tools" id="setDetails" ${route.setOpen ? 'open' : ''}><summary><b>⚙️ الإعدادات والإشعارات</b></summary>
   <div class="set-block"><h3>👤 بيانات الحمل</h3>
-    <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
+    <p class="muted" style="margin:0">موعد الولادة:<br><b>${Cal.both(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
+  ${Cal.ok ? `<div class="set-block"><h3>📅 التقويم</h3><div class="seg" id="calSeg">
+    ${[['gregorian', 'ميلادي'], ['hijri', 'هجري (أم القرى)']].map(([k, v]) => `<button data-cal="${k}" class="${Cal.mode() === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <p class="muted" style="margin:0">كل التواريخ في التطبيق تظهر بالتقويم الذي تختارينه.</p></div>` : ''}
   <div class="set-block"><h3>💾 النسخ الاحتياطي</h3>
     <p class="muted">بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.</p>
     <div class="row"><button class="btn grow" id="exportBtn">⬇️ تصدير</button>
@@ -735,6 +791,16 @@ function bind() {
   on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
   on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); render(false); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
+  app.querySelectorAll('#calSeg button').forEach(b => b.onclick = () => { S.calendar = b.dataset.cal; save(); render(false); toast(b.dataset.cal === 'hijri' ? 'التواريخ الآن بالهجري 🌙' : 'التواريخ الآن بالميلادي'); });
+  on('#newsX', () => { S.news12 = 1; save(); render(false); });
+  on('#newsGo', () => { S.news12 = 1; save(); route = { view: 'more', setOpen: true }; history.pushState(route, ''); render(); });
+  const cd = $('#countdown');
+  if (cd) {
+    const due = +cd.dataset.due, el = k => cd.querySelector(`[data-cd="${k}"]`);
+    const tick = () => { let s = Math.max(0, Math.floor((due - Date.now()) / 1000)); const v = { d: Math.floor(s / 86400), h: Math.floor(s / 3600) % 24, m: Math.floor(s / 60) % 60, s: s % 60 };
+      Object.entries(v).forEach(([k, n]) => { el(k).textContent = String(n).padStart(2, '0'); }); };
+    tick(); timers.push(setInterval(tick, 1000));
+  }
 
   if (route.sub === 'profile') bindSetup();
 
@@ -830,11 +896,12 @@ function bind() {
   };
   on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
   const lt = $('#lblToggle'); if (lt) lt.onclick = () => { route.labels = !route.labels; history.replaceState(route, ''); render(false); };
+  extrasBind();
   featBind();
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); });
+window.addEventListener('DOMContentLoaded', () => { booted = true; if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); Widget.sync(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});

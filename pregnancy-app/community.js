@@ -203,7 +203,7 @@ Object.assign(SUBVIEWS, {
     const sorted = (ans || []).filter(a => !isBlocked(a)).sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
     return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).</div></div>` : ''}
       <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
-        <h2 style="margin:12px 0 6px">${esc(x.title)}</h2><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
+        <div class="row" style="align-items:flex-start;margin-top:12px"><h2 class="grow" style="margin:0 0 6px">${esc(x.title)}</h2>${favBtn({ id: 'cq:' + x.id, type: 'cq', title: x.title, text: x.body, qid: x.id })}</div><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
         <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : modBtns(x, `q:${esc(x.id)}`)}</div></div>
       ${!hasAi && AI.sample && ans ? '<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">✨ اطلبي رأي نبض في هذا السؤال</button>' : ''}
       <h3>${ans ? `${ans.length} ${ans.length === 1 ? 'رد' : 'ردود'}` : 'جاري تحميل الردود…'}</h3>

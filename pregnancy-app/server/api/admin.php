@@ -15,6 +15,22 @@ if (isset($_GET['logout'])) { session_destroy(); header('Location: admin.php'); 
 $ok = !empty($_SESSION['nabd_admin']);
 $pdo = $ok ? new PDO($CFG['db_dsn'], $CFG['db_user'] ?? null, $CFG['db_pass'] ?? null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]) : null;
 
+// طلبات حذف الحساب من صفحة الويب: حذف الحساب المطابق للبريد أو إغلاق الطلب
+if ($ok && isset($_POST['delreq']) && hash_equals($_SESSION['csrf'], (string)($_POST['csrf'] ?? ''))) {
+  $rid = (int)$_POST['delreq'];
+  $s = $pdo->prepare('SELECT email FROM delete_requests WHERE id = ?'); $s->execute([$rid]); $email = $s->fetchColumn();
+  if ($email !== false && ($_POST['go'] ?? '') === 'delete') {
+    $s = $pdo->prepare('SELECT id FROM users WHERE LOWER(email) = ?'); $s->execute([mb_strtolower((string)$email)]);
+    foreach ($s->fetchAll(PDO::FETCH_COLUMN) as $uid) {
+      $pdo->prepare('UPDATE questions SET hidden = 1 WHERE dev IN (SELECT dev FROM user_devices WHERE user_id = ?)')->execute([$uid]);
+      $pdo->prepare('UPDATE answers SET hidden = 1 WHERE dev IN (SELECT dev FROM user_devices WHERE user_id = ?)')->execute([$uid]);
+      foreach (['backups', 'sessions', 'user_devices'] as $t) $pdo->prepare("DELETE FROM $t WHERE user_id = ?")->execute([$uid]);
+      $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
+    }
+  }
+  $pdo->prepare('UPDATE delete_requests SET done = 1 WHERE id = ?')->execute([$rid]);
+  header('Location: admin.php'); exit;
+}
 if ($ok && isset($_POST['do']) && hash_equals($_SESSION['csrf'], (string)($_POST['csrf'] ?? ''))) {
   $t = $_POST['t'] === 'q' ? 'questions' : 'answers'; $id = (int)$_POST['id'];
   if ($_POST['do'] === 'hide') $pdo->prepare("UPDATE $t SET hidden = 1 WHERE id = ?")->execute([$id]);
@@ -45,10 +61,17 @@ foreach (['q' => 'questions', 'a' => 'answers'] as $k => $t) {
   foreach ($pdo->query($sql) as $r) $rows[] = $r + ['k' => $k];
 }
 $aiReports = $pdo->query('SELECT id, text, t FROM ai_reports ORDER BY t DESC LIMIT 50')->fetchAll();
-$stats = $pdo->query('SELECT (SELECT COUNT(*) FROM questions) q, (SELECT COUNT(*) FROM answers) a, (SELECT COUNT(*) FROM bans) b')->fetch();
+$stats = $pdo->query('SELECT (SELECT COUNT(*) FROM questions) q, (SELECT COUNT(*) FROM answers) a, (SELECT COUNT(*) FROM bans) b, (SELECT COUNT(*) FROM users) u')->fetch();
+$delReqs = $pdo->query('SELECT r.id, r.email, r.t, (SELECT COUNT(*) FROM users u WHERE LOWER(u.email) = LOWER(r.email)) n FROM delete_requests r WHERE r.done = 0 ORDER BY r.t')->fetchAll();
 ?>
 <h1>إشراف نبضٌ صغير</h1>
-<p class="m">الأسئلة: <?= $stats['q'] ?> · الردود: <?= $stats['a'] ?> · محظورون: <?= $stats['b'] ?> · <a href="?logout=1">خروج</a></p>
+<p class="m">الأسئلة: <?= $stats['q'] ?> · الردود: <?= $stats['a'] ?> · محظورون: <?= $stats['b'] ?> · الحسابات: <?= $stats['u'] ?> · <a href="?logout=1">خروج</a></p>
+<?php if ($delReqs): ?><h2>طلبات حذف الحساب</h2>
+<?php foreach ($delReqs as $r): ?>
+<div class="c"><b dir="ltr"><?= $h($r['email']) ?></b> <span class="m">· <?= $h(date('Y-m-d H:i', (int)$r['t'])) ?> · <?= $r['n'] ? 'يوجد حساب بهذا البريد' : 'لا يوجد حساب بهذا البريد' ?></span>
+<form method="post"><input type="hidden" name="csrf" value="<?= $h($_SESSION['csrf']) ?>"><input type="hidden" name="delreq" value="<?= (int)$r['id'] ?>">
+<?php if ($r['n']): ?><button class="d" name="go" value="delete" onclick="return confirm('حذف الحساب ونسخته نهائياً؟')">حذف الحساب</button><?php endif; ?><button name="go" value="close">إغلاق الطلب</button></form></div>
+<?php endforeach; endif; ?>
 <h2>المحتوى المُبلَّغ عنه أو المخفي</h2>
 <?php if (!$rows) echo '<p class="m">لا يوجد شيء يحتاج مراجعة 🎉</p>'; ?>
 <?php foreach ($rows as $r): ?>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>حذف الحساب — نبضٌ صغير</title>
+<style>
+  :root { --p: #fa1a7f; --bg: #fbf7f9; --card: #fff; --text: #2c3048; --muted: #7c8098; --b: #efe3ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0f1428; --card: #181f3a; --text: #f3eee9; --muted: #a9a6bd; --p: #ff4d9a; --b: #2c3456; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, Tahoma, sans-serif; line-height: 1.9; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { color: var(--p); font-size: 1.45rem; } h2 { font-size: 1.08rem; margin: 6px 0; }
+  section { background: var(--card); border: 1px solid var(--b); border-radius: 16px; padding: 12px 18px; margin: 14px 0; }
+  .m { color: var(--muted); font-size: .9rem; }
+  input { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; border: 1px solid var(--b); background: var(--bg); color: var(--text); font: inherit; direction: ltr; text-align: right; }
+  button { margin-top: 10px; width: 100%; border: 0; border-radius: 14px; padding: 12px; font: inherit; font-weight: 700; background: var(--p); color: #fff; cursor: pointer; }
+  #msg { font-weight: 700; }
+</style>
+</head>
+<body><main>
+<h1>حذف الحساب — تطبيق «نبضٌ صغير»</h1>
+<p class="m">الحساب في «نبضٌ صغير» اختياري، ويُستخدم فقط للنسخ الاحتياطي على السحابة.</p>
+
+<section><h2>الطريقة الأسرع: من داخل التطبيق</h2>
+<p>افتحي التطبيق ← <b>المزيد</b> ← <b>حسابي</b> ← <b>حذف الحساب نهائياً</b>، ثم أكّدي. يتم الحذف فوراً.</p></section>
+
+<section><h2>ما الذي يُحذف؟</h2>
+<p>اسمك وبريدك ومعرّف حسابك، ونسخة بياناتك على السحابة، وكل جلسات الدخول — تُحذف نهائياً. ومنشوراتك في مجتمع الأمهات تُخفى. البيانات المحفوظة على جهازك لا تتأثر، ويمكنك مسحها من الإعدادات ← «حذف جميع البيانات».</p></section>
+
+<section><h2>طلب الحذف بدون التطبيق</h2>
+<p>اكتبي البريد الذي سجّلتِ به الدخول، وسنحذف الحساب خلال 7 أيام.</p>
+<form id="f"><input type="email" id="email" required placeholder="name@gmail.com" autocomplete="email"><button>أرسلي طلب الحذف</button></form>
+<p id="msg" role="status"></p></section>
+<p class="m"><a href="privacy.html">سياسة الخصوصية</a></p>
+<script>
+  // نفس مجلد السيرفر: public_html/nabd-api
+  const API = 'nabd-api/account.php';
+  document.getElementById('f').onsubmit = async e => {
+    e.preventDefault();
+    const msg = document.getElementById('msg');
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'request_delete', email: document.getElementById('email').value }) });
+      msg.textContent = r.ok ? '✅ وصلنا طلبك، وسيتم الحذف خلال 7 أيام.' : r.status === 429 ? 'محاولات كثيرة، جرّبي غداً.' : 'تأكدي من البريد وحاولي مرة أخرى.';
+    } catch { msg.textContent = 'تعذّر الإرسال — تأكدي من الاتصال.'; }
+  };
+</script>
+</main></body>
+</html>

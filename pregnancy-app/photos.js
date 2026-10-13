@@ -63,8 +63,8 @@ const Photos = (() => {
   const parts = w => { const p = P[Math.min(LAST, Math.max(1, w))]; return Object.keys(p).map(k => ({ k, n: NAME[k], d: desc(k, w), p: p[k] })); };
 
   // طبقة الأسماء: نقطة على الجزء وخط إلى اسمه على أحد الجانبين
-  function overlay(w) {
-    const L = parts(w).map(x => ({ ...x, x: x.p[0] * 40, y: x.p[1] * 40 }));
+  function overlay(w, list = parts(w)) {
+    const L = list.map(x => ({ ...x, x: x.p[0] * 40, y: x.p[1] * 40 }));
     const place = (arr, left) => {
       arr.sort((a, b) => a.y - b.y);
       const ys = []; arr.forEach((l, i) => ys.push(Math.max(l.y, i ? ys[i - 1] + 30 : 20)));
@@ -85,5 +85,27 @@ const Photos = (() => {
     return `<div class="photo ${cls}"><img src="${src(w)}" alt="شكل الجنين في الأسبوع ${w}" loading="lazy" decoding="async">${labels ? overlay(w) : ''}</div>`;
   }
 
-  return { src, parts, figure };
+  /* ---------- داخل الرحم: صورة قطاع للرحم لكل مرحلة، والأسماء تُرسم هنا فوق الصورة ----------
+     images/womb-1.webp (8–13) · womb-2 (14–20) · womb-3 (21–30) · womb-4 (31–40)
+     الإحداثيات من 0 إلى 10 — عدّليها بعد وضع الصور إن لزم. */
+  const WOMB = null; // يُستبدل وقت البناء بالصور المتوفرة فقط
+  const wombGroup = w => w < 8 ? 0 : w <= 13 ? 1 : w <= 20 ? 2 : w <= 30 ? 3 : 4;
+  const WP = {
+    1: { placenta: [6.8, 2.6], cord: [5.6, 4.2], fluid: [3.4, 3.6], uterus: [8.6, 5.2], cervix: [5.0, 8.8] },
+    2: { placenta: [7.0, 2.2], cord: [5.8, 4.4], fluid: [3.0, 3.4], uterus: [8.8, 5.4], cervix: [5.0, 9.0] },
+    3: { placenta: [7.2, 1.8], cord: [6.0, 4.6], fluid: [2.6, 3.0], uterus: [9.0, 5.6], cervix: [5.0, 9.2] },
+    4: { placenta: [7.4, 1.6], cord: [6.2, 4.8], fluid: [2.4, 2.6], uterus: [9.2, 5.8], cervix: [5.0, 9.3] }
+  };
+  const WNAME = { placenta: 'المشيمة', cord: 'الحبل السري', cervix: 'عنق الرحم', uterus: 'الرحم', fluid: 'السائل الأمنيوسي' };
+  function womb(w) {
+    const g = wombGroup(w);
+    if (!g || (WOMB && !WOMB[g])) return '';
+    const url = WOMB ? WOMB[g] : `images/womb-${g}.webp`;
+    const list = Object.entries(WP[g]).map(([k, p]) => ({ k, n: WNAME[k], p }));
+    // في نسخة التطوير: إن لم توجد الصورة تُحذف الشريحة ونقطتها
+    const miss = WOMB ? '' : ` onerror="const s=this.closest('.slide');if(s){s.remove();document.querySelector('#dots i:last-child')?.remove()}"`;
+    return `<div class="photo square womb"><img src="${url}" alt="قطاع داخل الرحم في الأسبوع ${w}" loading="lazy" decoding="async"${miss}>${overlay(w, list)}</div>`;
+  }
+
+  return { src, parts, figure, womb };
 })();

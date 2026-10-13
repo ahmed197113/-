@@ -569,6 +569,136 @@ details.more-tools[open] > :not(summary) { animation: softIn .35s cubic-bezier(.
 .app-logo { display: block; width: 72px; height: 72px; margin: 14px auto 6px; border-radius: 18px; box-shadow: 0 8px 24px rgba(250,26,127,.28); }
 .bubble .flag { display: block; margin-top: 6px; font-size: .75rem; opacity: .7; }
 
+/* ===== الإصدار 1.2: الإعداد على خطوات، العجلات، المفضلة، المشاركة، الحساب ===== */
+/* الإعداد أول مرة */
+body.onb-mode { padding-bottom: 0; }
+body.onb-mode .topbar { display: none; }
+.onb { min-height: 100svh; display: flex; flex-direction: column; padding: calc(10px + env(safe-area-inset-top, 0px)) 0 calc(14px + env(safe-area-inset-bottom, 0px)); }
+.onb-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.onb-head .icon-btn:disabled { opacity: .3; }
+.onb-dots { flex: 1; display: flex; justify-content: center; gap: 6px; }
+.onb-dots i { width: 8px; height: 8px; border-radius: 99px; background: var(--track); transition: width .25s, background .25s; }
+.onb-dots i.done { background: var(--primary-2); }
+.onb-dots i.on { width: 24px; background: var(--primary); }
+.onb-body { flex: 1; }
+.onb-body h2 { font-size: 1.35rem; margin: 6px 0 4px; text-wrap: balance; }
+.onb-body h2 small { font-size: .85rem; font-weight: 400; }
+.onb-body > p.muted { margin: 0 0 16px; }
+.in-fwd { animation: onbFwd .32s cubic-bezier(.2,.7,.2,1) both; }
+.in-back { animation: onbBack .32s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes onbFwd { from { opacity: 0; transform: translateX(-28px); } }
+@keyframes onbBack { from { opacity: 0; transform: translateX(28px); } }
+.onb-foot { display: grid; gap: 4px; padding-top: 14px; }
+.btn.big { padding: 15px 18px; font-size: 1.05rem; border-radius: 18px; }
+.onb-skip { justify-self: center; font-weight: 600; }
+.onb-card { width: 100%; display: flex; align-items: center; gap: 14px; text-align: right; cursor: pointer; padding: 16px; margin-bottom: 12px;
+  background: var(--card); border: 2px solid var(--border); border-radius: 20px; transition: border-color .2s, transform .15s; }
+.onb-card:active { transform: scale(.98); }
+.onb-card.on { border-color: var(--primary); background: var(--soft); }
+.onb-card b { display: block; font-size: 1.02rem; }
+.onb-card small { display: block; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.onb-ic { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; font-size: 1.5rem; background: var(--card-2); flex-shrink: 0; }
+.onb-tick { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; color: transparent; border: 2px solid var(--border); flex-shrink: 0; }
+.onb-card.on .onb-tick { background: var(--primary); border-color: var(--primary); color: #fff; }
+.onb-live { display: grid; gap: 4px; text-align: center; margin: 14px 0 0; }
+.onb-live b { font-size: 1rem; line-height: 1.6; }
+.onb-stepper { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 12px 0 0; }
+.onb-stepper span { color: var(--muted); font-size: .9rem; }
+.icon-btn.sm { width: 36px; height: 36px; font-size: 1.1rem; }
+.onb-result { text-align: center; padding-top: 8px; }
+.onb-result h2 { font-size: 1.25rem; }
+.onb-ring { width: 150px; height: 150px; margin: 6px auto 14px; border-radius: 50%; display: grid; place-content: center;
+  background: radial-gradient(circle, var(--card) 60%, transparent 61%), conic-gradient(var(--primary), var(--gold), var(--primary)); }
+.onb-ring b { font-size: 3rem; line-height: 1; }
+.onb-ring small { color: var(--muted); }
+.onb-big { font-size: 4rem; }
+.onb-due { font-weight: 700; font-size: 1.02rem; margin-top: 4px; line-height: 1.7; }
+.onb-center { text-align: center; padding-top: 10px; }
+.onb-art { width: 140px; height: 140px; display: block; margin: 0 auto 10px; }
+.onb-list { list-style: none; padding: 0; margin: 12px auto; display: grid; gap: 8px; max-width: 340px; text-align: right; }
+.onb-list li { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 10px 14px; }
+.g-slot { display: flex; justify-content: center; min-height: 48px; margin: 14px 0 4px; }
+.g-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff !important; color: #1f1f1f !important; border: 1px solid #dadce0 !important; border-radius: 999px; max-width: 340px; }
+/* شاشة الترحيب: صورة الجنين بملء الشاشة مع تدرّج */
+.onb-welcome { padding: 0; margin: -4px -16px 0; }
+.onb-hero { position: relative; min-height: 100svh; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+.onb-hero-img { position: absolute; inset: 0 0 auto; width: 100%; height: 78svh; object-fit: cover; object-position: 50% 40%; }
+.onb-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 30%, color-mix(in srgb, var(--bg) 70%, transparent) 55%, var(--bg) 72%); }
+.onb-hero-body { position: relative; z-index: 1; text-align: center; padding: 0 20px calc(26px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; justify-items: center; }
+.onb-hero-body h1 { margin: 0; font-size: 2rem; }
+.onb-hero-body p { margin: 0 0 12px; font-size: 1.12rem; text-wrap: balance; }
+.onb-logo { width: 64px; height: 64px; border-radius: 18px; box-shadow: var(--shadow); }
+.onb-login { font-weight: 600; color: var(--text); }
+.onb-hero .btn { max-width: 380px; }
+.onb-welcome .onb-body { animation: none; }
+
+/* عجلة التاريخ */
+.wheel { position: relative; display: flex; gap: 6px; height: 200px; margin: 14px 0 0; padding: 0 4px; border-radius: 20px; background: var(--card); border: 1px solid var(--border); overflow: hidden; }
+.wheel::before { content: ''; position: absolute; inset: 80px 8px auto; height: 40px; border-radius: 12px; background: var(--soft); pointer-events: none; }
+.wheel-col { position: relative; flex: 1; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; padding: 80px 0; outline: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+.wheel-col:nth-child(2) { flex: 1.6; }
+.wheel-col::-webkit-scrollbar { display: none; }
+.wheel-col:focus-visible { outline: 2px solid var(--primary-2); outline-offset: -2px; border-radius: 12px; }
+.wheel-item { height: 40px; line-height: 40px; text-align: center; scroll-snap-align: center; color: var(--muted); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; transition: color .15s, font-size .15s; }
+.wheel-item.on { color: var(--primary); font-weight: 700; font-size: 1.08rem; }
+label.f .wheel, div.f .wheel { margin-top: 6px; }
+div.f { margin-bottom: 12px; font-weight: 600; font-size: .92rem; }
+
+/* الرئيسية */
+.meet-month { justify-self: start; padding: 2px 12px; border-radius: 999px; background: var(--soft); color: var(--primary); font-weight: 700; font-size: .85rem; }
+.span-cards { margin-bottom: 14px; }
+.span-cards .mini { display: grid; gap: 2px; }
+.span-cards .mini b { font-size: 1rem; line-height: 1.5; }
+.journey .progress { height: 12px; }
+.journey .progress > i { background: linear-gradient(90deg, var(--gold), var(--rose)); }
+.journey-ends { display: flex; justify-content: space-between; margin-top: 8px; gap: 10px; }
+.journey-ends span { display: grid; }
+.journey-ends span:last-child { text-align: left; }
+.journey-ends small { color: var(--muted); font-size: .8rem; }
+.journey-ends b { font-size: .92rem; }
+.countdown { text-align: center; background: linear-gradient(135deg, var(--soft), var(--card)); }
+.cd-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; direction: rtl; }
+.cd-row div { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 8px 2px; display: grid; }
+.cd-row b { font-size: 1.6rem; font-variant-numeric: tabular-nums; color: var(--primary); line-height: 1.2; }
+.cd-row small { color: var(--muted); font-size: .78rem; }
+.news-card { display: flex; gap: 12px; align-items: flex-start; border: 1.5px solid var(--primary); }
+.news-card .icon-btn.sm { width: 32px; height: 32px; font-size: .85rem; }
+.share-btn { position: absolute; top: 8px; left: 14px; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--text); font-size: .85rem; font-weight: 600; backdrop-filter: blur(8px); }
+.share-btn svg { width: 16px; height: 16px; color: var(--primary); }
+.womb { border-radius: 26px; }
+
+/* المفضلة */
+.fav-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer; color: var(--muted); padding: 6px; border-radius: 999px; }
+.fav-btn svg { width: 22px; height: 22px; fill: none; transition: fill .2s, color .2s; }
+.fav-btn.on { color: var(--primary); }
+.fav-btn.on svg { fill: var(--primary); }
+.fav-btn span { font-size: .82rem; }
+.fav-btn.pop svg { animation: favPop .35s ease; }
+@keyframes favPop { 50% { transform: scale(1.35); } }
+ul.fav-list li { display: flex; align-items: flex-start; gap: 6px; }
+ul.fav-list li > span { flex: 1; }
+ul.fav-list .fav-btn { margin-top: -4px; }
+.bubble-acts { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.bubble-acts .flag { margin: 0; }
+.fav-card .row { margin-bottom: 8px; }
+.fav-open { cursor: pointer; line-height: 1.8; }
+
+/* الحساب والنوافذ */
+.av.big { width: 52px; height: 52px; font-size: 1.3rem; background: linear-gradient(135deg, var(--rose), var(--gold)); }
+.sheet-bg { position: fixed; inset: 0; z-index: 50; background: rgba(8, 10, 22, .55); display: flex; align-items: flex-end; justify-content: center; animation: fadeIn .2s ease; }
+.sheet { width: 100%; max-width: 520px; background: var(--card); border-radius: 26px 26px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px)); animation: sheetUp .28s cubic-bezier(.2,.7,.2,1); text-align: center; }
+.sheet h3 { margin: 0 0 6px; }
+.pick { display: flex; gap: 10px; align-items: flex-start; text-align: right; border: 2px solid var(--border); border-radius: 16px; padding: 12px; margin: 10px 0; cursor: pointer; }
+.pick:has(input:checked) { border-color: var(--primary); background: var(--soft); }
+.pick input { accent-color: var(--primary); margin-top: 6px; }
+.pick b { display: block; } .pick small { color: var(--muted); }
+@keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } }
+@keyframes fadeIn { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .in-fwd, .in-back, .sheet, .sheet-bg, .fav-btn.pop svg { animation: none; } }
+.toast { z-index: 70; }
+
 </style>
 </head>
 <body>
@@ -846,7 +976,7 @@ const TRIMESTERS = [
     focus: ['السونار المفصل (20)', 'اختبار سكر الحمل (24–28)', 'الحديد والكالسيوم', 'النشاط البدني المعتدل'] },
   { n: 3, name: 'الثلث الثالث', range: 'الأسبوع 28 – 40', color: '#7986cb',
     summary: 'مرحلة النضج والتحضير: يكتسب الجنين الوزن وتنضج رئتاه. زيارات متكررة، عدّ الحركات، وتجهيز الولادة.',
-    focus: ['عدّ الحركات يومياً', 'لقاح Tdap', 'مسحة GBS (35–37)', 'حقيبة الولادة وخطة الولادة'] }
+    focus: ['عدّ الحركات يومياً', 'لقاح Tdap', 'مسحة GBS (36–37)', 'حقيبة الولادة وخطة الولادة'] }
 ];
 
 const APPOINTMENTS = [
@@ -950,7 +1080,7 @@ const FAQ = [
   ['هل العلاقة الزوجية آمنة؟', 'نعم في الحمل الطبيعي، إلا إذا نصح الطبيب بغير ذلك (نزيف، مشيمة منزاحة، خطر ولادة مبكرة).'],
   ['ما الفرق بين الطلق الكاذب والحقيقي؟', 'الكاذب: غير منتظم، لا يزداد شدة، يخف بالراحة أو تغيير الوضعية. الحقيقي: منتظم، يقترب ويشتد تدريجياً، ولا يزول بالراحة.'],
   ['متى أتوجه للمستشفى؟', 'انقباضات كل 5 دقائق لمدة ساعة (5-1-1)، نزول الماء، نزيف، قلة الحركة، أو أي علامة خطر.'],
-  ['هل يمكنني تناول المسكنات؟', 'الباراسيتامول آمن غالباً بالجرعة المعتادة. تجنبي الإيبوبروفين والأسبرين (إلا بوصفة) خاصة بعد الأسبوع 20.'],
+  ['هل يمكنني تناول المسكنات؟', 'لا تأخذي أي مسكّن قبل أن تسألي طبيبك أو الصيدلي، فبعض المسكّنات الشائعة غير مناسبة في الحمل، خاصة بعد الأسبوع 20.'],
   ['ما هو اكتئاب ما بعد الولادة؟', 'حزن وقلق مستمر لأكثر من أسبوعين بعد الولادة يؤثر على حياتك اليومية. شائع وقابل للعلاج — لا تترددي في طلب المساعدة.']
 ];
 
@@ -1497,12 +1627,165 @@ APPOINTMENTS.forEach(a => { if (a.title.includes('Tdap')) { a.from = 16; a.to = 
   <script>
 /* إعدادات النسخة المستقلة
    apiBase: رابط مجلد السيرفر على استضافتك (راجعي server/README.md) — يشغّل المساعد الذكي وقراءة التحاليل ومجتمع الأمهات.
-   supabaseUrl/supabaseKey: بديل للمجتمع فقط عبر Supabase (راجعي COMMUNITY.md). */
+   supabaseUrl/supabaseKey: بديل للمجتمع فقط عبر Supabase (راجعي COMMUNITY.md).
+   googleWebClientId: معرّف عميل الويب من Google Cloud (ليس سراً) — يفعّل تسجيل الدخول الاختياري والنسخ على السحابة (راجعي server/GOOGLE_SETUP.md). */
 window.NABD_CONFIG = {
   apiBase: '', // مثال: https://example.com/nabd-api
   supabaseUrl: '',
-  supabaseKey: ''
+  supabaseKey: '',
+  googleWebClientId: '' // مثال: 1234567890-abc.apps.googleusercontent.com
 };
+
+</script>
+  <script>
+/* نبضٌ صغير — التقويم الميلادي والهجري (أم القرى) وعجلة اختيار التاريخ
+   التحويل من الهجري إلى الميلادي عبر جدول يُبنى من Intl للفترة 1440–1460 هـ (نفس تقويم أم القرى الرسمي). */
+'use strict';
+
+const Cal = (() => {
+  const H_FROM = 1440, H_TO = 1460;
+  const G_OPTS = { day: 'numeric', month: 'long', year: 'numeric' };
+  let num = null, ok = false;
+  try {
+    num = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric' });
+    ok = num.resolvedOptions().calendar === 'islamic-umalqura';
+  } catch { ok = false; }
+
+  const MONTHS_H = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
+  const gName = new Intl.DateTimeFormat('ar-u-nu-latn', { month: 'long' });
+  const MONTHS_G = Array.from({ length: 12 }, (_, i) => gName.format(new Date(2026, i, 1)));
+
+  const day0 = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const plus = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // التاريخ الهجري لأي يوم ميلادي {y, m, d}
+  function parts(date) {
+    const o = {};
+    num.formatToParts(date).forEach(p => { if (p.type === 'year' || p.type === 'month' || p.type === 'day') o[p.type[0]] = +p.value; });
+    return { y: o.y, m: o.m, d: o.d };
+  }
+
+  // جدول بداية كل شهر هجري بالميلادي: starts[(y - H_FROM) * 12 + (m - 1)]
+  let starts = null;
+  function table() {
+    if (starts) return starts;
+    starts = [];
+    let d = new Date(2018, 7, 20), p = parts(d);
+    while (!(p.y === H_FROM && p.m === 1 && p.d === 1)) { d = plus(d, 1); p = parts(d); }
+    starts.push(d);
+    for (let i = 1; i <= (H_TO - H_FROM + 1) * 12; i++) {
+      let g = plus(starts[i - 1], 29);
+      for (let k = 0; k < 3 && parts(g).d !== 1; k++) g = plus(g, 1);
+      starts.push(g);
+    }
+    return starts;
+  }
+  const idx = (y, m) => (y - H_FROM) * 12 + (m - 1);
+  const inRange = y => y >= H_FROM && y <= H_TO;
+  const monthLen = (y, m) => { const t = table(), i = idx(y, m); return Math.round((t[i + 1] - t[i]) / 864e5); };
+  // هجري ← ميلادي (يرجع null خارج الفترة أو لتاريخ غير موجود)
+  function toGreg(y, m, d) {
+    if (!inRange(y) || m < 1 || m > 12 || d < 1 || d > monthLen(y, m)) return null;
+    return plus(table()[idx(y, m)], d - 1);
+  }
+
+  const mode = () => ok && (typeof S !== 'undefined') && (S.calendar || (S.country === 'SA' ? 'hijri' : 'gregorian')) === 'hijri' ? 'hijri' : 'gregorian';
+  const mk = (cal, opts) => { try { return new Intl.DateTimeFormat(cal === 'hijri' ? 'ar-SA-u-ca-islamic-umalqura-nu-latn' : 'ar-u-nu-latn', opts); } catch { return new Intl.DateTimeFormat('ar', opts); } };
+  // منسّق يتبع إعداد التقويم لحظة العرض
+  function fmt(opts) {
+    const g = mk('gregorian', opts), h = ok ? mk('hijri', opts) : g;
+    return { format: d => (mode() === 'hijri' ? h : g).format(d) };
+  }
+  const gFull = mk('gregorian', G_OPTS), hFull = ok ? mk('hijri', G_OPTS) : null;
+  const greg = d => `${gFull.format(d)} م`;
+  const hijri = d => hFull ? hFull.format(d) : '';
+  // التقويمان معاً، والمختار أولاً: «25 جمادى الآخرة 1448 هـ – 5 ديسمبر 2026 م»
+  const both = d => !hFull ? greg(d) : mode() === 'hijri' ? `${hijri(d)} – ${greg(d)}` : `${greg(d)} – ${hijri(d)}`;
+
+  return { ok, H_FROM, H_TO, MONTHS_H, MONTHS_G, parts: d => ok ? parts(d) : null, table, monthLen, toGreg, mode, fmt, greg, hijri, both, iso, day0 };
+})();
+
+/* ---------- عجلة تمرير (بدون مكتبات): أعمدة تثبت على العنصر الأوسط ---------- */
+const Wheel = (() => {
+  const H = 40; // ارتفاع العنصر
+  function column(onPick) {
+    const el = document.createElement('div');
+    el.className = 'wheel-col'; el.tabIndex = 0; el.setAttribute('role', 'listbox');
+    let items = [], cur = 0, t = null, silent = false;
+    const mark = () => [...el.children].forEach((c, i) => { c.classList.toggle('on', i === cur); c.setAttribute('aria-selected', i === cur); });
+    const settle = () => {
+      if (silent) return;
+      const i = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollTop / H)));
+      if (i !== cur) { cur = i; mark(); onPick(items[i][0]); }
+    };
+    el.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(settle, 110); }, { passive: true });
+    el.addEventListener('keydown', e => {
+      const k = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+      if (k) { e.preventDefault(); api.scrollTo(cur + k, true); }
+    });
+    el.addEventListener('click', e => { const it = e.target.closest('.wheel-item'); if (it) api.scrollTo(+it.dataset.i, true); });
+    const api = {
+      el,
+      fill(list, value) {
+        items = list;
+        el.innerHTML = list.map(([, label], i) => `<div class="wheel-item" role="option" data-i="${i}">${label}</div>`).join('');
+        api.select(value);
+      },
+      select(value) {
+        const i = Math.max(0, items.findIndex(x => x[0] === value));
+        cur = i; mark(); silent = true; el.scrollTop = i * H;
+        requestAnimationFrame(() => { el.scrollTop = i * H; setTimeout(() => { silent = false; }, 60); });
+      },
+      scrollTo(i, smooth) { i = Math.max(0, Math.min(items.length - 1, i)); el.scrollTo({ top: i * H, behavior: smooth ? 'smooth' : 'instant' }); },
+      value: () => items[cur] && items[cur][0]
+    };
+    return api;
+  }
+  return { column, H };
+})();
+
+/* عجلة تاريخ (يوم / شهر / سنة) بالتقويم المختار؛ القيمة الداخلية دائماً تاريخ ميلادي ISO
+   opts: { cal: 'hijri'|'gregorian', value, min, max (ISO), onChange(iso) } */
+function datePicker(host, opts) {
+  const parseIso = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const H = opts.cal === 'hijri' && Cal.ok;
+  const min = parseIso(opts.min), max = parseIso(opts.max);
+  let date = parseIso(opts.value);
+  if (date < min) date = min; if (date > max) date = max;
+  const toP = d => H ? Cal.parts(d) : { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() };
+  const fromP = p => H ? Cal.toGreg(p.y, p.m, p.d) : new Date(p.y, p.m - 1, p.d);
+  const len = (y, m) => H ? Cal.monthLen(y, m) : new Date(y, m, 0).getDate();
+  const pMin = toP(min), pMax = toP(max);
+  host.innerHTML = '';
+  host.classList.add('wheel');
+  const p = toP(date);
+  const pick = () => {
+    const y = cy.value(), m = cm.value(), n = len(y, m);
+    let d = Math.min(cd.value(), n);
+    let g = fromP({ y, m, d });
+    const clamped = g < min ? min : g > max ? max : g;
+    const q = toP(clamped);
+    if (cd.el.children.length !== len(q.y, q.m)) cd.fill(days(q.y, q.m), q.d);
+    if (+clamped !== +g) { cy.select(q.y); cm.select(q.m); cd.select(q.d); }
+    date = clamped; opts.onChange && opts.onChange(Cal.iso(date));
+  };
+  const days = (y, m) => Array.from({ length: len(y, m) }, (_, i) => [i + 1, String(i + 1)]);
+  const cd = Wheel.column(pick), cm = Wheel.column(pick), cy = Wheel.column(pick);
+  cd.el.setAttribute('aria-label', 'اليوم'); cm.el.setAttribute('aria-label', 'الشهر'); cy.el.setAttribute('aria-label', 'السنة');
+  host.append(cd.el, cm.el, cy.el);
+  cd.fill(days(p.y, p.m), p.d);
+  cm.fill((H ? Cal.MONTHS_H : Cal.MONTHS_G).map((n, i) => [i + 1, n]), p.m);
+  const ys = []; for (let y = pMin.y; y <= pMax.y; y++) ys.push([y, H ? `${y} هـ` : `${y}`]);
+  cy.fill(ys, p.y);
+  const api = {
+    value: () => Cal.iso(date),
+    // للاختبارات وللتحكم من الكود
+    set(isoStr) { date = parseIso(isoStr); const q = toP(date); cy.select(q.y); cm.select(q.m); cd.fill(days(q.y, q.m), q.d); opts.onChange && opts.onChange(Cal.iso(date)); }
+  };
+  host._picker = api;
+  return api;
+}
 
 </script>
   <script>
@@ -1572,8 +1855,8 @@ const Photos = (() => {
   const parts = w => { const p = P[Math.min(LAST, Math.max(1, w))]; return Object.keys(p).map(k => ({ k, n: NAME[k], d: desc(k, w), p: p[k] })); };
 
   // طبقة الأسماء: نقطة على الجزء وخط إلى اسمه على أحد الجانبين
-  function overlay(w) {
-    const L = parts(w).map(x => ({ ...x, x: x.p[0] * 40, y: x.p[1] * 40 }));
+  function overlay(w, list = parts(w)) {
+    const L = list.map(x => ({ ...x, x: x.p[0] * 40, y: x.p[1] * 40 }));
     const place = (arr, left) => {
       arr.sort((a, b) => a.y - b.y);
       const ys = []; arr.forEach((l, i) => ys.push(Math.max(l.y, i ? ys[i - 1] + 30 : 20)));
@@ -1594,7 +1877,29 @@ const Photos = (() => {
     return `<div class="photo ${cls}"><img src="${src(w)}" alt="شكل الجنين في الأسبوع ${w}" loading="lazy" decoding="async">${labels ? overlay(w) : ''}</div>`;
   }
 
-  return { src, parts, figure };
+  /* ---------- داخل الرحم: صورة قطاع للرحم لكل مرحلة، والأسماء تُرسم هنا فوق الصورة ----------
+     images/womb-1.webp (8–13) · womb-2 (14–20) · womb-3 (21–30) · womb-4 (31–40)
+     الإحداثيات من 0 إلى 10 — عدّليها بعد وضع الصور إن لزم. */
+  const WOMB = {}; // يُستبدل وقت البناء بالصور المتوفرة فقط
+  const wombGroup = w => w < 8 ? 0 : w <= 13 ? 1 : w <= 20 ? 2 : w <= 30 ? 3 : 4;
+  const WP = {
+    1: { placenta: [6.8, 2.6], cord: [5.6, 4.2], fluid: [3.4, 3.6], uterus: [8.6, 5.2], cervix: [5.0, 8.8] },
+    2: { placenta: [7.0, 2.2], cord: [5.8, 4.4], fluid: [3.0, 3.4], uterus: [8.8, 5.4], cervix: [5.0, 9.0] },
+    3: { placenta: [7.2, 1.8], cord: [6.0, 4.6], fluid: [2.6, 3.0], uterus: [9.0, 5.6], cervix: [5.0, 9.2] },
+    4: { placenta: [7.4, 1.6], cord: [6.2, 4.8], fluid: [2.4, 2.6], uterus: [9.2, 5.8], cervix: [5.0, 9.3] }
+  };
+  const WNAME = { placenta: 'المشيمة', cord: 'الحبل السري', cervix: 'عنق الرحم', uterus: 'الرحم', fluid: 'السائل الأمنيوسي' };
+  function womb(w) {
+    const g = wombGroup(w);
+    if (!g || (WOMB && !WOMB[g])) return '';
+    const url = WOMB ? WOMB[g] : `images/womb-${g}.webp`;
+    const list = Object.entries(WP[g]).map(([k, p]) => ({ k, n: WNAME[k], p }));
+    // في نسخة التطوير: إن لم توجد الصورة تُحذف الشريحة ونقطتها
+    const miss = WOMB ? '' : ` onerror="const s=this.closest('.slide');if(s){s.remove();document.querySelector('#dots i:last-child')?.remove()}"`;
+    return `<div class="photo square womb"><img src="${url}" alt="قطاع داخل الرحم في الأسبوع ${w}" loading="lazy" decoding="async"${miss}>${overlay(w, list)}</div>`;
+  }
+
+  return { src, parts, figure, womb };
 })();
 
 </script>
@@ -1621,13 +1926,17 @@ function load() {
   try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); }
   catch { return defaults(); }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
+function save() {
+  S._mt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
+  if (typeof Account !== 'undefined') Account.dirty();
+  if (typeof Widget !== 'undefined') Widget.sync();
+}
 
 /* ---------- أدوات التاريخ ---------- */
-const fmt = new Intl.DateTimeFormat('ar-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-const fmtShort = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'short' });
-let fmtHijri;
-try { fmtHijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { fmtHijri = null; }
+// كل التواريخ المعروضة تتبع إعداد التقويم (ميلادي / هجري أم القرى)
+const fmt = Cal.fmt({ weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const fmtShort = Cal.fmt({ day: 'numeric', month: 'short' });
 
 const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1704,15 +2013,16 @@ const TOOLS = [
   ['cnew', '✍️', 'سؤال جديد'], ['cq', '👩‍👩‍👧', 'مجتمع الأمهات'], ['bguide', '📖', 'طفلي شهراً بشهر'], ['momguide', '🌷', 'صحتك بعد الولادة']
 ];
 const APP_NAME = 'نبضٌ صغير';
+const EXTRA_TITLES = { profile: 'بيانات الحمل', favs: '💗 المفضلة', account: '☁️ حسابي' };
 
+let booted = false; // لا رسم قبل تحميل كل الملفات
 function render(scroll = true) {
+  if (!booted) return;
   timers.forEach(clearInterval); timers = [];
   applyTheme();
   const tab = $('#tabbar');
-  if (!S.profile) {
-    tab.hidden = true; $('#backBtn').hidden = true; $('#title').textContent = `${APP_NAME} 💗`;
-    app.innerHTML = viewSetup(true); bindSetup(); return;
-  }
+  if (!S.profile || S.onb) { tab.hidden = true; Onb.render(); return; }
+  document.body.classList.remove('onb-mode');
   tab.hidden = false;
   tab.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === route.view));
   $('#backBtn').hidden = !route.sub;
@@ -1721,7 +2031,7 @@ function render(scroll = true) {
   let html;
   if (route.sub) {
     const t = TOOLS.find(x => x[0] === route.sub);
-    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (route.sub === 'profile' ? 'بيانات الحمل' : APP_NAME);
+    $('#title').textContent = t ? `${t[1]} ${t[2]}` : (EXTRA_TITLES[route.sub] || APP_NAME);
     html = route.sub === 'profile' ? viewSetup(false) : (SUBVIEWS[route.sub] || (() => ''))();
   } else {
     $('#title').textContent = titles[route.view];
@@ -1798,16 +2108,30 @@ function viewSetup(first) {
   </div>
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
+// حدود التواريخ المنطقية لكل طريقة حساب
+const dateBounds = method => method === 'due' ? [iso(addDays(today(), -21)), iso(addDays(today(), 300))] : [iso(addDays(today(), -300)), iso(today())];
+// حقل تاريخ: عجلة هجرية عند اختيار التقويم الهجري، وإلا حقل التاريخ المعتاد
+function dateField(id, label, value, method) {
+  const [min, max] = dateBounds(method);
+  if (Cal.mode() !== 'hijri') return `<label class="f">${label}<input id="${id}" type="date" min="${min}" max="${max}" value="${esc(value)}"></label>`;
+  const v = value || (method === 'due' ? iso(addDays(today(), 200)) : iso(addDays(today(), -60)));
+  return `<div class="f">${label}<div class="wheel" data-wheel="${id}" data-min="${min}" data-max="${max}"></div><input type="hidden" id="${id}" value="${esc(v)}"></div>`;
+}
 function setupFields(p) {
-  const t = iso(today());
   switch (p.method) {
-    case 'lmp': return `<label class="f">أول يوم في آخر دورة شهرية<input id="s_lmp" type="date" max="${t}" value="${esc(p.lmp)}"></label>
+    case 'lmp': return `${dateField('s_lmp', 'أول يوم في آخر دورة شهرية', p.lmp, 'lmp')}
       <label class="f">متوسط طول الدورة (أيام)<input id="s_cycle" type="number" min="20" max="45" value="${esc(p.cycle || 28)}"></label>`;
-    case 'conception': return `<label class="f">تاريخ الإخصاب / الإباضة<input id="s_conc" type="date" max="${t}" value="${esc(p.conception)}"></label>`;
-    case 'ivf': return `<label class="f">تاريخ إرجاع الأجنة<input id="s_ivf" type="date" max="${t}" value="${esc(p.ivf)}"></label>
+    case 'conception': return dateField('s_conc', 'تاريخ الإخصاب / الإباضة', p.conception, 'conception');
+    case 'ivf': return `${dateField('s_ivf', 'تاريخ إرجاع الأجنة', p.ivf, 'ivf')}
       <label class="f">عمر الجنين عند الإرجاع<select id="s_ivfday">${[3, 5, 6].map(d => `<option value="${d}" ${+p.ivfDay === d ? 'selected' : ''}>اليوم ${d}</option>`).join('')}</select></label>`;
-    case 'due': return `<label class="f">موعد الولادة المتوقع<input id="s_due" type="date" value="${esc(p.due)}"></label>`;
+    case 'due': return dateField('s_due', 'موعد الولادة المتوقع', p.due, 'due');
   }
+}
+function mountWheels(root, onChange) {
+  root.querySelectorAll('[data-wheel]').forEach(el => {
+    const inp = document.getElementById(el.dataset.wheel);
+    datePicker(el, { cal: 'hijri', value: inp.value, min: el.dataset.min, max: el.dataset.max, onChange: v => { inp.value = v; onChange(); } });
+  });
 }
 function readSetup() {
   const p = { ...(S.profile || {}) };
@@ -1831,8 +2155,7 @@ function bindSetup() {
     const bad = st.left < -21 || st.left > 300;
     box.style.display = 'block';
     box.innerHTML = bad ? `<b style="color:var(--warn)">⚠️ التاريخ غير منطقي، تأكدي منه.</b>` :
-      `<div class="muted">موعد الولادة المتوقع</div><h2 style="margin:4px 0">${fmt.format(st.due)}</h2>
-       ${fmtHijri ? `<div class="muted">${fmtHijri.format(st.due)}</div>` : ''}
+      `<div class="muted">موعد الولادة المتوقع</div><h3 style="margin:4px 0">${Cal.both(st.due)}</h3>
        <div class="badge" style="margin-top:6px">أنتِ في الأسبوع ${st.week}</div>`;
   };
   document.querySelectorAll('#s_method button').forEach(b => b.onclick = () => {
@@ -1840,16 +2163,18 @@ function bindSetup() {
     b.classList.add('on');
     $('#s_fields').innerHTML = setupFields({ ...(S.profile || {}), method: b.dataset.m });
     $('#s_fields').querySelectorAll('input,select').forEach(i => i.oninput = preview);
+    mountWheels($('#s_fields'), preview);
     preview();
   });
   app.querySelectorAll('input,select').forEach(i => i.oninput = preview);
+  mountWheels(app, preview);
   preview();
   $('#s_save').onclick = () => {
     const p = readSetup();
     if (!p) return toast('أدخلي التاريخ أولاً');
     const old = S.profile; S.profile = p; const st = status();
     if (st.left < -21 || st.left > 300) { S.profile = old; return toast('التاريخ غير صحيح'); }
-    save(); toast('تم الحفظ ✅'); Notify.sync(true);
+    save(); toast('تم الحفظ ✅'); Notify.sync(false);
     if (!old) { route = { view: 'home' }; history.replaceState(route, ''); render(); } else history.back();
   };
 }
@@ -1859,25 +2184,40 @@ const ICON = {
   scale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 10a5 5 0 0 1 8 0M12 10l2-2"/></svg>',
   ruler: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m3 16 13-13 5 5L8 21zM7 12l2 2M10 9l2 2M13 6l2 2"/></svg>',
   seed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="10" r="6"/><path d="M12 16v5M9 21h6M10 9.5a2 2 0 0 1 2-2"/></svg>',
-  baby: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 11h.01M15 11h.01M9.5 15a3.5 3.5 0 0 0 5 0M12 3c-1.2 1.8-.4 3.2 1.4 3.2"/></svg>'
+  baby: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9 11h.01M15 11h.01M9.5 15a3.5 3.5 0 0 0 5 0M12 3c-1.2 1.8-.4 3.2 1.4 3.2"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>'
 };
 const ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع'];
-const fmtDayMonth = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long' });
-const fmtDate = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDayMonth = Cal.fmt({ day: 'numeric', month: 'long' });
+const fmtDate = Cal.fmt({ day: 'numeric', month: 'long', year: 'numeric' });
 const wd = (n) => `${Math.floor(n / 7)} أسبوعاً و ${n % 7} ${n % 7 === 1 ? 'يوم' : 'أيام'}`;
+const MONTHS_ORD = ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن', 'التاسع'];
+// العدد مع المعدود بعربية صحيحة: 1 أسبوع، أسبوعان، 3 أسابيع، 11 أسبوعاً
+const arCount = (n, one, two, few, many) => n <= 0 ? '' : n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`;
+const arWeeks = n => arCount(n, 'أسبوع واحد', 'أسبوعان', 'أسابيع', 'أسبوعاً');
+const arDays = n => arCount(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً');
+// مدة بالأسابيع والأيام: «32 أسبوعاً و3 أيام»
+const weeksDays = n => { const w = Math.floor(n / 7), d = n % 7; return w && d ? `${arWeeks(w)} و${arDays(d)}` : w ? arWeeks(w) : d ? arDays(d) : 'اليوم'; };
+// الوزن بالغرام حتى 999 غ ثم بالكيلو بمنزلة عشرية واحدة
+const wtLabel = t => { const m = /^([\d.]+)\s*(كغ|غ)$/.exec(t || ''); if (!m) return t; const g = m[2] === 'كغ' ? +m[1] * 1000 : +m[1]; return g < 1000 ? `${Math.round(g)} غ` : `${(Math.round(g / 100) / 10).toFixed(1)} كغ`; };
 
 function hero(sel) {
   const w = WEEKS[sel - 1];
   const chips = w.wt === '—'
     ? `<div class="float-chip chip-bl"><span class="ic pink">${ICON.seed}</span><div><small>المرحلة</small><b>${w.size}</b></div></div>`
-    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${w.wt}</b></div></div>
+    : `<div class="float-chip chip-tr"><span class="ic">${ICON.scale}</span><div><small>الوزن</small><b>${wtLabel(w.wt)}</b></div></div>
        <div class="float-chip chip-bl"><span class="ic pink">${ICON.ruler}</span><div><small>الطول</small><b>${w.len}</b></div></div>`;
+  // الشريحة الثالثة: داخل الرحم (تظهر فقط عند توفر صورة القطاع لهذا الأسبوع)
+  const womb = Photos.womb(sel), n = womb ? 3 : 2, cur = Math.min(route.slide || 0, n - 1);
   return `<div class="hero-stage">
     <div class="carousel" id="car">
       <div class="slide"><div class="halo">${Photos.figure(sel, { cls: 'round' })}</div>${chips}<span class="size-tag">${w.emoji} بحجم ${w.size}</span></div>
       <div class="slide">${Photos.figure(sel, { labels: true, cls: 'square' })}<span class="slide-cap">الأسبوع ${sel} · أسماء الأجزاء</span></div>
+      ${womb ? `<div class="slide">${womb}<span class="slide-cap">داخل الرحم · الأسبوع ${sel}</span></div>` : ''}
     </div>
-    <div class="dots" id="dots"><i class="${route.slide ? '' : 'on'}"></i><i class="${route.slide ? 'on' : ''}"></i></div>
+    <button class="share-btn" data-share="${sel}" aria-label="شاركي الأسبوع ${sel}">${ICON.share}<span>شاركي</span></button>
+    <div class="dots" id="dots">${Array.from({ length: n }, (_, i) => `<i class="${i === cur ? 'on' : ''}"></i>`).join('')}</div>
   </div>`;
 }
 // بطاقات الأسابيع: رقم الأسبوع ورمز حجم الجنين
@@ -1912,9 +2252,20 @@ function progressCard(st) {
     <div class="meet-info">
       <span class="kicker">الأسبوع ${st.week} · اليوم ${ORD[st.extra]}</span>
       <b class="meet-big">${TRIMESTERS[st.tri - 1].name}</b>
-      <span class="muted">موعد اللقاء ${fmtShort.format(st.due)}</span>
+      <span class="meet-month">الشهر ${MONTHS_ORD[st.month - 1]}</span>
+      <span class="muted">اللقاء ${fmtShort.format(st.due)}</span>
     </div>
-  </div>`;
+  </div>
+  <div class="grid2 span-cards">
+    <div class="card mini"><small>مضى من الحمل</small><b>${weeksDays(Math.min(st.days, 280))}</b></div>
+    <div class="card mini"><small>${st.left >= 0 ? 'تبقّى للولادة' : 'تجاوزتِ الموعد بـ'}</small><b>${weeksDays(Math.abs(st.left))}</b></div>
+  </div>
+  <div class="card journey">
+    <div class="progress"><i style="width:${(st.pct * 100).toFixed(1)}%"></i></div>
+    <div class="journey-ends"><span><small>بداية الحمل</small><b>${fmtShort.format(st.start)}</b></span><span><small>الولادة</small><b>${fmtShort.format(st.due)}</b></span></div>
+  </div>
+  ${st.left >= 0 && st.left <= 28 ? `<div class="card countdown" id="countdown" data-due="${st.due.getTime()}"><small>العدّ التنازلي للقاء 💗</small>
+    <div class="cd-row">${[['d', 'يوم'], ['h', 'ساعة'], ['m', 'دقيقة'], ['s', 'ثانية']].map(([k, l]) => `<div><b data-cd="${k}">--</b><small>${l}</small></div>`).join('')}</div></div>` : ''}`;
 }
 
 function viewHome() {
@@ -1930,6 +2281,8 @@ function viewHome() {
   const next = nextAppt ? { ic: '🩺', t: nextAppt.title, d: fmtShort.format(parse(nextAppt.date)), sub: 'appts' }
     : nextTest ? { ic: '🔬', t: nextTest.title, d: `الأسبوع ${nextTest.from}${nextTest.to !== nextTest.from ? '–' + nextTest.to : ''}`, sub: 'tests' } : null;
   return `
+  ${S.news12 ? '' : `<div class="card news-card"><span class="big-ic">✨</span><div class="grow"><b>جديد في نبض</b><div class="muted">التقويم الهجري، وحفظ بياناتك على السحابة، والمفضلة 💗</div>
+    <button class="btn sm" id="newsGo" style="margin-top:8px">اكتشفي</button></div><button class="icon-btn sm" id="newsX" aria-label="إغلاق">✕</button></div>`}
   ${hero(sel)}
   ${weekStrip(sel, st)}
   ${progressCard(st)}
@@ -1968,7 +2321,7 @@ function viewWeeks() {
   <div class="card">
     ${!items.length ? '<p class="muted">لا توجد مهام خاصة لهذا الأسبوع.</p>' : sec === 'todo'
       ? items.map((t, i) => { const k = `w${sel}_${i}`; return `<label class="check ${S.done[k] ? 'done' : ''}"><input type="checkbox" data-done="${k}" ${S.done[k] ? 'checked' : ''}><span>${t}</span></label>`; }).join('')
-      : `<ul class="list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`}
+      : `<ul class="list fav-list">${items.map((i, k) => `<li><span>${i}</span>${favBtn({ id: `w${sel}.${sec}.${k}`, type: sec === 'tips' ? 'tip' : 'week', text: i, week: sel, sec })}</li>`).join('')}</ul>`}
   </div>
   <div class="row">
     <button class="btn ghost grow" data-wk="${Math.max(1, sel - 1)}" ${sel === 1 ? 'disabled' : ''}>→ الأسبوع ${Math.max(1, sel - 1)}</button>
@@ -2043,7 +2396,12 @@ function viewTrack() {
 
 function viewGuide() {
   const rows = ['warnings', 'tests', 'localfood', 'food', 'ramadan', 'exercise', 'names', 'postpartum', 'faq', 'calc', 'born'];
-  return `<div class="card group">${rows.map(k => navRow(k, '')).join('')}</div>`;
+  const nf = (S.favorites || []).length, acc = Account.user();
+  const mine = `<div class="card group">
+    <div class="nav-row" data-sub="favs"><span class="ic">💗</span><div class="grow"><b>المفضلة</b><div class="muted">${nf ? `${nf} محفوظة` : 'احفظي المعلومات والنصائح والردود بلمسة قلب'}</div></div><span class="chev">‹</span></div>
+    ${Account.available() || acc ? `<div class="nav-row" data-sub="account"><span class="ic">☁️</span><div class="grow"><b>حسابي</b><div class="muted">${acc ? esc(acc.email || acc.name || '') : 'اختياري: نسخة احتياطية تلقائية على السحابة'}</div></div><span class="chev">‹</span></div>` : ''}
+  </div>`;
+  return `${mine}<div class="card group">${rows.map(k => navRow(k, '')).join('')}</div>`;
 }
 
 function viewMore() {
@@ -2051,8 +2409,11 @@ function viewMore() {
   return `${viewGuide()}
   <details class="card group more-tools" id="setDetails" ${route.setOpen ? 'open' : ''}><summary><b>⚙️ الإعدادات والإشعارات</b></summary>
   <div class="set-block"><h3>👤 بيانات الحمل</h3>
-    <p class="muted" style="margin:0">موعد الولادة: <b>${fmt.format(st.due)}</b></p>
+    <p class="muted" style="margin:0">موعد الولادة:<br><b>${Cal.both(st.due)}</b></p>
     <button class="btn ghost block" data-sub="profile" style="margin-top:10px">تعديل البيانات وطريقة الحساب</button></div>
+  ${Cal.ok ? `<div class="set-block"><h3>📅 التقويم</h3><div class="seg" id="calSeg">
+    ${[['gregorian', 'ميلادي'], ['hijri', 'هجري (أم القرى)']].map(([k, v]) => `<button data-cal="${k}" class="${Cal.mode() === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <p class="muted" style="margin:0">كل التواريخ في التطبيق تظهر بالتقويم الذي تختارينه.</p></div>` : ''}
   <div class="set-block"><h3>💾 النسخ الاحتياطي</h3>
     <p class="muted">بياناتك محفوظة على جهازك فقط. صدّريها للاحتفاظ بنسخة أو لنقلها لجهاز آخر.</p>
     <div class="row"><button class="btn grow" id="exportBtn">⬇️ تصدير</button>
@@ -2336,6 +2697,16 @@ function bind() {
   on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
   on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); render(false); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
+  app.querySelectorAll('#calSeg button').forEach(b => b.onclick = () => { S.calendar = b.dataset.cal; save(); render(false); toast(b.dataset.cal === 'hijri' ? 'التواريخ الآن بالهجري 🌙' : 'التواريخ الآن بالميلادي'); });
+  on('#newsX', () => { S.news12 = 1; save(); render(false); });
+  on('#newsGo', () => { S.news12 = 1; save(); route = { view: 'more', setOpen: true }; history.pushState(route, ''); render(); });
+  const cd = $('#countdown');
+  if (cd) {
+    const due = +cd.dataset.due, el = k => cd.querySelector(`[data-cd="${k}"]`);
+    const tick = () => { let s = Math.max(0, Math.floor((due - Date.now()) / 1000)); const v = { d: Math.floor(s / 86400), h: Math.floor(s / 3600) % 24, m: Math.floor(s / 60) % 60, s: s % 60 };
+      Object.entries(v).forEach(([k, n]) => { el(k).textContent = String(n).padStart(2, '0'); }); };
+    tick(); timers.push(setInterval(tick, 1000));
+  }
 
   if (route.sub === 'profile') bindSetup();
 
@@ -2431,11 +2802,12 @@ function bind() {
   };
   on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
   const lt = $('#lblToggle'); if (lt) lt.onclick = () => { route.labels = !route.labels; history.replaceState(route, ''); render(false); };
+  extrasBind();
   featBind();
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); });
+window.addEventListener('DOMContentLoaded', () => { booted = true; if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); Widget.sync(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -2982,7 +3354,7 @@ function viewAssistAI() {
     : ['ما معنى نتائج تحاليلي؟', 'هل أستطيع صيام رمضان؟', 'هل الحلبة آمنة؟', 'ماذا يحدث لطفلي هذا الأسبوع؟', 'عندي صداع وتورم في قدمي'];
   return `<div class="assist">
     <div class="card hero-soft"><div class="row"><span class="big-ic">✨</span><div class="grow"><b>نبض — رفيقتك الذكية</b><div class="muted">${AI.sample ? 'تعرف أسبوعك وتحاليلك وأعراضك، وتجاوبك عليكِ أنتِ.' : 'وضع بدون اتصال: إجابات من دليل التطبيق.'}</div></div></div></div>
-    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}${m.role === 'assistant' ? `<button class="link flag" data-flag="${i}" ${m.flagged ? 'disabled' : ''}>${m.flagged ? 'تم الإبلاغ' : '🚩 إبلاغ عن الرد'}</button>` : ''}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
+    <div id="chat">${chat.length ? chat.map((m, i) => `<div class="bubble ${m.role}">${esc(m.content).replace(/\n/g, '<br>')}${m.role === 'assistant' ? `<div class="bubble-acts">${favBtn({ id: 'ai:' + favHash(m.content), type: 'ai', text: m.content }, 'حفظ')}<button class="link flag" data-flag="${i}" ${m.flagged ? 'disabled' : ''}>${m.flagged ? 'تم الإبلاغ' : '🚩 إبلاغ عن الرد'}</button></div>` : ''}</div>`).join('') : `<div class="chips">${sug.map(s => `<button class="chip" data-sug="${esc(s)}">${s}</button>`).join('')}</div>`}</div>
     <form class="ask-row sticky-ask" id="askForm"><input class="input" id="askQ" placeholder="اكتبي سؤالك…" autocomplete="off" value="${esc(route.q || '')}"><button class="btn" id="askSend" aria-label="إرسال">↖</button></form>
     ${chat.length ? '<button class="link" id="chatClear">مسح المحادثة</button>' : ''}
     <p class="disclaimer">نبض للتثقيف ولا تغني عن الطبيب. في الطوارئ اتصلي بالإسعاف ${emergencyNo()}.</p></div>`;
@@ -3458,7 +3830,7 @@ Object.assign(SUBVIEWS, {
     const sorted = (ans || []).filter(a => !isBlocked(a)).sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
     return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).</div></div>` : ''}
       <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
-        <h2 style="margin:12px 0 6px">${esc(x.title)}</h2><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
+        <div class="row" style="align-items:flex-start;margin-top:12px"><h2 class="grow" style="margin:0 0 6px">${esc(x.title)}</h2>${favBtn({ id: 'cq:' + x.id, type: 'cq', title: x.title, text: x.body, qid: x.id })}</div><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
         <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : modBtns(x, `q:${esc(x.id)}`)}</div></div>
       ${!hasAi && AI.sample && ans ? '<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">✨ اطلبي رأي نبض في هذا السؤال</button>' : ''}
       <h3>${ans ? `${ans.length} ${ans.length === 1 ? 'رد' : 'ردود'}` : 'جاري تحميل الردود…'}</h3>
@@ -3656,6 +4028,537 @@ const Notify = (() => {
   }
 
   return { native: () => !!plugin(), sync, listen, greet, test, rem, start() { listen(); greet(); sync(false); } };
+})();
+
+</script>
+  <script>
+/* نبضٌ صغير — حساب اختياري (Google) للنسخ الاحتياطي التلقائي والاسترجاع على جهاز جديد
+   لا يُطلب أبداً لاستخدام أي ميزة. التوكن يُحفظ منفصلاً عن S فلا يدخل في النسخ الاحتياطية.
+   التحقق من توكن Google يتم على السيرفر فقط (auth.php). */
+'use strict';
+
+const Account = (() => {
+  const LS = 'nabd_account', MAX = 512 * 1024, DEBOUNCE = 30000;
+  const cfg = () => window.NABD_CONFIG || {};
+  const base = () => (cfg().apiBase || '').replace(/\/$/, '');
+  const read = () => { try { return JSON.parse(localStorage.getItem(LS)) || null; } catch { return null; } };
+  const write = a => { try { a ? localStorage.setItem(LS, JSON.stringify(a)) : localStorage.removeItem(LS); } catch {} };
+  let acc = read(), timer = null, dirty = false, pushing = false, restoring = false, nativeReady = false;
+  const user = () => acc && acc.exp > Date.now() ? acc : null;
+  const native = () => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.SocialLogin;
+  const available = () => !!(base() && cfg().googleWebClientId);
+
+  async function api(method, file, body, extra = {}) {
+    const r = await fetch(`${base()}/${file}`, { method, ...extra,
+      headers: { 'Content-Type': 'application/json', 'X-Device': Server.dev(), ...(acc ? { Authorization: `Bearer ${acc.token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) { acc = null; write(null); }
+    if (!r.ok) throw Object.assign(new Error(j.error || r.status), { code: j.error, status: r.status });
+    return j;
+  }
+
+  /* ---------- تسجيل الدخول ---------- */
+  // زر Google: في التطبيق زر خاص يفتح حسابات الجهاز، وفي المتصفح زر Google الرسمي
+  function button(host, ctx = {}) {
+    if (!available()) { host.innerHTML = '<p class="muted center">تسجيل الدخول غير متاح حالياً.</p>'; return; }
+    if (native()) {
+      host.innerHTML = `<button class="btn g-btn block" type="button">${G_LOGO}<span>المتابعة بحساب Google</span></button>`;
+      host.firstElementChild.onclick = () => signIn(ctx);
+      return;
+    }
+    host.innerHTML = '<p class="muted center">جاري تحميل زر Google…</p>';
+    gis().then(g => {
+      host.innerHTML = '';
+      g.accounts.id.initialize({ client_id: cfg().googleWebClientId, callback: r => r.credential && finishLogin(r.credential, ctx), ux_mode: 'popup', use_fedcm_for_prompt: true });
+      g.accounts.id.renderButton(host, { theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale: 'ar', width: Math.min(320, host.clientWidth || 300) });
+    }).catch(() => { host.innerHTML = '<p class="muted center">تعذّر تحميل تسجيل الدخول — تأكدي من الاتصال.</p>'; });
+  }
+  let gisP = null;
+  const gis = () => gisP || (gisP = new Promise((res, rej) => {
+    if (window.google?.accounts?.id) return res(window.google);
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = () => res(window.google); s.onerror = () => { gisP = null; rej(new Error('gis')); };
+    document.head.appendChild(s);
+  }));
+
+  // تسجيل الدخول من أي مكان (رابط «لديّ حساب» أو صفحة حسابي)
+  async function signIn(ctx = {}) {
+    if (!available()) return toast('تسجيل الدخول غير متاح حالياً');
+    if (!native()) return sheet(ctx);
+    try {
+      const SL = window.Capacitor.Plugins.SocialLogin;
+      if (!nativeReady) { await SL.initialize({ google: { webClientId: cfg().googleWebClientId, mode: 'online' } }); nativeReady = true; }
+      const r = await SL.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
+      const tok = r && r.result && r.result.idToken;
+      if (!tok) throw new Error('no_token');
+      await finishLogin(tok, ctx);
+    } catch (e) {
+      if (!/cancel/i.test(String(e && (e.message || e.code)))) toast('تعذّر تسجيل الدخول — حاولي مرة أخرى');
+    }
+  }
+
+  // نافذة صغيرة فيها زر Google (للمتصفح)
+  function sheet(ctx) {
+    closeSheet();
+    const d = document.createElement('div'); d.className = 'sheet-bg'; d.id = 'accSheet';
+    d.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="تسجيل الدخول"><h3>تسجيل الدخول</h3>
+      <p class="muted">لاسترجاع بياناتك المحفوظة على السحابة.</p><div class="g-slot" id="sheetG"></div>
+      <button class="link" id="sheetX">إلغاء</button></div>`;
+    document.body.appendChild(d);
+    d.onclick = e => { if (e.target === d) closeSheet(); };
+    d.querySelector('#sheetX').onclick = closeSheet;
+    button(d.querySelector('#sheetG'), ctx);
+  }
+  const closeSheet = () => document.getElementById('accSheet')?.remove();
+
+  async function finishLogin(idToken, ctx) {
+    closeSheet();
+    toast('جاري تسجيل الدخول…');
+    try {
+      const r = await api('POST', 'auth.php', { id_token: idToken });
+      acc = { token: r.token, exp: r.exp, name: r.user.name, email: r.user.email, last: 0 }; write(acc);
+      if (r.user.name && !S.nick) S.nick = r.user.name.split(' ')[0];
+      await reconcile(ctx);
+    } catch (e) { toast(e.code === 'rate_limited' ? 'محاولات كثيرة، جرّبي بعد قليل' : 'تعذّر تسجيل الدخول — حاولي مرة أخرى'); }
+  }
+
+  /* ---------- المزامنة ---------- */
+  const snapshot = () => { const c = { ...S }; delete c.onb; return c; };
+  const payload = () => {
+    let c = snapshot(), s = JSON.stringify(c);
+    if (s.length > MAX) { c = { ...c, chat: [] }; s = JSON.stringify(c); }
+    return s.length > MAX ? null : s;
+  };
+
+  // بعد تسجيل الدخول: لا نمسح شيئاً بصمت
+  async function reconcile(ctx) {
+    let cloud = null;
+    try { const r = await api('GET', 'backup.php'); if (r.data) cloud = { data: JSON.parse(r.data), updated: r.updated }; } catch {}
+    const hasLocal = !!S.profile;
+    if (cloud && cloud.data && cloud.data.profile && hasLocal) return choose(cloud);
+    if (cloud && cloud.data && cloud.data.profile) { restore(cloud.data); toast('تم استرجاع بياناتك ☁️'); return; }
+    if (!S.profile) { toast('تم تسجيل الدخول ✅ — لا توجد نسخة محفوظة بعد، أكملي الإعداد'); if (S.onb && S.onb.step === 'welcome') Onb.go('cal'); return; }
+    await push(); toast('تم تسجيل الدخول ✅ ونسخ بياناتك');
+    if (S.onb && ctx.from === 'onboarding') Onb.finish(); else render(false);
+  }
+
+  function restore(data) {
+    try { localStorage.setItem(KEY + '_before_restore', JSON.stringify(S)); } catch {}
+    restoring = true;
+    const keep = { theme: S.theme, devId: S.devId };
+    S = Object.assign(defaults(), data, { theme: keep.theme || data.theme, news12: 1 });
+    if (!S.devId) S.devId = keep.devId;
+    delete S.onb;
+    save(); restoring = false; dirty = false;
+    route = { view: 'home' }; history.replaceState(route, ''); render();
+    Notify.sync(false);
+  }
+
+  // اختيار النسخة: هذا الجهاز أم السحابة (الأحدث مختار افتراضياً)
+  function choose(cloud) {
+    const localT = S._mt || 0, cloudT = cloud.data._mt || cloud.updated || 0, newer = cloudT > localT ? 'cloud' : 'local';
+    const when = t => t ? `${fmtDate.format(new Date(t))} · ${new Date(t).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}` : 'غير معروف';
+    const desc = d => d.baby ? `طفل وُلد ${fmtDate.format(parse(d.baby.date))}` : d.profile ? 'بيانات حمل' : '';
+    closeSheet();
+    const el = document.createElement('div'); el.className = 'sheet-bg'; el.id = 'accSheet';
+    el.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>أي نسخة تريدين الاحتفاظ بها؟</h3>
+      <p class="muted">وجدنا بيانات على هذا الجهاز وعلى السحابة.</p>
+      <label class="pick"><input type="radio" name="ver" value="local" ${newer === 'local' ? 'checked' : ''}><span><b>📱 هذا الجهاز</b><small>${desc(S)} · آخر تعديل ${when(localT)}${newer === 'local' ? ' · الأحدث' : ''}</small></span></label>
+      <label class="pick"><input type="radio" name="ver" value="cloud" ${newer === 'cloud' ? 'checked' : ''}><span><b>☁️ السحابة</b><small>${desc(cloud.data)} · آخر تعديل ${when(cloudT)}${newer === 'cloud' ? ' · الأحدث' : ''}</small></span></label>
+      <p class="muted" style="font-size:.85rem">النسخة الأخرى ستُستبدل.</p>
+      <button class="btn block" id="verOk">متابعة</button></div>`;
+    document.body.appendChild(el);
+    el.querySelector('#verOk').onclick = async () => {
+      const v = el.querySelector('input[name=ver]:checked').value; closeSheet();
+      if (v === 'cloud') { restore(cloud.data); toast('تم استرجاع نسخة السحابة ☁️'); }
+      else { await push(); toast('تم حفظ نسخة هذا الجهاز على السحابة ☁️'); if (S.onb) Onb.finish(); else render(false); }
+    };
+  }
+
+  async function push(opts = {}) {
+    if (!user() || pushing) return false;
+    const body = payload();
+    if (!body) { toast('بياناتك أكبر من حد النسخ الاحتياطي'); return false; }
+    pushing = true;
+    try {
+      // عند الخروج من التطبيق: keepalive حتى يكتمل الطلب (حدّه 64KB)
+      const r = await api('PUT', 'backup.php', { data: body, mt: S._mt || Date.now() }, opts.exit && body.length < 60000 ? { keepalive: true } : {});
+      dirty = false; acc.last = r.updated || Date.now(); write(acc); return true;
+    } catch { return false; } finally { pushing = false; }
+  }
+
+  // بعد أي تعديل: نسخ تلقائي بعد 30 ثانية من آخر تعديل
+  function markDirty() {
+    if (restoring || !user()) return;
+    dirty = true; clearTimeout(timer); timer = setTimeout(() => push(), DEBOUNCE);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && dirty) { clearTimeout(timer); push({ exit: true }); } });
+
+  async function signOut() {
+    try { await api('POST', 'account.php', { action: 'logout' }); } catch {}
+    acc = null; write(null); clearTimeout(timer); dirty = false;
+    try { if (native() && nativeReady) await window.Capacitor.Plugins.SocialLogin.logout({ provider: 'google' }); } catch {}
+  }
+  async function remove() {
+    await api('POST', 'account.php', { action: 'delete' });
+    acc = null; write(null); clearTimeout(timer); dirty = false;
+    try { if (native() && nativeReady) await window.Capacitor.Plugins.SocialLogin.logout({ provider: 'google' }); } catch {}
+  }
+
+  const G_LOGO = '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+
+  return { available, user, button, signIn, push, dirty: markDirty, signOut, remove, _finish: finishLogin };
+})();
+
+</script>
+  <script>
+/* نبضٌ صغير — المفضلة 💗، ومشاركة الأسبوع كصورة، وشاشة «حسابي» */
+'use strict';
+
+/* ---------- المفضلة ---------- */
+const FAVREG = {};
+const favHash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+const isFav = id => (S.favorites || []).some(f => f.id === id);
+// زر قلب لأي عنصر: {id, type: week|tip|ai|cq, text, ...}
+function favBtn(item, label = '') {
+  FAVREG[item.id] = item;
+  const on = isFav(item.id);
+  return `<button class="fav-btn ${on ? 'on' : ''}" data-fav="${esc(item.id)}" aria-pressed="${on}" aria-label="${on ? 'إزالة من المفضلة' : 'حفظ في المفضلة'}">${ICON.heart}${label ? `<span>${label}</span>` : ''}</button>`;
+}
+function toggleFav(id) {
+  S.favorites = S.favorites || [];
+  if (isFav(id)) { S.favorites = S.favorites.filter(f => f.id !== id); save(); toast('أُزيلت من المفضلة'); return false; }
+  const it = FAVREG[id]; if (!it) return false;
+  S.favorites.unshift({ ...it, t: Date.now() }); save(); toast('حُفظت في المفضلة 💗'); return true;
+}
+
+const FAV_TYPES = [['week', '👶', 'معلومات الأسبوع'], ['tip', '💡', 'نصائح'], ['ai', '✨', 'ردود نبض'], ['cq', '👩‍👩‍👧', 'أسئلة المجتمع']];
+
+/* ---------- مشاركة الأسبوع كصورة ---------- */
+const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+async function weekCard(w) {
+  const x = WEEKS[w - 1], W = 1080, H = 1350, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  try { await Promise.all([document.fonts.load('700 80px Rubik'), document.fonts.load('400 40px Rubik')]); } catch {}
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#2a1640'); bg.addColorStop(1, '#0f1428');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W / 2, 600, 80, W / 2, 600, 560); glow.addColorStop(0, 'rgba(250,26,127,.45)'); glow.addColorStop(1, 'rgba(250,26,127,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  // صورة الجنين في دائرة
+  try {
+    const img = await loadImg(Photos.src(w)), r = 300, cx = W / 2, cy = 600;
+    g.save(); g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.clip(); g.drawImage(img, cx - r, cy - r, r * 2, r * 2); g.restore();
+    g.lineWidth = 10; g.strokeStyle = '#ff4d9a'; g.beginPath(); g.arc(cx, cy, r + 14, 0, Math.PI * 2); g.stroke();
+  } catch {}
+  // الشعار والاسم
+  try { const logo = await loadImg('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPgo8ZGVmcz48ZmlsdGVyIGlkPSJnbCIgeD0iLTUwJSIgeT0iLTUwJSIgd2lkdGg9IjIwMCUiIGhlaWdodD0iMjAwJSI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMjIiIHJlc3VsdD0iYiIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0iYiIvPjxmZU1lcmdlTm9kZSBpbj0iU291cmNlR3JhcGhpYyIvPjwvZmVNZXJnZT48L2ZpbHRlcj48L2RlZnM+CjxyZWN0IHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHJ4PSIyMjQiIGZpbGw9IiNGQTFBN0YiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNzcuMCwxNzIuMCkgc2NhbGUoMC41KSI+CjxnIGZpbGw9IiNmZmYiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuMDAwMDAwLDE0MDAuMDAwMDAwKSBzY2FsZSgwLjEwMDAwMCwtMC4xMDAwMDApIgogc3Ryb2tlPSJub25lIj4KPHBhdGggZD0iTTk4MjIgMTE4OTAgYy0xMiAtNSAtMjUgLTE2IC0yOCAtMjUgLTQgLTggLTE1IC0xNSAtMjUgLTE1IC0yMCAwCi05MCAtNjUgLTE0OSAtMTM4IC0xOSAtMjQgLTQ0IC01NCAtNTUgLTY3IC0xMSAtMTMgLTI5IC0zNiAtNDAgLTUxIC0xMSAtMTQKLTMxIC0zNiAtNDQgLTQ5IC0xNCAtMTQgLTIxIC0yOSAtMTggLTM5IDMgLTggMCAtMTkgLTggLTIzIC0xOSAtMTEgLTY1IC04MQotNjUgLTk4IDAgLTggLTkgLTI0IC0yMCAtMzUgLTExIC0xMSAtMjAgLTI4IC0yMCAtMzkgMCAtMTAgLTkgLTIxIC0yMCAtMjQKLTExIC0zIC0yMCAtMTMgLTIwIC0yMiAwIC05IC0xOSAtMzkgLTQyIC02NyAtMzQgLTQwIC00MyAtNTcgLTQzIC04OSAwIC0yOAotMyAtMzggLTEzIC0zNCAtNyAyIC0xOCAtNyAtMjQgLTIzIC03IC0xNSAtMjAgLTM4IC0zMCAtNTEgLTEwIC0xMyAtMTggLTMyCi0xOCAtNDIgMCAtMTEgLTkgLTM2IC0yMCAtNTYgLTExIC0yMSAtMjAgLTQzIC0yMCAtNTAgMCAtNyAtOSAtMzAgLTIwIC01MAotMTEgLTIxIC0yMCAtNDkgLTIwIC02MyAwIC0xNCAtNyAtMzggLTE1IC01MyAtMTQgLTI4IC0yMiAtNTkgLTUxIC0yMTcgLTIxCi0xMDkgLTE1IC00MDggOSAtNDg1IDkgLTI3IDIwIC02OCAyNSAtOTAgNSAtMjIgMTQgLTUzIDIwIC03MCA2IC0xNiAxNSAtNDgKMjAgLTcwIDYgLTIyIDI2IC04MiA0NiAtMTM0IDIwIC01MSAzNiAtMTAxIDM2IC0xMDkgMCAtOSA3IC0yNCAxNiAtMzMgOSAtMTAKMjAgLTM1IDI1IC01NiAxMiAtNTggNDkgLTE1NiA2NSAtMTc0IDggLTggMTQgLTIyIDE0IC0zMCAxIC04IDkgLTMyIDIwIC01NAoxMSAtMjIgMTkgLTUxIDIwIC02MyAwIC0xMyA5IC0zNSAyMCAtNDkgMTEgLTE0IDIwIC0zMyAyMCAtNDIgMCAtOSA3IC0yOSAxNQotNDUgOCAtMTYgMTggLTQ2IDIxIC02NyA0IC0yMSAxMyAtNDQgMjAgLTUwIDggLTYgMTQgLTE5IDE0IC0yOCAwIC05IDkgLTMzCjIwIC01NCAxMSAtMjAgMjAgLTQ4IDIwIC02MSAwIC0xMyA4IC0zNCAxOCAtNDcgMjIgLTI5IDYyIC0xMTEgNjIgLTEyNyAwIC03CjE4IC01MCA0MCAtOTcgMjIgLTQ3IDQwIC05MCA0MCAtOTggMCAtNyA3IC0yMyAxNyAtMzYgMjQgLTM1IDYwIC0xMDkgNjggLTE0MAo0IC0xNCAxMCAtMzEgMTUgLTM2IDE3IC0yMCA2NyAtMTIxIDc0IC0xNDggMyAtMTUgMTMgLTI3IDIxIC0yNyAxMCAwIDE1IC0xMAoxNSAtMjggMCAtMTUgOSAtMzUgMjAgLTQ1IDExIC05IDIwIC0yOSAyMCAtNDUgMCAtMTYgOSAtMzcgMjAgLTQ3IDExIC0xMCAyMAotMjggMjAgLTM5IDAgLTEyIDkgLTMyIDIwIC00NiAxMSAtMTQgMjAgLTMyIDIwIC00MSAwIC05IDkgLTI0IDIwIC0zNCAxMSAtMTAKMjAgLTMwIDIwIC00NSAwIC0xNSA5IC0zNSAyMCAtNDUgMTEgLTEwIDIwIC0zMSAyMCAtNDYgMCAtMTUgNiAtNDAgMTQgLTU2IDQ0Ci05MiA1NiAtMTE5IDU2IC0xMzAgMCAtNyAxOCAtNTAgMzkgLTk1IDIxIC00NiA0MiAtOTQgNDYgLTEwOCA4IC0yOCAzOSAtMTAyCjYxIC0xNDIgOCAtMTQgMTQgLTM0IDE0IC00NSAwIC0xMCAxMSAtNDIgMjUgLTcxIDE0IC0zMCAyNSAtNjEgMjUgLTY5IDAgLTggOQotMjYgMjAgLTQwIDEzIC0xNyAyMCAtNDEgMjAgLTcxIDAgLTI3IDYgLTUyIDE2IC02MyA5IC0xMCAxOCAtMzcgMjEgLTYxIDMKLTI0IDEyIC02MyAyMCAtODggMjIgLTY4IDIyIC0zMzUgMCAtMzgwIC05IC0xOCAtMTcgLTQ3IC0xNyAtNjQgMCAtMTcgLTkgLTQ0Ci0yMCAtNjEgLTExIC0xNiAtMjAgLTQ0IC0yMCAtNjEgMCAtMTYgLTExIC00NSAtMjUgLTY0IC0xNCAtMTkgLTI1IC0zOSAtMjUKLTQ2IDAgLTYgLTcgLTE3IC0xNSAtMjQgLTggLTcgLTE1IC0yMyAtMTUgLTM1IDAgLTEyIC03IC0yOSAtMTcgLTM2IC05IC04Ci0yMiAtMjkgLTMwIC00NiAtNyAtMTggLTE3IC0zMyAtMjIgLTMzIC02IDAgLTEzIC05IC0xNiAtMjEgLTcgLTIxIC01MCAtODkKLTYzIC05OSAtMTMgLTEwIC02MiAtODYgLTYyIC05NyAwIC02IC03IC0xMyAtMTUgLTE3IC04IC0zIC0xNSAtMTIgLTE1IC0yMCAwCi03IC0xNyAtMjkgLTM3IC00OCAtNDkgLTQ0IC0xMzMgLTE0MyAtMTMzIC0xNTYgMCAtNSAtNyAtMTIgLTE1IC0xNiAtOCAtMwotMTUgLTEyIC0xNSAtMjAgMCAtNyAtOCAtMTMgLTE3IC0xMiAtMTIgMCAtMTkgLTcgLTIxIC0yMSAtMiAtMTMgLTEwIC0yMyAtMTcKLTIzIC03IDAgLTE1IC0xMCAtMTcgLTIyIC0yIC0xNSAtMTEgLTI0IC0yNSAtMjYgLTEzIC0yIC0yMyAtOSAtMjMgLTE3IDAgLTcKLTcgLTE1IC0xNSAtMTkgLTggLTMgLTE1IC0xMiAtMTUgLTIxIDAgLTggLTkgLTE1IC0yMCAtMTUgLTExIDAgLTIzIC03IC0yNwotMTYgLTkgLTI0IC01MiAtNjQgLTY4IC02NCAtOCAwIC0xNSAtOSAtMTUgLTE5IDAgLTExIC05IC0yMyAtMjAgLTI2IC0xMSAtMwotMjAgLTEzIC0yMCAtMjEgMCAtOCAtNCAtMTMgLTkgLTkgLTEyIDcgLTQzIC0yNCAtMzYgLTM2IDQgLTUgMSAtOSAtNiAtOSAtNwowIC0zNCAtMTggLTYwIC00MCAtMjYgLTIyIC01MiAtNDAgLTU4IC00MCAtNSAwIC0xNCAtNiAtMTggLTEzIC04IC0xMyAtMjEKLTIzIC0xMDggLTgxIC0yNyAtMTkgLTY1IC00OCAtODMgLTY1IC0xOCAtMTcgLTM2IC0zMSAtMzggLTMxIC02IDAgLTEwOSAtODEKLTEzNSAtMTA1IC05IC04IC0yMSAtMTUgLTI3IC0xNSAtNiAwIC0xNyAtNiAtMjQgLTEyIC03IC03IC0zNiAtMjkgLTYzIC00OAotMjggLTE5IC01NiAtNDAgLTYzIC00NiAtNiAtNyAtMjEgLTE2IC0zMiAtMTkgLTExIC0zIC0yMCAtMTEgLTIwIC0xNiAwIC01Ci0xMCAtMTMgLTIzIC0xOCAtMzQgLTEzIC0xMTcgLTcxIC0xMTcgLTgyIDAgLTUgLTcgLTkgLTE1IC05IC04IDAgLTIzIC05IC0zMgotMjAgLTEwIC0xMSAtMjcgLTIwIC0zOSAtMjAgLTExIDAgLTI5IC05IC0zOSAtMjAgLTEwIC0xMSAtMjQgLTIwIC0zMSAtMjAgLTgKMCAtMTkgLTkgLTI2IC0yMCAtOCAtMTIgLTI0IC0yMCAtMzkgLTIwIC0xNCAwIC0zNCAtOSAtNDQgLTIwIC0xMCAtMTEgLTIyCi0yMCAtMjcgLTIwIC02IDAgLTIxIC05IC0zNSAtMjAgLTE0IC0xMSAtMzUgLTIwIC00NSAtMjAgLTExIDAgLTIyIC05IC0yNQotMjAgLTQgLTE0IC0xNCAtMjAgLTMyIC0yMCAtMTQgMCAtMzkgLTkgLTU2IC0yMCAtMTYgLTExIC0zOCAtMjAgLTQ3IC0yMCAtMTAKMCAtMjIgLTkgLTI4IC0yMCAtNiAtMTEgLTIxIC0yMCAtMzQgLTIwIC0xMyAwIC0zNyAtNyAtNTIgLTE1IC0xNiAtOCAtMzcgLTE1Ci00NyAtMTUgLTEwIDAgLTM1IC05IC01NSAtMTkgLTczIC0zOSAtMTE4IC01OSAtMTQ5IC02NSAtMTcgLTQgLTM3IC0xNCAtNDQKLTIyIC02IC04IC0xOSAtMTQgLTI4IC0xNCAtOSAwIC0zMiAtOCAtNTEgLTE5IC0xOSAtMTAgLTUzIC0yMSAtNzQgLTI1IC0yMgotNCAtNDkgLTE0IC02MCAtMjIgLTExIC04IC0yNyAtMTQgLTM1IC0xNCAtNyAwIC0zMiAtOCAtNTUgLTE5IC0yMyAtMTAgLTYzCi0yMyAtOTEgLTI5IC01NyAtMTIgLTE2MiAtNDcgLTE3OSAtNjEgLTYgLTUgLTQwIC0xMiAtNzYgLTE2IC0zNiAtNCAtNzYgLTE0Ci05MCAtMjMgLTE0IC05IC01NyAtMTkgLTk3IC0yMyAtNDQgLTMgLTgwIC0xMiAtOTAgLTIxIC0xNCAtMTIgLTUyIC0xNyAtMTU4Ci0yMSAtNzcgLTMgLTE1NiAtMTEgLTE3NyAtMTcgLTI0IC03IC0xNjIgLTEwIC00MTUgLTggLTM4NSAzIC01ODMgMTggLTcwOCA1MwotMjcgOCAtNzAgMTcgLTk1IDIxIC0yNSAzIC03NCAxNSAtMTA5IDI1IC0zNSAxMCAtNzYgMTkgLTkyIDE5IC0xNyAwIC00MCA2Ci01MiAxNCAtMTIgOCAtNDAgMTcgLTYyIDIxIC0yMiA0IC01MSAxMyAtNjUgMjAgLTE0IDcgLTY0IDI1IC0xMTIgNDAgLTQ3IDE0Ci0xMDMgMzUgLTEyNCA0NiAtMjEgMTAgLTQ1IDE5IC01NCAxOSAtMTQgMCAtMTAwIDQwIC0xMjQgNTggLTEyIDEwIC05NiA0MAotMTM2IDQ5IC0xNCAzIC0zMSAxNCAtMzggMjUgLTcgMTAgLTIzIDE4IC0zNSAxOCAtMTMgMCAtMzAgOSAtNDAgMjAgLTkgMTEKLTI4IDIwIC00MSAyMCAtMTUgMCAtMjYgNyAtMjkgMjAgLTQgMTUgLTE0IDIwIC00MSAyMCAtMjAgMCAtMzYgNSAtMzYgMTEgMAoxNyAtNjAgNjkgLTgxIDY5IC0xMCAwIC0yMyA5IC0yOSAyMCAtNiAxMiAtMjEgMjAgLTM1IDIwIC0xOCAwIC0yNSA1IC0yNSAyMAowIDE1IC03IDIwIC0yNSAyMCAtMjMgMCAtNzUgNDEgLTc1IDYwIDAgMTcgLTM2IDMwIC00OSAxNyAtOSAtOSAtMTEgLTYgLTkgMTMKMiAxOSAtMiAyNiAtMjAgMjggLTE2IDIgLTIyIDggLTE4IDE4IDMgOCAtNyAyNiAtMjUgNDIgLTczIDY0IC0yMjAgMjE2IC0yOTQKMzAyIC00NCA1MiAtODggMTAyIC05NyAxMTIgLTEwIDEwIC0xOCAyMiAtMTggMjcgMCA2IC04IDE2IC0xNyAyMyAtMjIgMTYgLTYzCjczIC02MyA4NyAwIDUgLTEwIDE3IC0yMiAyNiAtMTMgOCAtMjQgMjAgLTI0IDI1IC0xIDYgLTIgMTYgLTMgMjQgMCA4IC0xMCAxOAotMjEgMjEgLTEzIDQgLTIwIDE1IC0yMCAzMSAwIDE3IC02IDI0IC0xOSAyNCAtMTUgMCAtMjEgOCAtMjMgMzMgLTIgMjQgLTcgMzEKLTIwIDI5IC0xNCAtMiAtMTggNCAtMTggMzMgMCAyMiAtOCA0NyAtMjAgNjIgLTExIDE0IC0yMCAzNCAtMjAgNDMgMCAxMCAtNwoyMyAtMTUgMzAgLTggNyAtMTcgMjcgLTIxIDQ2IC0zIDE5IC0xNSA0MSAtMjYgNDggLTExIDggLTIzIDI5IC0yNyA0NiAtMyAxNwotMTAgMzAgLTE2IDI4IC01IC0yIC0xMyAyNCAtMTYgNTcgLTQgMzMgLTIxIDk4IC0zOCAxNDUgLTE3IDQ2IC0zMSA5NiAtMzEKMTEwIDAgMTQgLTkgNDQgLTIwIDY1IC0xMSAyMiAtMjMgNTggLTI2IDgwIC0zIDIyIC0xMiA2NyAtMTkgMTAwIC03IDMzIC0xNgo5OCAtMjAgMTQ1IC00IDQ3IC0xMyAxMjggLTIxIDE4MCAtMTcgMTE1IC0xOSA0OTggLTMgNTUwIDYgMTkgMTUgMTAxIDE5IDE4Mgo2IDk4IDEzIDE1NCAyMyAxNzAgOCAxMyAxNyA0NCAyMSA3MSAzIDI2IDEzIDYxIDIxIDc3IDggMTYgMTggNTggMjEgOTIgNCAzNQoxMiA3MiAxOSA4NCA4IDEyIDE3IDM4IDIwIDU4IDQgMjAgMTYgNTMgMjYgNzMgMTEgMjEgMTkgNTMgMTkgNzMgMCAxOSA5IDQ5CjIwIDY1IDExIDE3IDIwIDQyIDIwIDU2IDAgMTUgNyAzMiAxNSAzOSA4IDcgMTcgMjcgMjEgNDYgMyAxOSAxNSA1MSAyNSA3MSAxMQoyMSAxOSA0MiAxOSA0OCAwIDYgOSAyOSAyMCA1MCAxMyAyNiAxOCA1MCAxNCA2OCAtNCAxOSAtMSAyOSAxMCAzMyA4IDMgMjAgMjIKMjcgNDIgNiAyMSAxOCA0MSAyNSA0NSA5IDUgMTQgMjUgMTQgNTEgMCAzNSA0IDQ1IDIwIDQ5IDExIDMgMjAgMTMgMjAgMjIgMCA5CjExIDMwIDI1IDQ3IDE0IDE2IDI1IDM2IDI1IDQzIDAgMTUgMzMgNzYgNjIgMTE0IDEwIDEzIDE4IDMyIDE4IDQzIDAgMTAgNyAyMQoxNSAyNCA4IDQgMTUgMTQgMTUgMjUgMCAxMCA5IDIzIDIwIDI5IDExIDYgMjMgMjMgMjYgMzggNCAxNSAxNSAzNSAyNSA0NSAxMQoxMCAxOSAyNCAxOSAzMiAwIDggNiAxOCAxMyAyMiA4IDQgMjEgMjIgMzAgMzggOSAxNyAyNCA0NCAzMiA2MCA5IDE3IDI3IDQ4CjQwIDcwIDEzIDIyIDMxIDU1IDM5IDczIDggMTcgMjAgMzIgMjUgMzIgNiAwIDExIDEwIDExIDIzIDEgMTIgNyAzMyAxNSA0NyAxOQozMyAxOSA5MSAwIDEyNiAtOCAxNiAtMTUgMzcgLTE1IDQ3IDAgMTkgLTkgMjQgLTUwIDMwIC0xNCAyIC0zOCA5IC01MyAxNSAtMzQKMTQgLTU0IDE1IC02MSAzIC0zIC01IC0yMSAtMTIgLTM5IC0xNSAtNDggLTkgLTEzOSAtMTA1IC0yMjIgLTIzNSAtNSAtOCAtMjcKLTM3IC00NyAtNjQgLTIxIC0yNyAtMzggLTU3IC0zOCAtNjcgMCAtMTAgLTcgLTIwIC0xNSAtMjQgLTkgLTMgLTE1IC0xOCAtMTUKLTM1IDAgLTIwIC02IC0zMCAtMjAgLTM0IC0xNCAtMyAtMjAgLTE0IC0yMCAtMzIgMCAtMTggLTYgLTI5IC0yMCAtMzIgLTExIC0zCi0yMCAtMTQgLTIwIC0yNCAwIC0xMSAtNyAtMjIgLTE1IC0yNSAtOCAtNCAtMTUgLTE0IC0xNSAtMjQgMCAtMzIgLTExIC01MAotMzEgLTUwIC0xNCAwIC0xOSAtNyAtMTkgLTI1IDAgLTE1IC02IC0yNSAtMTUgLTI1IC04IDAgLTIyIC0xNSAtMzAgLTMyIC0yMgotNDcgLTM5IC03NSAtNTggLTk2IC0xMCAtMTAgLTE3IC0zMCAtMTcgLTQ0IDAgLTE3IC03IC0yNyAtMjAgLTMxIC0xNCAtNCAtMjAKLTE0IC0yMCAtMzUgMCAtMjEgLTYgLTMxIC0yMCAtMzUgLTEyIC0zIC0yMCAtMTQgLTIwIC0yNSAwIC0xMiAtNCAtMjMgLTkgLTI3Ci0xNSAtOSAtNjggLTkxIC03NiAtMTE3IC00IC0xMiAtMTYgLTMxIC0yNiAtNDEgLTExIC0xMCAtMTkgLTI2IC0xOSAtMzYgMAotMTAgLTkgLTI2IC0yMCAtMzYgLTExIC0xMCAtMjAgLTIzIC0yMCAtMzAgMCAtMTYgLTU5IC0xMzMgLTcxIC0xNDAgLTUgLTQgLTkKLTE3IC05IC0yOSAwIC0xMyAtNyAtMjkgLTE1IC0zNiAtOCAtNyAtMTcgLTI3IC0yMSAtNDYgLTMgLTE4IC0xMiAtMzggLTIwCi00NSAtOCAtNiAtMTQgLTIzIC0xNCAtMzggMCAtMTQgLTkgLTM5IC0yMCAtNTYgLTExIC0xNiAtMjAgLTM5IC0yMCAtNTEgMAotMTEgLTkgLTI5IC0yMCAtMzkgLTE0IC0xMiAtMjAgLTMxIC0yMCAtNTggMCAtMjIgLTcgLTQ4IC0xNSAtNTcgLTMwIC0zNCAtNjUKLTExMiAtNjUgLTE0OCAwIC0yMSAtNiAtNDYgLTE0IC01NyAtNyAtMTEgLTE5IC0zOCAtMjYgLTYwIC03IC0yMiAtMTkgLTQ5Ci0yNiAtNjAgLTggLTExIC0xNCAtMzEgLTE0IC00NCAwIC0xNCAtOCAtNDMgLTE4IC02NSAtMzkgLTg3IC0xMTEgLTMzNCAtMTEyCi0zODIgMCAtMTEgLTcgLTM1IC0xNiAtNTIgLTggLTE3IC0xOCAtNjQgLTIxIC0xMDQgLTMgLTQwIC0xMSAtODQgLTE4IC05OCAtNwotMTQgLTE1IC01NyAtMTkgLTk2IC0zIC0zOSAtMTMgLTkwIC0yMSAtMTE0IC04IC0yMyAtMTkgLTEwOCAtMjUgLTE4OSAtNiAtODAKLTE0IC0xNzMgLTE5IC0yMDYgLTE2IC0xMDMgLTEzIC01NTAgNCAtNjMwIDggLTM4IDE1IC0xMTAgMTYgLTE2MCAxIC0xMDQgNwotMTQ3IDQ0IC0zMDUgMTQgLTYzIDMwIC0xNDIgMzUgLTE3NSA1IC0zMyAxNiAtNzMgMjMgLTkwIDIyIC00OSA0NyAtMTI2IDYxCi0xODkgNyAtMzMgMjEgLTY1IDMwIC03MSA5IC03IDE2IC0xOSAxNiAtMjggMCAtMjYgMTEgLTQ3IDI2IC00NyAxMCAwIDE0IC0xNAoxNCAtNTAgMCAtMzkgNCAtNTMgMjAgLTYyIDExIC03IDIwIC0yMiAyMCAtMzMgMCAtMTEgNyAtMzMgMTUgLTQ4IDggLTE1IDE3Ci00NSAyMSAtNjUgNCAtMjAgMTUgLTQ4IDI1IC02MSAxMSAtMTMgMTkgLTMxIDE5IC00MCAwIC0xMCA3IC0yNiAxNSAtMzcgOAotMTAgMTUgLTI4IDE1IC00MCAwIC0xMSA5IC0yOSAyMSAtNDAgMTEgLTEwIDMyIC00MyA0NiAtNzQgMTUgLTMwIDMyIC01OSA0MAotNjMgNyAtNCAxMyAtMTQgMTMgLTIxIDAgLTcgOSAtMjUgMjAgLTM5IDExIC0xNCAyMCAtMzAgMjAgLTM2IDAgLTE0IDUxIC05NAo2NiAtMTAzIDcgLTQgMTQgLTE4IDE4IC0zMiAzIC0xMyAyNCAtNDAgNDYgLTYwIDIyIC0yMCA0MCAtNDAgNDAgLTQ1IDAgLTYgOAotMTYgMTggLTIzIDEwIC03IDIxIC0yMSAyNSAtMzAgMyAtMTAgMTMgLTE4IDIyIC0xOCA5IDAgMTUgLTkgMTUgLTIzIDAgLTE2CjE2IC0zNyA0NSAtNjMgMjQgLTIxIDQ1IC00NCA0NSAtNTAgMCAtNyA5IC0xNCAyMCAtMTcgMTEgLTMgMjAgLTEyIDIwIC0yMCAwCi04IDkgLTE3IDE5IC0yMCAxMSAtMiAyMSAtMTUgMjMgLTI4IDIgLTEzIDkgLTIzIDE2IC0yMSA2IDEgMTIgLTUgMTIgLTEzIDAKLTggOSAtMTUgMjEgLTE1IDE0IDAgMTkgLTYgMTcgLTE3IC00IC0yNSAxMCAtNDMgMjcgLTM2IDEwIDMgMTUgLTEgMTUgLTEyIDAKLTkgOSAtMTkgMjAgLTIyIDE1IC00IDE5IC0xMSAxNCAtMjUgLTQgLTE0IDAgLTIxIDE1IC0yNSAxMiAtMyAyMSAtOCAyMSAtMTIKMCAtMTIgODcgLTk5IDE1MCAtMTUxIDM2IC0yOSA2NyAtNTYgNzAgLTU5IDMgLTQgMzIgLTI4IDY1IC01NCAzMyAtMjUgNzEgLTU2Cjg0IC02NyAxMyAtMTEgMjggLTIwIDMyIC0yMCA1IDAgMTkgLTEwIDMyIC0yMiAyNSAtMjQgMTEyIC03OSAxODcgLTExOSAyNAotMTMgNTEgLTMyIDU4IC00MSA3IC0xMCAyMCAtMTggMjcgLTE4IDggMCA0MSAtMTggNzIgLTQwIDMyIC0yMiA2OCAtNDAgNzkKLTQwIDEyIDAgMjcgLTcgMzQgLTE1IDcgLTggMTggLTE1IDI1IC0xNSA2IDAgMjAgLTkgMzAgLTIwIDEwIC0xMSAzMCAtMjAgNDUKLTIwIDE1IDAgMzkgLTkgNTMgLTIwIDE0IC0xMSAyOSAtMjAgMzUgLTIwIDUgMCAxNyAtOSAyNyAtMjAgMTEgLTEyIDMxIC0yMAo1MCAtMjAgMTggMCA0MiAtOSA1NSAtMjAgMTIgLTExIDM4IC0yMiA1NiAtMjYgMTggLTMgMzggLTEyIDQ0IC0xOSA2IC04IDMwCi0xNyA1MyAtMjAgMjMgLTQgNDkgLTEzIDU3IC0yMCA4IC03IDMxIC0xNiA1MCAtMjAgMTkgLTQgNDYgLTE2IDU5IC0yNiAxMwotMTEgNDAgLTE5IDYwIC0xOSAyMCAtMSA0NyAtNyA2MSAtMTUgMTQgLTggMzcgLTE0IDUxIC0xNSAxNSAwIDQ3IC05IDcyIC0yMAoyNSAtMTEgNjcgLTIzIDk0IC0yNiAyNiAtMyA2NSAtMTIgODYgLTIwIDIwIC04IDQ4IC0xNCA2MSAtMTQgMTMgMCA0MyAtOSA2NwotMTkgMjQgLTExIDc2IC0yMiAxMTQgLTI2IDM5IC00IDk3IC0xNCAxMzAgLTIxIDMzIC04IDEyMyAtMTkgMjAwIC0yNCA3NyAtNgoxNzggLTE0IDIyNSAtMTkgMTM5IC0xNiAzNTYgLTEzIDM4OSA0IDIwIDEwIDc5IDE2IDE5MiAyMCA5MCA0IDE4NyAxMyAyMTQgMjAKMjggOCAxMDEgMTYgMTY0IDE5IDcxIDQgMTIyIDExIDEzNSAxOSAxMiA4IDUzIDE4IDkxIDIyIDM5IDQgNzggMTIgODkgMTcgMTAKNSA0NyAxNCA4MyAxOSAzNSA1IDc3IDE2IDk0IDI0IDE2IDkgNDggMjAgNzIgMjUgODggMTkgMTU0IDM4IDE4MiA1MiAxNyA5IDQ2CjE4IDY2IDIyIDIxIDQgNDIgMTMgNDkgMjEgNyA4IDI3IDE1IDQ0IDE1IDIyIDAgNDAgOCA1NiAyNSAxMyAxNCAzMiAyNSA0MiAyNQo5IDAgMzIgOSA1MCAyMCAxOCAxMSA0MyAyMCA1NSAyMCAxMyAwIDI4IDkgMzUgMjAgNyAxMSAyMSAyMCAzMCAyMCAxMCAwIDIyIDkKMjcgMTkgOCAxNSAyMiAxOSA2MiAxOSAzNyAxIDU4IDYgNzMgMjAgMTEgMTEgMzEgMjMgNDMgMjYgMTEgNCAyNCAxMyAyNiAyMCAzCjggMTkgMTcgMzUgMjEgMTggMyAzMiAxNCAzNSAyNiAzIDEyIDE0IDE5IDMwIDE5IDEzIDAgMzAgNyAzNyAxNSA3IDggMjUgMTUKNDEgMTUgMTUgMCAzMSA1IDM0IDEwIDQgNiAyMSAxNyAzOCAyNSAxOCA4IDM5IDE5IDQ3IDIzIDggNSA0MSAyMiA3MiAzOCAzMgoxNiA1OCAzMyA1OCAzNyAwIDQgMTQgMTMgMzAgMTkgMTcgNSAzNSAxOSA0MSAyOSA1IDEwIDE3IDE5IDI1IDE5IDIyIDAgMTAxCjQ4IDEwOCA2NSAzIDggMTMgMTUgMjIgMTUgOSAwIDQ3IDI0IDgzIDUzIDM2IDMwIDc0IDU3IDg0IDYwIDkgNCAxNyAxMyAxNyAyMgowIDggNiAxNSAxNCAxNSAxMyAwIDI2IDExIDExMyA5MSAyNCAyMSA0NSAzOSA0OSAzOSAxMCAwIDY0IDU4IDY0IDY5IDAgNiA5CjExIDIxIDExIDEyIDAgMjMgOCAyNiAyMCAzIDExIDEzIDIwIDIzIDIwIDkgMCAzNiAyMCA1OSA0NSAyMyAyNSA0NiA0NSA1MiA0NQo1IDAgOSA3IDkgMTYgMCA5IDkgMTggMjAgMjEgMTEgMyAyMCAxMiAyMCAxOSAwIDggOSAxNCAyMCAxNCAxMiAwIDI0IDEwIDI5CjI0IDUgMTMgMTcgMjYgMjUgMjkgOSA0IDE2IDEzIDE2IDIyIDAgOCA0IDE1IDEwIDE1IDEyIDAgNjAgNDggNjAgNjAgMCA2IDUKMTAgMTAgMTAgMTUgMCAyNDggMjM1IDMwNyAzMTAgMjkgMzYgNjYgNzggODMgOTQgMTggMTYgNDIgNDYgNTUgNjUgMTMgMjAgMzcKNTEgNTQgNzAgMTcgMTkgMzEgNDAgMzEgNDcgMCA2IDcgMTQgMTUgMTggOCAzIDE1IDEyIDE1IDE5IDAgOCA3IDIxIDE2IDI4IDE1CjEyIDQ2IDU2IDExNiAxNjMgMTQgMjMgMjcgNDkgMjcgNTkgMSAxMSAxMCAyMSAyMSAyNCAyMiA2IDMzIDMyIDI0IDU3IC00IDEyCjAgMTYgMTUgMTYgMTIgMCAyMSA2IDIxIDE1IDAgOCA5IDE5IDIwIDI1IDE0IDggMjAgMjEgMjAgNDUgMCAyOCA0IDM1IDIwIDM1CjEzIDAgMjAgNyAyMCAyMCAwIDExIDkgMjUgMjAgMzIgMTEgNyAyMCAyNCAyMCAzNyAwIDEzIDYgMzEgMTQgNDAgOCA5IDI2IDI5CjQwIDQ0IDE0IDE1IDI2IDM5IDI2IDUyIDAgMTQgOSAzMCAyMCAzNyAxMSA3IDIwIDE4IDIwIDI1IDAgNyA5IDIyIDIxIDM0IDExCjExIDIxIDMwIDIxIDQyIDEgMTIgNyAyOSAxNCAzNyA3IDggMjIgMzUgMzMgNjAgMTEgMjUgMjUgNTMgMzEgNjMgMjYgNDUgMzEKNTQgNDAgNzcgMTEgMjUgNDEgOTEgNjYgMTQzIDggMTYgMTQgNDAgMTQgNTQgMCAxNCAxMSAzOCAyNSA1NSAxNCAxNiAyNSA0MAoyNSA1NCAwIDEzIDkgNDEgMjAgNjEgMTEgMjEgMjAgNDQgMjAgNTEgMCA4IDkgMjUgMjAgMzkgMTEgMTUgMjAgNDEgMjAgNjIgMAoyMCA3IDQ1IDE1IDU1IDggMTEgMTUgMjkgMTUgNDAgMCAxMiAxMiA0NCAyNSA3MSAxNCAyOCAyNSA2NCAyNSA4MCAwIDE3IDcgMzkKMTUgNDkgOCAxMSAxNSAzMyAxNSA0OSAwIDE2IDkgNDQgMTkgNjEgMTEgMTcgMjUgNjcgMzEgMTExIDcgNDQgMTcgODggMjIgOTkKNSAxMCAxNCA0MyAxOSA3NSA1IDMxIDE1IDgxIDI0IDExMSA4IDMwIDE1IDc5IDE1IDExMCAwIDMwIDcgNzMgMTQgOTUgOCAyMgoxNyA3NiAyMSAxMjAgMyA0NCAxNCAxMDUgMjMgMTM1IDI1IDgzIDI1IDc2NiAwIDg1NSAtMTAgMzMgLTIyIDEwOCAtMjcgMTY2Ci02IDU4IC0xNCAxMTYgLTE5IDEzMCAtNSAxMyAtMTIgNjAgLTE2IDEwMyAtNCA0NCAtMTQgOTIgLTIyIDEwNyAtOCAxNiAtMTcKNTAgLTIxIDc2IC0zIDI3IC0xMSA1OSAtMTggNzMgLTcgMTQgLTE1IDQ0IC0xOSA2OCAtMyAyMyAtMTUgNTkgLTI2IDgwIC0xMQoyMCAtMjAgNDUgLTIwIDU1IDAgMTAgLTYgMjggLTE0IDQwIC04IDEyIC0xNyAzOCAtMjAgNTggLTQgMjEgLTEzIDQyIC0yMSA0OQotNyA2IC0xNyAyNiAtMjAgNDMgLTQgMTggLTE0IDQwIC0yMiA0OSAtOSAxMCAtMTggMzQgLTIwIDU1IC0yIDIxIC0xMCA0NCAtMTcKNTMgLTcgOCAtMTYgMjggLTIwIDQ0IC00IDE2IC0xNiA0MSAtMjcgNTQgLTEwIDE0IC0xOSAzOSAtMTkgNTYgMCAxOSAtOCAzOAotMjAgNDkgLTExIDkgLTIwIDI3IC0yMCAzOSAwIDEyIC03IDI5IC0xNiAzOSAtOSAxMCAtMTggMzcgLTIxIDYxIC0zIDI0IC0xMQo1MCAtMTkgNTggLTcgOCAtMTYgMjggLTIwIDQzIC0zIDE2IC0xMiAzMSAtMTkgMzMgLTcgMyAtMTYgMjQgLTE5IDQ2IC00IDI0Ci0xNSA0NyAtMjYgNTUgLTExIDggLTIwIDIzIC0yMCAzMyAwIDExIC02IDM0IC0xNCA1MiAtMjUgNjAgLTM2IDgzIC00NCA5OCAtNQo4IC0xOCAzNSAtMzAgNjAgLTUzIDExOCAtODYgMTgwIC05MyAxODAgLTUgMCAtOSAxMCAtOSAyMyAwIDEzIC0xMSAzOCAtMjUgNTcKLTE0IDE5IC0yNSAzOSAtMjUgNDYgMCA2IC02IDE3IC0xNCAyMyAtOCA3IC0xNyAzMCAtMjEgNTEgLTQgMjEgLTEzIDQ0IC0yMQo1MSAtOCA2IC0xNCAxNiAtMTQgMjIgMCA2IC05IDI5IC0xOSA1MSAtMTEgMjMgLTI0IDYwIC0zMCA4MiAtNiAyMyAtMTggNDcKLTI2IDU0IC04IDcgLTE1IDIzIC0xNSAzNSAwIDEyIC05IDM0IC0yMCA0OCAtMTQgMTggLTIwIDQwIC0yMCA3NiAwIDMyIC03IDY1Ci0yMCA4OCAtMTEgMjEgLTIwIDUwIC0yMCA2NiAwIDE1IC03IDQ0IC0xNiA2NSAtMTMgMzEgLTE1IDgxIC0xNCAyOTYgMSAyNjMgNQozMDQgNTEgNDgxIDIyIDg2IDI4IDE0MiAzMCAyODggMyAxNjggLTggMjU1IC0zNCAyODEgLTkgMTAgLTE3IDI0IC0xNyAzMiAwIDgKLTExIDE5IC0yNSAyNCAtMTQgNSAtMjUgMTYgLTI1IDI1IDAgOCAtNSAxNSAtMTAgMTUgLTYgMCAtMjEgMTEgLTM0IDI1IC0yMQoyMyAtMzMgMjUgLTEyNyAzMCAtNTkgMyAtMTE0IDEgLTEyNyAtNXoiLz4KPC9nPjwvZz4KPGcgZmlsbD0iI0ZGRDFFMyIgZmlsdGVyPSJ1cmwoI2dsKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsMTQwMC4wMDAwMDApIHNjYWxlKDAuMTAwMDAwLC0wLjEwMDAwMCkiCiBzdHJva2U9Im5vbmUiPgo8cGF0aCBkPSJNOTgzOSAxMTkyMiBjLTI1IC05IC01OCAtMjYgLTc1IC0zNiAtNDQgLTI4IC0yMTEgLTIwMyAtMjUyIC0yNjUKLTIxIC0zMCAtNTIgLTcxIC02OSAtOTAgLTE4IC0yMCAtMzMgLTQ0IC0zMyAtNTMgMCAtMTAgLTkgLTI1IC0xOSAtMzUgLTExCi0xMCAtMzEgLTQwIC00NSAtNjggLTE1IC0yNyAtMzIgLTU0IC0zOSAtNjAgLTggLTUgLTI0IC0zMSAtMzcgLTU4IC0xMyAtMjYKLTMyIC01NSAtNDIgLTY0IC0xMCAtOSAtMTggLTI0IC0xOCAtMzMgMCAtMTAgLTkgLTI5IC0yMCAtNDMgLTExIC0xNCAtMjAgLTMyCi0yMCAtNDAgMCAtNyAtOSAtMjQgLTIwIC0zNyAtMTEgLTEzIC0yMCAtMzIgLTIwIC00NCAwIC0xMiAtOSAtMzIgLTIwIC00NgotMTEgLTE0IC0yMCAtMzYgLTIwIC01MCAwIC0xNCAtOSAtMzggLTIwIC01NSAtMTEgLTE2IC0yMCAtNDAgLTIwIC01MyAwIC0xMgotOSAtNDAgLTIwIC02MiAtMTEgLTIyIC0yMCAtNTYgLTIwIC03NyAwIC0yMSAtOCAtNTQgLTE4IC03MyAtMjUgLTQ4IC00NwotMzI3IC0zMiAtNDIwIDUgLTM2IDEwIC04OSAxMCAtMTE4IDAgLTMzIDcgLTY2IDIwIC04OSAxMSAtMjIgMjAgLTU3IDIwIC04MwowIC0yOCA4IC01NiAyMCAtNzUgMTEgLTE2IDIwIC00NSAyMCAtNjMgMCAtMTkgOSAtNDUgMjAgLTU5IDExIC0xNCAyMCAtNDAgMjAKLTU3IDAgLTE3IDkgLTQ0IDIwIC02MSAxMSAtMTYgMjAgLTQzIDIwIC01OCAwIC0xNSA5IC00NSAyMCAtNjcgMTEgLTIyIDIwCi00NiAyMCAtNTQgMCAtOSA5IC0zNSAxOSAtNTggMjUgLTU3IDU0IC0xMjggODUgLTIxMCAxNCAtMzYgMzIgLTc5IDQwIC05NSA4Ci0xNSAxOSAtNDMgMjUgLTYwIDYgLTE4IDE2IC00OCAyMiAtNjUgNiAtMTggMjAgLTUwIDMwIC03MCAxMCAtMjAgMTkgLTQ1IDE5Ci01NSAwIC0xMCA5IC0yOSAyMCAtNDMgMTEgLTE0IDIwIC0zNiAyMCAtNDggMCAtMTMgOSAtMzUgMjAgLTQ5IDExIC0xNCAyMAotMzUgMjAgLTQ3IDAgLTExIDkgLTMyIDIwIC00NiAxMSAtMTQgMjAgLTM0IDIwIC00NiAwIC0xMiA5IC0zMSAyMCAtNDQgMTEKLTEzIDIwIC0zMyAyMCAtNDUgMCAtMTMgNiAtMjggMTQgLTM0IDggLTcgMTggLTI3IDIyIC00NCAzIC0xOCAxNSAtNDMgMjUgLTU2CjExIC0xMyAxOSAtMzEgMTkgLTQwIDAgLTkgOSAtMjkgMjAgLTQ2IDExIC0xNiAyMCAtMzcgMjAgLTQ2IDAgLTkgOSAtMjggMjAKLTQyIDExIC0xNCAyMCAtMzMgMjAgLTQyIDAgLTkgOSAtMjggMjAgLTQyIDExIC0xNCAyMCAtMzMgMjAgLTQzIDAgLTEwIDkgLTI5CjIwIC00MyAxMSAtMTQgMjAgLTMwIDIwIC0zNiAwIC0xMCAzMyAtODEgNTEgLTExMSA1IC04IDE0IC0yNiAyMSAtNDAgNiAtMTQKMzggLTgwIDcwIC0xNDcgMzIgLTY3IDU4IC0xMjggNTggLTEzNSAwIC03IDkgLTI2IDIwIC00MyAxMSAtMTYgMjAgLTM4IDIwCi00NyAwIC0xMCA5IC0zMiAyMCAtNTAgMTEgLTE4IDIwIC00MCAyMCAtNDggMCAtOCA5IC0yNiAyMCAtNDAgMTEgLTE0IDIwIC0zNQoyMCAtNDggMCAtMTIgOSAtMzkgMjAgLTU5IDExIC0yMSAyMCAtNDQgMjAgLTUxIDAgLTggOSAtMjUgMjAgLTM5IDExIC0xNCAyMAotMzQgMjAgLTQ1IDAgLTEwIDkgLTM2IDIwIC01OCAxMSAtMjIgMjAgLTUwIDIwIC02MiAwIC0xMyA5IC0zNCAyMCAtNDggMTEKLTE0IDIwIC0zNyAyMCAtNTIgMCAtMTQgOSAtNDcgMjAgLTczIDExIC0yNiAyMCAtNTcgMjAgLTcxIDAgLTEzIDkgLTQzIDE5Ci02NiAyMCAtNDUgNDIgLTIwMyA0MSAtMjk4IC0xIC05MCAtMjYgLTI1MyAtNDMgLTI4NSAtMTAgLTE2IC0xNyAtMzggLTE3IC00OAowIC0xMCAtOSAtMzUgLTIwIC01NyAtMTEgLTIyIC0yMCAtNDggLTIwIC01OSAwIC0xMSAtOCAtMjcgLTE3IC0zNiAtMTYgLTE2Ci00MSAtNTcgLTYxIC0xMDAgLTYgLTEyIC0xNyAtMjcgLTI2IC0zNCAtOSAtNyAtMTYgLTIyIC0xNiAtMzIgMCAtMTEgLTkgLTI3Ci0yMCAtMzYgLTExIC0xMCAtMjAgLTIyIC0yMCAtMjkgMCAtNiAtOSAtMTkgLTIwIC0yOSAtMTEgLTEwIC0yMCAtMjQgLTIwIC0zMQowIC03IC04IC0yMSAtMTggLTMxIC0xMSAtMTAgLTU4IC02NyAtMTA3IC0xMjggLTEyOCAtMTYxIC01MzAgLTU1OCAtNjY3IC02NjAKLTE1IC0xMSAtNjAgLTQ4IC0xMDIgLTgzIC00MSAtMzQgLTc4IC02MiAtODMgLTYyIC00IDAgLTMwIC0yMSAtNTggLTQ2IC0yNwotMjYgLTY3IC01OCAtODkgLTczIC0xMzcgLTkxIC0xOTQgLTEzMiAtMjA2IC0xNDYgLTcgLTggLTE4IC0xNSAtMjUgLTE1IC02IDAKLTIwIC05IC0zMCAtMjAgLTEwIC0xMSAtMjYgLTIwIC0zNSAtMjAgLTkgMCAtMjUgLTkgLTM1IC0yMCAtMTAgLTExIC0yNCAtMjAKLTMwIC0yMCAtNyAwIC0xOCAtNyAtMjUgLTE2IC04IC04IC0yNyAtMjIgLTQ0IC0zMCAtMTcgLTggLTQ5IC0yNSAtNzEgLTM5Ci0yMiAtMTMgLTUwIC0yOSAtNjMgLTM0IC0xMyAtNiAtNDQgLTI3IC02OSAtNDYgLTI1IC0xOSAtNTMgLTM1IC02MiAtMzUgLTkgMAotMjcgLTkgLTQxIC0yMCAtMTQgLTExIC0zMyAtMjAgLTQyIC0yMCAtOSAwIC0yMCAtNSAtMjQgLTExIC0zIC02IC0yNSAtMTkKLTQ5IC0yOSAtMjQgLTEwIC00NiAtMjMgLTQ5IC0yOSAtNCAtNiAtMTcgLTExIC0zMCAtMTEgLTEzIDAgLTMxIC05IC00MSAtMjAKLTEwIC0xMSAtMjggLTIwIC0zOSAtMjAgLTEyIDAgLTM0IC05IC01MSAtMjAgLTE2IC0xMSAtMzYgLTIwIC00MyAtMjAgLTggMAotMjUgLTkgLTM5IC0yMCAtMTQgLTExIC0zNyAtMjAgLTUwIC0yMCAtMTQgMCAtMzYgLTkgLTUwIC0yMCAtMTQgLTExIC0zNSAtMjAKLTQ1IC0yMCAtMTEgMCAtMzEgLTkgLTQ1IC0yMCAtMTQgLTExIC0zOCAtMjAgLTU0IC0yMCAtMTYgMCAtNDMgLTkgLTYxIC0yMAotMTggLTExIC00NCAtMjAgLTU2IC0yMCAtMTMgMCAtMzUgLTkgLTQ5IC0yMCAtMTQgLTExIC0zOCAtMjAgLTU0IC0yMCAtMTUgMAotNDggLTkgLTc0IC0yMCAtMjYgLTExIC01NiAtMjAgLTY4IC0yMCAtMTIgMCAtMzkgLTkgLTYwIC0yMCAtMjAgLTExIC01MCAtMjAKLTY2IC0yMCAtMTYgMCAtNDggLTcgLTcyIC0xNiAtMjQgLTggLTcxIC0yMCAtMTA1IC0yNSAtMzMgLTQgLTc0IC0xNSAtOTAgLTI0Ci0xNiAtOCAtNDkgLTE1IC03NCAtMTUgLTI1IDAgLTg4IC05IC0xNDAgLTIwIC01MiAtMTAgLTE1NiAtMjQgLTIzMCAtMzAgLTc0Ci02IC0xODAgLTE2IC0yMzUgLTIxIC0xMjcgLTEzIC00MDggLTQgLTUwMCAxNiAtMzggOCAtMTA5IDE1IC0xNTcgMTUgLTU4IDAKLTEwNyA3IC0xNTAgMjAgLTM0IDExIC05MCAyMCAtMTIzIDIwIC00MSAwIC03MiA2IC05OCAyMCAtMjAgMTEgLTU1IDIwIC03NwoyMCAtMjMgMCAtNTggOSAtODAgMjAgLTIyIDExIC01NyAyMCAtNzggMjAgLTI0IDAgLTQ5IDggLTY1IDIwIC0xNCAxMSAtMzUgMjAKLTQ2IDIwIC0xMiAwIC0zOSA5IC02MSAyMCAtMjIgMTEgLTQ5IDIwIC02MSAyMCAtMTIgMCAtMzYgOCAtNTMgMTkgLTE3IDEwCi00NyAyMSAtNjcgMjUgLTIxIDQgLTQyIDEzIC00OSAyMSAtNyA4IC0yMiAxNSAtMzUgMTUgLTEyIDAgLTMyIDkgLTQ1IDIwIC0xMwoxMSAtMzIgMjAgLTQyIDIwIC0xMSAwIC0zMSA5IC00NSAyMCAtMTQgMTEgLTMyIDIwIC00MCAyMCAtOCAwIC0yNiA5IC00MCAyMAotMTQgMTEgLTMzIDIwIC00MyAyMCAtOSAwIC0yNSA5IC0zNSAyMCAtMTAgMTEgLTI2IDIwIC0zNSAyMCAtOSAwIC0yNSA5IC0zNQoyMCAtMTAgMTEgLTIzIDIwIC0zMCAyMCAtNyAwIC0yMCA5IC0zMCAyMCAtMTAgMTEgLTI1IDIwIC0zNCAyMCAtOSAwIC0yNCA5Ci0zNCAyMCAtOSAxMSAtMjMgMjAgLTMwIDIwIC04IDAgLTIyIDkgLTMyIDIwIC0xMCAxMSAtMjQgMjAgLTMxIDIwIC03IDAgLTE4CjkgLTI0IDIwIC02IDExIC0xNyAyMCAtMjUgMjAgLTcgMCAtMTUgMyAtMTcgOCAtMSA0IC0zMCAyNyAtNjMgNTIgLTc5IDU5Ci00NDIgNDIyIC00ODAgNDgwIC0xNiAyNSAtMzYgNTMgLTQ1IDYyIC0xNSAxNyAtNDYgNTMgLTgxIDk3IC0xMCAxMyAtMTkgMzAKLTE5IDM3IDAgNyAtOSAxOCAtMjAgMjQgLTExIDYgLTIwIDE3IC0yMCAyNSAwIDE4IC0zOCA4NSAtNjIgMTA4IC0xMCAxMCAtMTgKMjYgLTE4IDM2IDAgMTAgLTkgMjYgLTIwIDM2IC0xMSAxMCAtMjAgMjQgLTIwIDMyIDAgOCAtOSAzMSAtMTkgNTEgLTUyIDEwMQotNjEgMTIxIC02MSAxMzIgMCA2IC05IDIzIC0yMCAzNyAtMTEgMTQgLTIwIDM1IC0yMCA0NyAwIDExIC05IDM1IC0yMCA1MSAtMTEKMTcgLTIwIDQxIC0yMCA1MyAwIDEzIC05IDM1IC0yMCA0OSAtMTEgMTQgLTIwIDQxIC0yMCA2MCAwIDE4IC05IDUxIC0yMCA3MwotMTEgMjIgLTIwIDUzIC0yMCA3MCAwIDE2IC05IDQ3IC0yMCA2NyAtMTIgMjMgLTIwIDU3IC0yMCA4NSAwIDI2IC03IDczIC0xNgoxMDUgLTggMzIgLTE5IDExOSAtMjQgMTk0IC01IDc1IC0xNCAxNDggLTIwIDE2MyAtMTMgMzUgLTEzIDMzMCAwIDM3NiA2IDE5CjE1IDkxIDIwIDE2MCA2IDY5IDE3IDE1MiAyNSAxODUgOCAzMyAxNSA4MCAxNSAxMDUgMCAyNiA5IDYxIDIwIDgzIDExIDIwIDIwCjUyIDIwIDcwIDAgMTkgOSA2MCAyMCA5MiAxMSAzMiAyMCA3MCAyMCA4NCAwIDE0IDkgNDAgMjAgNTYgMTEgMTcgMjAgNDUgMjAKNjMgMCAxOCA5IDUwIDIwIDcyIDExIDIyIDIwIDU0IDIwIDczIDAgMjEgOCA0MSAyMCA1MiAxMSAxMCAyMCAyOCAyMCAzOSAwIDEyCjkgMzUgMjAgNTEgMTEgMTcgMjAgNDEgMjAgNTMgMCAxMyA5IDM1IDIwIDQ5IDExIDE0IDIwIDM0IDIwIDQ1IDAgMTAgOSAzNiAyMAo1OCAxMSAyMiAyMCA0OCAyMCA1OSAwIDExIDQgMjIgOSAyNiAxNCA4IDcxIDEyNiA3MSAxNDYgMCAxMCA1IDIxIDExIDI1IDYgMwoxOSAyNSAyOSA0OSAxMCAyNCAyMyA0NiAyOSA0OSA2IDQgMTEgMTcgMTEgMzAgMCAxMyA5IDMxIDIwIDQxIDExIDEwIDIwIDI2CjIwIDM1IDAgOSA5IDI1IDIwIDM1IDExIDEwIDIwIDIzIDIwIDI5IDAgNiAxOCAzOCA0MCA3MSAyMiAzMyA0MCA2NSA0MCA3MSAwCjYgOSAxOSAxOSAyOCAxMSAxMCAyMyAzMSAyNiA0NyA0IDE2IDExIDI5IDE2IDI5IDUgMCAxNiAxNSAyNCAzMyAyMSA0NCAzOSA3NAo1NyA5NCA4IDEwIDE4IDMwIDIyIDQ2IDMgMTUgMTAgMjcgMTUgMjcgNSAwIDIxIDIwIDM1IDQ0IDIyIDM3IDI2IDU3IDI2IDExOAowIDYyIC00IDc5IC0yNSAxMTEgLTM1IDUwIC05MCA3NyAtMTYwIDc3IC05MyAwIC0xMzkgLTM0IC0yNjAgLTE5NSAtMTEgLTE0Ci0yOCAtMzQgLTM4IC00MyAtOSAtOSAtMTcgLTIyIC0xNyAtMjggMCAtNiAtMjAgLTM4IC00NSAtNzAgLTI1IC0zMSAtNDUgLTYyCi00NSAtNjcgMCAtNiAtMTUgLTI4IC0zMyAtNTEgLTMwIC0zNyAtNTUgLTczIC04MiAtMTE4IC01IC05IC0yNSAtMzcgLTQyIC02MwotMTggLTI1IC0zMyAtNTAgLTMzIC01NCAwIC01IC03IC0xNSAtMTcgLTIyIC05IC04IC0yMiAtMjcgLTMwIC00NCAtNyAtMTYKLTIzIC00MyAtMzMgLTYwIC0xMSAtMTYgLTI3IC00NCAtMzQgLTYxIC04IC0xNyAtMjIgLTM2IC0zMCAtNDQgLTkgLTcgLTE2Ci0yMyAtMTYgLTM2IDAgLTEzIC03IC0yNyAtMTQgLTMxIC04IC01IC0yOSAtMzUgLTQ3IC02OCAtMTcgLTMzIC0zOCAtNjcgLTQ1Ci03NiAtOCAtOCAtMTQgLTIxIC0xNCAtMjggMCAtNyAtOSAtMjQgLTIwIC0zOCAtMTEgLTE0IC0yMCAtMzMgLTIwIC00MyAwIC05Ci05IC0yNSAtMjAgLTM1IC0xMSAtMTAgLTIwIC0yOSAtMjAgLTQyIDAgLTEyIC05IC0zMiAtMjAgLTQzIC0xMSAtMTEgLTIwIC0yOAotMjAgLTM4IDAgLTExIC05IC0yNyAtMjAgLTM3IC0xMSAtMTAgLTIwIC0yOCAtMjAgLTQwIDAgLTEyIC05IC0zMCAtMjAgLTQwCi0xMSAtMTAgLTIwIC0zMSAtMjAgLTQ3IDAgLTE2IC02IC0zMSAtMTUgLTM0IC04IC0zIC0xOSAtMjAgLTI0IC0zNyAtMTUgLTUxCi01OCAtMTQ4IC03MCAtMTYwIC02IC02IC0xMSAtMTkgLTExIC0yOSAwIC05IC05IC0zNyAtMTkgLTYwIC0xMCAtMjQgLTI4IC02NQotMzkgLTkzIC0xMSAtMjcgLTMwIC03MyAtNDEgLTEwMiAtMTIgLTI4IC0yMSAtNjIgLTIxIC03NSAwIC0xMyAtOSAtMzYgLTIwCi01MyAtMTEgLTE2IC0yMCAtNDAgLTIwIC01MyAwIC0xMiAtOSAtNDAgLTIwIC02MiAtMTEgLTIyIC0yMCAtNTIgLTIwIC02NyAwCi0xNSAtOSAtNDEgLTIwIC01OCAtMTEgLTE2IC0yMCAtNDYgLTIwIC02NiAwIC0yMCAtOSAtNTYgLTIwIC04MCAtMTEgLTI0IC0yMAotNjAgLTIwIC03OSAwIC0xOSAtOSAtNTMgLTIwIC03NSAtMTEgLTIyIC0xOSAtNDkgLTE5IC02MCAwIC0xMSAtOSAtNTggLTIwCi0xMDUgLTE5IC04MSAtMjggLTEzMCAtNTEgLTI4NSAtNiAtMzggLTE4IC0xMTkgLTI4IC0xODAgLTI2IC0xNjUgLTI1IC05NDggMQotMTA0OCA5IC0zOCAxNyAtOTQgMTcgLTEyNSAwIC0zMiA5IC04MyAyMCAtMTE1IDExIC0zMSAyMCAtNzYgMjAgLTk5IDAgLTI0IDkKLTY3IDIwIC05NiAxMSAtMjkgMjAgLTY3IDIwIC04NSAwIC0xNyA5IC00NSAyMCAtNjIgMTEgLTE2IDIwIC00MyAyMCAtNjAgMAotMTYgOSAtNTAgMjAgLTc0IDExIC0yNCAyMCAtNTMgMjAgLTY1IDAgLTExIDkgLTM0IDIwIC01MSAxMSAtMTYgMjAgLTM4IDIwCi00NyAwIC0xMCA5IC0zOSAyMSAtNjUgNDQgLTk5IDU3IC0xMjkgNzkgLTE4MyA2MyAtMTU2IDEwNCAtMjM2IDE2MSAtMzIwIDE0Ci0yMiAyOSAtNDkgNzQgLTEzNCAyMSAtNDIgNDMgLTc2IDQ3IC03NiA0IDAgOCAtNiA4IC0xNCAwIC04IDExIC0yOCAyNSAtNDQKMTQgLTE3IDI1IC0zMyAyNSAtMzcgMCAtMyA2MiAtODQgMTM3IC0xNzggMTc4IC0yMjIgNDU4IC01MDQgNjU4IC02NjMgMTY0Ci0xMzAgMjY4IC0yMDQgMjg5IC0yMDQgNyAwIDIxIC05IDMxIC0yMCAxMCAtMTEgMjMgLTIwIDMwIC0yMCAxMCAwIDI0IC05IDgzCi01NiAzOCAtMzAgMTcxIC0xMDQgMTg3IC0xMDQgOCAwIDE2IC00IDIwIC0xMCAzIC01IDM2IC0yMyA3MyAtNDAgMzcgLTE4IDc0Ci0zNiA4MiAtNDEgNTAgLTMwIDE0NyAtNjkgMTcwIC02OSAxNSAwIDM5IC05IDUzIC0yMCAxNCAtMTEgMzAgLTIwIDM2IC0yMCA3CjAgMjkgLTkgNTEgLTIwIDIyIC0xMSA0OSAtMjAgNjEgLTIwIDExIDAgMzIgLTkgNDYgLTIwIDE0IC0xMSAzOSAtMjAgNTUgLTIwCjE2IDAgNDYgLTkgNjggLTIwIDIyIC0xMSA1MiAtMjAgNjcgLTIwIDE2IDAgNDUgLTkgNjYgLTIwIDIwIC0xMSA1MyAtMjAgNzIKLTIwIDIwIDAgNDkgLTcgNjQgLTE1IDE2IC04IDQ4IC0xNyA3MiAtMjEgMjQgLTMgNzAgLTE0IDEwMiAtMjUgMzEgLTEwIDcyCi0xOSA5MCAtMTkgMTggMCA2OSAtOSAxMTMgLTE5IDQzIC0xMSAxMjkgLTIyIDE4OSAtMjUgNjEgLTIgMTQyIC0xMiAxODAgLTIxCjYxIC0xNSAxMTEgLTE2IDM4MCAtMTIgMTcxIDQgMzI4IDExIDM1MCAxNiAyMiA2IDkwIDEzIDE1MCAxNyA2MSAzIDE1NSAxNAoyMTAgMjQgNTUgMTAgMTIwIDIxIDE0NSAyNSAyNCAzIDQ5IDEwIDU1IDE1IDcgNiA0NiAxNSA4OCAyMCA0MyA2IDkzIDE4IDExMgoyNiAxOSA3IDQ5IDE0IDY3IDE0IDE4IDAgNTAgOSA3MSAyMCAyMCAxMSA0OCAyMCA2MiAyMCAxNCAwIDQyIDkgNjIgMjAgMjEgMTEKNDkgMjAgNjMgMjAgMTQgMCAzOSA5IDU1IDIwIDE3IDExIDQ0IDIwIDYwIDIwIDE3IDAgNDUgOSA2MyAyMCAxOCAxMSAzOSAyMAo0OCAyMCA4IDAgMzIgOSA1MiAxOSAyMCAxMSA2MCAyOCA4NyAzOSA2MSAyNCA5NSAzOSAxMTUgNTAgNDMgMjUgMTA3IDUyIDEyMQo1MiA5IDAgMjQgOSAzNCAyMCAxMCAxMSAyOCAyMCA0MCAyMCAxMSAwIDI2IDUgMzEgMTAgMTEgMTEgMzAgMjIgMTQ5IDg0IDM4CjIwIDc3IDQzIDg2IDUxIDggOCAyMSAxNSAyOCAxNSAxNiAwIDk2IDQ3IDExMSA2NSA3IDggMTkgMTUgMjcgMTUgOCAwIDI4IDEwCjQzIDIyIDU4IDQ3IDc0IDU4IDg1IDU4IDcgMCAyMCA5IDMwIDIwIDEwIDExIDIzIDIwIDMwIDIwIDcgMCAyMCA5IDMwIDIwIDEwCjExIDI0IDIwIDMwIDIwIDcgMCAxOCA3IDI1IDE1IDcgOCA0NCAzNSA4NCA2MSAzOSAyNiA3OCA1NCA4NiA2NCA4IDkgNjkgNjEKMTM1IDExNCAzMTIgMjUyIDM5NiAzMzAgNjE4IDU3NiA3MiA4MCAxMzUgMTUwIDE0MiAxNTUgNiA2IDMyIDM2IDU4IDY5IDI2IDMyCjU5IDY3IDcyIDc4IDI0IDE4IDg1IDEwMiA4NSAxMTYgMCA0IDE0IDIwIDMwIDM1IDE3IDE2IDQ3IDU0IDY3IDg1IDIxIDMyIDQwCjU5IDQ0IDYyIDMgMyAxNSAyMCAyNSAzOSAyOSA1MSAzNiA2MSA4MCAxMjEgNzUgMTAxIDExMSAxNTYgMTE4IDE3OCA0IDEyIDExCjIyIDE1IDIyIDUgMCAxNSAxNSAyMiAzMyA3IDE3IDE3IDM3IDIxIDQyIDI1IDMxIDU4IDg4IDU4IDEwMCAwIDggNiAxOCAxMyAyMgoxOSAxMSAxMDkgMTc2IDE1NiAyODMgNiAxNCAxNSAzMiAyMCA0MCA1IDggMTQgMjYgMjAgNDAgNiAxNCAxNSAzMiAxOSA0MCA1IDgKMTkgMzggMzIgNjUgMTIgMjggMzEgNjcgNDEgODcgMTEgMjAgMTkgNDMgMTkgNTAgMCA3IDggMzEgMTkgNTMgNDMgOTIgNjEgMTM3CjYxIDE1NiAwIDEyIDkgMzIgMjAgNDYgMTEgMTQgMjAgMzQgMjAgNDUgMCAxMCA5IDM2IDIwIDU4IDExIDIyIDIwIDQ5IDIwIDYwCjAgMTEgOSAzOCAyMCA2MCAxMSAyMiAyMCA0OCAyMCA2MCAwIDExIDkgMzcgMjAgNTcgMTEgMjEgMjAgNDggMjAgNjEgMCAxMyA3CjM3IDE2IDU1IDkgMTcgMjAgNTYgMjQgODcgNSAzMCAxNSA3MyAyNCA5NSA4IDIyIDE1IDYzIDE2IDkwIDAgMjggOSA2OCAyMCA5MAoxMSAyMiAyMCA1OCAyMCA4MCAwIDIyIDkgNzQgMjAgMTE1IDExIDQxIDIwIDEwMCAyMCAxMzAgMCAzMSA3IDgwIDE1IDExMCA0MwoxNTYgNDcgOTgyIDUgMTA2MCAtNyAxMiAtMTYgNzIgLTIwIDEzNCAtNSA2MSAtMTYgMTM2IC0yNCAxNjYgLTkgMzAgLTE2IDY4Ci0xNiA4MyAwIDE1IC05IDQ1IC0yMCA2NyAtMTEgMjIgLTIwIDU2IC0yMCA3NyAwIDIxIC05IDU4IC0yMCA4MiAtMTEgMjQgLTIwCjU0IC0yMCA2OCAwIDEzIC05IDQxIC0xOSA2MSAtMTAgMjAgLTI0IDUyIC0zMCA3MCAtNiAxNyAtMTYgNDcgLTIyIDY1IC02IDE3Ci0yMCA0OSAtMzAgNjkgLTEwIDIwIC0xOSA0NCAtMTkgNTIgMCAxNiAtMjggODMgLTYxIDE0OCAtMTAgMjAgLTE5IDQ0IC0xOSA1MwowIDkgLTkgMzMgLTIwIDU1IC0xMSAyMiAtMjAgNDcgLTIwIDU2IDAgOSAtOSAyNyAtMjAgNDEgLTExIDE0IC0yMCAzNSAtMjAgNDcKMCAxMSAtOSAzNSAtMjAgNTEgLTExIDE3IC0yMCA0MCAtMjAgNTEgMCAxMiAtOSAzMyAtMjAgNDcgLTExIDE0IC0yMCAzMSAtMjAKMzkgMCA3IC05IDI3IC0yMCA0MyAtMTEgMTcgLTIwIDM5IC0yMCA1MCAwIDExIC05IDI4IC0yMCAzOCAtMTEgOSAtMjAgMjUgLTIwCjM0IDAgMTAgLTkgMzIgLTIwIDQ4IC0xMSAxNyAtMjAgMzcgLTIwIDQ1IDAgMTMgLTE2IDUwIC01MyAxMjUgLTE5IDM4IC0zMiA2MAotNDkgODQgLTEwIDEzIC0xOCAzNCAtMTggNDYgMCAxMiAtOSAzNCAtMjAgNDggLTExIDE0IC0yMCAzMiAtMjAgNDAgMCA4IC05CjI2IC0yMCA0MCAtMTEgMTQgLTIwIDMxIC0yMCAzOSAwIDcgLTkgMjcgLTIwIDQzIC0xMSAxNyAtMjAgMzcgLTIwIDQ2IDAgOSAtOQoyNCAtMjAgMzQgLTExIDEwIC0yMCAyOSAtMjAgNDIgMCAxMyAtOSA0MSAtMjAgNjMgLTExIDIyIC0yMCA0NyAtMjAgNTcgMCAxMAotOSAzMiAtMjAgNDggLTExIDE3IC0yMCA0MCAtMjAgNTMgMCAxMyAtNiAzNSAtMTQgNTAgLTggMTUgLTE5IDUzIC0yNSA4NSAtNgozMSAtMTYgNjcgLTIzIDgwIC03IDEyIC0xNSA1MSAtMTkgODcgLTQgMzYgLTEzIDk0IC0yMCAxMzAgLTE3IDk0IC0xNSAzMzkgNQo0MjMgOSAzOCAxNiA4OCAxNiAxMTMgMCAyNCA5IDY3IDIwIDk2IDExIDI5IDIwIDY5IDIwIDg4IDAgMTkgNyA1OCAxNiA4NSA4CjI4IDE4IDk3IDIwIDE1NSA1IDg5IDMgMTE1IC0xNSAxNjkgLTEyIDM1IC0yMSA2OSAtMjEgNzUgMCA2IC05IDE5IC0yMCAyOQotMTEgOSAtMjAgMjYgLTIwIDM2IDAgMjQgLTg3IDk5IC0xMzggMTE5IC01NiAyMiAtMTU5IDI0IC0yMTMgNHogbTIzNyAtNTcKYzEzIC0xNCAyOCAtMjUgMzQgLTI1IDUgMCAxMCAtNyAxMCAtMTUgMCAtOSAxMSAtMjAgMjUgLTI1IDE0IC01IDI1IC0xNiAyNQotMjQgMCAtOCA4IC0yMiAxNyAtMzIgMjYgLTI2IDM3IC0xMTMgMzQgLTI4MSAtMiAtMTQ2IC04IC0yMDIgLTMwIC0yODggLTQ2Ci0xNzcgLTUwIC0yMTggLTUxIC00ODEgLTEgLTIxNSAxIC0yNjUgMTQgLTI5NiA5IC0yMSAxNiAtNTAgMTYgLTY1IDAgLTE2IDkKLTQ1IDIwIC02NiAxMyAtMjMgMjAgLTU2IDIwIC04OCAwIC0zNiA2IC01OCAyMCAtNzYgMTEgLTE0IDIwIC0zNiAyMCAtNDggMAotMTIgNyAtMjggMTUgLTM1IDggLTcgMjAgLTMxIDI2IC01NCA2IC0yMiAxOSAtNTkgMzAgLTgyIDEwIC0yMiAxOSAtNDUgMTkKLTUxIDAgLTYgNiAtMTYgMTQgLTIyIDggLTcgMTcgLTMwIDIxIC01MSA0IC0yMSAxMyAtNDQgMjEgLTUxIDggLTYgMTQgLTE3IDE0Ci0yMyAwIC03IDExIC0yNyAyNSAtNDYgMTQgLTE5IDI1IC00NCAyNSAtNTcgMCAtMTMgNCAtMjMgOSAtMjMgNyAwIDQwIC02MiA5MwotMTgwIDEyIC0yNSAyNSAtNTIgMzAgLTYwIDggLTE1IDE5IC0zOCA0NCAtOTggOCAtMTggMTQgLTQxIDE0IC01MiAwIC0xMCA5Ci0yNSAyMCAtMzMgMTEgLTggMjIgLTMxIDI2IC01NSAzIC0yMiAxMiAtNDMgMTkgLTQ2IDcgLTIgMTYgLTE3IDE5IC0zMyA0IC0xNQoxMyAtMzUgMjAgLTQzIDggLTggMTYgLTM0IDE5IC01OCAzIC0yNCAxMiAtNTEgMjEgLTYxIDkgLTEwIDE2IC0yNyAxNiAtMzkgMAotMTIgOSAtMzAgMjAgLTM5IDEyIC0xMSAyMCAtMzAgMjAgLTQ5IDAgLTE3IDkgLTQyIDE5IC01NiAxMSAtMTMgMjMgLTM4IDI3Ci01NCA0IC0xNiAxMyAtMzYgMjAgLTQ0IDcgLTkgMTUgLTMyIDE3IC01MyAyIC0yMSAxMSAtNDUgMjAgLTU1IDggLTkgMTggLTMxCjIyIC00OSAzIC0xNyAxMyAtMzcgMjAgLTQzIDggLTcgMTcgLTI4IDIxIC00OSAzIC0yMCAxMiAtNDYgMjAgLTU4IDggLTEyIDE0Ci0zMCAxNCAtNDAgMCAtMTAgOSAtMzUgMjAgLTU1IDExIC0yMSAyMyAtNTcgMjYgLTgwIDQgLTI0IDEyIC01NCAxOSAtNjggNwotMTQgMTUgLTQ2IDE4IC03MyA0IC0yNiAxMyAtNjAgMjEgLTc2IDggLTE1IDE4IC02MyAyMiAtMTA3IDQgLTQzIDExIC05MCAxNgotMTAzIDUgLTE0IDEzIC03MiAxOSAtMTMwIDUgLTU4IDE3IC0xMzMgMjcgLTE2NiAyNSAtODkgMjUgLTc3MiAwIC04NTUgLTkKLTMwIC0yMCAtOTEgLTIzIC0xMzUgLTQgLTQ0IC0xMyAtOTggLTIxIC0xMjAgLTcgLTIyIC0xNCAtNjUgLTE0IC05NSAwIC0zMQotNyAtODAgLTE1IC0xMTAgLTkgLTMwIC0xOSAtODAgLTI0IC0xMTEgLTUgLTMyIC0xNCAtNjUgLTE5IC03NSAtNSAtMTEgLTE1Ci01NSAtMjIgLTk5IC02IC00NCAtMjAgLTk0IC0zMSAtMTExIC0xMCAtMTcgLTE5IC00NSAtMTkgLTYxIDAgLTE2IC03IC0zOAotMTUgLTQ5IC04IC0xMCAtMTUgLTMyIC0xNSAtNDkgMCAtMTYgLTExIC01MiAtMjUgLTgwIC0xMyAtMjcgLTI1IC01OSAtMjUKLTcxIDAgLTExIC03IC0yOSAtMTUgLTQwIC04IC0xMCAtMTUgLTM1IC0xNSAtNTUgMCAtMjEgLTkgLTQ3IC0yMCAtNjIgLTExCi0xNCAtMjAgLTMxIC0yMCAtMzkgMCAtNyAtOSAtMzAgLTIwIC01MSAtMTEgLTIwIC0yMCAtNDggLTIwIC02MSAwIC0xNCAtMTEKLTM4IC0yNSAtNTQgLTE0IC0xNyAtMjUgLTQxIC0yNSAtNTUgMCAtMTQgLTYgLTM4IC0xNCAtNTQgLTI1IC01MiAtNTUgLTExOAotNjYgLTE0MyAtOSAtMjMgLTE0IC0zMiAtNDAgLTc3IC02IC0xMCAtMjAgLTM4IC0zMSAtNjMgLTExIC0yNSAtMjYgLTUyIC0zMwotNjAgLTcgLTggLTEzIC0yNSAtMTQgLTM3IDAgLTEyIC0xMCAtMzEgLTIxIC00MiAtMTIgLTEyIC0yMSAtMjcgLTIxIC0zNCAwCi03IC05IC0xOCAtMjAgLTI1IC0xMSAtNyAtMjAgLTIzIC0yMCAtMzcgMCAtMTMgLTEyIC0zNyAtMjYgLTUyIC0xNCAtMTUgLTMyCi0zNSAtNDAgLTQ0IC04IC05IC0xNCAtMjcgLTE0IC00MCAwIC0xMyAtOSAtMzAgLTIwIC0zNyAtMTEgLTcgLTIwIC0yMSAtMjAKLTMyIDAgLTEzIC03IC0yMCAtMjAgLTIwIC0xNiAwIC0yMCAtNyAtMjAgLTM1IDAgLTI0IC02IC0zNyAtMjAgLTQ1IC0xMSAtNgotMjAgLTE3IC0yMCAtMjUgMCAtOSAtOSAtMTUgLTIxIC0xNSAtMTUgMCAtMTkgLTQgLTE1IC0xNiA5IC0yNSAtMiAtNTEgLTI0Ci01NyAtMTEgLTMgLTIwIC0xMyAtMjEgLTI0IDAgLTEwIC0xMyAtMzYgLTI3IC01OSAtNzAgLTEwNyAtMTAxIC0xNTEgLTExNgotMTYzIC05IC03IC0xNiAtMjAgLTE2IC0yOCAwIC03IC03IC0xNiAtMTUgLTE5IC04IC00IC0xNSAtMTIgLTE1IC0xOCAwIC03Ci0xNCAtMjggLTMxIC00NyAtMTcgLTE5IC00MSAtNTAgLTU0IC03MCAtMTMgLTE5IC0zNyAtNDkgLTU1IC02NSAtMTcgLTE2IC01NAotNTggLTgzIC05NCAtNTkgLTc1IC0yOTIgLTMxMCAtMzA3IC0zMTAgLTUgMCAtMTAgLTQgLTEwIC0xMCAwIC0xMiAtNDggLTYwCi02MCAtNjAgLTYgMCAtMTAgLTcgLTEwIC0xNSAwIC05IC03IC0xOCAtMTYgLTIyIC04IC0zIC0yMCAtMTYgLTI1IC0yOSAtNQotMTQgLTE3IC0yNCAtMjkgLTI0IC0xMSAwIC0yMCAtNiAtMjAgLTE0IDAgLTcgLTkgLTE2IC0yMCAtMTkgLTExIC0zIC0yMCAtMTIKLTIwIC0yMSAwIC05IC00IC0xNiAtOSAtMTYgLTYgMCAtMjkgLTIwIC01MiAtNDUgLTIzIC0yNSAtNTAgLTQ1IC01OSAtNDUgLTEwCjAgLTIwIC05IC0yMyAtMjAgLTMgLTEyIC0xNCAtMjAgLTI2IC0yMCAtMTIgMCAtMjEgLTUgLTIxIC0xMSAwIC0xMSAtNTQgLTY5Ci02NCAtNjkgLTQgMCAtMjUgLTE4IC00OSAtMzkgLTg3IC04MCAtMTAwIC05MSAtMTEzIC05MSAtOCAwIC0xNCAtNyAtMTQgLTE1CjAgLTkgLTggLTE4IC0xNyAtMjIgLTEwIC0zIC00OCAtMzAgLTg0IC02MCAtMzYgLTI5IC03NCAtNTMgLTgzIC01MyAtOSAwIC0xOQotNyAtMjIgLTE1IC03IC0xNyAtODYgLTY1IC0xMDggLTY1IC04IDAgLTIwIC05IC0yNSAtMTkgLTYgLTEwIC0yNCAtMjQgLTQxCi0yOSAtMTYgLTYgLTMwIC0xNSAtMzAgLTE5IDAgLTQgLTI2IC0yMSAtNTggLTM3IC0zMSAtMTYgLTY0IC0zMyAtNzIgLTM4IC04Ci00IC0yOSAtMTUgLTQ3IC0yMyAtMTcgLTggLTM0IC0xOSAtMzggLTI1IC0zIC01IC0xOSAtMTAgLTM0IC0xMCAtMTYgMCAtMzQKLTcgLTQxIC0xNSAtNyAtOCAtMjQgLTE1IC0zNyAtMTUgLTE2IDAgLTI3IC03IC0zMCAtMTkgLTMgLTEyIC0xNyAtMjMgLTM1Ci0yNiAtMTYgLTQgLTMyIC0xMyAtMzUgLTIxIC0yIC03IC0xNSAtMTYgLTI2IC0yMCAtMTIgLTMgLTMyIC0xNSAtNDMgLTI2IC0xNQotMTQgLTM2IC0xOSAtNzMgLTIwIC00MCAwIC01NCAtNCAtNjIgLTE5IC01IC0xMCAtMTcgLTE5IC0yNyAtMTkgLTkgMCAtMjMgLTkKLTMwIC0yMCAtNyAtMTEgLTIyIC0yMCAtMzUgLTIwIC0xMiAwIC0zNyAtOSAtNTUgLTIwIC0xOCAtMTEgLTQxIC0yMCAtNTAgLTIwCi0xMCAwIC0yOSAtMTEgLTQyIC0yNSAtMTYgLTE3IC0zNCAtMjUgLTU2IC0yNSAtMTcgMCAtMzcgLTcgLTQ0IC0xNSAtNyAtOAotMjggLTE3IC00OSAtMjEgLTIwIC00IC00OSAtMTMgLTY2IC0yMiAtMjggLTE0IC05NCAtMzMgLTE4MiAtNTIgLTI0IC01IC01NgotMTYgLTcyIC0yNSAtMTcgLTggLTU5IC0xOSAtOTQgLTI0IC0zNiAtNSAtNzMgLTE0IC04MyAtMTkgLTExIC01IC01MCAtMTMKLTg5IC0xNyAtMzggLTQgLTc5IC0xNCAtOTEgLTIyIC0xMyAtOCAtNjQgLTE1IC0xMzUgLTE5IC02MyAtMyAtMTM2IC0xMSAtMTY0Ci0xOSAtMjcgLTcgLTEyNCAtMTYgLTIxNCAtMjAgLTExMyAtNCAtMTcyIC0xMCAtMTkyIC0yMCAtMzMgLTE3IC0yNTAgLTIwCi0zODkgLTQgLTQ3IDUgLTE0OCAxMyAtMjI1IDE5IC03NyA1IC0xNjcgMTYgLTIwMCAyNCAtMzMgNyAtOTEgMTcgLTEzMCAyMQotMzggNCAtOTAgMTUgLTExNCAyNiAtMjQgMTAgLTU0IDE5IC02NyAxOSAtMTMgMCAtNDEgNiAtNjEgMTQgLTIxIDggLTYwIDE3Ci04NiAyMCAtMjcgMyAtNjkgMTUgLTk0IDI2IC0yNSAxMSAtNTcgMjAgLTcyIDIwIC0xNCAxIC0zNyA3IC01MSAxNSAtMTQgOAotNDEgMTQgLTYxIDE1IC0yMCAwIC00NyA4IC02MCAxOSAtMTMgMTAgLTQwIDIyIC01OSAyNiAtMTkgNCAtNDIgMTMgLTUwIDIwCi04IDcgLTM0IDE2IC01NyAyMCAtMjMgMyAtNDcgMTIgLTUzIDIwIC02IDcgLTI2IDE2IC00NCAxOSAtMTggNCAtNDQgMTUgLTU2CjI2IC0xMyAxMSAtMzcgMjAgLTU1IDIwIC0xOSAwIC0zOSA4IC01MCAyMCAtMTAgMTEgLTIyIDIwIC0yNyAyMCAtNiAwIC0yMSA5Ci0zNSAyMCAtMTQgMTEgLTM4IDIwIC01MyAyMCAtMTUgMCAtMzUgOSAtNDUgMjAgLTEwIDExIC0yNCAyMCAtMzAgMjAgLTcgMAotMTggNyAtMjUgMTUgLTcgOCAtMjIgMTUgLTM0IDE1IC0xMSAwIC00NyAxOCAtNzkgNDAgLTMxIDIyIC02NCA0MCAtNzIgNDAgLTcKMCAtMjAgOCAtMjcgMTggLTcgOSAtMzQgMjggLTU4IDQxIC03NSA0MCAtMTYyIDk1IC0xODcgMTE5IC0xMyAxMiAtMjcgMjIgLTMyCjIyIC00IDAgLTE5IDkgLTMyIDIwIC0xMyAxMSAtNTEgNDIgLTg0IDY3IC0zMyAyNiAtNjIgNTAgLTY1IDU0IC0zIDMgLTM0IDMwCi03MCA1OSAtNjMgNTIgLTE1MCAxMzkgLTE1MCAxNTEgMCA0IC05IDkgLTIxIDEyIC0xNSA0IC0xOSAxMSAtMTUgMjUgNSAxNCAxCjIxIC0xNCAyNSAtMTEgMyAtMjAgMTMgLTIwIDIyIDAgMTEgLTUgMTUgLTE1IDEyIC0xNyAtNyAtMzEgMTEgLTI3IDM2IDIgMTEKLTMgMTcgLTE3IDE3IC0xMiAwIC0yMSA3IC0yMSAxNSAwIDggLTYgMTQgLTEyIDEzIC03IC0yIC0xNCA4IC0xNiAyMSAtMiAxMwotMTIgMjYgLTIzIDI4IC0xMCAzIC0xOSAxMiAtMTkgMjAgMCA4IC05IDE3IC0yMCAyMCAtMTEgMyAtMjAgMTAgLTIwIDE3IDAgNgotMjEgMjkgLTQ1IDUwIC0yOSAyNiAtNDUgNDcgLTQ1IDYzIDAgMTQgLTYgMjMgLTE1IDIzIC05IDAgLTE5IDggLTIyIDE4IC00IDkKLTE1IDIzIC0yNSAzMCAtMTAgNyAtMTggMTcgLTE4IDIzIDAgNSAtMTggMjUgLTQwIDQ1IC0yMiAyMCAtNDMgNDcgLTQ2IDYwIC00CjE0IC0xMSAyOCAtMTggMzIgLTE1IDkgLTY2IDg5IC02NiAxMDMgMCA2IC05IDIyIC0yMCAzNiAtMTEgMTQgLTIwIDMyIC0yMCAzOQowIDcgLTYgMTcgLTEzIDIxIC04IDQgLTI1IDMzIC00MCA2MyAtMTQgMzEgLTM1IDY0IC00NiA3NCAtMTIgMTEgLTIxIDI5IC0yMQo0MCAwIDEyIC03IDMwIC0xNSA0MCAtOCAxMSAtMTUgMjcgLTE1IDM3IDAgOSAtOCAyNyAtMTkgNDAgLTEwIDEzIC0yMSA0MSAtMjUKNjEgLTQgMjAgLTEzIDUwIC0yMSA2NSAtOCAxNSAtMTUgMzcgLTE1IDQ4IDAgMTEgLTkgMjYgLTIwIDMzIC0xNiA5IC0yMCAyMwotMjAgNjIgMCAzNiAtNCA1MCAtMTQgNTAgLTE1IDAgLTI2IDIxIC0yNiA0NyAwIDkgLTcgMjEgLTE2IDI4IC05IDYgLTIzIDM4Ci0zMCA3MSAtMTQgNjMgLTM5IDE0MCAtNjEgMTg5IC03IDE3IC0xOCA1NyAtMjMgOTAgLTUgMzMgLTIxIDExMiAtMzUgMTc1IC0zNwoxNTggLTQzIDIwMSAtNDQgMzA1IC0xIDUwIC04IDEyMiAtMTYgMTYwIC0xNyA4MCAtMjAgNTI3IC00IDYzMCA1IDMzIDEzIDEyNgoxOSAyMDYgNiA4MSAxNyAxNjYgMjUgMTg5IDggMjQgMTggNzUgMjEgMTE0IDQgMzkgMTIgODIgMTkgOTYgNyAxNCAxNSA1OCAxOAo5OCAzIDQwIDEzIDg3IDIxIDEwNCA5IDE3IDE2IDQxIDE2IDUyIDEgNDggNzMgMjk1IDExMiAzODIgMTAgMjIgMTggNTEgMTggNjUKMCAxMyA2IDMzIDE0IDQ0IDcgMTEgMTkgMzggMjYgNjAgNyAyMiAxOSA0OSAyNiA2MCA4IDExIDE0IDM2IDE0IDU3IDAgMzYgMzUKMTE0IDY1IDE0OCA4IDkgMTUgMzUgMTUgNTcgMCAyNyA2IDQ2IDIwIDU4IDExIDEwIDIwIDI4IDIwIDM5IDAgMTIgOSAzNSAyMAo1MSAxMSAxNyAyMCA0MiAyMCA1NiAwIDE1IDYgMzIgMTQgMzggOCA3IDE3IDI3IDIwIDQ1IDQgMTkgMTMgMzkgMjEgNDYgOCA3CjE1IDIzIDE1IDM2IDAgMTIgNCAyNSA5IDI5IDEyIDcgNzEgMTI0IDcxIDE0MCAwIDcgOSAyMCAyMCAzMCAxMSAxMCAyMCAyNiAyMAozNiAwIDEwIDggMjYgMTkgMzYgMTAgMTAgMjIgMjkgMjYgNDEgOCAyNiA2MSAxMDggNzYgMTE3IDUgNCA5IDE1IDkgMjcgMCAxMQo4IDIyIDIwIDI1IDE0IDQgMjAgMTQgMjAgMzUgMCAyMSA2IDMxIDIwIDM1IDEzIDQgMjAgMTQgMjAgMzEgMCAxNCA3IDM0IDE3CjQ0IDE5IDIxIDM2IDQ5IDU4IDk2IDggMTcgMjIgMzIgMzAgMzIgOSAwIDE1IDEwIDE1IDI1IDAgMTggNSAyNSAxOSAyNSAyMCAwCjMxIDE4IDMxIDUwIDAgMTAgNyAyMCAxNSAyNCA4IDMgMTUgMTQgMTUgMjUgMCAxMCA5IDIxIDIwIDI0IDE0IDMgMjAgMTQgMjAKMzIgMCAxOCA2IDI5IDIwIDMyIDE0IDQgMjAgMTQgMjAgMzQgMCAxNyA2IDMyIDE1IDM1IDggNCAxNSAxNCAxNSAyNCAwIDEwIDE3CjQwIDM4IDY3IDIwIDI3IDQyIDU2IDQ3IDY0IDgzIDEzMCAxNzQgMjI2IDIyMiAyMzUgMTggMyAzNiAxMCAzOSAxNSA3IDEyIDI3CjExIDYxIC0zIDE1IC02IDM5IC0xMyA1MyAtMTUgNDEgLTYgNTAgLTExIDUwIC0zMCAwIC0xMCA3IC0zMSAxNSAtNDcgMTkgLTM1CjE5IC05MyAwIC0xMjYgLTggLTE0IC0xNCAtMzUgLTE1IC00NyAwIC0xMyAtNSAtMjMgLTExIC0yMyAtNSAwIC0xNyAtMTUgLTI1Ci0zMiAtOCAtMTggLTI2IC01MSAtMzkgLTczIC0xMyAtMjIgLTMxIC01MyAtNDAgLTcwIC04IC0xNiAtMjMgLTQzIC0zMiAtNjAKLTkgLTE2IC0yMiAtMzQgLTMwIC0zOCAtNyAtNCAtMTMgLTE0IC0xMyAtMjIgMCAtOCAtOCAtMjIgLTE5IC0zMiAtMTAgLTEwCi0yMSAtMzAgLTI1IC00NSAtMyAtMTUgLTE1IC0zMiAtMjYgLTM4IC0xMSAtNiAtMjAgLTE5IC0yMCAtMjkgMCAtMTEgLTcgLTIxCi0xNSAtMjUgLTggLTMgLTE1IC0xNCAtMTUgLTI0IDAgLTExIC04IC0zMCAtMTggLTQzIC0yOSAtMzggLTYyIC05OSAtNjIgLTExNAowIC03IC0xMSAtMjcgLTI1IC00MyAtMTQgLTE3IC0yNSAtMzggLTI1IC00NyAwIC05IC05IC0xOSAtMjAgLTIyIC0xNiAtNCAtMjAKLTE0IC0yMCAtNDkgMCAtMjYgLTUgLTQ2IC0xNCAtNTEgLTcgLTQgLTE5IC0yNCAtMjUgLTQ1IC03IC0yMCAtMTkgLTM5IC0yNwotNDIgLTExIC00IC0xNCAtMTQgLTEwIC0zMyA0IC0xOCAtMSAtNDIgLTE0IC02OCAtMTEgLTIxIC0yMCAtNDQgLTIwIC01MCAwCi02IC04IC0yNyAtMTkgLTQ4IC0xMCAtMjAgLTIyIC01MiAtMjUgLTcxIC00IC0xOSAtMTMgLTM5IC0yMSAtNDYgLTggLTcgLTE1Ci0yNCAtMTUgLTM5IDAgLTE0IC05IC0zOSAtMjAgLTU2IC0xMSAtMTYgLTIwIC00NiAtMjAgLTY1IDAgLTIwIC04IC01MiAtMTkKLTczIC0xMCAtMjAgLTIyIC01MyAtMjYgLTczIC0zIC0yMCAtMTIgLTQ2IC0yMCAtNTggLTcgLTEyIC0xNSAtNDkgLTE5IC04NAotMyAtMzQgLTEzIC03NiAtMjEgLTkyIC04IC0xNiAtMTggLTUxIC0yMSAtNzcgLTQgLTI3IC0xMyAtNTggLTIxIC03MSAtMTAKLTE2IC0xNyAtNzIgLTIzIC0xNzAgLTQgLTgxIC0xMyAtMTYzIC0xOSAtMTgyIC0xNiAtNTIgLTE0IC00MzUgMyAtNTUwIDggLTUyCjE3IC0xMzMgMjEgLTE4MCA0IC00NyAxMyAtMTEyIDIwIC0xNDUgNyAtMzMgMTYgLTc4IDE5IC0xMDAgMyAtMjIgMTUgLTU4IDI2Ci04MCAxMSAtMjEgMjAgLTUxIDIwIC02NSAwIC0xNCAxNCAtNjQgMzEgLTExMCAxNyAtNDcgMzQgLTExMiAzOCAtMTQ1IDMgLTMzCjExIC01OSAxNiAtNTcgNiAyIDEzIC0xMSAxNiAtMjggNCAtMTcgMTYgLTM4IDI3IC00NiAxMSAtNyAyMyAtMjkgMjYgLTQ4IDQKLTE5IDEzIC0zOSAyMSAtNDYgOCAtNyAxNSAtMjAgMTUgLTMwIDAgLTkgOSAtMjkgMjAgLTQzIDEyIC0xNSAyMCAtNDAgMjAgLTYyCjAgLTI5IDQgLTM1IDE4IC0zMyAxMyAyIDE4IC01IDIwIC0yOSAyIC0yNSA4IC0zMyAyMyAtMzMgMTMgMCAxOSAtNyAxOSAtMjQgMAotMTYgNyAtMjcgMjAgLTMxIDExIC0zIDIxIC0xMyAyMSAtMjEgMSAtOCAyIC0xOCAzIC0yNCAwIC01IDExIC0xNyAyNCAtMjUgMTIKLTkgMjIgLTIxIDIyIC0yNiAwIC0xNCA0MSAtNzEgNjMgLTg3IDkgLTcgMTcgLTE3IDE3IC0yMyAwIC01IDggLTE3IDE4IC0yNyA5Ci0xMCA1MyAtNjAgOTcgLTExMiA3NCAtODYgMjIxIC0yMzggMjk0IC0zMDIgMTggLTE2IDI4IC0zNCAyNSAtNDIgLTQgLTEwIDIKLTE2IDE4IC0xOCAxOCAtMiAyMiAtOSAyMCAtMjggLTIgLTE5IDAgLTIyIDkgLTEzIDEzIDEzIDQ5IDAgNDkgLTE3IDAgLTE5IDUyCi02MCA3NSAtNjAgMTggMCAyNSAtNSAyNSAtMjAgMCAtMTUgNyAtMjAgMjUgLTIwIDE0IDAgMjkgLTggMzUgLTIwIDYgLTExIDE5Ci0yMCAyOSAtMjAgMjEgMCA4MSAtNTIgODEgLTY5IDAgLTYgMTYgLTExIDM2IC0xMSAyNyAwIDM3IC01IDQxIC0yMCAzIC0xMyAxNAotMjAgMjkgLTIwIDEzIDAgMzIgLTkgNDEgLTIwIDEwIC0xMSAyNyAtMjAgNDAgLTIwIDEyIDAgMjggLTggMzUgLTE4IDcgLTExCjI0IC0yMiAzOCAtMjUgNDAgLTkgMTI0IC0zOSAxMzYgLTQ5IDI0IC0xOCAxMTAgLTU4IDEyNCAtNTggOSAwIDMzIC05IDU0IC0xOQoyMSAtMTEgNzcgLTMyIDEyNCAtNDYgNDggLTE1IDk4IC0zMyAxMTIgLTQwIDE0IC03IDQzIC0xNiA2NSAtMjAgMjIgLTQgNTAKLTEzIDYyIC0yMSAxMiAtOCAzNSAtMTQgNTIgLTE0IDE2IDAgNTcgLTkgOTIgLTE5IDM1IC0xMCA4NCAtMjIgMTA5IC0yNSAyNQotNCA2OCAtMTMgOTUgLTIxIDEyNSAtMzUgMzIzIC01MCA3MDggLTUzIDI1MyAtMiAzOTEgMSA0MTUgOCAyMSA2IDEwMCAxNCAxNzcKMTcgMTA2IDQgMTQ0IDkgMTU4IDIxIDEwIDkgNDYgMTggOTAgMjEgNDAgNCA4MyAxNCA5NyAyMyAxNCA5IDU0IDE5IDkwIDIzIDM2CjQgNzAgMTEgNzYgMTYgMTcgMTQgMTIyIDQ5IDE3OSA2MSAyOCA2IDY4IDE5IDkxIDI5IDIzIDExIDQ4IDE5IDU1IDE5IDggMCAyNAo2IDM1IDE0IDExIDggMzggMTggNjAgMjIgMjEgNCA1NSAxNSA3NCAyNSAxOSAxMSA0MiAxOSA1MSAxOSA5IDAgMjIgNiAyOCAxNAo3IDggMjcgMTggNDQgMjIgMzEgNiA3NiAyNiAxNDkgNjUgMjAgMTAgNDUgMTkgNTUgMTkgMTAgMCAzMSA3IDQ3IDE1IDE1IDggMzkKMTUgNTIgMTUgMTMgMCAyOCA5IDM0IDIwIDYgMTEgMTggMjAgMjggMjAgOSAwIDMxIDkgNDcgMjAgMTcgMTEgNDIgMjAgNTYgMjAKMTggMCAyOCA2IDMyIDIwIDMgMTEgMTQgMjAgMjUgMjAgMTAgMCAzMSA5IDQ1IDIwIDE0IDExIDI5IDIwIDM1IDIwIDUgMCAxNyA5CjI3IDIwIDEwIDExIDMwIDIwIDQ0IDIwIDE1IDAgMzEgOCAzOSAyMCA3IDExIDE4IDIwIDI2IDIwIDcgMCAyMSA5IDMxIDIwIDEwCjExIDI4IDIwIDM5IDIwIDEyIDAgMjkgOSAzOSAyMCA5IDExIDI0IDIwIDMyIDIwIDggMCAxNSA0IDE1IDkgMCAxMSA4MyA2OQoxMTcgODIgMTMgNSAyMyAxMyAyMyAxOCAwIDUgOSAxMyAyMCAxNiAxMSAzIDI2IDEyIDMyIDE5IDcgNiAzNSAyNyA2MyA0NiAyNwoxOSA1NiA0MSA2MyA0OCA3IDYgMTggMTIgMjQgMTIgNiAwIDE4IDcgMjcgMTUgMjYgMjQgMTI5IDEwNSAxMzUgMTA1IDIgMCAyMAoxNCAzOCAzMSAxOCAxNyA1NiA0NiA4MyA2NSA4NyA1OCAxMDAgNjggMTA4IDgxIDQgNyAxMyAxMyAxOCAxMyA2IDAgMzIgMTggNTgKNDAgMjYgMjIgNTMgNDAgNjAgNDAgNyAwIDEwIDQgNiA5IC03IDEyIDI0IDQzIDM2IDM2IDUgLTQgOSAxIDkgOSAwIDggOSAxOAoyMCAyMSAxMSAzIDIwIDE1IDIwIDI2IDAgMTAgNyAxOSAxNSAxOSAxNiAwIDU5IDQwIDY4IDY0IDQgOSAxNiAxNiAyNyAxNiAxMQowIDIwIDcgMjAgMTUgMCA5IDcgMTggMTUgMjEgOCA0IDE1IDEyIDE1IDE5IDAgOCAxMCAxNSAyMyAxNyAxNCAyIDIzIDExIDI1CjI2IDIgMTIgMTAgMjIgMTcgMjIgNyAwIDE1IDEwIDE3IDIzIDIgMTQgOSAyMSAyMSAyMSA5IC0xIDE3IDUgMTcgMTIgMCA4IDcKMTcgMTUgMjAgOCA0IDE1IDExIDE1IDE2IDAgMTMgODQgMTEyIDEzMyAxNTYgMjAgMTkgMzcgNDEgMzcgNDggMCA4IDcgMTcgMTUKMjAgOCA0IDE1IDExIDE1IDE3IDAgMTEgNDkgODcgNjIgOTcgMTMgMTAgNTYgNzggNjMgOTkgMyAxMiAxMCAyMSAxNiAyMSA1IDAKMTUgMTUgMjIgMzMgOCAxNyAyMSAzOCAzMCA0NiAxMCA3IDE3IDI0IDE3IDM2IDAgMTIgNyAyOCAxNSAzNSA4IDcgMTUgMTggMTUKMjQgMCA3IDExIDI3IDI1IDQ2IDE0IDE5IDI1IDQ4IDI1IDY0IDAgMTcgOSA0NSAyMCA2MSAxMSAxNyAyMCA0NCAyMCA2MSAwIDE3CjggNDYgMTcgNjQgMjIgNDUgMjIgMzEyIDAgMzgwIC04IDI1IC0xNyA2NCAtMjAgODggLTMgMjQgLTEyIDUxIC0yMSA2MSAtMTAKMTEgLTE2IDM2IC0xNiA2MyAwIDMwIC03IDU0IC0yMCA3MSAtMTEgMTQgLTIwIDMyIC0yMCA0MCAwIDggLTExIDM5IC0yNSA2OQotMTQgMjkgLTI1IDYxIC0yNSA3MSAwIDExIC02IDMxIC0xNCA0NSAtMjIgNDAgLTUzIDExNCAtNjEgMTQyIC00IDE0IC0yNSA2MgotNDYgMTA4IC0yMSA0NSAtMzkgODggLTM5IDk1IDAgMTEgLTEyIDM4IC01NiAxMzAgLTggMTYgLTE0IDQxIC0xNCA1NiAwIDE1Ci05IDM2IC0yMCA0NiAtMTEgMTAgLTIwIDMwIC0yMCA0NSAwIDE1IC05IDM1IC0yMCA0NSAtMTEgMTAgLTIwIDI1IC0yMCAzNCAwCjkgLTkgMjcgLTIwIDQxIC0xMSAxNCAtMjAgMzQgLTIwIDQ2IDAgMTEgLTkgMjkgLTIwIDM5IC0xMSAxMCAtMjAgMzEgLTIwIDQ3CjAgMTYgLTkgMzYgLTIwIDQ1IC0xMSAxMCAtMjAgMzAgLTIwIDQ1IDAgMTggLTUgMjggLTE1IDI4IC04IDAgLTE4IDEyIC0yMSAyNwotNyAyNyAtNTcgMTI4IC03NCAxNDggLTUgNSAtMTEgMjIgLTE1IDM2IC04IDMxIC00NCAxMDUgLTY4IDE0MCAtMTAgMTMgLTE3CjI5IC0xNyAzNiAwIDggLTE4IDUxIC00MCA5OCAtMjIgNDcgLTQwIDkwIC00MCA5NyAwIDE2IC00MCA5OCAtNjIgMTI3IC0xMCAxMwotMTggMzQgLTE4IDQ3IDAgMTMgLTkgNDEgLTIwIDYxIC0xMSAyMSAtMjAgNDUgLTIwIDU0IDAgOSAtNiAyMiAtMTQgMjggLTcgNgotMTYgMjkgLTIwIDUwIC0zIDIxIC0xMyA1MSAtMjEgNjcgLTggMTYgLTE1IDM2IC0xNSA0NSAwIDkgLTkgMjggLTIwIDQyIC0xMQoxNCAtMjAgMzYgLTIwIDQ5IC0xIDEyIC05IDQxIC0yMCA2MyAtMTEgMjIgLTE5IDQ2IC0yMCA1NCAwIDggLTYgMjIgLTE0IDMwCi0xNiAxOCAtNTMgMTE2IC02NSAxNzQgLTUgMjEgLTE2IDQ2IC0yNSA1NiAtOSA5IC0xNiAyNCAtMTYgMzMgMCA4IC0xNiA1OAotMzYgMTA5IC0yMCA1MiAtNDAgMTEyIC00NiAxMzQgLTUgMjIgLTE0IDU0IC0yMCA3MCAtNiAxNyAtMTUgNDggLTIwIDcwIC01CjIyIC0xNiA2MyAtMjUgOTAgLTI0IDc3IC0zMCAzNzYgLTkgNDg1IDI5IDE1OCAzNyAxODkgNTEgMjE3IDggMTUgMTUgMzkgMTUKNTMgMCAxNCA5IDQyIDIwIDYzIDExIDIwIDIwIDQzIDIwIDUwIDAgNyA5IDI5IDIwIDUwIDExIDIwIDIwIDQ1IDIwIDU2IDAgMTAKOCAyOSAxOCA0MiAxMCAxMyAyMyAzNiAzMCA1MSA2IDE2IDE3IDI1IDI0IDIzIDEwIC00IDEzIDYgMTMgMzQgMCAzMiA5IDQ5IDQzCjg5IDIzIDI4IDQyIDU4IDQyIDY3IDAgOSA5IDE5IDIwIDIyIDExIDMgMjAgMTQgMjAgMjQgMCAxMSA5IDI4IDIwIDM5IDExIDExCjIwIDI3IDIwIDM1IDAgMTcgNDYgODcgNjUgOTggOCA0IDExIDE1IDggMjMgLTMgMTAgNCAyNSAxOCAzOSAxMyAxMyAzMyAzNSA0NAo0OSAxMSAxNSAyOSAzOCA0MCA1MSAxMSAxMyAzNiA0MyA1NSA2NyA1OSA3MyAxMjkgMTM4IDE0OSAxMzggMTAgMCAyMSA3IDI1CjE1IDEwIDI4IDQ5IDM1IDE1NSAzMCA5NCAtNSAxMDYgLTcgMTI3IC0zMHoiLz4KPHBhdGggZD0iTTUzMTAgNzYwNSBjLTIxMiAtNTcgLTI5OSAtMTE2IC00ODYgLTMyOCAtNTQgLTYxIC0xMzAgLTIwMiAtMTQwCi0yNTkgLTMgLTE4IC0xMyAtNTEgLTIxIC03MyAtMjAgLTUzIC0yOSAtMjg4IC0xNCAtMzc1IDI3IC0xNjAgMTA4IC00MDUgMTQwCi00MjUgNiAtMyAxMSAtMTQgMTEgLTI0IDAgLTEwIDkgLTI2IDIwIC0zNiAxMSAtMTAgMjAgLTI1IDIwIC0zNCAwIC05IDkgLTI3CjIwIC00MSAxMSAtMTQgMjAgLTI4IDIwIC0zMiAwIC00IDE1IC0yOCAzMyAtNTQgMTcgLTI1IDM3IC01MyA0MiAtNjIgNiAtMTAKMjYgLTM3IDQ2IC02MiAyMCAtMjUgNDAgLTUzIDQ1IC02MiAyOCAtNTEgMzE0IC0zNTEgNDA0IC00MjQgMTkgLTE2IDc4IC03MAoxMzEgLTEyMCAxOTMgLTE4MyA0NTIgLTM2NiA2ODkgLTQ4NSAxMzMgLTY4IDIzOCAtNDAgNDkwIDEyNyAyNTQgMTcwIDYxNyA0NzEKNzg1IDY1NCAxNDUgMTU3IDE4MiAxOTkgMjAwIDIyNSAxMSAxNiAyNyAzNiAzNSA0NCA5IDkgMzggNDkgNjQgODkgMjcgNDAgNTMKNzUgNTggNzggNCAzIDE1IDIwIDIzIDM3IDggMTggMjYgNTAgNDAgNzIgMTMgMjIgMjcgNDcgMzAgNTUgNCA4IDE3IDM4IDMwIDY1CjIxIDQ1IDU4IDE0NiAxMTEgMzA1IDIyIDY4IDMyIDM0NCAxNSA0MzAgLTQyIDIxMiAtMTEyIDM0MCAtMjcxIDQ5NyAtNTEgNTEKLTEzOSAxMTkgLTE3MiAxMzMgLTEzIDYgLTMwIDE0IC0zOCAxOSAtMTIzIDc4IC00MDAgMTE3IC01MzQgNzYgLTI3IC04IC02MgotMTUgLTc4IC0xNSAtMzYgMCAtMjY2IC0xMDkgLTI5MiAtMTM4IC0xMSAtMTIgLTI0IC0yMiAtMzAgLTIyIC0yMiAwIC0yNjQKLTI1NCAtMjkzIC0zMDcgLTEwIC0xOCAtMjQgLTMzIC0zMSAtMzMgLTE2IDAgLTYzIDUwIC0xMDMgMTEwIC04MiAxMjMgLTI0NAoyNTcgLTQwNCAzMzQgLTM1IDE4IC0xMTQgNDEgLTIwNSA2MiAtMTQwIDMxIC0yNzIgMzEgLTM5MCAtMXoiLz4KPC9nPjwvZz48L2c+PC9zdmc+'); g.drawImage(logo, W / 2 - 50, 70, 100, 100); } catch {}
+  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#fff';
+  g.font = '700 48px Rubik, sans-serif'; g.fillText(APP_NAME, W / 2, 230);
+  const name = S.profile && S.profile.babyName;
+  g.font = '700 96px Rubik, sans-serif'; g.fillText(`الأسبوع ${w}`, W / 2, 1035);
+  g.fillStyle = '#ffb3cf'; g.font = '400 52px Rubik, sans-serif';
+  g.fillText(x.wt === '—' ? x.size : `${name ? name + ' ' : ''}بحجم ${x.size} ${x.emoji}`, W / 2, 1115);
+  if (x.wt !== '—') { g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '400 40px Rubik, sans-serif'; g.fillText(`الطول ${x.len} · الوزن ${wtLabel(x.wt)}`, W / 2, 1185); }
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '400 34px Rubik, sans-serif'; g.fillText('تابعي حملك أسبوعاً بأسبوع مع نبضٌ صغير 💗', W / 2, 1290);
+  return c;
+}
+async function shareWeek(w) {
+  toast('جاري تجهيز الصورة…');
+  const c = await weekCard(w), name = `nabd-week-${w}.png`, text = `الأسبوع ${w} من رحلتي مع ${APP_NAME} 💗`;
+  const P = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins;
+  try {
+    if (P && P.Share && P.Filesystem) {
+      const data = c.toDataURL('image/png').split(',')[1];
+      const f = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+      await P.Share.share({ title: text, text, files: [f.uri], dialogTitle: 'شاركي الأسبوع' });
+      return;
+    }
+    const blob = await new Promise(r => c.toBlob(r, 'image/png')), file = new File([blob], name, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast('تم حفظ الصورة 📸');
+  } catch (e) { if (!/abort|cancel/i.test(String(e && (e.name || e.message)))) toast('تعذّرت المشاركة'); }
+}
+
+/* ---------- الشاشات ---------- */
+Object.assign(SUBVIEWS, {
+  favs() {
+    const list = S.favorites || [], f = route.tab && FAV_TYPES.some(t => t[0] === route.tab) ? route.tab : 'all';
+    if (!list.length) return `<div class="card center"><div style="font-size:2.6rem">💗</div><h3>لا توجد عناصر محفوظة بعد</h3>
+      <p class="muted">اضغطي القلب بجانب أي معلومة أو نصيحة في «رحلتي»، أو على رد من نبض، أو على سؤال في المجتمع.</p></div>`;
+    const shown = list.filter(x => f === 'all' || x.type === f);
+    return `<div class="seg" id="favSeg"><button data-ff="all" class="${f === 'all' ? 'on' : ''}">الكل ${list.length}</button>
+      ${FAV_TYPES.filter(([k]) => list.some(x => x.type === k)).map(([k, ic, n]) => `<button data-ff="${k}" class="${f === k ? 'on' : ''}">${ic} ${n}</button>`).join('')}</div>
+      ${shown.map(x => { FAVREG[x.id] = x; const t = FAV_TYPES.find(y => y[0] === x.type) || FAV_TYPES[0];
+        const body = x.type === 'cq' ? `<b>${esc(x.title)}</b><div class="muted clamp">${esc(x.text)}</div>` : x.type === 'ai' ? `<div class="clamp">${esc(x.text)}</div>` : `<div>${x.text}</div>`;
+        return `<div class="card fav-card"><div class="row"><span class="badge soft">${t[1]} ${x.week ? `الأسبوع ${x.week}` : t[2]}</span><span class="grow"></span>${favBtn(x)}</div>
+          <div class="fav-open" data-fopen="${esc(x.id)}">${body}</div></div>`; }).join('')}`;
+  },
+
+  account() {
+    const u = Account.user();
+    if (!u) return `<div class="card center">
+        <svg class="onb-art" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--soft)"/><path d="M38 80h46a16 16 0 0 0 0-32 22 22 0 0 0-42-5 14 14 0 0 0-4 37z" fill="var(--primary)"/></svg>
+        <h2>احفظي بياناتك على السحابة</h2>
+        <ul class="onb-list"><li>☁️ نسخة احتياطية تلقائية</li><li>📱 استرجاع كل شيء على جهاز جديد</li><li>👩 نفس اسمك في مجتمع الأمهات</li></ul>
+        <p class="muted">اختياري تماماً — كل الميزات تعمل بدون حساب. لا نحفظ الصور على السحابة.</p>
+        <div class="g-slot" id="accGoogle"></div></div>`;
+    const last = u.last ? `${fmtDate.format(new Date(u.last))} · ${new Date(u.last).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}` : 'لم يتم النسخ بعد';
+    return `<div class="card"><div class="row"><span class="av big">${esc((u.name || u.email || '؟').trim()[0])}</span><div class="grow"><b>${esc(u.name || '')}</b><div class="muted" dir="ltr" style="text-align:right">${esc(u.email || '')}</div></div></div></div>
+      <div class="card"><h3>☁️ النسخ الاحتياطي</h3><p class="muted" style="margin:0 0 10px">يتم تلقائياً بعد أي تعديل وعند الخروج من التطبيق.<br>آخر نسخ: <b>${last}</b></p>
+        <button class="btn block" id="accPush">نسخ الآن</button></div>
+      <div class="card"><button class="btn ghost block" id="accOut">تسجيل الخروج</button>
+        <p class="muted" style="margin:8px 0 0">بياناتك تبقى على هذا الجهاز بعد الخروج.</p></div>
+      <details class="card group more-tools" id="accAdv" ${route.delStep ? 'open' : ''}><summary><b>إعدادات متقدمة</b></summary>
+        <p class="muted" style="margin:10px 0">إزالة الحساب تمسح نسختك على السحابة وتخفي منشوراتك في المجتمع. بيانات هذا الجهاز تبقى كما هي.</p>
+        ${route.delStep ? `<p><b>هل أنتِ متأكدة؟ لا يمكن التراجع عن هذا.</b></p><button class="btn danger block" id="accDelFinal">نعم، أزيلي حسابي</button><button class="link" id="accDelCancel">إلغاء</button>`
+          : '<button class="btn ghost block" id="accDel">إزالة الحساب</button>'}</details>`;
+  }
+});
+
+function extrasBind() {
+  const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+  app.querySelectorAll('[data-fav]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const now = toggleFav(b.dataset.fav);
+    if (route.sub === 'favs') return render(false);
+    b.classList.toggle('on', now); b.setAttribute('aria-pressed', now);
+    if (now && !REDUCED) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+  });
+  app.querySelectorAll('[data-ff]').forEach(b => b.onclick = () => { route.tab = b.dataset.ff; history.replaceState(route, ''); render(false); });
+  app.querySelectorAll('[data-fopen]').forEach(el => el.onclick = () => {
+    const x = (S.favorites || []).find(f => f.id === el.dataset.fopen); if (!x) return;
+    if (x.type === 'week' || x.type === 'tip') { route = { view: 'weeks', week: x.week, sec: x.sec, mode: 'week' }; history.pushState(route, ''); render(); }
+    else if (x.type === 'cq') { route = { view: 'assist', as: 'cm', sub: 'cq', qid: x.qid }; history.pushState(route, ''); render(); }
+    else el.querySelector('.clamp')?.classList.toggle('clamp');
+  });
+  app.querySelectorAll('[data-share]').forEach(b => b.onclick = e => { e.stopPropagation(); shareWeek(+b.dataset.share); });
+  // حسابي
+  if ($('#accGoogle')) Account.button($('#accGoogle'), { from: 'account' });
+  on('#accPush', async () => { const b = $('#accPush'); b.disabled = true; const ok = await Account.push(); toast(ok ? 'تم النسخ ☁️' : 'تعذّر النسخ — تأكدي من الاتصال'); render(false); });
+  on('#accOut', confirmTap('#accOut', async () => { await Account.signOut(); toast('تم تسجيل الخروج'); render(false); }));
+  on('#accDel', () => { route.delStep = 1; history.replaceState(route, ''); render(false); });
+  on('#accDelCancel', () => { route.delStep = 0; history.replaceState(route, ''); render(false); });
+  on('#accDelFinal', confirmTap('#accDelFinal', async () => {
+    try { await Account.remove(); route.delStep = 0; toast('تمت إزالة حسابك'); render(false); }
+    catch { toast('تعذّر الحذف — تأكدي من الاتصال'); }
+  }));
+}
+
+/* ---------- ويدجت الشاشة الرئيسية (أندرويد): نكتب موعد الولادة وأحجام الجنين، والويدجت يحسب الأسبوع يومياً ---------- */
+const Widget = (() => {
+  let t = null, last = '';
+  function sync() {
+    const P = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.Preferences;
+    if (!P) return;
+    clearTimeout(t);
+    t = setTimeout(() => {
+      let data = {};
+      if (S.baby && S.baby.date) data = { baby: S.baby.date, name: S.baby.name || '' };
+      else if (S.profile && !S.onb) data = { due: iso(calcDue(S.profile)), name: S.profile.babyName || '', sizes: WEEKS.map(w => w.wt === '—' ? '' : `بحجم ${w.size} ${w.emoji}`) };
+      const v = JSON.stringify(data);
+      if (v !== last) { last = v; P.set({ key: 'nabd_widget', value: v }).catch(() => {}); }
+    }, 800);
+  }
+  return { sync };
+})();
+
+</script>
+  <script>
+/* نبضٌ صغير — الإعداد أول مرة على خطوات: ترحيب ← التقويم ← طريقة الحساب ← التاريخ ← بياناتك ← النتيجة ← الإشعارات ← الحساب (اختياري)
+   التقدّم محفوظ في S.onb، فلو أُغلق التطبيق في المنتصف تعود لنفس الخطوة. */
+'use strict';
+
+const Onb = (() => {
+  let dir = 'fwd';
+  const st0 = () => S.onb || (S.onb = { step: 'welcome', hist: [] });
+  const steps = () => ['cal', 'method', 'date', 'info', 'result', 'notify', ...(Account.available() ? ['login'] : [])];
+  const born = o => o.method === 'born';
+  const defDate = m => iso(addDays(today(), { lmp: -70, conception: -56, ivf: -50, due: 180, born: -14 }[m] || -70));
+  const bounds = m => m === 'born' ? [iso(addDays(today(), -730)), iso(today())] : dateBounds(m === 'due' ? 'due' : 'lmp');
+
+  function go(step) { const o = st0(); o.hist.push(o.step); o.step = step; dir = 'fwd'; save(); render(); }
+  function back() { const o = st0(); if (!o.hist.length) return; o.step = o.hist.pop(); dir = 'back'; save(); render(); }
+
+  // الملف الشخصي الناتج من اختيارات الإعداد
+  function profileOf(o) {
+    const p = { method: o.method, name: o.name || '', babyName: o.babyName || '', cycle: o.cycle || 28, ivfDay: o.ivfDay || 5 };
+    if (o.method === 'born') return { ...p, method: 'due', due: o.date, babyName: (o.baby && o.baby.name) || p.babyName };
+    p[o.method] = o.date;
+    return p;
+  }
+  function calc(o) {
+    const old = S.profile; S.profile = profileOf(o);
+    try { const st = status(); return { st, bad: st.left < -21 || st.left > 300 }; } finally { S.profile = old; }
+  }
+
+  /* ---------- الشاشات ---------- */
+  const card = (attr, on, ic, title, sub) => `<button class="onb-card ${on ? 'on' : ''}" ${attr}><span class="onb-ic">${ic}</span><span class="grow"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span><span class="onb-tick">✓</span></button>`;
+  const V = {
+    welcome: () => `<div class="onb-hero">
+        <img class="onb-hero-img" src="${Photos.src(24)}" alt="">
+        <div class="onb-hero-body">
+          <img class="onb-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPgo8ZGVmcz48ZmlsdGVyIGlkPSJnbCIgeD0iLTUwJSIgeT0iLTUwJSIgd2lkdGg9IjIwMCUiIGhlaWdodD0iMjAwJSI+PGZlR2F1c3NpYW5CbHVyIHN0ZERldmlhdGlvbj0iMjIiIHJlc3VsdD0iYiIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0iYiIvPjxmZU1lcmdlTm9kZSBpbj0iU291cmNlR3JhcGhpYyIvPjwvZmVNZXJnZT48L2ZpbHRlcj48L2RlZnM+CjxyZWN0IHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHJ4PSIyMjQiIGZpbGw9IiNGQTFBN0YiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxNzcuMCwxNzIuMCkgc2NhbGUoMC41KSI+CjxnIGZpbGw9IiNmZmYiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuMDAwMDAwLDE0MDAuMDAwMDAwKSBzY2FsZSgwLjEwMDAwMCwtMC4xMDAwMDApIgogc3Ryb2tlPSJub25lIj4KPHBhdGggZD0iTTk4MjIgMTE4OTAgYy0xMiAtNSAtMjUgLTE2IC0yOCAtMjUgLTQgLTggLTE1IC0xNSAtMjUgLTE1IC0yMCAwCi05MCAtNjUgLTE0OSAtMTM4IC0xOSAtMjQgLTQ0IC01NCAtNTUgLTY3IC0xMSAtMTMgLTI5IC0zNiAtNDAgLTUxIC0xMSAtMTQKLTMxIC0zNiAtNDQgLTQ5IC0xNCAtMTQgLTIxIC0yOSAtMTggLTM5IDMgLTggMCAtMTkgLTggLTIzIC0xOSAtMTEgLTY1IC04MQotNjUgLTk4IDAgLTggLTkgLTI0IC0yMCAtMzUgLTExIC0xMSAtMjAgLTI4IC0yMCAtMzkgMCAtMTAgLTkgLTIxIC0yMCAtMjQKLTExIC0zIC0yMCAtMTMgLTIwIC0yMiAwIC05IC0xOSAtMzkgLTQyIC02NyAtMzQgLTQwIC00MyAtNTcgLTQzIC04OSAwIC0yOAotMyAtMzggLTEzIC0zNCAtNyAyIC0xOCAtNyAtMjQgLTIzIC03IC0xNSAtMjAgLTM4IC0zMCAtNTEgLTEwIC0xMyAtMTggLTMyCi0xOCAtNDIgMCAtMTEgLTkgLTM2IC0yMCAtNTYgLTExIC0yMSAtMjAgLTQzIC0yMCAtNTAgMCAtNyAtOSAtMzAgLTIwIC01MAotMTEgLTIxIC0yMCAtNDkgLTIwIC02MyAwIC0xNCAtNyAtMzggLTE1IC01MyAtMTQgLTI4IC0yMiAtNTkgLTUxIC0yMTcgLTIxCi0xMDkgLTE1IC00MDggOSAtNDg1IDkgLTI3IDIwIC02OCAyNSAtOTAgNSAtMjIgMTQgLTUzIDIwIC03MCA2IC0xNiAxNSAtNDgKMjAgLTcwIDYgLTIyIDI2IC04MiA0NiAtMTM0IDIwIC01MSAzNiAtMTAxIDM2IC0xMDkgMCAtOSA3IC0yNCAxNiAtMzMgOSAtMTAKMjAgLTM1IDI1IC01NiAxMiAtNTggNDkgLTE1NiA2NSAtMTc0IDggLTggMTQgLTIyIDE0IC0zMCAxIC04IDkgLTMyIDIwIC01NAoxMSAtMjIgMTkgLTUxIDIwIC02MyAwIC0xMyA5IC0zNSAyMCAtNDkgMTEgLTE0IDIwIC0zMyAyMCAtNDIgMCAtOSA3IC0yOSAxNQotNDUgOCAtMTYgMTggLTQ2IDIxIC02NyA0IC0yMSAxMyAtNDQgMjAgLTUwIDggLTYgMTQgLTE5IDE0IC0yOCAwIC05IDkgLTMzCjIwIC01NCAxMSAtMjAgMjAgLTQ4IDIwIC02MSAwIC0xMyA4IC0zNCAxOCAtNDcgMjIgLTI5IDYyIC0xMTEgNjIgLTEyNyAwIC03CjE4IC01MCA0MCAtOTcgMjIgLTQ3IDQwIC05MCA0MCAtOTggMCAtNyA3IC0yMyAxNyAtMzYgMjQgLTM1IDYwIC0xMDkgNjggLTE0MAo0IC0xNCAxMCAtMzEgMTUgLTM2IDE3IC0yMCA2NyAtMTIxIDc0IC0xNDggMyAtMTUgMTMgLTI3IDIxIC0yNyAxMCAwIDE1IC0xMAoxNSAtMjggMCAtMTUgOSAtMzUgMjAgLTQ1IDExIC05IDIwIC0yOSAyMCAtNDUgMCAtMTYgOSAtMzcgMjAgLTQ3IDExIC0xMCAyMAotMjggMjAgLTM5IDAgLTEyIDkgLTMyIDIwIC00NiAxMSAtMTQgMjAgLTMyIDIwIC00MSAwIC05IDkgLTI0IDIwIC0zNCAxMSAtMTAKMjAgLTMwIDIwIC00NSAwIC0xNSA5IC0zNSAyMCAtNDUgMTEgLTEwIDIwIC0zMSAyMCAtNDYgMCAtMTUgNiAtNDAgMTQgLTU2IDQ0Ci05MiA1NiAtMTE5IDU2IC0xMzAgMCAtNyAxOCAtNTAgMzkgLTk1IDIxIC00NiA0MiAtOTQgNDYgLTEwOCA4IC0yOCAzOSAtMTAyCjYxIC0xNDIgOCAtMTQgMTQgLTM0IDE0IC00NSAwIC0xMCAxMSAtNDIgMjUgLTcxIDE0IC0zMCAyNSAtNjEgMjUgLTY5IDAgLTggOQotMjYgMjAgLTQwIDEzIC0xNyAyMCAtNDEgMjAgLTcxIDAgLTI3IDYgLTUyIDE2IC02MyA5IC0xMCAxOCAtMzcgMjEgLTYxIDMKLTI0IDEyIC02MyAyMCAtODggMjIgLTY4IDIyIC0zMzUgMCAtMzgwIC05IC0xOCAtMTcgLTQ3IC0xNyAtNjQgMCAtMTcgLTkgLTQ0Ci0yMCAtNjEgLTExIC0xNiAtMjAgLTQ0IC0yMCAtNjEgMCAtMTYgLTExIC00NSAtMjUgLTY0IC0xNCAtMTkgLTI1IC0zOSAtMjUKLTQ2IDAgLTYgLTcgLTE3IC0xNSAtMjQgLTggLTcgLTE1IC0yMyAtMTUgLTM1IDAgLTEyIC03IC0yOSAtMTcgLTM2IC05IC04Ci0yMiAtMjkgLTMwIC00NiAtNyAtMTggLTE3IC0zMyAtMjIgLTMzIC02IDAgLTEzIC05IC0xNiAtMjEgLTcgLTIxIC01MCAtODkKLTYzIC05OSAtMTMgLTEwIC02MiAtODYgLTYyIC05NyAwIC02IC03IC0xMyAtMTUgLTE3IC04IC0zIC0xNSAtMTIgLTE1IC0yMCAwCi03IC0xNyAtMjkgLTM3IC00OCAtNDkgLTQ0IC0xMzMgLTE0MyAtMTMzIC0xNTYgMCAtNSAtNyAtMTIgLTE1IC0xNiAtOCAtMwotMTUgLTEyIC0xNSAtMjAgMCAtNyAtOCAtMTMgLTE3IC0xMiAtMTIgMCAtMTkgLTcgLTIxIC0yMSAtMiAtMTMgLTEwIC0yMyAtMTcKLTIzIC03IDAgLTE1IC0xMCAtMTcgLTIyIC0yIC0xNSAtMTEgLTI0IC0yNSAtMjYgLTEzIC0yIC0yMyAtOSAtMjMgLTE3IDAgLTcKLTcgLTE1IC0xNSAtMTkgLTggLTMgLTE1IC0xMiAtMTUgLTIxIDAgLTggLTkgLTE1IC0yMCAtMTUgLTExIDAgLTIzIC03IC0yNwotMTYgLTkgLTI0IC01MiAtNjQgLTY4IC02NCAtOCAwIC0xNSAtOSAtMTUgLTE5IDAgLTExIC05IC0yMyAtMjAgLTI2IC0xMSAtMwotMjAgLTEzIC0yMCAtMjEgMCAtOCAtNCAtMTMgLTkgLTkgLTEyIDcgLTQzIC0yNCAtMzYgLTM2IDQgLTUgMSAtOSAtNiAtOSAtNwowIC0zNCAtMTggLTYwIC00MCAtMjYgLTIyIC01MiAtNDAgLTU4IC00MCAtNSAwIC0xNCAtNiAtMTggLTEzIC04IC0xMyAtMjEKLTIzIC0xMDggLTgxIC0yNyAtMTkgLTY1IC00OCAtODMgLTY1IC0xOCAtMTcgLTM2IC0zMSAtMzggLTMxIC02IDAgLTEwOSAtODEKLTEzNSAtMTA1IC05IC04IC0yMSAtMTUgLTI3IC0xNSAtNiAwIC0xNyAtNiAtMjQgLTEyIC03IC03IC0zNiAtMjkgLTYzIC00OAotMjggLTE5IC01NiAtNDAgLTYzIC00NiAtNiAtNyAtMjEgLTE2IC0zMiAtMTkgLTExIC0zIC0yMCAtMTEgLTIwIC0xNiAwIC01Ci0xMCAtMTMgLTIzIC0xOCAtMzQgLTEzIC0xMTcgLTcxIC0xMTcgLTgyIDAgLTUgLTcgLTkgLTE1IC05IC04IDAgLTIzIC05IC0zMgotMjAgLTEwIC0xMSAtMjcgLTIwIC0zOSAtMjAgLTExIDAgLTI5IC05IC0zOSAtMjAgLTEwIC0xMSAtMjQgLTIwIC0zMSAtMjAgLTgKMCAtMTkgLTkgLTI2IC0yMCAtOCAtMTIgLTI0IC0yMCAtMzkgLTIwIC0xNCAwIC0zNCAtOSAtNDQgLTIwIC0xMCAtMTEgLTIyCi0yMCAtMjcgLTIwIC02IDAgLTIxIC05IC0zNSAtMjAgLTE0IC0xMSAtMzUgLTIwIC00NSAtMjAgLTExIDAgLTIyIC05IC0yNQotMjAgLTQgLTE0IC0xNCAtMjAgLTMyIC0yMCAtMTQgMCAtMzkgLTkgLTU2IC0yMCAtMTYgLTExIC0zOCAtMjAgLTQ3IC0yMCAtMTAKMCAtMjIgLTkgLTI4IC0yMCAtNiAtMTEgLTIxIC0yMCAtMzQgLTIwIC0xMyAwIC0zNyAtNyAtNTIgLTE1IC0xNiAtOCAtMzcgLTE1Ci00NyAtMTUgLTEwIDAgLTM1IC05IC01NSAtMTkgLTczIC0zOSAtMTE4IC01OSAtMTQ5IC02NSAtMTcgLTQgLTM3IC0xNCAtNDQKLTIyIC02IC04IC0xOSAtMTQgLTI4IC0xNCAtOSAwIC0zMiAtOCAtNTEgLTE5IC0xOSAtMTAgLTUzIC0yMSAtNzQgLTI1IC0yMgotNCAtNDkgLTE0IC02MCAtMjIgLTExIC04IC0yNyAtMTQgLTM1IC0xNCAtNyAwIC0zMiAtOCAtNTUgLTE5IC0yMyAtMTAgLTYzCi0yMyAtOTEgLTI5IC01NyAtMTIgLTE2MiAtNDcgLTE3OSAtNjEgLTYgLTUgLTQwIC0xMiAtNzYgLTE2IC0zNiAtNCAtNzYgLTE0Ci05MCAtMjMgLTE0IC05IC01NyAtMTkgLTk3IC0yMyAtNDQgLTMgLTgwIC0xMiAtOTAgLTIxIC0xNCAtMTIgLTUyIC0xNyAtMTU4Ci0yMSAtNzcgLTMgLTE1NiAtMTEgLTE3NyAtMTcgLTI0IC03IC0xNjIgLTEwIC00MTUgLTggLTM4NSAzIC01ODMgMTggLTcwOCA1MwotMjcgOCAtNzAgMTcgLTk1IDIxIC0yNSAzIC03NCAxNSAtMTA5IDI1IC0zNSAxMCAtNzYgMTkgLTkyIDE5IC0xNyAwIC00MCA2Ci01MiAxNCAtMTIgOCAtNDAgMTcgLTYyIDIxIC0yMiA0IC01MSAxMyAtNjUgMjAgLTE0IDcgLTY0IDI1IC0xMTIgNDAgLTQ3IDE0Ci0xMDMgMzUgLTEyNCA0NiAtMjEgMTAgLTQ1IDE5IC01NCAxOSAtMTQgMCAtMTAwIDQwIC0xMjQgNTggLTEyIDEwIC05NiA0MAotMTM2IDQ5IC0xNCAzIC0zMSAxNCAtMzggMjUgLTcgMTAgLTIzIDE4IC0zNSAxOCAtMTMgMCAtMzAgOSAtNDAgMjAgLTkgMTEKLTI4IDIwIC00MSAyMCAtMTUgMCAtMjYgNyAtMjkgMjAgLTQgMTUgLTE0IDIwIC00MSAyMCAtMjAgMCAtMzYgNSAtMzYgMTEgMAoxNyAtNjAgNjkgLTgxIDY5IC0xMCAwIC0yMyA5IC0yOSAyMCAtNiAxMiAtMjEgMjAgLTM1IDIwIC0xOCAwIC0yNSA1IC0yNSAyMAowIDE1IC03IDIwIC0yNSAyMCAtMjMgMCAtNzUgNDEgLTc1IDYwIDAgMTcgLTM2IDMwIC00OSAxNyAtOSAtOSAtMTEgLTYgLTkgMTMKMiAxOSAtMiAyNiAtMjAgMjggLTE2IDIgLTIyIDggLTE4IDE4IDMgOCAtNyAyNiAtMjUgNDIgLTczIDY0IC0yMjAgMjE2IC0yOTQKMzAyIC00NCA1MiAtODggMTAyIC05NyAxMTIgLTEwIDEwIC0xOCAyMiAtMTggMjcgMCA2IC04IDE2IC0xNyAyMyAtMjIgMTYgLTYzCjczIC02MyA4NyAwIDUgLTEwIDE3IC0yMiAyNiAtMTMgOCAtMjQgMjAgLTI0IDI1IC0xIDYgLTIgMTYgLTMgMjQgMCA4IC0xMCAxOAotMjEgMjEgLTEzIDQgLTIwIDE1IC0yMCAzMSAwIDE3IC02IDI0IC0xOSAyNCAtMTUgMCAtMjEgOCAtMjMgMzMgLTIgMjQgLTcgMzEKLTIwIDI5IC0xNCAtMiAtMTggNCAtMTggMzMgMCAyMiAtOCA0NyAtMjAgNjIgLTExIDE0IC0yMCAzNCAtMjAgNDMgMCAxMCAtNwoyMyAtMTUgMzAgLTggNyAtMTcgMjcgLTIxIDQ2IC0zIDE5IC0xNSA0MSAtMjYgNDggLTExIDggLTIzIDI5IC0yNyA0NiAtMyAxNwotMTAgMzAgLTE2IDI4IC01IC0yIC0xMyAyNCAtMTYgNTcgLTQgMzMgLTIxIDk4IC0zOCAxNDUgLTE3IDQ2IC0zMSA5NiAtMzEKMTEwIDAgMTQgLTkgNDQgLTIwIDY1IC0xMSAyMiAtMjMgNTggLTI2IDgwIC0zIDIyIC0xMiA2NyAtMTkgMTAwIC03IDMzIC0xNgo5OCAtMjAgMTQ1IC00IDQ3IC0xMyAxMjggLTIxIDE4MCAtMTcgMTE1IC0xOSA0OTggLTMgNTUwIDYgMTkgMTUgMTAxIDE5IDE4Mgo2IDk4IDEzIDE1NCAyMyAxNzAgOCAxMyAxNyA0NCAyMSA3MSAzIDI2IDEzIDYxIDIxIDc3IDggMTYgMTggNTggMjEgOTIgNCAzNQoxMiA3MiAxOSA4NCA4IDEyIDE3IDM4IDIwIDU4IDQgMjAgMTYgNTMgMjYgNzMgMTEgMjEgMTkgNTMgMTkgNzMgMCAxOSA5IDQ5CjIwIDY1IDExIDE3IDIwIDQyIDIwIDU2IDAgMTUgNyAzMiAxNSAzOSA4IDcgMTcgMjcgMjEgNDYgMyAxOSAxNSA1MSAyNSA3MSAxMQoyMSAxOSA0MiAxOSA0OCAwIDYgOSAyOSAyMCA1MCAxMyAyNiAxOCA1MCAxNCA2OCAtNCAxOSAtMSAyOSAxMCAzMyA4IDMgMjAgMjIKMjcgNDIgNiAyMSAxOCA0MSAyNSA0NSA5IDUgMTQgMjUgMTQgNTEgMCAzNSA0IDQ1IDIwIDQ5IDExIDMgMjAgMTMgMjAgMjIgMCA5CjExIDMwIDI1IDQ3IDE0IDE2IDI1IDM2IDI1IDQzIDAgMTUgMzMgNzYgNjIgMTE0IDEwIDEzIDE4IDMyIDE4IDQzIDAgMTAgNyAyMQoxNSAyNCA4IDQgMTUgMTQgMTUgMjUgMCAxMCA5IDIzIDIwIDI5IDExIDYgMjMgMjMgMjYgMzggNCAxNSAxNSAzNSAyNSA0NSAxMQoxMCAxOSAyNCAxOSAzMiAwIDggNiAxOCAxMyAyMiA4IDQgMjEgMjIgMzAgMzggOSAxNyAyNCA0NCAzMiA2MCA5IDE3IDI3IDQ4CjQwIDcwIDEzIDIyIDMxIDU1IDM5IDczIDggMTcgMjAgMzIgMjUgMzIgNiAwIDExIDEwIDExIDIzIDEgMTIgNyAzMyAxNSA0NyAxOQozMyAxOSA5MSAwIDEyNiAtOCAxNiAtMTUgMzcgLTE1IDQ3IDAgMTkgLTkgMjQgLTUwIDMwIC0xNCAyIC0zOCA5IC01MyAxNSAtMzQKMTQgLTU0IDE1IC02MSAzIC0zIC01IC0yMSAtMTIgLTM5IC0xNSAtNDggLTkgLTEzOSAtMTA1IC0yMjIgLTIzNSAtNSAtOCAtMjcKLTM3IC00NyAtNjQgLTIxIC0yNyAtMzggLTU3IC0zOCAtNjcgMCAtMTAgLTcgLTIwIC0xNSAtMjQgLTkgLTMgLTE1IC0xOCAtMTUKLTM1IDAgLTIwIC02IC0zMCAtMjAgLTM0IC0xNCAtMyAtMjAgLTE0IC0yMCAtMzIgMCAtMTggLTYgLTI5IC0yMCAtMzIgLTExIC0zCi0yMCAtMTQgLTIwIC0yNCAwIC0xMSAtNyAtMjIgLTE1IC0yNSAtOCAtNCAtMTUgLTE0IC0xNSAtMjQgMCAtMzIgLTExIC01MAotMzEgLTUwIC0xNCAwIC0xOSAtNyAtMTkgLTI1IDAgLTE1IC02IC0yNSAtMTUgLTI1IC04IDAgLTIyIC0xNSAtMzAgLTMyIC0yMgotNDcgLTM5IC03NSAtNTggLTk2IC0xMCAtMTAgLTE3IC0zMCAtMTcgLTQ0IDAgLTE3IC03IC0yNyAtMjAgLTMxIC0xNCAtNCAtMjAKLTE0IC0yMCAtMzUgMCAtMjEgLTYgLTMxIC0yMCAtMzUgLTEyIC0zIC0yMCAtMTQgLTIwIC0yNSAwIC0xMiAtNCAtMjMgLTkgLTI3Ci0xNSAtOSAtNjggLTkxIC03NiAtMTE3IC00IC0xMiAtMTYgLTMxIC0yNiAtNDEgLTExIC0xMCAtMTkgLTI2IC0xOSAtMzYgMAotMTAgLTkgLTI2IC0yMCAtMzYgLTExIC0xMCAtMjAgLTIzIC0yMCAtMzAgMCAtMTYgLTU5IC0xMzMgLTcxIC0xNDAgLTUgLTQgLTkKLTE3IC05IC0yOSAwIC0xMyAtNyAtMjkgLTE1IC0zNiAtOCAtNyAtMTcgLTI3IC0yMSAtNDYgLTMgLTE4IC0xMiAtMzggLTIwCi00NSAtOCAtNiAtMTQgLTIzIC0xNCAtMzggMCAtMTQgLTkgLTM5IC0yMCAtNTYgLTExIC0xNiAtMjAgLTM5IC0yMCAtNTEgMAotMTEgLTkgLTI5IC0yMCAtMzkgLTE0IC0xMiAtMjAgLTMxIC0yMCAtNTggMCAtMjIgLTcgLTQ4IC0xNSAtNTcgLTMwIC0zNCAtNjUKLTExMiAtNjUgLTE0OCAwIC0yMSAtNiAtNDYgLTE0IC01NyAtNyAtMTEgLTE5IC0zOCAtMjYgLTYwIC03IC0yMiAtMTkgLTQ5Ci0yNiAtNjAgLTggLTExIC0xNCAtMzEgLTE0IC00NCAwIC0xNCAtOCAtNDMgLTE4IC02NSAtMzkgLTg3IC0xMTEgLTMzNCAtMTEyCi0zODIgMCAtMTEgLTcgLTM1IC0xNiAtNTIgLTggLTE3IC0xOCAtNjQgLTIxIC0xMDQgLTMgLTQwIC0xMSAtODQgLTE4IC05OCAtNwotMTQgLTE1IC01NyAtMTkgLTk2IC0zIC0zOSAtMTMgLTkwIC0yMSAtMTE0IC04IC0yMyAtMTkgLTEwOCAtMjUgLTE4OSAtNiAtODAKLTE0IC0xNzMgLTE5IC0yMDYgLTE2IC0xMDMgLTEzIC01NTAgNCAtNjMwIDggLTM4IDE1IC0xMTAgMTYgLTE2MCAxIC0xMDQgNwotMTQ3IDQ0IC0zMDUgMTQgLTYzIDMwIC0xNDIgMzUgLTE3NSA1IC0zMyAxNiAtNzMgMjMgLTkwIDIyIC00OSA0NyAtMTI2IDYxCi0xODkgNyAtMzMgMjEgLTY1IDMwIC03MSA5IC03IDE2IC0xOSAxNiAtMjggMCAtMjYgMTEgLTQ3IDI2IC00NyAxMCAwIDE0IC0xNAoxNCAtNTAgMCAtMzkgNCAtNTMgMjAgLTYyIDExIC03IDIwIC0yMiAyMCAtMzMgMCAtMTEgNyAtMzMgMTUgLTQ4IDggLTE1IDE3Ci00NSAyMSAtNjUgNCAtMjAgMTUgLTQ4IDI1IC02MSAxMSAtMTMgMTkgLTMxIDE5IC00MCAwIC0xMCA3IC0yNiAxNSAtMzcgOAotMTAgMTUgLTI4IDE1IC00MCAwIC0xMSA5IC0yOSAyMSAtNDAgMTEgLTEwIDMyIC00MyA0NiAtNzQgMTUgLTMwIDMyIC01OSA0MAotNjMgNyAtNCAxMyAtMTQgMTMgLTIxIDAgLTcgOSAtMjUgMjAgLTM5IDExIC0xNCAyMCAtMzAgMjAgLTM2IDAgLTE0IDUxIC05NAo2NiAtMTAzIDcgLTQgMTQgLTE4IDE4IC0zMiAzIC0xMyAyNCAtNDAgNDYgLTYwIDIyIC0yMCA0MCAtNDAgNDAgLTQ1IDAgLTYgOAotMTYgMTggLTIzIDEwIC03IDIxIC0yMSAyNSAtMzAgMyAtMTAgMTMgLTE4IDIyIC0xOCA5IDAgMTUgLTkgMTUgLTIzIDAgLTE2CjE2IC0zNyA0NSAtNjMgMjQgLTIxIDQ1IC00NCA0NSAtNTAgMCAtNyA5IC0xNCAyMCAtMTcgMTEgLTMgMjAgLTEyIDIwIC0yMCAwCi04IDkgLTE3IDE5IC0yMCAxMSAtMiAyMSAtMTUgMjMgLTI4IDIgLTEzIDkgLTIzIDE2IC0yMSA2IDEgMTIgLTUgMTIgLTEzIDAKLTggOSAtMTUgMjEgLTE1IDE0IDAgMTkgLTYgMTcgLTE3IC00IC0yNSAxMCAtNDMgMjcgLTM2IDEwIDMgMTUgLTEgMTUgLTEyIDAKLTkgOSAtMTkgMjAgLTIyIDE1IC00IDE5IC0xMSAxNCAtMjUgLTQgLTE0IDAgLTIxIDE1IC0yNSAxMiAtMyAyMSAtOCAyMSAtMTIKMCAtMTIgODcgLTk5IDE1MCAtMTUxIDM2IC0yOSA2NyAtNTYgNzAgLTU5IDMgLTQgMzIgLTI4IDY1IC01NCAzMyAtMjUgNzEgLTU2Cjg0IC02NyAxMyAtMTEgMjggLTIwIDMyIC0yMCA1IDAgMTkgLTEwIDMyIC0yMiAyNSAtMjQgMTEyIC03OSAxODcgLTExOSAyNAotMTMgNTEgLTMyIDU4IC00MSA3IC0xMCAyMCAtMTggMjcgLTE4IDggMCA0MSAtMTggNzIgLTQwIDMyIC0yMiA2OCAtNDAgNzkKLTQwIDEyIDAgMjcgLTcgMzQgLTE1IDcgLTggMTggLTE1IDI1IC0xNSA2IDAgMjAgLTkgMzAgLTIwIDEwIC0xMSAzMCAtMjAgNDUKLTIwIDE1IDAgMzkgLTkgNTMgLTIwIDE0IC0xMSAyOSAtMjAgMzUgLTIwIDUgMCAxNyAtOSAyNyAtMjAgMTEgLTEyIDMxIC0yMAo1MCAtMjAgMTggMCA0MiAtOSA1NSAtMjAgMTIgLTExIDM4IC0yMiA1NiAtMjYgMTggLTMgMzggLTEyIDQ0IC0xOSA2IC04IDMwCi0xNyA1MyAtMjAgMjMgLTQgNDkgLTEzIDU3IC0yMCA4IC03IDMxIC0xNiA1MCAtMjAgMTkgLTQgNDYgLTE2IDU5IC0yNiAxMwotMTEgNDAgLTE5IDYwIC0xOSAyMCAtMSA0NyAtNyA2MSAtMTUgMTQgLTggMzcgLTE0IDUxIC0xNSAxNSAwIDQ3IC05IDcyIC0yMAoyNSAtMTEgNjcgLTIzIDk0IC0yNiAyNiAtMyA2NSAtMTIgODYgLTIwIDIwIC04IDQ4IC0xNCA2MSAtMTQgMTMgMCA0MyAtOSA2NwotMTkgMjQgLTExIDc2IC0yMiAxMTQgLTI2IDM5IC00IDk3IC0xNCAxMzAgLTIxIDMzIC04IDEyMyAtMTkgMjAwIC0yNCA3NyAtNgoxNzggLTE0IDIyNSAtMTkgMTM5IC0xNiAzNTYgLTEzIDM4OSA0IDIwIDEwIDc5IDE2IDE5MiAyMCA5MCA0IDE4NyAxMyAyMTQgMjAKMjggOCAxMDEgMTYgMTY0IDE5IDcxIDQgMTIyIDExIDEzNSAxOSAxMiA4IDUzIDE4IDkxIDIyIDM5IDQgNzggMTIgODkgMTcgMTAKNSA0NyAxNCA4MyAxOSAzNSA1IDc3IDE2IDk0IDI0IDE2IDkgNDggMjAgNzIgMjUgODggMTkgMTU0IDM4IDE4MiA1MiAxNyA5IDQ2CjE4IDY2IDIyIDIxIDQgNDIgMTMgNDkgMjEgNyA4IDI3IDE1IDQ0IDE1IDIyIDAgNDAgOCA1NiAyNSAxMyAxNCAzMiAyNSA0MiAyNQo5IDAgMzIgOSA1MCAyMCAxOCAxMSA0MyAyMCA1NSAyMCAxMyAwIDI4IDkgMzUgMjAgNyAxMSAyMSAyMCAzMCAyMCAxMCAwIDIyIDkKMjcgMTkgOCAxNSAyMiAxOSA2MiAxOSAzNyAxIDU4IDYgNzMgMjAgMTEgMTEgMzEgMjMgNDMgMjYgMTEgNCAyNCAxMyAyNiAyMCAzCjggMTkgMTcgMzUgMjEgMTggMyAzMiAxNCAzNSAyNiAzIDEyIDE0IDE5IDMwIDE5IDEzIDAgMzAgNyAzNyAxNSA3IDggMjUgMTUKNDEgMTUgMTUgMCAzMSA1IDM0IDEwIDQgNiAyMSAxNyAzOCAyNSAxOCA4IDM5IDE5IDQ3IDIzIDggNSA0MSAyMiA3MiAzOCAzMgoxNiA1OCAzMyA1OCAzNyAwIDQgMTQgMTMgMzAgMTkgMTcgNSAzNSAxOSA0MSAyOSA1IDEwIDE3IDE5IDI1IDE5IDIyIDAgMTAxCjQ4IDEwOCA2NSAzIDggMTMgMTUgMjIgMTUgOSAwIDQ3IDI0IDgzIDUzIDM2IDMwIDc0IDU3IDg0IDYwIDkgNCAxNyAxMyAxNyAyMgowIDggNiAxNSAxNCAxNSAxMyAwIDI2IDExIDExMyA5MSAyNCAyMSA0NSAzOSA0OSAzOSAxMCAwIDY0IDU4IDY0IDY5IDAgNiA5CjExIDIxIDExIDEyIDAgMjMgOCAyNiAyMCAzIDExIDEzIDIwIDIzIDIwIDkgMCAzNiAyMCA1OSA0NSAyMyAyNSA0NiA0NSA1MiA0NQo1IDAgOSA3IDkgMTYgMCA5IDkgMTggMjAgMjEgMTEgMyAyMCAxMiAyMCAxOSAwIDggOSAxNCAyMCAxNCAxMiAwIDI0IDEwIDI5CjI0IDUgMTMgMTcgMjYgMjUgMjkgOSA0IDE2IDEzIDE2IDIyIDAgOCA0IDE1IDEwIDE1IDEyIDAgNjAgNDggNjAgNjAgMCA2IDUKMTAgMTAgMTAgMTUgMCAyNDggMjM1IDMwNyAzMTAgMjkgMzYgNjYgNzggODMgOTQgMTggMTYgNDIgNDYgNTUgNjUgMTMgMjAgMzcKNTEgNTQgNzAgMTcgMTkgMzEgNDAgMzEgNDcgMCA2IDcgMTQgMTUgMTggOCAzIDE1IDEyIDE1IDE5IDAgOCA3IDIxIDE2IDI4IDE1CjEyIDQ2IDU2IDExNiAxNjMgMTQgMjMgMjcgNDkgMjcgNTkgMSAxMSAxMCAyMSAyMSAyNCAyMiA2IDMzIDMyIDI0IDU3IC00IDEyCjAgMTYgMTUgMTYgMTIgMCAyMSA2IDIxIDE1IDAgOCA5IDE5IDIwIDI1IDE0IDggMjAgMjEgMjAgNDUgMCAyOCA0IDM1IDIwIDM1CjEzIDAgMjAgNyAyMCAyMCAwIDExIDkgMjUgMjAgMzIgMTEgNyAyMCAyNCAyMCAzNyAwIDEzIDYgMzEgMTQgNDAgOCA5IDI2IDI5CjQwIDQ0IDE0IDE1IDI2IDM5IDI2IDUyIDAgMTQgOSAzMCAyMCAzNyAxMSA3IDIwIDE4IDIwIDI1IDAgNyA5IDIyIDIxIDM0IDExCjExIDIxIDMwIDIxIDQyIDEgMTIgNyAyOSAxNCAzNyA3IDggMjIgMzUgMzMgNjAgMTEgMjUgMjUgNTMgMzEgNjMgMjYgNDUgMzEKNTQgNDAgNzcgMTEgMjUgNDEgOTEgNjYgMTQzIDggMTYgMTQgNDAgMTQgNTQgMCAxNCAxMSAzOCAyNSA1NSAxNCAxNiAyNSA0MAoyNSA1NCAwIDEzIDkgNDEgMjAgNjEgMTEgMjEgMjAgNDQgMjAgNTEgMCA4IDkgMjUgMjAgMzkgMTEgMTUgMjAgNDEgMjAgNjIgMAoyMCA3IDQ1IDE1IDU1IDggMTEgMTUgMjkgMTUgNDAgMCAxMiAxMiA0NCAyNSA3MSAxNCAyOCAyNSA2NCAyNSA4MCAwIDE3IDcgMzkKMTUgNDkgOCAxMSAxNSAzMyAxNSA0OSAwIDE2IDkgNDQgMTkgNjEgMTEgMTcgMjUgNjcgMzEgMTExIDcgNDQgMTcgODggMjIgOTkKNSAxMCAxNCA0MyAxOSA3NSA1IDMxIDE1IDgxIDI0IDExMSA4IDMwIDE1IDc5IDE1IDExMCAwIDMwIDcgNzMgMTQgOTUgOCAyMgoxNyA3NiAyMSAxMjAgMyA0NCAxNCAxMDUgMjMgMTM1IDI1IDgzIDI1IDc2NiAwIDg1NSAtMTAgMzMgLTIyIDEwOCAtMjcgMTY2Ci02IDU4IC0xNCAxMTYgLTE5IDEzMCAtNSAxMyAtMTIgNjAgLTE2IDEwMyAtNCA0NCAtMTQgOTIgLTIyIDEwNyAtOCAxNiAtMTcKNTAgLTIxIDc2IC0zIDI3IC0xMSA1OSAtMTggNzMgLTcgMTQgLTE1IDQ0IC0xOSA2OCAtMyAyMyAtMTUgNTkgLTI2IDgwIC0xMQoyMCAtMjAgNDUgLTIwIDU1IDAgMTAgLTYgMjggLTE0IDQwIC04IDEyIC0xNyAzOCAtMjAgNTggLTQgMjEgLTEzIDQyIC0yMSA0OQotNyA2IC0xNyAyNiAtMjAgNDMgLTQgMTggLTE0IDQwIC0yMiA0OSAtOSAxMCAtMTggMzQgLTIwIDU1IC0yIDIxIC0xMCA0NCAtMTcKNTMgLTcgOCAtMTYgMjggLTIwIDQ0IC00IDE2IC0xNiA0MSAtMjcgNTQgLTEwIDE0IC0xOSAzOSAtMTkgNTYgMCAxOSAtOCAzOAotMjAgNDkgLTExIDkgLTIwIDI3IC0yMCAzOSAwIDEyIC03IDI5IC0xNiAzOSAtOSAxMCAtMTggMzcgLTIxIDYxIC0zIDI0IC0xMQo1MCAtMTkgNTggLTcgOCAtMTYgMjggLTIwIDQzIC0zIDE2IC0xMiAzMSAtMTkgMzMgLTcgMyAtMTYgMjQgLTE5IDQ2IC00IDI0Ci0xNSA0NyAtMjYgNTUgLTExIDggLTIwIDIzIC0yMCAzMyAwIDExIC02IDM0IC0xNCA1MiAtMjUgNjAgLTM2IDgzIC00NCA5OCAtNQo4IC0xOCAzNSAtMzAgNjAgLTUzIDExOCAtODYgMTgwIC05MyAxODAgLTUgMCAtOSAxMCAtOSAyMyAwIDEzIC0xMSAzOCAtMjUgNTcKLTE0IDE5IC0yNSAzOSAtMjUgNDYgMCA2IC02IDE3IC0xNCAyMyAtOCA3IC0xNyAzMCAtMjEgNTEgLTQgMjEgLTEzIDQ0IC0yMQo1MSAtOCA2IC0xNCAxNiAtMTQgMjIgMCA2IC05IDI5IC0xOSA1MSAtMTEgMjMgLTI0IDYwIC0zMCA4MiAtNiAyMyAtMTggNDcKLTI2IDU0IC04IDcgLTE1IDIzIC0xNSAzNSAwIDEyIC05IDM0IC0yMCA0OCAtMTQgMTggLTIwIDQwIC0yMCA3NiAwIDMyIC03IDY1Ci0yMCA4OCAtMTEgMjEgLTIwIDUwIC0yMCA2NiAwIDE1IC03IDQ0IC0xNiA2NSAtMTMgMzEgLTE1IDgxIC0xNCAyOTYgMSAyNjMgNQozMDQgNTEgNDgxIDIyIDg2IDI4IDE0MiAzMCAyODggMyAxNjggLTggMjU1IC0zNCAyODEgLTkgMTAgLTE3IDI0IC0xNyAzMiAwIDgKLTExIDE5IC0yNSAyNCAtMTQgNSAtMjUgMTYgLTI1IDI1IDAgOCAtNSAxNSAtMTAgMTUgLTYgMCAtMjEgMTEgLTM0IDI1IC0yMQoyMyAtMzMgMjUgLTEyNyAzMCAtNTkgMyAtMTE0IDEgLTEyNyAtNXoiLz4KPC9nPjwvZz4KPGcgZmlsbD0iI0ZGRDFFMyIgZmlsdGVyPSJ1cmwoI2dsKSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsMTQwMC4wMDAwMDApIHNjYWxlKDAuMTAwMDAwLC0wLjEwMDAwMCkiCiBzdHJva2U9Im5vbmUiPgo8cGF0aCBkPSJNOTgzOSAxMTkyMiBjLTI1IC05IC01OCAtMjYgLTc1IC0zNiAtNDQgLTI4IC0yMTEgLTIwMyAtMjUyIC0yNjUKLTIxIC0zMCAtNTIgLTcxIC02OSAtOTAgLTE4IC0yMCAtMzMgLTQ0IC0zMyAtNTMgMCAtMTAgLTkgLTI1IC0xOSAtMzUgLTExCi0xMCAtMzEgLTQwIC00NSAtNjggLTE1IC0yNyAtMzIgLTU0IC0zOSAtNjAgLTggLTUgLTI0IC0zMSAtMzcgLTU4IC0xMyAtMjYKLTMyIC01NSAtNDIgLTY0IC0xMCAtOSAtMTggLTI0IC0xOCAtMzMgMCAtMTAgLTkgLTI5IC0yMCAtNDMgLTExIC0xNCAtMjAgLTMyCi0yMCAtNDAgMCAtNyAtOSAtMjQgLTIwIC0zNyAtMTEgLTEzIC0yMCAtMzIgLTIwIC00NCAwIC0xMiAtOSAtMzIgLTIwIC00NgotMTEgLTE0IC0yMCAtMzYgLTIwIC01MCAwIC0xNCAtOSAtMzggLTIwIC01NSAtMTEgLTE2IC0yMCAtNDAgLTIwIC01MyAwIC0xMgotOSAtNDAgLTIwIC02MiAtMTEgLTIyIC0yMCAtNTYgLTIwIC03NyAwIC0yMSAtOCAtNTQgLTE4IC03MyAtMjUgLTQ4IC00NwotMzI3IC0zMiAtNDIwIDUgLTM2IDEwIC04OSAxMCAtMTE4IDAgLTMzIDcgLTY2IDIwIC04OSAxMSAtMjIgMjAgLTU3IDIwIC04MwowIC0yOCA4IC01NiAyMCAtNzUgMTEgLTE2IDIwIC00NSAyMCAtNjMgMCAtMTkgOSAtNDUgMjAgLTU5IDExIC0xNCAyMCAtNDAgMjAKLTU3IDAgLTE3IDkgLTQ0IDIwIC02MSAxMSAtMTYgMjAgLTQzIDIwIC01OCAwIC0xNSA5IC00NSAyMCAtNjcgMTEgLTIyIDIwCi00NiAyMCAtNTQgMCAtOSA5IC0zNSAxOSAtNTggMjUgLTU3IDU0IC0xMjggODUgLTIxMCAxNCAtMzYgMzIgLTc5IDQwIC05NSA4Ci0xNSAxOSAtNDMgMjUgLTYwIDYgLTE4IDE2IC00OCAyMiAtNjUgNiAtMTggMjAgLTUwIDMwIC03MCAxMCAtMjAgMTkgLTQ1IDE5Ci01NSAwIC0xMCA5IC0yOSAyMCAtNDMgMTEgLTE0IDIwIC0zNiAyMCAtNDggMCAtMTMgOSAtMzUgMjAgLTQ5IDExIC0xNCAyMAotMzUgMjAgLTQ3IDAgLTExIDkgLTMyIDIwIC00NiAxMSAtMTQgMjAgLTM0IDIwIC00NiAwIC0xMiA5IC0zMSAyMCAtNDQgMTEKLTEzIDIwIC0zMyAyMCAtNDUgMCAtMTMgNiAtMjggMTQgLTM0IDggLTcgMTggLTI3IDIyIC00NCAzIC0xOCAxNSAtNDMgMjUgLTU2CjExIC0xMyAxOSAtMzEgMTkgLTQwIDAgLTkgOSAtMjkgMjAgLTQ2IDExIC0xNiAyMCAtMzcgMjAgLTQ2IDAgLTkgOSAtMjggMjAKLTQyIDExIC0xNCAyMCAtMzMgMjAgLTQyIDAgLTkgOSAtMjggMjAgLTQyIDExIC0xNCAyMCAtMzMgMjAgLTQzIDAgLTEwIDkgLTI5CjIwIC00MyAxMSAtMTQgMjAgLTMwIDIwIC0zNiAwIC0xMCAzMyAtODEgNTEgLTExMSA1IC04IDE0IC0yNiAyMSAtNDAgNiAtMTQKMzggLTgwIDcwIC0xNDcgMzIgLTY3IDU4IC0xMjggNTggLTEzNSAwIC03IDkgLTI2IDIwIC00MyAxMSAtMTYgMjAgLTM4IDIwCi00NyAwIC0xMCA5IC0zMiAyMCAtNTAgMTEgLTE4IDIwIC00MCAyMCAtNDggMCAtOCA5IC0yNiAyMCAtNDAgMTEgLTE0IDIwIC0zNQoyMCAtNDggMCAtMTIgOSAtMzkgMjAgLTU5IDExIC0yMSAyMCAtNDQgMjAgLTUxIDAgLTggOSAtMjUgMjAgLTM5IDExIC0xNCAyMAotMzQgMjAgLTQ1IDAgLTEwIDkgLTM2IDIwIC01OCAxMSAtMjIgMjAgLTUwIDIwIC02MiAwIC0xMyA5IC0zNCAyMCAtNDggMTEKLTE0IDIwIC0zNyAyMCAtNTIgMCAtMTQgOSAtNDcgMjAgLTczIDExIC0yNiAyMCAtNTcgMjAgLTcxIDAgLTEzIDkgLTQzIDE5Ci02NiAyMCAtNDUgNDIgLTIwMyA0MSAtMjk4IC0xIC05MCAtMjYgLTI1MyAtNDMgLTI4NSAtMTAgLTE2IC0xNyAtMzggLTE3IC00OAowIC0xMCAtOSAtMzUgLTIwIC01NyAtMTEgLTIyIC0yMCAtNDggLTIwIC01OSAwIC0xMSAtOCAtMjcgLTE3IC0zNiAtMTYgLTE2Ci00MSAtNTcgLTYxIC0xMDAgLTYgLTEyIC0xNyAtMjcgLTI2IC0zNCAtOSAtNyAtMTYgLTIyIC0xNiAtMzIgMCAtMTEgLTkgLTI3Ci0yMCAtMzYgLTExIC0xMCAtMjAgLTIyIC0yMCAtMjkgMCAtNiAtOSAtMTkgLTIwIC0yOSAtMTEgLTEwIC0yMCAtMjQgLTIwIC0zMQowIC03IC04IC0yMSAtMTggLTMxIC0xMSAtMTAgLTU4IC02NyAtMTA3IC0xMjggLTEyOCAtMTYxIC01MzAgLTU1OCAtNjY3IC02NjAKLTE1IC0xMSAtNjAgLTQ4IC0xMDIgLTgzIC00MSAtMzQgLTc4IC02MiAtODMgLTYyIC00IDAgLTMwIC0yMSAtNTggLTQ2IC0yNwotMjYgLTY3IC01OCAtODkgLTczIC0xMzcgLTkxIC0xOTQgLTEzMiAtMjA2IC0xNDYgLTcgLTggLTE4IC0xNSAtMjUgLTE1IC02IDAKLTIwIC05IC0zMCAtMjAgLTEwIC0xMSAtMjYgLTIwIC0zNSAtMjAgLTkgMCAtMjUgLTkgLTM1IC0yMCAtMTAgLTExIC0yNCAtMjAKLTMwIC0yMCAtNyAwIC0xOCAtNyAtMjUgLTE2IC04IC04IC0yNyAtMjIgLTQ0IC0zMCAtMTcgLTggLTQ5IC0yNSAtNzEgLTM5Ci0yMiAtMTMgLTUwIC0yOSAtNjMgLTM0IC0xMyAtNiAtNDQgLTI3IC02OSAtNDYgLTI1IC0xOSAtNTMgLTM1IC02MiAtMzUgLTkgMAotMjcgLTkgLTQxIC0yMCAtMTQgLTExIC0zMyAtMjAgLTQyIC0yMCAtOSAwIC0yMCAtNSAtMjQgLTExIC0zIC02IC0yNSAtMTkKLTQ5IC0yOSAtMjQgLTEwIC00NiAtMjMgLTQ5IC0yOSAtNCAtNiAtMTcgLTExIC0zMCAtMTEgLTEzIDAgLTMxIC05IC00MSAtMjAKLTEwIC0xMSAtMjggLTIwIC0zOSAtMjAgLTEyIDAgLTM0IC05IC01MSAtMjAgLTE2IC0xMSAtMzYgLTIwIC00MyAtMjAgLTggMAotMjUgLTkgLTM5IC0yMCAtMTQgLTExIC0zNyAtMjAgLTUwIC0yMCAtMTQgMCAtMzYgLTkgLTUwIC0yMCAtMTQgLTExIC0zNSAtMjAKLTQ1IC0yMCAtMTEgMCAtMzEgLTkgLTQ1IC0yMCAtMTQgLTExIC0zOCAtMjAgLTU0IC0yMCAtMTYgMCAtNDMgLTkgLTYxIC0yMAotMTggLTExIC00NCAtMjAgLTU2IC0yMCAtMTMgMCAtMzUgLTkgLTQ5IC0yMCAtMTQgLTExIC0zOCAtMjAgLTU0IC0yMCAtMTUgMAotNDggLTkgLTc0IC0yMCAtMjYgLTExIC01NiAtMjAgLTY4IC0yMCAtMTIgMCAtMzkgLTkgLTYwIC0yMCAtMjAgLTExIC01MCAtMjAKLTY2IC0yMCAtMTYgMCAtNDggLTcgLTcyIC0xNiAtMjQgLTggLTcxIC0yMCAtMTA1IC0yNSAtMzMgLTQgLTc0IC0xNSAtOTAgLTI0Ci0xNiAtOCAtNDkgLTE1IC03NCAtMTUgLTI1IDAgLTg4IC05IC0xNDAgLTIwIC01MiAtMTAgLTE1NiAtMjQgLTIzMCAtMzAgLTc0Ci02IC0xODAgLTE2IC0yMzUgLTIxIC0xMjcgLTEzIC00MDggLTQgLTUwMCAxNiAtMzggOCAtMTA5IDE1IC0xNTcgMTUgLTU4IDAKLTEwNyA3IC0xNTAgMjAgLTM0IDExIC05MCAyMCAtMTIzIDIwIC00MSAwIC03MiA2IC05OCAyMCAtMjAgMTEgLTU1IDIwIC03NwoyMCAtMjMgMCAtNTggOSAtODAgMjAgLTIyIDExIC01NyAyMCAtNzggMjAgLTI0IDAgLTQ5IDggLTY1IDIwIC0xNCAxMSAtMzUgMjAKLTQ2IDIwIC0xMiAwIC0zOSA5IC02MSAyMCAtMjIgMTEgLTQ5IDIwIC02MSAyMCAtMTIgMCAtMzYgOCAtNTMgMTkgLTE3IDEwCi00NyAyMSAtNjcgMjUgLTIxIDQgLTQyIDEzIC00OSAyMSAtNyA4IC0yMiAxNSAtMzUgMTUgLTEyIDAgLTMyIDkgLTQ1IDIwIC0xMwoxMSAtMzIgMjAgLTQyIDIwIC0xMSAwIC0zMSA5IC00NSAyMCAtMTQgMTEgLTMyIDIwIC00MCAyMCAtOCAwIC0yNiA5IC00MCAyMAotMTQgMTEgLTMzIDIwIC00MyAyMCAtOSAwIC0yNSA5IC0zNSAyMCAtMTAgMTEgLTI2IDIwIC0zNSAyMCAtOSAwIC0yNSA5IC0zNQoyMCAtMTAgMTEgLTIzIDIwIC0zMCAyMCAtNyAwIC0yMCA5IC0zMCAyMCAtMTAgMTEgLTI1IDIwIC0zNCAyMCAtOSAwIC0yNCA5Ci0zNCAyMCAtOSAxMSAtMjMgMjAgLTMwIDIwIC04IDAgLTIyIDkgLTMyIDIwIC0xMCAxMSAtMjQgMjAgLTMxIDIwIC03IDAgLTE4CjkgLTI0IDIwIC02IDExIC0xNyAyMCAtMjUgMjAgLTcgMCAtMTUgMyAtMTcgOCAtMSA0IC0zMCAyNyAtNjMgNTIgLTc5IDU5Ci00NDIgNDIyIC00ODAgNDgwIC0xNiAyNSAtMzYgNTMgLTQ1IDYyIC0xNSAxNyAtNDYgNTMgLTgxIDk3IC0xMCAxMyAtMTkgMzAKLTE5IDM3IDAgNyAtOSAxOCAtMjAgMjQgLTExIDYgLTIwIDE3IC0yMCAyNSAwIDE4IC0zOCA4NSAtNjIgMTA4IC0xMCAxMCAtMTgKMjYgLTE4IDM2IDAgMTAgLTkgMjYgLTIwIDM2IC0xMSAxMCAtMjAgMjQgLTIwIDMyIDAgOCAtOSAzMSAtMTkgNTEgLTUyIDEwMQotNjEgMTIxIC02MSAxMzIgMCA2IC05IDIzIC0yMCAzNyAtMTEgMTQgLTIwIDM1IC0yMCA0NyAwIDExIC05IDM1IC0yMCA1MSAtMTEKMTcgLTIwIDQxIC0yMCA1MyAwIDEzIC05IDM1IC0yMCA0OSAtMTEgMTQgLTIwIDQxIC0yMCA2MCAwIDE4IC05IDUxIC0yMCA3MwotMTEgMjIgLTIwIDUzIC0yMCA3MCAwIDE2IC05IDQ3IC0yMCA2NyAtMTIgMjMgLTIwIDU3IC0yMCA4NSAwIDI2IC03IDczIC0xNgoxMDUgLTggMzIgLTE5IDExOSAtMjQgMTk0IC01IDc1IC0xNCAxNDggLTIwIDE2MyAtMTMgMzUgLTEzIDMzMCAwIDM3NiA2IDE5CjE1IDkxIDIwIDE2MCA2IDY5IDE3IDE1MiAyNSAxODUgOCAzMyAxNSA4MCAxNSAxMDUgMCAyNiA5IDYxIDIwIDgzIDExIDIwIDIwCjUyIDIwIDcwIDAgMTkgOSA2MCAyMCA5MiAxMSAzMiAyMCA3MCAyMCA4NCAwIDE0IDkgNDAgMjAgNTYgMTEgMTcgMjAgNDUgMjAKNjMgMCAxOCA5IDUwIDIwIDcyIDExIDIyIDIwIDU0IDIwIDczIDAgMjEgOCA0MSAyMCA1MiAxMSAxMCAyMCAyOCAyMCAzOSAwIDEyCjkgMzUgMjAgNTEgMTEgMTcgMjAgNDEgMjAgNTMgMCAxMyA5IDM1IDIwIDQ5IDExIDE0IDIwIDM0IDIwIDQ1IDAgMTAgOSAzNiAyMAo1OCAxMSAyMiAyMCA0OCAyMCA1OSAwIDExIDQgMjIgOSAyNiAxNCA4IDcxIDEyNiA3MSAxNDYgMCAxMCA1IDIxIDExIDI1IDYgMwoxOSAyNSAyOSA0OSAxMCAyNCAyMyA0NiAyOSA0OSA2IDQgMTEgMTcgMTEgMzAgMCAxMyA5IDMxIDIwIDQxIDExIDEwIDIwIDI2CjIwIDM1IDAgOSA5IDI1IDIwIDM1IDExIDEwIDIwIDIzIDIwIDI5IDAgNiAxOCAzOCA0MCA3MSAyMiAzMyA0MCA2NSA0MCA3MSAwCjYgOSAxOSAxOSAyOCAxMSAxMCAyMyAzMSAyNiA0NyA0IDE2IDExIDI5IDE2IDI5IDUgMCAxNiAxNSAyNCAzMyAyMSA0NCAzOSA3NAo1NyA5NCA4IDEwIDE4IDMwIDIyIDQ2IDMgMTUgMTAgMjcgMTUgMjcgNSAwIDIxIDIwIDM1IDQ0IDIyIDM3IDI2IDU3IDI2IDExOAowIDYyIC00IDc5IC0yNSAxMTEgLTM1IDUwIC05MCA3NyAtMTYwIDc3IC05MyAwIC0xMzkgLTM0IC0yNjAgLTE5NSAtMTEgLTE0Ci0yOCAtMzQgLTM4IC00MyAtOSAtOSAtMTcgLTIyIC0xNyAtMjggMCAtNiAtMjAgLTM4IC00NSAtNzAgLTI1IC0zMSAtNDUgLTYyCi00NSAtNjcgMCAtNiAtMTUgLTI4IC0zMyAtNTEgLTMwIC0zNyAtNTUgLTczIC04MiAtMTE4IC01IC05IC0yNSAtMzcgLTQyIC02MwotMTggLTI1IC0zMyAtNTAgLTMzIC01NCAwIC01IC03IC0xNSAtMTcgLTIyIC05IC04IC0yMiAtMjcgLTMwIC00NCAtNyAtMTYKLTIzIC00MyAtMzMgLTYwIC0xMSAtMTYgLTI3IC00NCAtMzQgLTYxIC04IC0xNyAtMjIgLTM2IC0zMCAtNDQgLTkgLTcgLTE2Ci0yMyAtMTYgLTM2IDAgLTEzIC03IC0yNyAtMTQgLTMxIC04IC01IC0yOSAtMzUgLTQ3IC02OCAtMTcgLTMzIC0zOCAtNjcgLTQ1Ci03NiAtOCAtOCAtMTQgLTIxIC0xNCAtMjggMCAtNyAtOSAtMjQgLTIwIC0zOCAtMTEgLTE0IC0yMCAtMzMgLTIwIC00MyAwIC05Ci05IC0yNSAtMjAgLTM1IC0xMSAtMTAgLTIwIC0yOSAtMjAgLTQyIDAgLTEyIC05IC0zMiAtMjAgLTQzIC0xMSAtMTEgLTIwIC0yOAotMjAgLTM4IDAgLTExIC05IC0yNyAtMjAgLTM3IC0xMSAtMTAgLTIwIC0yOCAtMjAgLTQwIDAgLTEyIC05IC0zMCAtMjAgLTQwCi0xMSAtMTAgLTIwIC0zMSAtMjAgLTQ3IDAgLTE2IC02IC0zMSAtMTUgLTM0IC04IC0zIC0xOSAtMjAgLTI0IC0zNyAtMTUgLTUxCi01OCAtMTQ4IC03MCAtMTYwIC02IC02IC0xMSAtMTkgLTExIC0yOSAwIC05IC05IC0zNyAtMTkgLTYwIC0xMCAtMjQgLTI4IC02NQotMzkgLTkzIC0xMSAtMjcgLTMwIC03MyAtNDEgLTEwMiAtMTIgLTI4IC0yMSAtNjIgLTIxIC03NSAwIC0xMyAtOSAtMzYgLTIwCi01MyAtMTEgLTE2IC0yMCAtNDAgLTIwIC01MyAwIC0xMiAtOSAtNDAgLTIwIC02MiAtMTEgLTIyIC0yMCAtNTIgLTIwIC02NyAwCi0xNSAtOSAtNDEgLTIwIC01OCAtMTEgLTE2IC0yMCAtNDYgLTIwIC02NiAwIC0yMCAtOSAtNTYgLTIwIC04MCAtMTEgLTI0IC0yMAotNjAgLTIwIC03OSAwIC0xOSAtOSAtNTMgLTIwIC03NSAtMTEgLTIyIC0xOSAtNDkgLTE5IC02MCAwIC0xMSAtOSAtNTggLTIwCi0xMDUgLTE5IC04MSAtMjggLTEzMCAtNTEgLTI4NSAtNiAtMzggLTE4IC0xMTkgLTI4IC0xODAgLTI2IC0xNjUgLTI1IC05NDggMQotMTA0OCA5IC0zOCAxNyAtOTQgMTcgLTEyNSAwIC0zMiA5IC04MyAyMCAtMTE1IDExIC0zMSAyMCAtNzYgMjAgLTk5IDAgLTI0IDkKLTY3IDIwIC05NiAxMSAtMjkgMjAgLTY3IDIwIC04NSAwIC0xNyA5IC00NSAyMCAtNjIgMTEgLTE2IDIwIC00MyAyMCAtNjAgMAotMTYgOSAtNTAgMjAgLTc0IDExIC0yNCAyMCAtNTMgMjAgLTY1IDAgLTExIDkgLTM0IDIwIC01MSAxMSAtMTYgMjAgLTM4IDIwCi00NyAwIC0xMCA5IC0zOSAyMSAtNjUgNDQgLTk5IDU3IC0xMjkgNzkgLTE4MyA2MyAtMTU2IDEwNCAtMjM2IDE2MSAtMzIwIDE0Ci0yMiAyOSAtNDkgNzQgLTEzNCAyMSAtNDIgNDMgLTc2IDQ3IC03NiA0IDAgOCAtNiA4IC0xNCAwIC04IDExIC0yOCAyNSAtNDQKMTQgLTE3IDI1IC0zMyAyNSAtMzcgMCAtMyA2MiAtODQgMTM3IC0xNzggMTc4IC0yMjIgNDU4IC01MDQgNjU4IC02NjMgMTY0Ci0xMzAgMjY4IC0yMDQgMjg5IC0yMDQgNyAwIDIxIC05IDMxIC0yMCAxMCAtMTEgMjMgLTIwIDMwIC0yMCAxMCAwIDI0IC05IDgzCi01NiAzOCAtMzAgMTcxIC0xMDQgMTg3IC0xMDQgOCAwIDE2IC00IDIwIC0xMCAzIC01IDM2IC0yMyA3MyAtNDAgMzcgLTE4IDc0Ci0zNiA4MiAtNDEgNTAgLTMwIDE0NyAtNjkgMTcwIC02OSAxNSAwIDM5IC05IDUzIC0yMCAxNCAtMTEgMzAgLTIwIDM2IC0yMCA3CjAgMjkgLTkgNTEgLTIwIDIyIC0xMSA0OSAtMjAgNjEgLTIwIDExIDAgMzIgLTkgNDYgLTIwIDE0IC0xMSAzOSAtMjAgNTUgLTIwCjE2IDAgNDYgLTkgNjggLTIwIDIyIC0xMSA1MiAtMjAgNjcgLTIwIDE2IDAgNDUgLTkgNjYgLTIwIDIwIC0xMSA1MyAtMjAgNzIKLTIwIDIwIDAgNDkgLTcgNjQgLTE1IDE2IC04IDQ4IC0xNyA3MiAtMjEgMjQgLTMgNzAgLTE0IDEwMiAtMjUgMzEgLTEwIDcyCi0xOSA5MCAtMTkgMTggMCA2OSAtOSAxMTMgLTE5IDQzIC0xMSAxMjkgLTIyIDE4OSAtMjUgNjEgLTIgMTQyIC0xMiAxODAgLTIxCjYxIC0xNSAxMTEgLTE2IDM4MCAtMTIgMTcxIDQgMzI4IDExIDM1MCAxNiAyMiA2IDkwIDEzIDE1MCAxNyA2MSAzIDE1NSAxNAoyMTAgMjQgNTUgMTAgMTIwIDIxIDE0NSAyNSAyNCAzIDQ5IDEwIDU1IDE1IDcgNiA0NiAxNSA4OCAyMCA0MyA2IDkzIDE4IDExMgoyNiAxOSA3IDQ5IDE0IDY3IDE0IDE4IDAgNTAgOSA3MSAyMCAyMCAxMSA0OCAyMCA2MiAyMCAxNCAwIDQyIDkgNjIgMjAgMjEgMTEKNDkgMjAgNjMgMjAgMTQgMCAzOSA5IDU1IDIwIDE3IDExIDQ0IDIwIDYwIDIwIDE3IDAgNDUgOSA2MyAyMCAxOCAxMSAzOSAyMAo0OCAyMCA4IDAgMzIgOSA1MiAxOSAyMCAxMSA2MCAyOCA4NyAzOSA2MSAyNCA5NSAzOSAxMTUgNTAgNDMgMjUgMTA3IDUyIDEyMQo1MiA5IDAgMjQgOSAzNCAyMCAxMCAxMSAyOCAyMCA0MCAyMCAxMSAwIDI2IDUgMzEgMTAgMTEgMTEgMzAgMjIgMTQ5IDg0IDM4CjIwIDc3IDQzIDg2IDUxIDggOCAyMSAxNSAyOCAxNSAxNiAwIDk2IDQ3IDExMSA2NSA3IDggMTkgMTUgMjcgMTUgOCAwIDI4IDEwCjQzIDIyIDU4IDQ3IDc0IDU4IDg1IDU4IDcgMCAyMCA5IDMwIDIwIDEwIDExIDIzIDIwIDMwIDIwIDcgMCAyMCA5IDMwIDIwIDEwCjExIDI0IDIwIDMwIDIwIDcgMCAxOCA3IDI1IDE1IDcgOCA0NCAzNSA4NCA2MSAzOSAyNiA3OCA1NCA4NiA2NCA4IDkgNjkgNjEKMTM1IDExNCAzMTIgMjUyIDM5NiAzMzAgNjE4IDU3NiA3MiA4MCAxMzUgMTUwIDE0MiAxNTUgNiA2IDMyIDM2IDU4IDY5IDI2IDMyCjU5IDY3IDcyIDc4IDI0IDE4IDg1IDEwMiA4NSAxMTYgMCA0IDE0IDIwIDMwIDM1IDE3IDE2IDQ3IDU0IDY3IDg1IDIxIDMyIDQwCjU5IDQ0IDYyIDMgMyAxNSAyMCAyNSAzOSAyOSA1MSAzNiA2MSA4MCAxMjEgNzUgMTAxIDExMSAxNTYgMTE4IDE3OCA0IDEyIDExCjIyIDE1IDIyIDUgMCAxNSAxNSAyMiAzMyA3IDE3IDE3IDM3IDIxIDQyIDI1IDMxIDU4IDg4IDU4IDEwMCAwIDggNiAxOCAxMyAyMgoxOSAxMSAxMDkgMTc2IDE1NiAyODMgNiAxNCAxNSAzMiAyMCA0MCA1IDggMTQgMjYgMjAgNDAgNiAxNCAxNSAzMiAxOSA0MCA1IDgKMTkgMzggMzIgNjUgMTIgMjggMzEgNjcgNDEgODcgMTEgMjAgMTkgNDMgMTkgNTAgMCA3IDggMzEgMTkgNTMgNDMgOTIgNjEgMTM3CjYxIDE1NiAwIDEyIDkgMzIgMjAgNDYgMTEgMTQgMjAgMzQgMjAgNDUgMCAxMCA5IDM2IDIwIDU4IDExIDIyIDIwIDQ5IDIwIDYwCjAgMTEgOSAzOCAyMCA2MCAxMSAyMiAyMCA0OCAyMCA2MCAwIDExIDkgMzcgMjAgNTcgMTEgMjEgMjAgNDggMjAgNjEgMCAxMyA3CjM3IDE2IDU1IDkgMTcgMjAgNTYgMjQgODcgNSAzMCAxNSA3MyAyNCA5NSA4IDIyIDE1IDYzIDE2IDkwIDAgMjggOSA2OCAyMCA5MAoxMSAyMiAyMCA1OCAyMCA4MCAwIDIyIDkgNzQgMjAgMTE1IDExIDQxIDIwIDEwMCAyMCAxMzAgMCAzMSA3IDgwIDE1IDExMCA0MwoxNTYgNDcgOTgyIDUgMTA2MCAtNyAxMiAtMTYgNzIgLTIwIDEzNCAtNSA2MSAtMTYgMTM2IC0yNCAxNjYgLTkgMzAgLTE2IDY4Ci0xNiA4MyAwIDE1IC05IDQ1IC0yMCA2NyAtMTEgMjIgLTIwIDU2IC0yMCA3NyAwIDIxIC05IDU4IC0yMCA4MiAtMTEgMjQgLTIwCjU0IC0yMCA2OCAwIDEzIC05IDQxIC0xOSA2MSAtMTAgMjAgLTI0IDUyIC0zMCA3MCAtNiAxNyAtMTYgNDcgLTIyIDY1IC02IDE3Ci0yMCA0OSAtMzAgNjkgLTEwIDIwIC0xOSA0NCAtMTkgNTIgMCAxNiAtMjggODMgLTYxIDE0OCAtMTAgMjAgLTE5IDQ0IC0xOSA1MwowIDkgLTkgMzMgLTIwIDU1IC0xMSAyMiAtMjAgNDcgLTIwIDU2IDAgOSAtOSAyNyAtMjAgNDEgLTExIDE0IC0yMCAzNSAtMjAgNDcKMCAxMSAtOSAzNSAtMjAgNTEgLTExIDE3IC0yMCA0MCAtMjAgNTEgMCAxMiAtOSAzMyAtMjAgNDcgLTExIDE0IC0yMCAzMSAtMjAKMzkgMCA3IC05IDI3IC0yMCA0MyAtMTEgMTcgLTIwIDM5IC0yMCA1MCAwIDExIC05IDI4IC0yMCAzOCAtMTEgOSAtMjAgMjUgLTIwCjM0IDAgMTAgLTkgMzIgLTIwIDQ4IC0xMSAxNyAtMjAgMzcgLTIwIDQ1IDAgMTMgLTE2IDUwIC01MyAxMjUgLTE5IDM4IC0zMiA2MAotNDkgODQgLTEwIDEzIC0xOCAzNCAtMTggNDYgMCAxMiAtOSAzNCAtMjAgNDggLTExIDE0IC0yMCAzMiAtMjAgNDAgMCA4IC05CjI2IC0yMCA0MCAtMTEgMTQgLTIwIDMxIC0yMCAzOSAwIDcgLTkgMjcgLTIwIDQzIC0xMSAxNyAtMjAgMzcgLTIwIDQ2IDAgOSAtOQoyNCAtMjAgMzQgLTExIDEwIC0yMCAyOSAtMjAgNDIgMCAxMyAtOSA0MSAtMjAgNjMgLTExIDIyIC0yMCA0NyAtMjAgNTcgMCAxMAotOSAzMiAtMjAgNDggLTExIDE3IC0yMCA0MCAtMjAgNTMgMCAxMyAtNiAzNSAtMTQgNTAgLTggMTUgLTE5IDUzIC0yNSA4NSAtNgozMSAtMTYgNjcgLTIzIDgwIC03IDEyIC0xNSA1MSAtMTkgODcgLTQgMzYgLTEzIDk0IC0yMCAxMzAgLTE3IDk0IC0xNSAzMzkgNQo0MjMgOSAzOCAxNiA4OCAxNiAxMTMgMCAyNCA5IDY3IDIwIDk2IDExIDI5IDIwIDY5IDIwIDg4IDAgMTkgNyA1OCAxNiA4NSA4CjI4IDE4IDk3IDIwIDE1NSA1IDg5IDMgMTE1IC0xNSAxNjkgLTEyIDM1IC0yMSA2OSAtMjEgNzUgMCA2IC05IDE5IC0yMCAyOQotMTEgOSAtMjAgMjYgLTIwIDM2IDAgMjQgLTg3IDk5IC0xMzggMTE5IC01NiAyMiAtMTU5IDI0IC0yMTMgNHogbTIzNyAtNTcKYzEzIC0xNCAyOCAtMjUgMzQgLTI1IDUgMCAxMCAtNyAxMCAtMTUgMCAtOSAxMSAtMjAgMjUgLTI1IDE0IC01IDI1IC0xNiAyNQotMjQgMCAtOCA4IC0yMiAxNyAtMzIgMjYgLTI2IDM3IC0xMTMgMzQgLTI4MSAtMiAtMTQ2IC04IC0yMDIgLTMwIC0yODggLTQ2Ci0xNzcgLTUwIC0yMTggLTUxIC00ODEgLTEgLTIxNSAxIC0yNjUgMTQgLTI5NiA5IC0yMSAxNiAtNTAgMTYgLTY1IDAgLTE2IDkKLTQ1IDIwIC02NiAxMyAtMjMgMjAgLTU2IDIwIC04OCAwIC0zNiA2IC01OCAyMCAtNzYgMTEgLTE0IDIwIC0zNiAyMCAtNDggMAotMTIgNyAtMjggMTUgLTM1IDggLTcgMjAgLTMxIDI2IC01NCA2IC0yMiAxOSAtNTkgMzAgLTgyIDEwIC0yMiAxOSAtNDUgMTkKLTUxIDAgLTYgNiAtMTYgMTQgLTIyIDggLTcgMTcgLTMwIDIxIC01MSA0IC0yMSAxMyAtNDQgMjEgLTUxIDggLTYgMTQgLTE3IDE0Ci0yMyAwIC03IDExIC0yNyAyNSAtNDYgMTQgLTE5IDI1IC00NCAyNSAtNTcgMCAtMTMgNCAtMjMgOSAtMjMgNyAwIDQwIC02MiA5MwotMTgwIDEyIC0yNSAyNSAtNTIgMzAgLTYwIDggLTE1IDE5IC0zOCA0NCAtOTggOCAtMTggMTQgLTQxIDE0IC01MiAwIC0xMCA5Ci0yNSAyMCAtMzMgMTEgLTggMjIgLTMxIDI2IC01NSAzIC0yMiAxMiAtNDMgMTkgLTQ2IDcgLTIgMTYgLTE3IDE5IC0zMyA0IC0xNQoxMyAtMzUgMjAgLTQzIDggLTggMTYgLTM0IDE5IC01OCAzIC0yNCAxMiAtNTEgMjEgLTYxIDkgLTEwIDE2IC0yNyAxNiAtMzkgMAotMTIgOSAtMzAgMjAgLTM5IDEyIC0xMSAyMCAtMzAgMjAgLTQ5IDAgLTE3IDkgLTQyIDE5IC01NiAxMSAtMTMgMjMgLTM4IDI3Ci01NCA0IC0xNiAxMyAtMzYgMjAgLTQ0IDcgLTkgMTUgLTMyIDE3IC01MyAyIC0yMSAxMSAtNDUgMjAgLTU1IDggLTkgMTggLTMxCjIyIC00OSAzIC0xNyAxMyAtMzcgMjAgLTQzIDggLTcgMTcgLTI4IDIxIC00OSAzIC0yMCAxMiAtNDYgMjAgLTU4IDggLTEyIDE0Ci0zMCAxNCAtNDAgMCAtMTAgOSAtMzUgMjAgLTU1IDExIC0yMSAyMyAtNTcgMjYgLTgwIDQgLTI0IDEyIC01NCAxOSAtNjggNwotMTQgMTUgLTQ2IDE4IC03MyA0IC0yNiAxMyAtNjAgMjEgLTc2IDggLTE1IDE4IC02MyAyMiAtMTA3IDQgLTQzIDExIC05MCAxNgotMTAzIDUgLTE0IDEzIC03MiAxOSAtMTMwIDUgLTU4IDE3IC0xMzMgMjcgLTE2NiAyNSAtODkgMjUgLTc3MiAwIC04NTUgLTkKLTMwIC0yMCAtOTEgLTIzIC0xMzUgLTQgLTQ0IC0xMyAtOTggLTIxIC0xMjAgLTcgLTIyIC0xNCAtNjUgLTE0IC05NSAwIC0zMQotNyAtODAgLTE1IC0xMTAgLTkgLTMwIC0xOSAtODAgLTI0IC0xMTEgLTUgLTMyIC0xNCAtNjUgLTE5IC03NSAtNSAtMTEgLTE1Ci01NSAtMjIgLTk5IC02IC00NCAtMjAgLTk0IC0zMSAtMTExIC0xMCAtMTcgLTE5IC00NSAtMTkgLTYxIDAgLTE2IC03IC0zOAotMTUgLTQ5IC04IC0xMCAtMTUgLTMyIC0xNSAtNDkgMCAtMTYgLTExIC01MiAtMjUgLTgwIC0xMyAtMjcgLTI1IC01OSAtMjUKLTcxIDAgLTExIC03IC0yOSAtMTUgLTQwIC04IC0xMCAtMTUgLTM1IC0xNSAtNTUgMCAtMjEgLTkgLTQ3IC0yMCAtNjIgLTExCi0xNCAtMjAgLTMxIC0yMCAtMzkgMCAtNyAtOSAtMzAgLTIwIC01MSAtMTEgLTIwIC0yMCAtNDggLTIwIC02MSAwIC0xNCAtMTEKLTM4IC0yNSAtNTQgLTE0IC0xNyAtMjUgLTQxIC0yNSAtNTUgMCAtMTQgLTYgLTM4IC0xNCAtNTQgLTI1IC01MiAtNTUgLTExOAotNjYgLTE0MyAtOSAtMjMgLTE0IC0zMiAtNDAgLTc3IC02IC0xMCAtMjAgLTM4IC0zMSAtNjMgLTExIC0yNSAtMjYgLTUyIC0zMwotNjAgLTcgLTggLTEzIC0yNSAtMTQgLTM3IDAgLTEyIC0xMCAtMzEgLTIxIC00MiAtMTIgLTEyIC0yMSAtMjcgLTIxIC0zNCAwCi03IC05IC0xOCAtMjAgLTI1IC0xMSAtNyAtMjAgLTIzIC0yMCAtMzcgMCAtMTMgLTEyIC0zNyAtMjYgLTUyIC0xNCAtMTUgLTMyCi0zNSAtNDAgLTQ0IC04IC05IC0xNCAtMjcgLTE0IC00MCAwIC0xMyAtOSAtMzAgLTIwIC0zNyAtMTEgLTcgLTIwIC0yMSAtMjAKLTMyIDAgLTEzIC03IC0yMCAtMjAgLTIwIC0xNiAwIC0yMCAtNyAtMjAgLTM1IDAgLTI0IC02IC0zNyAtMjAgLTQ1IC0xMSAtNgotMjAgLTE3IC0yMCAtMjUgMCAtOSAtOSAtMTUgLTIxIC0xNSAtMTUgMCAtMTkgLTQgLTE1IC0xNiA5IC0yNSAtMiAtNTEgLTI0Ci01NyAtMTEgLTMgLTIwIC0xMyAtMjEgLTI0IDAgLTEwIC0xMyAtMzYgLTI3IC01OSAtNzAgLTEwNyAtMTAxIC0xNTEgLTExNgotMTYzIC05IC03IC0xNiAtMjAgLTE2IC0yOCAwIC03IC03IC0xNiAtMTUgLTE5IC04IC00IC0xNSAtMTIgLTE1IC0xOCAwIC03Ci0xNCAtMjggLTMxIC00NyAtMTcgLTE5IC00MSAtNTAgLTU0IC03MCAtMTMgLTE5IC0zNyAtNDkgLTU1IC02NSAtMTcgLTE2IC01NAotNTggLTgzIC05NCAtNTkgLTc1IC0yOTIgLTMxMCAtMzA3IC0zMTAgLTUgMCAtMTAgLTQgLTEwIC0xMCAwIC0xMiAtNDggLTYwCi02MCAtNjAgLTYgMCAtMTAgLTcgLTEwIC0xNSAwIC05IC03IC0xOCAtMTYgLTIyIC04IC0zIC0yMCAtMTYgLTI1IC0yOSAtNQotMTQgLTE3IC0yNCAtMjkgLTI0IC0xMSAwIC0yMCAtNiAtMjAgLTE0IDAgLTcgLTkgLTE2IC0yMCAtMTkgLTExIC0zIC0yMCAtMTIKLTIwIC0yMSAwIC05IC00IC0xNiAtOSAtMTYgLTYgMCAtMjkgLTIwIC01MiAtNDUgLTIzIC0yNSAtNTAgLTQ1IC01OSAtNDUgLTEwCjAgLTIwIC05IC0yMyAtMjAgLTMgLTEyIC0xNCAtMjAgLTI2IC0yMCAtMTIgMCAtMjEgLTUgLTIxIC0xMSAwIC0xMSAtNTQgLTY5Ci02NCAtNjkgLTQgMCAtMjUgLTE4IC00OSAtMzkgLTg3IC04MCAtMTAwIC05MSAtMTEzIC05MSAtOCAwIC0xNCAtNyAtMTQgLTE1CjAgLTkgLTggLTE4IC0xNyAtMjIgLTEwIC0zIC00OCAtMzAgLTg0IC02MCAtMzYgLTI5IC03NCAtNTMgLTgzIC01MyAtOSAwIC0xOQotNyAtMjIgLTE1IC03IC0xNyAtODYgLTY1IC0xMDggLTY1IC04IDAgLTIwIC05IC0yNSAtMTkgLTYgLTEwIC0yNCAtMjQgLTQxCi0yOSAtMTYgLTYgLTMwIC0xNSAtMzAgLTE5IDAgLTQgLTI2IC0yMSAtNTggLTM3IC0zMSAtMTYgLTY0IC0zMyAtNzIgLTM4IC04Ci00IC0yOSAtMTUgLTQ3IC0yMyAtMTcgLTggLTM0IC0xOSAtMzggLTI1IC0zIC01IC0xOSAtMTAgLTM0IC0xMCAtMTYgMCAtMzQKLTcgLTQxIC0xNSAtNyAtOCAtMjQgLTE1IC0zNyAtMTUgLTE2IDAgLTI3IC03IC0zMCAtMTkgLTMgLTEyIC0xNyAtMjMgLTM1Ci0yNiAtMTYgLTQgLTMyIC0xMyAtMzUgLTIxIC0yIC03IC0xNSAtMTYgLTI2IC0yMCAtMTIgLTMgLTMyIC0xNSAtNDMgLTI2IC0xNQotMTQgLTM2IC0xOSAtNzMgLTIwIC00MCAwIC01NCAtNCAtNjIgLTE5IC01IC0xMCAtMTcgLTE5IC0yNyAtMTkgLTkgMCAtMjMgLTkKLTMwIC0yMCAtNyAtMTEgLTIyIC0yMCAtMzUgLTIwIC0xMiAwIC0zNyAtOSAtNTUgLTIwIC0xOCAtMTEgLTQxIC0yMCAtNTAgLTIwCi0xMCAwIC0yOSAtMTEgLTQyIC0yNSAtMTYgLTE3IC0zNCAtMjUgLTU2IC0yNSAtMTcgMCAtMzcgLTcgLTQ0IC0xNSAtNyAtOAotMjggLTE3IC00OSAtMjEgLTIwIC00IC00OSAtMTMgLTY2IC0yMiAtMjggLTE0IC05NCAtMzMgLTE4MiAtNTIgLTI0IC01IC01NgotMTYgLTcyIC0yNSAtMTcgLTggLTU5IC0xOSAtOTQgLTI0IC0zNiAtNSAtNzMgLTE0IC04MyAtMTkgLTExIC01IC01MCAtMTMKLTg5IC0xNyAtMzggLTQgLTc5IC0xNCAtOTEgLTIyIC0xMyAtOCAtNjQgLTE1IC0xMzUgLTE5IC02MyAtMyAtMTM2IC0xMSAtMTY0Ci0xOSAtMjcgLTcgLTEyNCAtMTYgLTIxNCAtMjAgLTExMyAtNCAtMTcyIC0xMCAtMTkyIC0yMCAtMzMgLTE3IC0yNTAgLTIwCi0zODkgLTQgLTQ3IDUgLTE0OCAxMyAtMjI1IDE5IC03NyA1IC0xNjcgMTYgLTIwMCAyNCAtMzMgNyAtOTEgMTcgLTEzMCAyMQotMzggNCAtOTAgMTUgLTExNCAyNiAtMjQgMTAgLTU0IDE5IC02NyAxOSAtMTMgMCAtNDEgNiAtNjEgMTQgLTIxIDggLTYwIDE3Ci04NiAyMCAtMjcgMyAtNjkgMTUgLTk0IDI2IC0yNSAxMSAtNTcgMjAgLTcyIDIwIC0xNCAxIC0zNyA3IC01MSAxNSAtMTQgOAotNDEgMTQgLTYxIDE1IC0yMCAwIC00NyA4IC02MCAxOSAtMTMgMTAgLTQwIDIyIC01OSAyNiAtMTkgNCAtNDIgMTMgLTUwIDIwCi04IDcgLTM0IDE2IC01NyAyMCAtMjMgMyAtNDcgMTIgLTUzIDIwIC02IDcgLTI2IDE2IC00NCAxOSAtMTggNCAtNDQgMTUgLTU2CjI2IC0xMyAxMSAtMzcgMjAgLTU1IDIwIC0xOSAwIC0zOSA4IC01MCAyMCAtMTAgMTEgLTIyIDIwIC0yNyAyMCAtNiAwIC0yMSA5Ci0zNSAyMCAtMTQgMTEgLTM4IDIwIC01MyAyMCAtMTUgMCAtMzUgOSAtNDUgMjAgLTEwIDExIC0yNCAyMCAtMzAgMjAgLTcgMAotMTggNyAtMjUgMTUgLTcgOCAtMjIgMTUgLTM0IDE1IC0xMSAwIC00NyAxOCAtNzkgNDAgLTMxIDIyIC02NCA0MCAtNzIgNDAgLTcKMCAtMjAgOCAtMjcgMTggLTcgOSAtMzQgMjggLTU4IDQxIC03NSA0MCAtMTYyIDk1IC0xODcgMTE5IC0xMyAxMiAtMjcgMjIgLTMyCjIyIC00IDAgLTE5IDkgLTMyIDIwIC0xMyAxMSAtNTEgNDIgLTg0IDY3IC0zMyAyNiAtNjIgNTAgLTY1IDU0IC0zIDMgLTM0IDMwCi03MCA1OSAtNjMgNTIgLTE1MCAxMzkgLTE1MCAxNTEgMCA0IC05IDkgLTIxIDEyIC0xNSA0IC0xOSAxMSAtMTUgMjUgNSAxNCAxCjIxIC0xNCAyNSAtMTEgMyAtMjAgMTMgLTIwIDIyIDAgMTEgLTUgMTUgLTE1IDEyIC0xNyAtNyAtMzEgMTEgLTI3IDM2IDIgMTEKLTMgMTcgLTE3IDE3IC0xMiAwIC0yMSA3IC0yMSAxNSAwIDggLTYgMTQgLTEyIDEzIC03IC0yIC0xNCA4IC0xNiAyMSAtMiAxMwotMTIgMjYgLTIzIDI4IC0xMCAzIC0xOSAxMiAtMTkgMjAgMCA4IC05IDE3IC0yMCAyMCAtMTEgMyAtMjAgMTAgLTIwIDE3IDAgNgotMjEgMjkgLTQ1IDUwIC0yOSAyNiAtNDUgNDcgLTQ1IDYzIDAgMTQgLTYgMjMgLTE1IDIzIC05IDAgLTE5IDggLTIyIDE4IC00IDkKLTE1IDIzIC0yNSAzMCAtMTAgNyAtMTggMTcgLTE4IDIzIDAgNSAtMTggMjUgLTQwIDQ1IC0yMiAyMCAtNDMgNDcgLTQ2IDYwIC00CjE0IC0xMSAyOCAtMTggMzIgLTE1IDkgLTY2IDg5IC02NiAxMDMgMCA2IC05IDIyIC0yMCAzNiAtMTEgMTQgLTIwIDMyIC0yMCAzOQowIDcgLTYgMTcgLTEzIDIxIC04IDQgLTI1IDMzIC00MCA2MyAtMTQgMzEgLTM1IDY0IC00NiA3NCAtMTIgMTEgLTIxIDI5IC0yMQo0MCAwIDEyIC03IDMwIC0xNSA0MCAtOCAxMSAtMTUgMjcgLTE1IDM3IDAgOSAtOCAyNyAtMTkgNDAgLTEwIDEzIC0yMSA0MSAtMjUKNjEgLTQgMjAgLTEzIDUwIC0yMSA2NSAtOCAxNSAtMTUgMzcgLTE1IDQ4IDAgMTEgLTkgMjYgLTIwIDMzIC0xNiA5IC0yMCAyMwotMjAgNjIgMCAzNiAtNCA1MCAtMTQgNTAgLTE1IDAgLTI2IDIxIC0yNiA0NyAwIDkgLTcgMjEgLTE2IDI4IC05IDYgLTIzIDM4Ci0zMCA3MSAtMTQgNjMgLTM5IDE0MCAtNjEgMTg5IC03IDE3IC0xOCA1NyAtMjMgOTAgLTUgMzMgLTIxIDExMiAtMzUgMTc1IC0zNwoxNTggLTQzIDIwMSAtNDQgMzA1IC0xIDUwIC04IDEyMiAtMTYgMTYwIC0xNyA4MCAtMjAgNTI3IC00IDYzMCA1IDMzIDEzIDEyNgoxOSAyMDYgNiA4MSAxNyAxNjYgMjUgMTg5IDggMjQgMTggNzUgMjEgMTE0IDQgMzkgMTIgODIgMTkgOTYgNyAxNCAxNSA1OCAxOAo5OCAzIDQwIDEzIDg3IDIxIDEwNCA5IDE3IDE2IDQxIDE2IDUyIDEgNDggNzMgMjk1IDExMiAzODIgMTAgMjIgMTggNTEgMTggNjUKMCAxMyA2IDMzIDE0IDQ0IDcgMTEgMTkgMzggMjYgNjAgNyAyMiAxOSA0OSAyNiA2MCA4IDExIDE0IDM2IDE0IDU3IDAgMzYgMzUKMTE0IDY1IDE0OCA4IDkgMTUgMzUgMTUgNTcgMCAyNyA2IDQ2IDIwIDU4IDExIDEwIDIwIDI4IDIwIDM5IDAgMTIgOSAzNSAyMAo1MSAxMSAxNyAyMCA0MiAyMCA1NiAwIDE1IDYgMzIgMTQgMzggOCA3IDE3IDI3IDIwIDQ1IDQgMTkgMTMgMzkgMjEgNDYgOCA3CjE1IDIzIDE1IDM2IDAgMTIgNCAyNSA5IDI5IDEyIDcgNzEgMTI0IDcxIDE0MCAwIDcgOSAyMCAyMCAzMCAxMSAxMCAyMCAyNiAyMAozNiAwIDEwIDggMjYgMTkgMzYgMTAgMTAgMjIgMjkgMjYgNDEgOCAyNiA2MSAxMDggNzYgMTE3IDUgNCA5IDE1IDkgMjcgMCAxMQo4IDIyIDIwIDI1IDE0IDQgMjAgMTQgMjAgMzUgMCAyMSA2IDMxIDIwIDM1IDEzIDQgMjAgMTQgMjAgMzEgMCAxNCA3IDM0IDE3CjQ0IDE5IDIxIDM2IDQ5IDU4IDk2IDggMTcgMjIgMzIgMzAgMzIgOSAwIDE1IDEwIDE1IDI1IDAgMTggNSAyNSAxOSAyNSAyMCAwCjMxIDE4IDMxIDUwIDAgMTAgNyAyMCAxNSAyNCA4IDMgMTUgMTQgMTUgMjUgMCAxMCA5IDIxIDIwIDI0IDE0IDMgMjAgMTQgMjAKMzIgMCAxOCA2IDI5IDIwIDMyIDE0IDQgMjAgMTQgMjAgMzQgMCAxNyA2IDMyIDE1IDM1IDggNCAxNSAxNCAxNSAyNCAwIDEwIDE3CjQwIDM4IDY3IDIwIDI3IDQyIDU2IDQ3IDY0IDgzIDEzMCAxNzQgMjI2IDIyMiAyMzUgMTggMyAzNiAxMCAzOSAxNSA3IDEyIDI3CjExIDYxIC0zIDE1IC02IDM5IC0xMyA1MyAtMTUgNDEgLTYgNTAgLTExIDUwIC0zMCAwIC0xMCA3IC0zMSAxNSAtNDcgMTkgLTM1CjE5IC05MyAwIC0xMjYgLTggLTE0IC0xNCAtMzUgLTE1IC00NyAwIC0xMyAtNSAtMjMgLTExIC0yMyAtNSAwIC0xNyAtMTUgLTI1Ci0zMiAtOCAtMTggLTI2IC01MSAtMzkgLTczIC0xMyAtMjIgLTMxIC01MyAtNDAgLTcwIC04IC0xNiAtMjMgLTQzIC0zMiAtNjAKLTkgLTE2IC0yMiAtMzQgLTMwIC0zOCAtNyAtNCAtMTMgLTE0IC0xMyAtMjIgMCAtOCAtOCAtMjIgLTE5IC0zMiAtMTAgLTEwCi0yMSAtMzAgLTI1IC00NSAtMyAtMTUgLTE1IC0zMiAtMjYgLTM4IC0xMSAtNiAtMjAgLTE5IC0yMCAtMjkgMCAtMTEgLTcgLTIxCi0xNSAtMjUgLTggLTMgLTE1IC0xNCAtMTUgLTI0IDAgLTExIC04IC0zMCAtMTggLTQzIC0yOSAtMzggLTYyIC05OSAtNjIgLTExNAowIC03IC0xMSAtMjcgLTI1IC00MyAtMTQgLTE3IC0yNSAtMzggLTI1IC00NyAwIC05IC05IC0xOSAtMjAgLTIyIC0xNiAtNCAtMjAKLTE0IC0yMCAtNDkgMCAtMjYgLTUgLTQ2IC0xNCAtNTEgLTcgLTQgLTE5IC0yNCAtMjUgLTQ1IC03IC0yMCAtMTkgLTM5IC0yNwotNDIgLTExIC00IC0xNCAtMTQgLTEwIC0zMyA0IC0xOCAtMSAtNDIgLTE0IC02OCAtMTEgLTIxIC0yMCAtNDQgLTIwIC01MCAwCi02IC04IC0yNyAtMTkgLTQ4IC0xMCAtMjAgLTIyIC01MiAtMjUgLTcxIC00IC0xOSAtMTMgLTM5IC0yMSAtNDYgLTggLTcgLTE1Ci0yNCAtMTUgLTM5IDAgLTE0IC05IC0zOSAtMjAgLTU2IC0xMSAtMTYgLTIwIC00NiAtMjAgLTY1IDAgLTIwIC04IC01MiAtMTkKLTczIC0xMCAtMjAgLTIyIC01MyAtMjYgLTczIC0zIC0yMCAtMTIgLTQ2IC0yMCAtNTggLTcgLTEyIC0xNSAtNDkgLTE5IC04NAotMyAtMzQgLTEzIC03NiAtMjEgLTkyIC04IC0xNiAtMTggLTUxIC0yMSAtNzcgLTQgLTI3IC0xMyAtNTggLTIxIC03MSAtMTAKLTE2IC0xNyAtNzIgLTIzIC0xNzAgLTQgLTgxIC0xMyAtMTYzIC0xOSAtMTgyIC0xNiAtNTIgLTE0IC00MzUgMyAtNTUwIDggLTUyCjE3IC0xMzMgMjEgLTE4MCA0IC00NyAxMyAtMTEyIDIwIC0xNDUgNyAtMzMgMTYgLTc4IDE5IC0xMDAgMyAtMjIgMTUgLTU4IDI2Ci04MCAxMSAtMjEgMjAgLTUxIDIwIC02NSAwIC0xNCAxNCAtNjQgMzEgLTExMCAxNyAtNDcgMzQgLTExMiAzOCAtMTQ1IDMgLTMzCjExIC01OSAxNiAtNTcgNiAyIDEzIC0xMSAxNiAtMjggNCAtMTcgMTYgLTM4IDI3IC00NiAxMSAtNyAyMyAtMjkgMjYgLTQ4IDQKLTE5IDEzIC0zOSAyMSAtNDYgOCAtNyAxNSAtMjAgMTUgLTMwIDAgLTkgOSAtMjkgMjAgLTQzIDEyIC0xNSAyMCAtNDAgMjAgLTYyCjAgLTI5IDQgLTM1IDE4IC0zMyAxMyAyIDE4IC01IDIwIC0yOSAyIC0yNSA4IC0zMyAyMyAtMzMgMTMgMCAxOSAtNyAxOSAtMjQgMAotMTYgNyAtMjcgMjAgLTMxIDExIC0zIDIxIC0xMyAyMSAtMjEgMSAtOCAyIC0xOCAzIC0yNCAwIC01IDExIC0xNyAyNCAtMjUgMTIKLTkgMjIgLTIxIDIyIC0yNiAwIC0xNCA0MSAtNzEgNjMgLTg3IDkgLTcgMTcgLTE3IDE3IC0yMyAwIC01IDggLTE3IDE4IC0yNyA5Ci0xMCA1MyAtNjAgOTcgLTExMiA3NCAtODYgMjIxIC0yMzggMjk0IC0zMDIgMTggLTE2IDI4IC0zNCAyNSAtNDIgLTQgLTEwIDIKLTE2IDE4IC0xOCAxOCAtMiAyMiAtOSAyMCAtMjggLTIgLTE5IDAgLTIyIDkgLTEzIDEzIDEzIDQ5IDAgNDkgLTE3IDAgLTE5IDUyCi02MCA3NSAtNjAgMTggMCAyNSAtNSAyNSAtMjAgMCAtMTUgNyAtMjAgMjUgLTIwIDE0IDAgMjkgLTggMzUgLTIwIDYgLTExIDE5Ci0yMCAyOSAtMjAgMjEgMCA4MSAtNTIgODEgLTY5IDAgLTYgMTYgLTExIDM2IC0xMSAyNyAwIDM3IC01IDQxIC0yMCAzIC0xMyAxNAotMjAgMjkgLTIwIDEzIDAgMzIgLTkgNDEgLTIwIDEwIC0xMSAyNyAtMjAgNDAgLTIwIDEyIDAgMjggLTggMzUgLTE4IDcgLTExCjI0IC0yMiAzOCAtMjUgNDAgLTkgMTI0IC0zOSAxMzYgLTQ5IDI0IC0xOCAxMTAgLTU4IDEyNCAtNTggOSAwIDMzIC05IDU0IC0xOQoyMSAtMTEgNzcgLTMyIDEyNCAtNDYgNDggLTE1IDk4IC0zMyAxMTIgLTQwIDE0IC03IDQzIC0xNiA2NSAtMjAgMjIgLTQgNTAKLTEzIDYyIC0yMSAxMiAtOCAzNSAtMTQgNTIgLTE0IDE2IDAgNTcgLTkgOTIgLTE5IDM1IC0xMCA4NCAtMjIgMTA5IC0yNSAyNQotNCA2OCAtMTMgOTUgLTIxIDEyNSAtMzUgMzIzIC01MCA3MDggLTUzIDI1MyAtMiAzOTEgMSA0MTUgOCAyMSA2IDEwMCAxNCAxNzcKMTcgMTA2IDQgMTQ0IDkgMTU4IDIxIDEwIDkgNDYgMTggOTAgMjEgNDAgNCA4MyAxNCA5NyAyMyAxNCA5IDU0IDE5IDkwIDIzIDM2CjQgNzAgMTEgNzYgMTYgMTcgMTQgMTIyIDQ5IDE3OSA2MSAyOCA2IDY4IDE5IDkxIDI5IDIzIDExIDQ4IDE5IDU1IDE5IDggMCAyNAo2IDM1IDE0IDExIDggMzggMTggNjAgMjIgMjEgNCA1NSAxNSA3NCAyNSAxOSAxMSA0MiAxOSA1MSAxOSA5IDAgMjIgNiAyOCAxNAo3IDggMjcgMTggNDQgMjIgMzEgNiA3NiAyNiAxNDkgNjUgMjAgMTAgNDUgMTkgNTUgMTkgMTAgMCAzMSA3IDQ3IDE1IDE1IDggMzkKMTUgNTIgMTUgMTMgMCAyOCA5IDM0IDIwIDYgMTEgMTggMjAgMjggMjAgOSAwIDMxIDkgNDcgMjAgMTcgMTEgNDIgMjAgNTYgMjAKMTggMCAyOCA2IDMyIDIwIDMgMTEgMTQgMjAgMjUgMjAgMTAgMCAzMSA5IDQ1IDIwIDE0IDExIDI5IDIwIDM1IDIwIDUgMCAxNyA5CjI3IDIwIDEwIDExIDMwIDIwIDQ0IDIwIDE1IDAgMzEgOCAzOSAyMCA3IDExIDE4IDIwIDI2IDIwIDcgMCAyMSA5IDMxIDIwIDEwCjExIDI4IDIwIDM5IDIwIDEyIDAgMjkgOSAzOSAyMCA5IDExIDI0IDIwIDMyIDIwIDggMCAxNSA0IDE1IDkgMCAxMSA4MyA2OQoxMTcgODIgMTMgNSAyMyAxMyAyMyAxOCAwIDUgOSAxMyAyMCAxNiAxMSAzIDI2IDEyIDMyIDE5IDcgNiAzNSAyNyA2MyA0NiAyNwoxOSA1NiA0MSA2MyA0OCA3IDYgMTggMTIgMjQgMTIgNiAwIDE4IDcgMjcgMTUgMjYgMjQgMTI5IDEwNSAxMzUgMTA1IDIgMCAyMAoxNCAzOCAzMSAxOCAxNyA1NiA0NiA4MyA2NSA4NyA1OCAxMDAgNjggMTA4IDgxIDQgNyAxMyAxMyAxOCAxMyA2IDAgMzIgMTggNTgKNDAgMjYgMjIgNTMgNDAgNjAgNDAgNyAwIDEwIDQgNiA5IC03IDEyIDI0IDQzIDM2IDM2IDUgLTQgOSAxIDkgOSAwIDggOSAxOAoyMCAyMSAxMSAzIDIwIDE1IDIwIDI2IDAgMTAgNyAxOSAxNSAxOSAxNiAwIDU5IDQwIDY4IDY0IDQgOSAxNiAxNiAyNyAxNiAxMQowIDIwIDcgMjAgMTUgMCA5IDcgMTggMTUgMjEgOCA0IDE1IDEyIDE1IDE5IDAgOCAxMCAxNSAyMyAxNyAxNCAyIDIzIDExIDI1CjI2IDIgMTIgMTAgMjIgMTcgMjIgNyAwIDE1IDEwIDE3IDIzIDIgMTQgOSAyMSAyMSAyMSA5IC0xIDE3IDUgMTcgMTIgMCA4IDcKMTcgMTUgMjAgOCA0IDE1IDExIDE1IDE2IDAgMTMgODQgMTEyIDEzMyAxNTYgMjAgMTkgMzcgNDEgMzcgNDggMCA4IDcgMTcgMTUKMjAgOCA0IDE1IDExIDE1IDE3IDAgMTEgNDkgODcgNjIgOTcgMTMgMTAgNTYgNzggNjMgOTkgMyAxMiAxMCAyMSAxNiAyMSA1IDAKMTUgMTUgMjIgMzMgOCAxNyAyMSAzOCAzMCA0NiAxMCA3IDE3IDI0IDE3IDM2IDAgMTIgNyAyOCAxNSAzNSA4IDcgMTUgMTggMTUKMjQgMCA3IDExIDI3IDI1IDQ2IDE0IDE5IDI1IDQ4IDI1IDY0IDAgMTcgOSA0NSAyMCA2MSAxMSAxNyAyMCA0NCAyMCA2MSAwIDE3CjggNDYgMTcgNjQgMjIgNDUgMjIgMzEyIDAgMzgwIC04IDI1IC0xNyA2NCAtMjAgODggLTMgMjQgLTEyIDUxIC0yMSA2MSAtMTAKMTEgLTE2IDM2IC0xNiA2MyAwIDMwIC03IDU0IC0yMCA3MSAtMTEgMTQgLTIwIDMyIC0yMCA0MCAwIDggLTExIDM5IC0yNSA2OQotMTQgMjkgLTI1IDYxIC0yNSA3MSAwIDExIC02IDMxIC0xNCA0NSAtMjIgNDAgLTUzIDExNCAtNjEgMTQyIC00IDE0IC0yNSA2MgotNDYgMTA4IC0yMSA0NSAtMzkgODggLTM5IDk1IDAgMTEgLTEyIDM4IC01NiAxMzAgLTggMTYgLTE0IDQxIC0xNCA1NiAwIDE1Ci05IDM2IC0yMCA0NiAtMTEgMTAgLTIwIDMwIC0yMCA0NSAwIDE1IC05IDM1IC0yMCA0NSAtMTEgMTAgLTIwIDI1IC0yMCAzNCAwCjkgLTkgMjcgLTIwIDQxIC0xMSAxNCAtMjAgMzQgLTIwIDQ2IDAgMTEgLTkgMjkgLTIwIDM5IC0xMSAxMCAtMjAgMzEgLTIwIDQ3CjAgMTYgLTkgMzYgLTIwIDQ1IC0xMSAxMCAtMjAgMzAgLTIwIDQ1IDAgMTggLTUgMjggLTE1IDI4IC04IDAgLTE4IDEyIC0yMSAyNwotNyAyNyAtNTcgMTI4IC03NCAxNDggLTUgNSAtMTEgMjIgLTE1IDM2IC04IDMxIC00NCAxMDUgLTY4IDE0MCAtMTAgMTMgLTE3CjI5IC0xNyAzNiAwIDggLTE4IDUxIC00MCA5OCAtMjIgNDcgLTQwIDkwIC00MCA5NyAwIDE2IC00MCA5OCAtNjIgMTI3IC0xMCAxMwotMTggMzQgLTE4IDQ3IDAgMTMgLTkgNDEgLTIwIDYxIC0xMSAyMSAtMjAgNDUgLTIwIDU0IDAgOSAtNiAyMiAtMTQgMjggLTcgNgotMTYgMjkgLTIwIDUwIC0zIDIxIC0xMyA1MSAtMjEgNjcgLTggMTYgLTE1IDM2IC0xNSA0NSAwIDkgLTkgMjggLTIwIDQyIC0xMQoxNCAtMjAgMzYgLTIwIDQ5IC0xIDEyIC05IDQxIC0yMCA2MyAtMTEgMjIgLTE5IDQ2IC0yMCA1NCAwIDggLTYgMjIgLTE0IDMwCi0xNiAxOCAtNTMgMTE2IC02NSAxNzQgLTUgMjEgLTE2IDQ2IC0yNSA1NiAtOSA5IC0xNiAyNCAtMTYgMzMgMCA4IC0xNiA1OAotMzYgMTA5IC0yMCA1MiAtNDAgMTEyIC00NiAxMzQgLTUgMjIgLTE0IDU0IC0yMCA3MCAtNiAxNyAtMTUgNDggLTIwIDcwIC01CjIyIC0xNiA2MyAtMjUgOTAgLTI0IDc3IC0zMCAzNzYgLTkgNDg1IDI5IDE1OCAzNyAxODkgNTEgMjE3IDggMTUgMTUgMzkgMTUKNTMgMCAxNCA5IDQyIDIwIDYzIDExIDIwIDIwIDQzIDIwIDUwIDAgNyA5IDI5IDIwIDUwIDExIDIwIDIwIDQ1IDIwIDU2IDAgMTAKOCAyOSAxOCA0MiAxMCAxMyAyMyAzNiAzMCA1MSA2IDE2IDE3IDI1IDI0IDIzIDEwIC00IDEzIDYgMTMgMzQgMCAzMiA5IDQ5IDQzCjg5IDIzIDI4IDQyIDU4IDQyIDY3IDAgOSA5IDE5IDIwIDIyIDExIDMgMjAgMTQgMjAgMjQgMCAxMSA5IDI4IDIwIDM5IDExIDExCjIwIDI3IDIwIDM1IDAgMTcgNDYgODcgNjUgOTggOCA0IDExIDE1IDggMjMgLTMgMTAgNCAyNSAxOCAzOSAxMyAxMyAzMyAzNSA0NAo0OSAxMSAxNSAyOSAzOCA0MCA1MSAxMSAxMyAzNiA0MyA1NSA2NyA1OSA3MyAxMjkgMTM4IDE0OSAxMzggMTAgMCAyMSA3IDI1CjE1IDEwIDI4IDQ5IDM1IDE1NSAzMCA5NCAtNSAxMDYgLTcgMTI3IC0zMHoiLz4KPHBhdGggZD0iTTUzMTAgNzYwNSBjLTIxMiAtNTcgLTI5OSAtMTE2IC00ODYgLTMyOCAtNTQgLTYxIC0xMzAgLTIwMiAtMTQwCi0yNTkgLTMgLTE4IC0xMyAtNTEgLTIxIC03MyAtMjAgLTUzIC0yOSAtMjg4IC0xNCAtMzc1IDI3IC0xNjAgMTA4IC00MDUgMTQwCi00MjUgNiAtMyAxMSAtMTQgMTEgLTI0IDAgLTEwIDkgLTI2IDIwIC0zNiAxMSAtMTAgMjAgLTI1IDIwIC0zNCAwIC05IDkgLTI3CjIwIC00MSAxMSAtMTQgMjAgLTI4IDIwIC0zMiAwIC00IDE1IC0yOCAzMyAtNTQgMTcgLTI1IDM3IC01MyA0MiAtNjIgNiAtMTAKMjYgLTM3IDQ2IC02MiAyMCAtMjUgNDAgLTUzIDQ1IC02MiAyOCAtNTEgMzE0IC0zNTEgNDA0IC00MjQgMTkgLTE2IDc4IC03MAoxMzEgLTEyMCAxOTMgLTE4MyA0NTIgLTM2NiA2ODkgLTQ4NSAxMzMgLTY4IDIzOCAtNDAgNDkwIDEyNyAyNTQgMTcwIDYxNyA0NzEKNzg1IDY1NCAxNDUgMTU3IDE4MiAxOTkgMjAwIDIyNSAxMSAxNiAyNyAzNiAzNSA0NCA5IDkgMzggNDkgNjQgODkgMjcgNDAgNTMKNzUgNTggNzggNCAzIDE1IDIwIDIzIDM3IDggMTggMjYgNTAgNDAgNzIgMTMgMjIgMjcgNDcgMzAgNTUgNCA4IDE3IDM4IDMwIDY1CjIxIDQ1IDU4IDE0NiAxMTEgMzA1IDIyIDY4IDMyIDM0NCAxNSA0MzAgLTQyIDIxMiAtMTEyIDM0MCAtMjcxIDQ5NyAtNTEgNTEKLTEzOSAxMTkgLTE3MiAxMzMgLTEzIDYgLTMwIDE0IC0zOCAxOSAtMTIzIDc4IC00MDAgMTE3IC01MzQgNzYgLTI3IC04IC02MgotMTUgLTc4IC0xNSAtMzYgMCAtMjY2IC0xMDkgLTI5MiAtMTM4IC0xMSAtMTIgLTI0IC0yMiAtMzAgLTIyIC0yMiAwIC0yNjQKLTI1NCAtMjkzIC0zMDcgLTEwIC0xOCAtMjQgLTMzIC0zMSAtMzMgLTE2IDAgLTYzIDUwIC0xMDMgMTEwIC04MiAxMjMgLTI0NAoyNTcgLTQwNCAzMzQgLTM1IDE4IC0xMTQgNDEgLTIwNSA2MiAtMTQwIDMxIC0yNzIgMzEgLTM5MCAtMXoiLz4KPC9nPjwvZz48L2c+PC9zdmc+" alt="${APP_NAME}">
+          <h1>${APP_NAME}</h1>
+          <p>نرافقكِ في رحلة الـ 9 أشهر… وما بعدها 💗</p>
+          <button class="btn block big" id="onbStart">لنبدأ الرحلة</button>
+          ${Account.available() ? '<button class="link onb-login" id="onbLogin">لديّ حساب – تسجيل الدخول</button>' : ''}
+        </div></div>`,
+
+    cal: o => `<h2>بأي تقويم تفضّلين التواريخ؟</h2><p class="muted">يمكنك تغييره لاحقاً من الإعدادات.</p>
+      ${card('data-ocal="gregorian"', o.cal === 'gregorian', '📅', 'ميلادي', Cal.greg(today()))}
+      ${Cal.ok ? card('data-ocal="hijri"', o.cal === 'hijri', '🌙', 'هجري', `${Cal.hijri(today())} · تقويم أم القرى`) : ''}`,
+
+    method: o => `<h2>كيف نحسب موعد الولادة؟</h2><p class="muted">اختاري ما تعرفينه، وسنحسب الباقي.</p>
+      ${card('data-om="lmp"', o.method === 'lmp', '🩸', 'أول يوم في آخر دورة', 'الطريقة الأشهر عند الأطباء')}
+      ${card('data-om="conception"', o.method === 'conception' || o.method === 'ivf', '🧬', 'تاريخ الإخصاب أو أطفال الأنابيب', 'الإباضة أو إرجاع الأجنة')}
+      ${card('data-om="due"', o.method === 'due', '🗓️', 'أعرف موعد الولادة', 'من الطبيب أو السونار')}
+      ${card('data-om="born"', born(o), '👶', 'وُلد طفلي', 'ابدئي متابعة الطفل حتى عمر سنتين')}`,
+
+    date: o => {
+      const t = { lmp: 'متى بدأت آخر دورة شهرية؟', conception: 'متى كان الإخصاب؟', ivf: 'متى كان إرجاع الأجنة؟', due: 'متى موعد الولادة؟', born: 'متى وُلد طفلك؟' }[o.method];
+      const extra = o.method === 'lmp' ? `<div class="onb-stepper"><span>طول الدورة</span><button class="icon-btn sm" data-cyc="-1" aria-label="أقل">−</button><b>${o.cycle || 28} يوماً</b><button class="icon-btn sm" data-cyc="1" aria-label="أكثر">+</button></div>`
+        : o.method === 'conception' || o.method === 'ivf' ? `<div class="seg" id="onbConc"><button data-oc="conception" class="${o.method === 'conception' ? 'on' : ''}">إخصاب طبيعي</button><button data-oc="ivf" class="${o.method === 'ivf' ? 'on' : ''}">أطفال الأنابيب</button></div>
+          ${o.method === 'ivf' ? `<div class="seg">${[3, 5, 6].map(d => `<button data-ivd="${d}" class="${(o.ivfDay || 5) === d ? 'on' : ''}">جنين اليوم ${d}</button>`).join('')}</div>` : ''}`
+        : born(o) ? `<label class="f">اسم طفلك (اختياري)<input id="onbBabyName" value="${esc((o.baby && o.baby.name) || '')}" placeholder="مثال: يوسف"></label>
+          <div class="seg" id="onbSex"><button data-osex="girl" class="${(o.baby && o.baby.sex) === 'girl' ? 'on' : ''}">👧 بنت</button><button data-osex="boy" class="${(o.baby && o.baby.sex) !== 'girl' ? 'on' : ''}">👦 ولد</button></div>` : '';
+      return `<h2>${t}</h2>${o.method === 'conception' || o.method === 'ivf' ? extra : ''}
+        <div class="wheel big" id="onbWheel"></div>
+        ${o.method === 'lmp' || born(o) ? extra : ''}
+        <div class="card onb-live" id="onbLive">${live(o)}</div>`;
+    },
+
+    info: o => `<h2>عرّفينا بكِ <small class="muted">(اختياري)</small></h2>
+      <label class="f">اسمك<input id="onbName" value="${esc(o.name || '')}" placeholder="مثال: سارة" maxlength="30"></label>
+      ${born(o) ? '' : `<label class="f">اسم الجنين أو لقبه<input id="onbBaby" value="${esc(o.babyName || '')}" placeholder="مثال: نونو" maxlength="30"></label>`}
+      <label class="f">بلدك<select id="onbCountry">${COUNTRIES.map(c => `<option value="${c.c}" ${(o.country || S.country || guessCountry()) === c.c ? 'selected' : ''}>${c.f} ${c.n}</option>`).join('')}</select></label>
+      <p class="muted">البلد يضبط رقم الإسعاف ووحدات التحاليل.</p>`,
+
+    result: o => {
+      if (born(o)) {
+        const d = diffDays(today(), parse(o.date)), b = o.baby || {};
+        return `<div class="onb-result"><div class="onb-big">🎉</div><h2>مبروك! ${esc(b.name || (b.sex === 'girl' ? 'بنتك' : 'طفلك'))}</h2>
+          <p>عمره اليوم <b>${d < 60 ? arWeeks(Math.floor(d / 7)) || arDays(d) : `${Math.floor(d / 30.44)} شهراً`}</b>، وسنرافقك شهراً بشهر حتى عمر سنتين.</p>
+          <p class="muted">وُلد في ${Cal.both(parse(o.date))}</p><button class="link" id="onbEdit">تعديل</button></div>`;
+      }
+      const { st } = calc(o);
+      return `<div class="onb-result">
+        <div class="onb-ring"><b>${st.week}</b><small>الأسبوع</small></div>
+        <h2>وفقاً لحساباتنا أنتِ حامل في الأسبوع ${st.week} <span class="muted">(الشهر ${MONTHS_ORD[st.month - 1]})</span></h2>
+        <div class="card"><small class="muted">موعد الولادة المتوقع</small><div class="onb-due">${Cal.both(st.due)}</div></div>
+        <button class="link" id="onbEdit">تعديل</button></div>`;
+    },
+
+    notify: () => `<div class="onb-center">
+        <svg class="onb-art" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--soft)"/><path d="M60 26c-13 0-22 10-22 23v15l-7 10h58l-7-10V49c0-13-9-23-22-23z" fill="var(--primary)"/><circle cx="60" cy="86" r="7" fill="var(--primary)"/><circle cx="84" cy="34" r="9" fill="var(--gold)"/></svg>
+        <h2>ابقي على اطلاع بكل ما يهمك</h2>
+        <ul class="onb-list"><li>📅 إشعار مع بداية كل أسبوع جديد</li><li>💡 معلومة يومية الساعة 9 صباحاً</li><li>💧 تذكير بشرب الماء</li><li>💊 تذكير الفيتامين أو الدواء</li></ul>
+        <p class="muted">يمكنك ضبطها أو إيقافها في أي وقت من الإعدادات.</p></div>`,
+
+    login: () => `<div class="onb-center">
+        <svg class="onb-art" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--soft)"/><path d="M38 80h46a16 16 0 0 0 0-32 22 22 0 0 0-42-5 14 14 0 0 0-4 37z" fill="var(--primary)"/><path d="m50 62 7 7 14-14" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h2>احفظي بياناتك على السحابة</h2>
+        <ul class="onb-list"><li>☁️ نسخة احتياطية تلقائية</li><li>📱 استرجاع كل شيء على جهاز جديد</li><li>👩 نفس اسمك في مجتمع الأمهات</li></ul>
+        <p class="muted">اختياري تماماً — كل الميزات تعمل بدون حساب.</p>
+        <div id="onbGoogle" class="g-slot"></div></div>`
+  };
+
+  function live(o) {
+    if (born(o)) return `<small class="muted">تاريخ الميلاد</small><b>${Cal.both(parse(o.date))}</b>`;
+    const { st, bad } = calc(o);
+    if (bad) return '<b style="color:var(--warn)">⚠️ التاريخ غير منطقي، تأكدي منه.</b>';
+    return `<small class="muted">موعد الولادة المتوقع</small><b>${Cal.both(st.due)}</b>
+      <span class="muted">${st.left >= 0 ? `باقٍ لكِ ${arWeeks(Math.max(0, 40 - st.week)) || 'أقل من أسبوع'} للأسبوع 40` : 'تجاوزتِ موعد الولادة'}</span>`;
+  }
+
+  const FOOT = {
+    welcome: '', cal: '', method: '',
+    date: o => `<button class="btn block big" id="onbNext" ${!born(o) && calc(o).bad ? 'disabled' : ''}>التالي</button>`,
+    info: () => '<button class="btn block big" id="onbNext">التالي</button><button class="link onb-skip" id="onbSkip">تخطّي</button>',
+    result: () => '<button class="btn block big" id="onbNext">التالي</button>',
+    notify: () => '<button class="btn block big" id="onbNotify">ابدئي بتفعيل الإشعارات</button><button class="link onb-skip" id="onbLater">لاحقاً</button>',
+    login: () => '<button class="link onb-skip" id="onbGuest">المتابعة كضيفة</button>'
+  };
+
+  function render() {
+    const o = st0();
+    document.body.classList.add('onb-mode');
+    $('#backBtn').hidden = true;
+    const list = steps(), i = list.indexOf(o.step);
+    if (o.step !== 'welcome' && i < 0) { o.step = 'welcome'; o.hist = []; }
+    const head = o.step === 'welcome' ? '' : `<div class="onb-head">
+      <button class="icon-btn" id="onbBack" aria-label="رجوع" ${o.hist.length ? '' : 'disabled'}>→</button>
+      <div class="onb-dots" role="progressbar" aria-valuemin="1" aria-valuemax="${list.length}" aria-valuenow="${i + 1}">${list.map((_, k) => `<i class="${k < i ? 'done' : k === i ? 'on' : ''}"></i>`).join('')}</div>
+      <span class="icon-btn ghost-slot"></span></div>`;
+    const foot = typeof FOOT[o.step] === 'function' ? FOOT[o.step](o) : '';
+    app.innerHTML = `<div class="onb onb-${o.step}">${head}<div class="onb-body ${REDUCED ? '' : 'in-' + dir}">${V[o.step](o)}</div>${foot ? `<div class="onb-foot">${foot}</div>` : ''}</div>`;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    bindStep(o);
+  }
+
+  function finish() {
+    delete S.onb; S.news12 = 1; save();
+    route = { view: 'home' }; history.replaceState(route, ''); render0();
+  }
+  const render0 = () => window.render();
+
+  // نثبّت البيانات قبل خطوة الإشعارات حتى تُجدول على الموعد الصحيح
+  function commit(o) {
+    S.profile = profileOf(o);
+    S.country = o.country || S.country || guessCountry();
+    if (o.cal) S.calendar = o.cal;
+    if (born(o)) S.baby = { name: (o.baby && o.baby.name) || '', sex: (o.baby && o.baby.sex) || 'boy', date: o.date, type: '', weight: '', length: '' };
+    save();
+  }
+
+  function bindStep(o) {
+    const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+    on('#onbBack', back);
+    on('#onbStart', () => { o.cal = o.cal || (Cal.ok && guessCountry() === 'SA' ? 'hijri' : 'gregorian'); go('cal'); });
+    on('#onbLogin', () => Account.signIn({ from: 'welcome' }));
+    app.querySelectorAll('[data-ocal]').forEach(b => b.onclick = () => { o.cal = b.dataset.ocal; S.calendar = o.cal; b.classList.add('on'); setTimeout(() => go('method'), 160); });
+    app.querySelectorAll('[data-om]').forEach(b => b.onclick = () => {
+      const m = b.dataset.om;
+      if (m !== o.method && !(m === 'conception' && o.method === 'ivf')) { o.method = m; o.date = defDate(m); }
+      b.classList.add('on'); setTimeout(() => go('date'), 160);
+    });
+    const w = $('#onbWheel');
+    if (w) {
+      const [min, max] = bounds(o.method);
+      datePicker(w, { cal: Cal.mode(), value: o.date || defDate(o.method), min, max, onChange: v => {
+        o.date = v; save(); $('#onbLive').innerHTML = live(o);
+        const n = $('#onbNext'); if (n) n.disabled = !born(o) && calc(o).bad;
+      } });
+      if (!o.date) { o.date = w._picker.value(); save(); }
+    }
+    app.querySelectorAll('[data-cyc]').forEach(b => b.onclick = () => { o.cycle = Math.max(20, Math.min(45, (o.cycle || 28) + +b.dataset.cyc)); save(); render(); });
+    app.querySelectorAll('[data-oc]').forEach(b => b.onclick = () => { o.method = b.dataset.oc; save(); render(); });
+    app.querySelectorAll('[data-ivd]').forEach(b => b.onclick = () => { o.ivfDay = +b.dataset.ivd; save(); render(); });
+    app.querySelectorAll('[data-osex]').forEach(b => b.onclick = () => { o.baby = { ...(o.baby || {}), sex: b.dataset.osex }; save(); app.querySelectorAll('[data-osex]').forEach(x => x.classList.toggle('on', x === b)); });
+    const bn = $('#onbBabyName'); if (bn) bn.oninput = () => { o.baby = { ...(o.baby || {}), name: bn.value.trim() }; save(); };
+    const readInfo = () => { if ($('#onbName')) { o.name = $('#onbName').value.trim(); o.babyName = $('#onbBaby') ? $('#onbBaby').value.trim() : o.babyName; o.country = $('#onbCountry').value; } };
+    on('#onbNext', () => {
+      if (o.step === 'date') return go('info');
+      if (o.step === 'info') { readInfo(); save(); return go('result'); }
+      if (o.step === 'result') { commit(o); return go('notify'); }
+    });
+    on('#onbSkip', () => { o.country = o.country || $('#onbCountry').value; save(); go('result'); });
+    on('#onbEdit', back);
+    const after = () => steps().includes('login') ? go('login') : finish();
+    on('#onbNotify', async () => {
+      S.notify = true; save();
+      const ok = await Notify.sync(true);
+      toast(ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'يمكنك السماح بالإشعارات لاحقاً من الإعدادات' : 'تعمل الإشعارات في تطبيق الموبايل');
+      after();
+    });
+    on('#onbLater', after);
+    on('#onbGuest', finish);
+    if ($('#onbGoogle')) Account.button($('#onbGoogle'), { from: 'onboarding' });
+  }
+
+  return { render, finish, go, state: st0 };
 })();
 
 </script>

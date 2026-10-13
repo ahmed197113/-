@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type, X-Device');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, X-Device, Authorization');
+header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
 header('Content-Type: application/json; charset=utf-8');
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { http_response_code(204); exit; }
 
@@ -120,4 +120,37 @@ function llm(string $system, array $messages, int $maxTokens): string {
   $text = trim($text);
   if ($text === '') return 'لا أستطيع الإجابة عن هذا السؤال، لكن طبيبك يقدر يساعدك فيه 💗';
   return $text;
+}
+
+function now_ms(): int { return (int)round(microtime(true) * 1000); }
+
+/* ---------- الحساب الاختياري (Google) ---------- */
+const SESSION_DAYS = 90;
+
+// توكن الجلسة من ترويسة Authorization: Bearer (مع بدائل لاستضافات Apache التي تحذفها)
+function bearer(): string {
+  $h = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+  if ($h === '' && function_exists('getallheaders')) { foreach (getallheaders() as $k => $v) if (strcasecmp($k, 'Authorization') === 0) $h = $v; }
+  return preg_match('/^Bearer\s+([a-f0-9]{64})$/', trim((string)$h), $m) ? $m[1] : '';
+}
+
+// المستخدم صاحب الجلسة، أو 401
+function require_user(): array {
+  $t = bearer();
+  if ($t === '') out(['error' => 'unauthorized'], 401);
+  $s = db()->prepare('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires > ?');
+  $s->execute([hash('sha256', $t), time()]);
+  $u = $s->fetch();
+  if (!$u) out(['error' => 'unauthorized'], 401);
+  db()->prepare('UPDATE users SET last_seen = ? WHERE id = ?')->execute([time(), $u['id']]);
+  return $u;
+}
+
+// نربط معرّف الجهاز بالحساب لنستطيع إخفاء منشوراته عند حذف الحساب
+function link_device(int $uid): void {
+  $d = $_SERVER['HTTP_X_DEVICE'] ?? '';
+  if (!preg_match('/^[a-z0-9]{12,64}$/', $d)) return;
+  $s = db()->prepare('SELECT 1 FROM user_devices WHERE user_id = ? AND dev = ?');
+  $s->execute([$uid, $d]);
+  if (!$s->fetchColumn()) db()->prepare('INSERT INTO user_devices (user_id, dev, t) VALUES (?,?,?)')->execute([$uid, $d, time()]);
 }

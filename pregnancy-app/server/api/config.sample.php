@@ -16,6 +16,12 @@ return [
   'ai_daily_labs' => 5,
   'ai_daily_ip'   => 200,
 
+  // تسجيل الدخول الاختياري بحساب Google: معرّف عميل الويب (Web client ID) من Google Cloud Console
+  // نفس القيمة الموجودة في googleWebClientId داخل config.js بالتطبيق
+  'google_client_ids' => ['1234567890-xxxx.apps.googleusercontent.com'],
+  'auth_daily_ip' => 40,   // محاولات تسجيل الدخول لكل IP يومياً
+  'backup_daily'  => 400,  // مرات حفظ النسخة لكل حساب يومياً
+
   // كلمة سر صفحة الإشراف admin.php (اختاري كلمة طويلة)
   'admin_token' => 'CHANGE-ME-LONG-RANDOM',
 ];

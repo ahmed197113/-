@@ -3,3 +3,5 @@
   Require all denied
 </FilesMatch>
 Options -Indexes
+# تمرير ترويسة Authorization إلى PHP (بعض إعدادات Apache تحذفها)
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
