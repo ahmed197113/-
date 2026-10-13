@@ -59,13 +59,17 @@ const Account = (() => {
       // تسجيل دخول أصلي عبر Firebase، ثم توكن Firebase يتحقق منه السيرفر
       const FA = window.Capacitor.Plugins.FirebaseAuthentication;
       if (ctx.provider === 'facebook') await FA.signInWithFacebook({ scopes: ['email', 'public_profile'] });
-      else await FA.signInWithGoogle({ scopes: ['email', 'profile'] });
+      else {
+        // بعض الأجهزة يفشل فيها Credential Manager بصمت؛ نعيد المحاولة بنافذة Google التقليدية
+        try { await FA.signInWithGoogle({ scopes: ['email', 'profile'] }); }
+        catch (e1) { await FA.signInWithGoogle({ scopes: ['email', 'profile'], useCredentialManager: false }); }
+      }
       const r = await FA.getIdToken({ forceRefresh: false });
       if (!r || !r.token) throw new Error('no_token');
       await finishLogin(r.token, ctx, 'firebase');
     } catch (e) {
       const m = String(e && (e.code || e.message || e)).slice(0, 120);
-      if (!/cancel|closed|abort/i.test(m)) toast('تعذّر تسجيل الدخول (' + m + ')');
+      toast('تعذّر تسجيل الدخول (' + m + ')');
     }
   }
   const nativeOut = async del => {
