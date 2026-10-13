@@ -11,6 +11,7 @@ import os from 'os';
 import path from 'path';
 import http from 'http';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const require = createRequire(import.meta.url);
 let pw; try { pw = require('playwright'); } catch { pw = require('/opt/node22/lib/node_modules/playwright'); }
@@ -36,7 +37,15 @@ let sql = fs.readFileSync(path.join(ROOT, 'server', 'api', 'schema.sql'), 'utf8'
   .replace(/,\s*INDEX \([^)]*\)/g, '').replace(/UNIQUE KEY \w+ \(/g, 'UNIQUE (');
 execFileSync('python3', ['-c', 'import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.executescript(sys.stdin.read())', dbFile], { input: sql });
 const CLIENT = 'web-client.apps.googleusercontent.com';
-fs.writeFileSync(path.join(tmp, 'api', 'config.php'), `<?php return ['db_dsn' => 'sqlite:${dbFile}', 'gemini_key' => 'x', 'ai_daily_chat' => 30, 'ai_daily_labs' => 5, 'ai_daily_ip' => 200, 'admin_token' => 'test', 'google_client_ids' => ['${CLIENT}'], 'test_mode' => true];`);
+// مفتاح وهمي لتوقيع توكنات Firebase (السيرفر يتحقق بـ openssl_verify فعلياً)
+const fbKeys = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+fs.writeFileSync(path.join(tmp, 'certs.json'), JSON.stringify({ kid1: fbKeys.publicKey.export({ type: 'spki', format: 'pem' }) }));
+const b64u = b => Buffer.from(b).toString('base64url');
+const fbToken = (sub, extra = {}) => { const now = Math.floor(Date.now() / 1000);
+  const c = { iss: 'https://securetoken.google.com/nabd-saghir', aud: 'nabd-saghir', sub, iat: now - 5, auth_time: now - 5, exp: now + 3600, name: 'ريم', email: 'reem@example.com', firebase: { sign_in_provider: 'facebook.com', identities: { 'facebook.com': ['42'] } }, ...extra };
+  const msg = b64u(JSON.stringify({ alg: 'RS256', kid: 'kid1' })) + '.' + b64u(JSON.stringify(c));
+  return msg + '.' + b64u(crypto.sign('sha256', Buffer.from(msg), fbKeys.privateKey)); };
+fs.writeFileSync(path.join(tmp, 'api', 'config.php'), `<?php return ['firebase_project_id' => 'nabd-saghir', 'firebase_certs_url' => 'file://${path.join(tmp, 'certs.json')}', 'db_dsn' => 'sqlite:${dbFile}', 'gemini_key' => 'x', 'ai_daily_chat' => 30, 'ai_daily_labs' => 5, 'ai_daily_ip' => 200, 'admin_token' => 'test', 'google_client_ids' => ['${CLIENT}'], 'test_mode' => true];`);
 const php = spawn('php', ['-S', '127.0.0.1:8092', '-t', path.join(tmp, 'api')], { stdio: 'ignore' });
 const API = 'http://127.0.0.1:8092';
 
@@ -53,15 +62,25 @@ const expectLmp = (lmp, cycle = 28) => { const due = plus(new Date(lmp + 'T00:00
 const hijriFmt = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
 const gregFmt = new Intl.DateTimeFormat('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
 
-async function page({ theme = 'dark', state = null, api = false } = {}) {
+async function page({ theme = 'dark', state = null, api = false, native = null } = {}) {
   if (!state && theme === 'light') state = { theme: 'light' };
   const ctx = await browser.newContext({ viewport: { width: 360, height: 780 }, deviceScaleFactor: 2, colorScheme: theme, serviceWorkers: 'block', locale: 'ar-SA' });
-  if (api) await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: `window.NABD_CONFIG = { apiBase: '${API}', supabaseUrl: '', supabaseKey: '', googleWebClientId: '${CLIENT}' };` }));
+  // الاختبارات لا تلمس السيرفر الحقيقي: إما سيرفر PHP المحلي أو بدون سيرفر
+  await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: `window.NABD_CONFIG = { apiBase: '${api ? API : ''}', supabaseUrl: '', supabaseKey: '', googleWebClientId: '${CLIENT}', facebook: true };` }));
   await ctx.route('https://accounts.google.com/**', r => r.abort());
+  // محاكاة تطبيق أندرويد: إضافة FirebaseAuthentication وهمية
+  if (native) await ctx.addInitScript(n => {
+    window.__calls = [];
+    const FA = { async signInWithFacebook(o) { __calls.push(['facebook', o]); return { user: { uid: 'fb1' } }; },
+      async signInWithGoogle(o) { __calls.push(['google', o]); const e = new Error(o && o.useCredentialManager === false ? 'ApiException statusCode=10 DEVELOPER_ERROR: 10: ' : 'GetCredentialCustomException type=com.google.android.libraries.identity.googleid.GetGoogleIdTokenCredentialException: [28444] Developer console is not set up correctly.');
+        e.code = o && o.useCredentialManager === false ? 'status-10' : 'GetCredentialCustomException'; throw e; },
+      async getIdToken() { return { token: n.token }; }, async signOut() { __calls.push(['signOut']); }, async deleteUser() { __calls.push(['deleteUser']); } };
+    window.Capacitor = { isNativePlatform: () => true, Plugins: { FirebaseAuthentication: FA } };
+  }, native);
   const p = await ctx.newPage();
   p.errors = [];
   p.on('pageerror', e => p.errors.push(e.message));
-  p.on('console', m => { if (m.type() === 'error' && !/accounts\.google|ERR_FAILED|womb-|Failed to load resource/.test(m.text())) p.errors.push(m.text()); });
+  p.on('console', m => { if (m.type() === 'error' && !/accounts\.google|ERR_FAILED|womb-|Failed to load resource|\[nabd\] sign-in failed/.test(m.text())) p.errors.push(m.text()); });
   await p.goto(URL0);
   if (state) { await p.evaluate(s => localStorage.setItem('rihlati_v1', JSON.stringify({ theme: 'dark', ...s })), state); await p.reload(); }
   await p.waitForTimeout(400);
@@ -312,6 +331,123 @@ try {
     ok('الحساب: كل الجلسات انتهت بعد الحذف', gone === 401, gone);
     ok('الحساب: لا أخطاء', [...A.errors, ...B.errors, ...C.errors].length === 0, [...A.errors, ...B.errors, ...C.errors]);
     await Promise.all([A.close(), B.close(), C.close()]);
+  }
+
+
+  /* 9b) تسجيل الدخول في تطبيق أندرويد (إضافة Firebase وهمية + توكن موقّع حقيقي): Facebook ثم خطأ Google بالتفاصيل */
+  {
+    const p = await page({ api: true, theme: 'light', state: profileState(120, { theme: 'light' }), native: { token: fbToken('fb-uid-9') } });
+    await p.evaluate(() => { route = { view: 'more', sub: 'account' }; render(false); }); await wait(p);
+    ok('أندرويد: زرّا Google وFacebook ظاهران', await p.isVisible('[data-prov="google"]') && await p.isVisible('[data-prov="facebook"]'));
+    await shot(p, '19-login-buttons-light');
+    await p.click('[data-prov="facebook"]'); await wait(p, 1200);
+    const u = await p.evaluate(() => ({ user: Account.user(), calls: __calls }));
+    ok('Facebook: Firebase ← auth.php ← حفظ الجلسة', u.user && u.user.name === 'ريم' && u.user.token.length === 64 && u.calls[0][0] === 'facebook', u);
+    const b = await p.evaluate(async api => (await fetch(api + '/backup.php', { headers: { Authorization: 'Bearer ' + Account.user().token } })).json(), API);
+    ok('Facebook: الجلسة تعمل والنسخة وصلت للسحابة', b.data && JSON.parse(b.data).profile, b);
+    await p.evaluate(() => Account.signOut()); await wait(p, 300);
+    await p.evaluate(() => { render(false); }); await wait(p);
+    await p.click('[data-prov="google"]'); await wait(p, 800);
+    const err = await p.textContent('.err-box').catch(() => '');
+    ok('Google: الخطأ يظهر كاملاً (النوع والكود وstatusCode) ولا تُغلق بصمت', /GetCredentialCustomException/.test(err) && /statusCode=10/.test(err) && /status-10/.test(err) && /google:legacy/.test(err), err);
+    const calls = await p.evaluate(() => __calls.filter(c => c[0] === 'google').map(c => c[1]));
+    ok('Google: بدون scopes إضافية، ثم إعادة المحاولة بالنافذة التقليدية', calls.length === 2 && !calls[0] && calls[1].useCredentialManager === false, calls);
+    await shot(p, '20-login-error-light');
+    ok('أندرويد: لا أخطاء', p.errors.length === 0, p.errors);
+    await p.close();
+  }
+
+  /* 11) أدوات الثلث الأخير */
+  for (const theme of ['dark', 'light']) {
+    const p = await page({ theme, state: profileState(240, { theme }) }); // الأسبوع 35
+    // الرئيسية: اختصارات من الأسبوع 28 (والشنطة من 32)
+    ok(`[${theme}] الرئيسية: اختصار الركلات والشنطة`, await p.isVisible('.home-tools [data-sub="kicks"]') && await p.isVisible('.home-tools [data-sub="bag"]'));
+    // عدّاد الركلات: هدف 10 ثم حفظ تلقائي
+    await p.evaluate(() => { route = { view: 'track', sub: 'kicks' }; render(false); }); await wait(p);
+    await p.click('#kickStart'); await wait(p, 400);
+    const kl = await p.evaluate(() => ({ t: document.querySelector('.kick-left')?.textContent, s: S._kick, html: app.innerHTML.slice(0, 200) }));
+    ok(`[${theme}] الركلات: جلسة بعدّاد ساعتين`, /متبقٍ\s*(2:00:00|1:59)/.test(kl.t || ''), kl);
+    await shot(p, `21-kicks-session-${theme}`);
+    for (let i = 0; i < 10; i++) { await p.click('#kickBtn'); await wait(p, 60); }
+    const k = await p.evaluate(() => ({ s: S._kick, last: S.kicks[S.kicks.length - 1], txt: document.querySelector('.result').textContent }));
+    ok(`[${theme}] الركلات: الوصول لـ10 يحفظ الجلسة تلقائياً`, !k.s && k.last.count === 10 && k.last.goal && /10 ركلات/.test(k.txt), k);
+    // جلسة انتهت ساعتاها والتطبيق مغلق
+    await p.evaluate(() => { S._kick = { start: Date.now() - 2.1 * 3600e3, count: 4 }; route.kickDone = null; render(false); }); await wait(p);
+    const k2 = await p.evaluate(() => ({ s: S._kick, txt: document.querySelector('.result').textContent, rows: document.querySelectorAll('.t tr').length }));
+    ok(`[${theme}] الركلات: انتهاء الساعتين بأقل من 10 = تنبيه للطبيب`, !k2.s && /4 ركلات فقط/.test(k2.txt) && k2.rows >= 2, k2);
+    await shot(p, `22-kicks-log-${theme}`);
+    // مؤقّت الطلق: نمط منتظم لساعة = «توجّهي للمستشفى»
+    await p.evaluate(() => { const now = Date.now(); S.contractions = Array.from({ length: 14 }, (_, i) => { const st = now - (13 - i) * 4.6 * 60e3 - 70e3; return { start: st, end: st + 62e3 }; }); route = { view: 'track', sub: 'contractions' }; render(false); }); await wait(p);
+    const c = await p.textContent('#app');
+    ok(`[${theme}] الطلق: قاعدة 5-1-1 تُظهر «توجّهي للمستشفى» مع التنبيه الطبي`, /توجّهي للمستشفى الآن/.test(c) && /تنبيه طبي/.test(c) && /4\.6 دقيقة/.test(c), c.slice(0, 300));
+    await shot(p, `23-contractions-511-${theme}`);
+    await p.evaluate(() => { const now = Date.now(); S.contractions = Array.from({ length: 6 }, (_, i) => { const st = now - (5 - i) * 4.5 * 60e3 - 70e3; return { start: st, end: st + 60e3 }; }); render(false); }); await wait(p);
+    ok(`[${theme}] الطلق: انتظام أقل من ساعة = «بدأت تنتظم» فقط`, /بدأت تنتظم/.test(await p.textContent('#app')) && !(await p.isVisible('.go-hospital')));
+    // الوزن: النطاق المتوقع حسب BMI
+    await p.evaluate(() => { S.profile.height = 160; S.profile.preWeight = 60; S.weights = [{ date: Cal.iso(addDays(today(), -2)), kg: 70 }]; route = { view: 'track', sub: 'weight' }; render(false); }); await wait(p);
+    const w = await p.textContent('#app');
+    ok(`[${theme}] الوزن: BMI والنطاق الموصى به والمتوقع لهذا الأسبوع`, /23\.4/.test(w) && /11\.5–16/.test(w) && /المتوقع حتى الأسبوع 35/.test(w) && /ضمن النطاق/.test(w), w.slice(0, 300));
+    await shot(p, `24-weight-${theme}`);
+    // الشنطة: الأوراق
+    await p.evaluate(() => { route = { view: 'track', sub: 'bag' }; render(false); }); await wait(p);
+    ok(`[${theme}] الشنطة: للأم والمولود والأوراق`, /📄 الأوراق/.test(await p.textContent('#app')));
+    await p.click('[data-bag="عقد الزواج (يُطلب في بعض الدول لتسجيل المولود)"]'); await wait(p, 200);
+    ok(`[${theme}] الشنطة: checkbox يُحفظ`, await p.evaluate(() => !!S.bag['عقد الزواج (يُطلب في بعض الدول لتسجيل المولود)']));
+    // المزاج السريع + تصدير PDF
+    await p.evaluate(() => { route = { view: 'track' }; render(false); }); await wait(p);
+    await p.click('[data-qmood="🥰"]'); await wait(p, 200);
+    ok(`[${theme}] المزاج: إدخال سريع بالإيموجي`, await p.evaluate(() => S.journal.find(j => j.date === Cal.iso(today())).mood === '🥰'));
+    await shot(p, `25-track-quickmood-${theme}`);
+    if (theme === 'light') {
+      const pdf = await p.evaluate(async () => {
+        for (let i = 1; i < 40; i++) S.journal.push({ date: Cal.iso(addDays(today(), -i)), mood: MOODS[i % 8], symptoms: SYMPTOMS_LIST.slice(i % 5, i % 5 + 3), note: i % 3 ? '' : 'ملاحظة للطبيب عن النوم والتعب في هذا اليوم' });
+        const b = await journalPdf(); const a = new Uint8Array(await b.arrayBuffer()); let s = ''; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s);
+      });
+      const buf = Buffer.from(pdf, 'base64'), pdfPath = path.join(SHOTS, 'report-sample.pdf');
+      fs.writeFileSync(pdfPath, buf);
+      let info = ''; try { info = execFileSync('pdfinfo', [pdfPath]).toString(); } catch (e) { info = String(e); }
+      ok('المفكرة: تصدير PDF صالح بعدة صفحات A4', buf.slice(0, 8).toString() === '%PDF-1.4' && /Pages:\s+[2-9]/.test(info) && /595 x 842/.test(info), info);
+      try { execFileSync('pdftoppm', ['-png', '-r', '60', '-f', '1', '-l', '1', pdfPath, path.join(SHOTS, '26-report-page')]); } catch {}
+    }
+    // تذكير الماء بوقت تحدده المستخدمة
+    await p.evaluate(() => { route = { view: 'more', setOpen: true }; render(false); }); await wait(p);
+    await p.selectOption('[data-remw="waterFrom"]', '8'); await wait(p, 200);
+    await p.selectOption('[data-remw="waterEvery"]', '3'); await wait(p, 200);
+    const hrs = await p.evaluate(() => Notify.waterHours(Notify.rem()));
+    ok(`[${theme}] تذكير الماء: من/إلى/كل حسب الاختيار`, JSON.stringify(hrs) === '[8,11,14,17]', hrs);
+    // حجم الخط
+    await p.click('#fontSeg [data-font="xl"]'); await wait(p, 200);
+    const fs1 = await p.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+    ok(`[${theme}] حجم الخط «أكبر» يكبّر النصوص`, fs1 === '20px', fs1);
+    await p.evaluate(() => document.querySelector('#fontSeg').scrollIntoView({ block: 'center' })); await wait(p, 200);
+    await shot(p, `27-settings-font-water-${theme}`);
+    await p.click('#fontSeg [data-font="md"]'); await wait(p, 200);
+    // التباين AA
+    const v = await p.evaluate(() => { const cs = getComputedStyle(document.documentElement), g = k => cs.getPropertyValue(k).trim(); return Object.fromEntries(['--bg', '--card', '--card-2', '--soft', '--text', '--muted', '--ink', '--ink-2', '--btn-a', '--btn-b', '--warn', '--ok'].map(k => [k, g(k)])); });
+    const lum = h => { h = h.replace('#', ''); if (h.length === 3) h = [...h].map(x => x + x).join(''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(c => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4).reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0); };
+    const cr = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x + 0.05) / (y + 0.05); };
+    const pairs = [['--text', '--card'], ['--muted', '--card'], ['--muted', '--bg'], ['--muted', '--card-2'], ['--ink', '--card'], ['--ink', '--soft'], ['--ink-2', '--card'], ['--warn', '--card'], ['--ok', '--card']].map(([a, b]) => [a + '/' + b, cr(v[a], v[b])]);
+    pairs.push(['#fff/--btn-a', cr('#ffffff', v['--btn-a'])], ['#fff/--btn-b', cr('#ffffff', v['--btn-b'])]);
+    const bad = pairs.filter(x => x[1] < 4.5);
+    ok(`[${theme}] تباين الألوان AA (4.5:1) للنصوص والأزرار`, !bad.length, bad.map(x => `${x[0]}=${x[1].toFixed(2)}`));
+    ok(`[${theme}] الأدوات: لا أخطاء`, p.errors.length === 0, p.errors);
+    await p.close();
+  }
+
+  /* 12) الأداء: زمن الإقلاع للملف الواحد ونسخة التطبيق (الصور منفصلة) */
+  {
+    const st = JSON.stringify(profileState(200));
+    const boot = async url => { const ctx = await browser.newContext({ viewport: { width: 360, height: 780 }, serviceWorkers: 'block' }); const p = await ctx.newPage();
+      await p.goto(url); await p.evaluate(s => localStorage.setItem('rihlati_v1', s), st); const t = [];
+      for (let i = 0; i < 3; i++) { await p.reload(); await p.waitForFunction(() => window.NABD_BOOT); t.push(await p.evaluate(() => window.NABD_BOOT)); }
+      await ctx.close(); return Math.min(...t); };
+    const wwwSrv = http.createServer((q, r) => { const f = path.join(ROOT, 'dist', 'www', decodeURIComponent(q.url.split('?')[0]) === '/' ? 'index.html' : decodeURIComponent(q.url.split('?')[0]));
+      if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.writeHead(404); return r.end(); } r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(r); }).listen(8093);
+    const single = await boot('file://' + path.join(ROOT, 'dist', 'nabd.html')), appv = await boot('http://127.0.0.1:8093/');
+    wwwSrv.close();
+    const kb = f => Math.round(fs.statSync(f).size / 1024);
+    console.log(`   ⏱️ زمن الإقلاع: الملف الواحد ${single} مللي ثانية (${kb(path.join(ROOT, 'dist', 'nabd.html'))} KB) · نسخة التطبيق ${appv} مللي ثانية (${kb(path.join(ROOT, 'dist', 'www', 'index.html'))} KB)`);
+    ok('الأداء: نسخة التطبيق أخف وأسرع إقلاعاً من الملف الواحد', appv <= single && kb(path.join(ROOT, 'dist', 'www', 'index.html')) < 1000, { single, appv });
   }
 
   /* 10) الملف الواحد المبني (dist/nabd.html) يعمل */

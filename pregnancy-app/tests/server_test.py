@@ -68,6 +68,14 @@ try:
     check('backup: حفظ النسخة', s == 200 and r.get('ok'), r)
     s, r = call('GET', 'backup.php', token=tok)
     check('backup: الاسترجاع يطابق المحفوظ', s == 200 and r['data'] == data and r['updated'] > 0, r)
+    # البيانات الجديدة في 1.2.48 تدخل في النسخة كما هي
+    full = {'profile': {'method': 'lmp', 'lmp': '2026-03-01'}, 'kicks': [{'at': 1, 'count': 10, 'sec': 900, 'goal': True}], '_kick': {'start': 5, 'count': 3},
+            'contractions': [{'start': 1, 'end': 61000}], 'journal': [{'date': '2026-10-01', 'mood': '🥰', 'symptoms': ['تعب'], 'note': ''}],
+            'bag': {'عقد الزواج (يُطلب في بعض الدول لتسجيل المولود)': True}, 'weights': [{'date': '2026-10-01', 'kg': 70}],
+            'reminders': {'water': True, 'waterFrom': 8, 'waterTo': 20, 'waterEvery': 3, 'vit': True, 'vitTime': '09:30'}, 'font': 'xl', 'crash': False, 'favorites': [{'id': 'w24.tips.0'}]}
+    s, r = call('PUT', 'backup.php', {'data': json.dumps(full, ensure_ascii=False)}, token=tok)
+    s, r = call('GET', 'backup.php', token=tok)
+    check('backup: الركلات والطلق والمفكرة والشنطة والتذكيرات تُحفظ وتُسترجع', s == 200 and json.loads(r['data']) == full, r)
     s, r = call('PUT', 'backup.php', {'data': json.dumps({'x': 'a' * (520 * 1024)})}, token=tok)
     check('backup: رفض نسخة أكبر من 512KB', s == 413, r)
     s, r = call('PUT', 'backup.php', {'data': 'not json'}, token=tok)
@@ -79,7 +87,7 @@ try:
     # جهاز ثانٍ لنفس الحساب يسترجع النسخة
     s, r2 = call('POST', 'auth.php', {'id_token': 'test:sub-1:mama@example.com:سارة أحمد'}, dev='devsecond12345')
     s, r = call('GET', 'backup.php', token=r2['token'], dev='devsecond12345')
-    check('backup: الاسترجاع على جهاز جديد', r.get('data') == data, r)
+    check('backup: الاسترجاع على جهاز جديد', r.get('data') and json.loads(r['data']) == full, r)
     # منشور في المجتمع ثم حذف الحساب
     s, r = call('POST', 'community.php', {'action': 'add', 'title': 'سؤال تجربة للحذف', 'body': 'تفاصيل السؤال هنا', 'nick': 'سارة'})
     qid = r.get('id')

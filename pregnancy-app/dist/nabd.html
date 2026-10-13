@@ -112,7 +112,7 @@ main { max-width: 760px; margin: 0 auto; padding: 4px 16px 16px; }
   display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .74rem; color: var(--muted);
 }
 .tabbar svg { width: 24px; height: 24px; }
-.tabbar button.active { background: var(--soft); color: var(--primary); font-weight: 700; }
+.tabbar button.active { background: var(--soft); color: var(--ink); font-weight: 700; }
 
 /* ---- عناصر عامة ---- */
 .card {
@@ -128,7 +128,7 @@ main { max-width: 760px; margin: 0 auto; padding: 4px 16px 16px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .badge { display: inline-block; padding: 4px 14px; border-radius: 999px; font-size: .82rem; font-weight: 700; background: var(--primary); color: #fff; }
 .badge.alt { background: var(--primary-2); }
-.badge.soft { background: var(--soft); color: var(--primary); }
+.badge.soft { background: var(--soft); color: var(--ink); }
 .stat { background: var(--card-2); border-radius: 16px; padding: 10px; text-align: center; font-variant-numeric: tabular-nums; }
 .stat b { display: block; font-size: 1.15rem; }
 .stat small { color: var(--muted); }
@@ -199,7 +199,7 @@ label.f input:focus, label.f select:focus, label.f textarea:focus, .input:focus 
 }
 .week-strip button b { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card-2); color: var(--text); font-size: 1rem; font-variant-numeric: tabular-nums; }
 .week-strip button.cur { border-color: color-mix(in srgb, var(--primary) 50%, var(--border)); }
-.week-strip button.sel { border-color: var(--primary); color: var(--primary); }
+.week-strip button.sel { border-color: var(--primary); color: var(--ink); }
 .week-strip button.sel b { background: var(--primary); color: #fff; }
 .back-now {
   position: sticky; top: calc(70px + env(safe-area-inset-top, 0px)); z-index: 15; display: block; margin: 0 auto 12px;
@@ -217,7 +217,7 @@ label.f input:focus, label.f select:focus, label.f textarea:focus, .input:focus 
 .prog-bar .track { flex: 1; height: 16px; background: var(--card-2); margin-inline: -4px; position: relative; overflow: hidden; }
 .prog-bar .track i { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--primary); border-radius: 0 10px 10px 0; }
 .prog-dates { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: .9rem; font-variant-numeric: tabular-nums; }
-.prog-dates .start { color: var(--primary); }
+.prog-dates .start { color: var(--ink); }
 .prog-dates .end { color: var(--muted); }
 .pattern {
   background-image: repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--text) 4%, transparent) 14px 15px);
@@ -240,10 +240,10 @@ label.f input:focus, label.f select:focus, label.f textarea:focus, .input:focus 
 .legend summary::-webkit-details-marker { display: none; }
 .legend summary::after { content: ' ▾'; color: var(--muted); }
 .legend[open] summary { margin-bottom: 8px; }
-.pill-name { flex-shrink: 0; min-width: 100px; text-align: center; font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 999px; background: var(--soft); color: var(--primary); }
+.pill-name { flex-shrink: 0; min-width: 100px; text-align: center; font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 999px; background: var(--soft); color: var(--ink); }
 .lbl-toggle { position: absolute; top: 10px; inset-inline-end: 22px; z-index: 3; }
 .chip { border: 1px solid var(--border); background: var(--card-2); padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: .85rem; }
-.chip.on { background: var(--soft); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+.chip.on { background: var(--soft); border-color: var(--primary); color: var(--ink); font-weight: 700; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ---- قوائم وأدوات ---- */
@@ -318,7 +318,7 @@ details.faq p { margin: 8px 0 0; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
 /* ---- الميزات الجديدة ---- */
-.tabbar button.mid { color: var(--primary-2); }
+.tabbar button.mid { color: var(--ink); }
 .tabbar button.mid svg { width: 26px; height: 26px; }
 .tabbar .lbl { white-space: nowrap; }
 .big-ic { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
@@ -401,13 +401,13 @@ a.btn { text-decoration: none; display: inline-block; }
 
 /* ================= لمسات الهوية ================= */
 h1, h2, h3 { font-family: var(--display); font-weight: 600; }
-.btn { color: var(--on-primary); background: linear-gradient(135deg, var(--rose), var(--gold)); }
+.btn { color: var(--on-primary); background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); }
 .btn.ghost { color: var(--text); background: var(--card-2); }
 .btn.danger { background: var(--warn); color: #fff; }
 .badge { color: var(--on-primary); }
 .badge.alt { background: var(--primary-2); }
-.seg button.on, .seg.big button.on, .sec-tabs button.on { background: linear-gradient(135deg, var(--rose), var(--gold)); color: var(--on-primary); border-color: transparent; }
-.chip.on { color: var(--gold); border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
+.seg button.on, .seg.big button.on, .sec-tabs button.on { background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); color: var(--on-primary); border-color: transparent; }
+.chip.on { color: var(--ink-2); border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent); }
 ul.list li::before { background: var(--gold); transform: rotate(45deg); border-radius: 2px; }
 .topbar h1 { font-family: var(--display); }
 
@@ -421,7 +421,7 @@ ul.list li::before { background: var(--gold); transform: rotate(45deg); border-r
 .size-tag { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: .85rem; font-weight: 600;
   padding: 4px 14px; border-radius: 999px; background: color-mix(in srgb, var(--card) 80%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); backdrop-filter: blur(8px); }
 .float-chip { border-color: color-mix(in srgb, var(--gold) 30%, var(--border)); }
-.float-chip .ic { background: color-mix(in srgb, var(--gold) 22%, var(--card)); color: var(--gold); }
+.float-chip .ic { background: color-mix(in srgb, var(--gold) 22%, var(--card)); color: var(--ink-2); }
 .float-chip .ic.pink { background: color-mix(in srgb, var(--rose) 22%, var(--card)); color: var(--rose); }
 .dots i.on { background: var(--gold); }
 
@@ -431,18 +431,18 @@ ul.list li::before { background: var(--gold); transform: rotate(45deg); border-r
 .week-strip.tiles b { width: auto; height: auto; background: none; font-size: 1.05rem; color: var(--text); }
 .week-strip.tiles small { font-size: .68rem; color: var(--muted); }
 .week-strip.tiles button.cur { border-color: color-mix(in srgb, var(--gold) 60%, var(--border)); }
-.week-strip.tiles button.cur small { color: var(--gold); font-weight: 700; }
+.week-strip.tiles button.cur small { color: var(--ink-2); font-weight: 700; }
 .week-strip.tiles button.sel { background: linear-gradient(160deg, color-mix(in srgb, var(--rose) 30%, var(--card)), color-mix(in srgb, var(--gold) 22%, var(--card))); border: 1.5px solid var(--gold); transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0,0,0,.25); }
-.back-now { background: linear-gradient(135deg, var(--rose), var(--gold)); color: var(--on-primary); }
+.back-now { background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); color: var(--on-primary); }
 
 /* الأقمار التسعة */
-.kicker { display: inline-block; font-size: .78rem; color: var(--gold); letter-spacing: .02em; margin-bottom: 4px; }
+.kicker { display: inline-block; font-size: .78rem; color: var(--ink-2); letter-spacing: .02em; margin-bottom: 4px; }
 .moons-card { background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--hero-1) 70%, var(--card)), var(--card)); }
 .moons-card h2 { font-size: 1.12rem; margin: 2px 0 14px; }
 .moons { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; }
 .moon { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .moon svg { width: 100%; max-width: 34px; height: auto; }
-.moon.now span { color: var(--gold); font-weight: 700; }
+.moon.now span { color: var(--ink-2); font-weight: 700; }
 .moon.now svg { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--gold) 80%, transparent)); }
 .ticket { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px dashed color-mix(in srgb, var(--gold) 35%, var(--border)); border-radius: 14px; overflow: hidden; }
 .ticket > div { padding: 8px 6px; text-align: center; border-inline-start: 1px dashed color-mix(in srgb, var(--gold) 35%, var(--border)); }
@@ -451,19 +451,19 @@ ul.list li::before { background: var(--gold); transform: rotate(45deg); border-r
 .ticket b { font-size: .9rem; font-variant-numeric: tabular-nums; }
 
 /* شريط التنقل العائم مع زر القلب */
-.tabbar button.active { background: transparent; color: var(--gold); }
+.tabbar button.active { background: transparent; color: var(--ink-2); }
 .tabbar button.mid { color: var(--text); margin-top: -24px; }
 .tabbar button.mid svg { width: 28px; height: 28px; padding: 13px; box-sizing: content-box; border-radius: 50%; color: var(--on-primary);
-  background: linear-gradient(135deg, var(--rose), var(--gold)); box-shadow: 0 8px 20px color-mix(in srgb, var(--rose) 45%, transparent); border: 4px solid var(--bg); }
-.tabbar button.mid.active { color: var(--gold); }
+  background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); box-shadow: 0 8px 20px color-mix(in srgb, var(--rose) 45%, transparent); border: 4px solid var(--bg); }
+.tabbar button.mid.active { color: var(--ink-2); }
 .tabbar[hidden] { display: none; }
-.bubble.user { background: linear-gradient(135deg, var(--rose), var(--gold)); color: var(--on-primary); }
+.bubble.user { background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); color: var(--on-primary); }
 .welcome .photo { border-radius: 50%; overflow: hidden; }
 .week-strip.tiles button.sel b { background: none; color: var(--text); }
-.week-strip.tiles button.sel small { color: var(--gold); }
+.week-strip.tiles button.sel small { color: var(--ink-2); }
 
 .sources { font-size: .8rem; color: var(--muted); text-align: center; margin: 4px 0 14px; line-height: 1.8; }
-.sources a { color: var(--gold); }
+.sources a { color: var(--ink-2); }
 .sources span { font-size: .74rem; }
 
 /* بطاقة «يومك» المختصرة */
@@ -641,12 +641,12 @@ body.onb-mode .topbar { display: none; }
 .wheel-col::-webkit-scrollbar { display: none; }
 .wheel-col:focus-visible { outline: 2px solid var(--primary-2); outline-offset: -2px; border-radius: 12px; }
 .wheel-item { height: 40px; line-height: 40px; text-align: center; scroll-snap-align: center; color: var(--muted); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; transition: color .15s, font-size .15s; }
-.wheel-item.on { color: var(--primary); font-weight: 700; font-size: 1.08rem; }
+.wheel-item.on { color: var(--ink); font-weight: 700; font-size: 1.08rem; }
 label.f .wheel, div.f .wheel { margin-top: 6px; }
 div.f { margin-bottom: 12px; font-weight: 600; font-size: .92rem; }
 
 /* الرئيسية */
-.meet-month { justify-self: start; padding: 2px 12px; border-radius: 999px; background: var(--soft); color: var(--primary); font-weight: 700; font-size: .85rem; }
+.meet-month { justify-self: start; padding: 2px 12px; border-radius: 999px; background: var(--soft); color: var(--ink); font-weight: 700; font-size: .85rem; }
 .span-cards { margin-bottom: 14px; }
 .span-cards .mini { display: grid; gap: 2px; }
 .span-cards .mini b { font-size: 1rem; line-height: 1.5; }
@@ -660,19 +660,19 @@ div.f { margin-bottom: 12px; font-weight: 600; font-size: .92rem; }
 .countdown { text-align: center; background: linear-gradient(135deg, var(--soft), var(--card)); }
 .cd-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; direction: rtl; }
 .cd-row div { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 8px 2px; display: grid; }
-.cd-row b { font-size: 1.6rem; font-variant-numeric: tabular-nums; color: var(--primary); line-height: 1.2; }
+.cd-row b { font-size: 1.6rem; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.2; }
 .cd-row small { color: var(--muted); font-size: .78rem; }
 .news-card { display: flex; gap: 12px; align-items: flex-start; border: 1.5px solid var(--primary); }
 .news-card .icon-btn.sm { width: 32px; height: 32px; font-size: .85rem; }
 .share-btn { position: absolute; top: 8px; left: 14px; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--text); font-size: .85rem; font-weight: 600; backdrop-filter: blur(8px); }
-.share-btn svg { width: 16px; height: 16px; color: var(--primary); }
+.share-btn svg { width: 16px; height: 16px; color: var(--ink); }
 .womb { border-radius: 26px; }
 
 /* المفضلة */
 .fav-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer; color: var(--muted); padding: 6px; border-radius: 999px; }
 .fav-btn svg { width: 22px; height: 22px; fill: none; transition: fill .2s, color .2s; }
-.fav-btn.on { color: var(--primary); }
+.fav-btn.on { color: var(--ink); }
 .fav-btn.on svg { fill: var(--primary); }
 .fav-btn span { font-size: .82rem; }
 .fav-btn.pop svg { animation: favPop .35s ease; }
@@ -686,7 +686,7 @@ ul.fav-list .fav-btn { margin-top: -4px; }
 .fav-open { cursor: pointer; line-height: 1.8; }
 
 /* الحساب والنوافذ */
-.av.big { width: 52px; height: 52px; font-size: 1.3rem; background: linear-gradient(135deg, var(--rose), var(--gold)); }
+.av.big { width: 52px; height: 52px; font-size: 1.3rem; background: linear-gradient(135deg, var(--btn-a), var(--btn-b)); }
 .sheet-bg { position: fixed; inset: 0; z-index: 50; background: rgba(8, 10, 22, .55); display: flex; align-items: flex-end; justify-content: center; animation: fadeIn .2s ease; }
 .sheet { width: 100%; max-width: 520px; background: var(--card); border-radius: 26px 26px 0 0; padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px)); animation: sheetUp .28s cubic-bezier(.2,.7,.2,1); text-align: center; }
 .sheet h3 { margin: 0 0 6px; }
@@ -700,6 +700,38 @@ ul.fav-list .fav-btn { margin-top: -4px; }
 .toast { z-index: 70; }
 .login-btns { display: grid; gap: 10px; width: 100%; max-width: 340px; margin: 0 auto; }
 .fb-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: #1877F2 !important; color: #fff !important; border-radius: 999px; }
+.err-box { text-align: left; white-space: pre-wrap; word-break: break-word; font: .8rem/1.5 ui-monospace, monospace; background: var(--card-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px; max-height: 40vh; overflow: auto; }
+
+/* ===== 1.2.48: أدوات الثلث الأخير ===== */
+.home-tools { margin-bottom: 14px; }
+.home-tools .mini b { font-size: 1rem; }
+.kick-card { display: grid; justify-items: center; gap: 10px; }
+.kick-ring { width: 170px; height: 170px; }
+.kick-n { font-size: 46px; font-weight: 700; fill: var(--text); font-family: var(--font); }
+.kick-of { font-size: 15px; fill: var(--muted); font-family: var(--font); }
+.kick-left { color: var(--muted); }
+.kick-left b { color: var(--text); font-variant-numeric: tabular-nums; }
+.counter-big.live { background: radial-gradient(circle, #ff8a80, #e53935) !important; }
+.go-hospital { animation: pulseWarn 1.6s ease-in-out 3; }
+.go-hospital h2 { margin: 0 0 6px; }
+.go-hospital .btn { margin-top: 8px; background: #e53935; color: #fff; }
+@keyframes pulseWarn { 50% { transform: scale(1.015); box-shadow: 0 0 0 6px color-mix(in srgb, var(--warn) 30%, transparent); } }
+.quick-mood .mood-row { display: flex; justify-content: space-between; gap: 4px; margin-top: 8px; }
+.quick-mood .mood-row button { flex: 1; min-width: 0; min-height: 44px; font-size: 1.5rem; border: 1px solid var(--border); background: var(--card-2); border-radius: 14px; cursor: pointer; padding: 4px 0; }
+.quick-mood .mood-row button.on { border-color: var(--primary); background: var(--soft); transform: scale(1.06); }
+@media (prefers-reduced-motion: reduce) { .go-hospital { animation: none; } }
+
+/* ===== إمكانية الوصول (AA): ألوان النص والأزرار ===== */
+:root { --ink: var(--primary); --ink-2: var(--gold); --btn-a: #c40f63; --btn-b: #e0136f; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --muted: #646882; --ink: #cf0f66; --ink-2: #cf0f66; --warn: #c0392b; --ok: #24805a; } }
+:root[data-theme="light"] { --muted: #646882; --ink: #cf0f66; --ink-2: #cf0f66; --warn: #c0392b; --ok: #24805a; }
+.badge, .badge.alt { background: var(--btn-a); color: #fff; }
+.badge.soft { background: var(--soft); color: var(--ink); }
+.btn.danger { background: #c0392b; color: #fff; }
+.fb-btn { background: #1466d8 !important; }
+/* حجم الخط من الإعدادات (يتبع rem) */
+html[data-font="lg"] { font-size: 112.5%; }
+html[data-font="xl"] { font-size: 125%; }
 
 </style>
 </head>
@@ -1054,8 +1086,9 @@ const WARNING_SIGNS = [
 ];
 
 const HOSPITAL_BAG = {
-  'للأم': ['الهوية وبطاقة التأمين وملف الحمل', 'روب أو قميص نوم بأزرار للرضاعة', 'حمالات صدر للرضاعة (2–3)', 'فوط نفاس كبيرة', 'ملابس داخلية قطنية أو استعمال واحد', 'شبشب وجوارب', 'أدوات العناية الشخصية وفرشاة الأسنان', 'مرطب شفاه', 'شاحن الجوال', 'ملابس مريحة للخروج', 'وسادة رضاعة (اختياري)', 'كريم الحلمات', 'مناديل مبللة', 'وجبات خفيفة وماء'],
+  'للأم': ['روب أو قميص نوم بأزرار للرضاعة', 'حمالات صدر للرضاعة (2–3)', 'فوط نفاس كبيرة', 'ملابس داخلية قطنية أو استعمال واحد', 'شبشب وجوارب', 'أدوات العناية الشخصية وفرشاة الأسنان', 'مرطب شفاه', 'شاحن الجوال', 'ملابس مريحة للخروج', 'وسادة رضاعة (اختياري)', 'كريم الحلمات', 'مناديل مبللة', 'وجبات خفيفة وماء'],
   'للمولود': ['3–4 بدلات قطنية (مقاس حديث الولادة)', 'قبعة وجوارب وقفازات', 'بطانية أو لفافة', 'حفاضات مقاس 1 أو حديث الولادة', 'مناديل مبللة للرضع', 'ملابس الخروج من المستشفى', 'مقعد السيارة المثبت'],
+  'الأوراق': ['بطاقة الهوية لكِ وللزوج', 'بطاقة التأمين أو خطاب التحويل', 'ملف الحمل ونتائج التحاليل والسونار', 'عقد الزواج (يُطلب في بعض الدول لتسجيل المولود)', 'خطة الولادة إن وُجدت', 'نسخة من «ملفي الطبي» من التطبيق'],
   'للمرافق': ['ملابس بديلة', 'شاحن وسماعات', 'وجبات خفيفة', 'أرقام الهواتف المهمة', 'مبلغ نقدي بسيط']
 };
 
@@ -1633,7 +1666,7 @@ APPOINTMENTS.forEach(a => { if (a.title.includes('Tdap')) { a.from = 16; a.to = 
    googleWebClientId: معرّف عميل الويب (ليس سراً) — لزر Google في نسخة المتصفح. في تطبيق أندرويد يتم الدخول عبر Firebase (Google وFacebook).
    تسجيل الدخول يظهر فقط بعد ضبط apiBase (راجعي server/GOOGLE_SETUP.md). */
 window.NABD_CONFIG = {
-  apiBase: '', // مثال: https://example.com/nabd-api
+  apiBase: 'https://nabd.khatta.net/nabd-api',
   supabaseUrl: '',
   supabaseKey: '',
   googleWebClientId: '987831438755-a2c3ljr526b3hplfhr27mc3shnvlo22k.apps.googleusercontent.com',
@@ -1984,6 +2017,7 @@ function toast(msg) {
 
 function applyTheme() {
   const root = document.documentElement;
+  if (S.font && S.font !== 'md') root.dataset.font = S.font; else delete root.dataset.font;
   if (S.theme === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', S.theme);
   const dark = S.theme === 'dark' || (S.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
   $('#themeBtn').textContent = dark ? '☀️' : '🌙';
@@ -2292,7 +2326,11 @@ function viewHome() {
   ${progressCard(st)}
   <div class="card nav-row" data-week="${sel}"><span class="ic">${w.emoji}</span><div class="grow"><b>${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</b><div class="muted">${w.baby[0]}</div></div><span class="chev">‹</span></div>
   ${badLabs || (tr && tr.lvl >= 2) ? `<button class="alert-line" data-sub="${badLabs ? 'labs' : 'checkin'}">${badLabs ? `🧪 ${badLabs} تحليل يحتاج انتباهك` : `${tr.ic} ${tr.title}`} ‹</button>` : ''}
-  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:6px auto;color:var(--gold)">🎉 وُلد طفلي؟</button>` : ''}
+  ${st.week >= 28 ? (() => { const all = Object.values(HOSPITAL_BAG).flat(), n = all.filter(i => S.bag[i]).length; return `<div class="grid2 home-tools">
+    <div class="card mini tap" data-sub="kicks" role="button" tabindex="0"><span class="big-ic">👣</span><b>عدّ الركلات</b><small>${S._kick ? `جلسة جارية · ${arKicks(S._kick.count)}` : 'هدف 10 خلال ساعتين'}</small></div>
+    ${st.week >= 32 ? `<div class="card mini tap" data-sub="bag" role="button" tabindex="0"><span class="big-ic">🎒</span><b>شنطة المستشفى</b><small>${n} من ${all.length} جاهزة</small></div>`
+      : `<div class="card mini tap" data-sub="contractions" role="button" tabindex="0"><span class="big-ic">⏱️</span><b>مؤقّت الطلق</b><small>قاعدة 5-1-1</small></div>`}</div>`; })() : ''}
+  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:6px auto;color:var(--ink-2)">🎉 وُلد طفلي؟</button>` : ''}
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
 const toolBtn = ([k, ic, name]) => `<div class="tool" data-sub="${k}"><span>${ic}</span>${name}</div>`;
@@ -2390,10 +2428,13 @@ function viewTrack() {
   const main = S.baby ? [navRow('momcare', 'التعافي والمزاج والرضاعة')] : [];
   main.push(navRow('labs', lat.length ? `${lat.length} تحاليل${bad ? ` · ${bad} تحتاج انتباه` : ' · كلها طبيعية'}` : 'أضيفي نتيجة واعرفي معناها'));
   main.push(navRow('appts', nextA ? `القادم: ${esc(nextA.title)} · ${fmtShort.format(parse(nextA.date))}` : 'لا توجد مواعيد قادمة'));
-  if (!S.baby && st.week >= 28) main.push(navRow('kicks', 'عدّ حركات الجنين'), navRow('contractions', 'حساب الطلق'));
-  const extra = ['weight', 'journal', 'file', 'medinfo', ...(S.baby ? [] : ['partner', 'bag', ...(st.week < 28 ? ['kicks', 'contractions'] : [])]), 'album', 'water']
+  const bagAll = Object.values(HOSPITAL_BAG).flat(), bagN = bagAll.filter(i => S.bag[i]).length;
+  if (!S.baby && st.week >= 28) main.push(navRow('kicks', S._kick ? `جلسة جارية · ${arKicks(S._kick.count)}` : 'هدف 10 حركات خلال ساعتين'), navRow('contractions', 'المدة والفاصل وقاعدة 5-1-1'));
+  if (!S.baby && st.week >= 32) main.push(navRow('bag', `${bagN} من ${bagAll.length} جاهزة`));
+  const extra = ['weight', 'journal', 'file', 'medinfo', ...(S.baby ? [] : ['partner', ...(st.week < 32 ? ['bag'] : []), ...(st.week < 28 ? ['kicks', 'contractions'] : [])]), 'album', 'water']
     .map(k => navRow(k, k === 'weight' && lw ? `آخر قياس: ${lw.kg} كغ` : ''));
   return `${todayCard}
+  ${quickMood()}
   <div class="card group">${main.join('')}</div>
   <details class="card group more-tools"><summary><b>أدوات أخرى</b><span class="muted">${extra.length}</span></summary>${extra.join('')}</details>`;
 }
@@ -2429,14 +2470,24 @@ function viewMore() {
     <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
     ${S.notify === false ? '' : (r => `
     <label class="check"><input type="checkbox" data-rem="tip" ${r.tip ? 'checked' : ''}><span>💡 معلومة يومية (9 صباحاً)</span></label>
-    <label class="check"><input type="checkbox" data-rem="water" ${r.water ? 'checked' : ''}><span>💧 تذكير بشرب الماء (من 10 صباحاً حتى 6 مساءً كل ساعتين)</span></label>
+    <label class="check"><input type="checkbox" data-rem="water" ${r.water ? 'checked' : ''}><span>💧 تذكير بشرب الماء</span></label>
+    ${r.water ? (() => { const hr = h => `${h % 12 || 12} ${h < 12 ? 'صباحاً' : h < 17 ? 'ظهراً' : 'مساءً'}`;
+      return `<div class="grid3 rem-water"><label class="f">من<select data-remw="waterFrom">${Array.from({ length: 12 }, (_, i) => i + 6).map(h => `<option value="${h}" ${+r.waterFrom === h ? 'selected' : ''}>${hr(h)}</option>`).join('')}</select></label>
+      <label class="f">إلى<select data-remw="waterTo">${Array.from({ length: 12 }, (_, i) => i + 11).map(h => `<option value="${h}" ${+r.waterTo === h ? 'selected' : ''}>${hr(h)}</option>`).join('')}</select></label>
+      <label class="f">كل<select data-remw="waterEvery">${[1, 2, 3].map(h => `<option value="${h}" ${+r.waterEvery === h ? 'selected' : ''}>${arCount(h, 'ساعة', 'ساعتين', 'ساعات', 'ساعة')}</option>`).join('')}</select></label></div>
+      <p class="muted" style="margin:0 0 8px">${arCount(Notify.waterHours(r).length, 'تذكير واحد', 'تذكيران', 'تذكيرات', 'تذكيراً')} يومياً.</p>`; })() : ''}
     <label class="check"><input type="checkbox" data-rem="vit" ${r.vit ? 'checked' : ''}><span>💊 تذكير الفيتامين أو الدواء يومياً</span></label>
     ${r.vit ? `<label class="f" style="margin:4px 0 8px">موعد التذكير<input type="time" id="remVitTime" value="${esc(r.vitTime)}"></label>` : ''}
     <button class="btn ghost block" id="notifyTest">🔔 جرّبي إشعاراً الآن</button>
     <p class="muted" style="margin:8px 0 0">إن لم تصلك الإشعارات: من إعدادات الجهاز اسمحي للتطبيق بالإشعارات، وأوقفي «تحسين البطارية» له.</p>`)(Notify.rem())}
     ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
   <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
-    ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+    ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <div class="muted">حجم الخط</div><div class="seg" id="fontSeg">
+    ${[['md', 'عادي'], ['lg', 'كبير'], ['xl', 'أكبر']].map(([k, v]) => `<button data-font="${k}" class="${(S.font || 'md') === k ? 'on' : ''}" aria-pressed="${(S.font || 'md') === k}">${v}</button>`).join('')}</div></div>
+  ${Crash.available() ? `<div class="set-block"><h3>🛡️ تقارير الأعطال</h3>
+    <label class="check"><input type="checkbox" id="crashOn" ${S.crash !== false ? 'checked' : ''}><span>أرسلي تقارير الأعطال لمساعدتنا على إصلاحها (بدون بياناتك الصحية أو أي بيانات إعلانية)</span></label></div>` : ''}
+  ${window.NABD_BOOT ? `<p class="muted center" style="font-size:.78rem">زمن فتح التطبيق: ${window.NABD_BOOT} مللي ثانية</p>` : ''}
   <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
   </details>
   <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
@@ -2444,47 +2495,7 @@ function viewMore() {
 
 /* ---------- الشاشات الفرعية ---------- */
 const SUBVIEWS = {
-  kicks() {
-    const s = S._kick;
-    const hist = S.kicks.slice(-10).reverse();
-    return `<div class="card center">
-      <p class="muted">ابدئي العدّ في وقت يكون فيه الجنين نشطاً (بعد الأكل عادة)، واستلقي على جانبك الأيسر. الهدف: 10 حركات خلال ساعتين.</p>
-      ${s ? `<div id="kickTime" class="muted">00:00</div>` : ''}
-      <button class="counter-big" id="kickBtn">${s ? s.count : '▶'}<small>${s ? 'اضغطي عند كل حركة' : 'ابدئي العدّ'}</small></button>
-      ${s ? `<div class="row" style="justify-content:center"><button class="btn ghost" id="kickUndo">تراجع</button><button class="btn" id="kickStop">إنهاء وحفظ</button></div>` : ''}
-    </div>
-    <div class="card"><h3>السجل</h3>${hist.length ? `<table class="t"><tr><th>التاريخ</th><th>الحركات</th><th>المدة</th></tr>
-      ${hist.map(k => `<tr><td>${fmtShort.format(new Date(k.at))} ${new Date(k.at).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}</td><td>${k.count}</td><td>${Math.round(k.sec / 60)} د</td></tr>`).join('')}</table>`
-      : '<p class="muted">لا توجد جلسات بعد.</p>'}</div>
-    <div class="card warn-card"><b>⚠️ راجعي الطبيب</b> إذا لم تشعري بـ10 حركات خلال ساعتين، أو لاحظتِ انخفاضاً واضحاً في نشاط الجنين المعتاد.</div>`;
-  },
-
-  contractions() {
-    const list = S.contractions.slice(-12);
-    const active = list.length && !list[list.length - 1].end;
-    const rows = list.map((c, i) => {
-      const dur = c.end ? Math.round((c.end - c.start) / 1000) : null;
-      const gap = i > 0 ? Math.round((c.start - list[i - 1].start) / 60000 * 10) / 10 : null;
-      return { c, dur, gap };
-    }).reverse();
-    const done = rows.filter(r => r.dur && r.gap);
-    const recent = done.slice(0, 6);
-    const avgGap = recent.length ? recent.reduce((a, r) => a + r.gap, 0) / recent.length : 0;
-    const avgDur = recent.length ? recent.reduce((a, r) => a + r.dur, 0) / recent.length : 0;
-    const go511 = recent.length >= 6 && avgGap <= 5 && avgDur >= 45;
-    return `<div class="card center">
-      <p class="muted">اضغطي عند بداية الانقباض، واضغطي مرة أخرى عند انتهائه.</p>
-      <button class="counter-big" id="ctrBtn" style="${active ? 'background:radial-gradient(circle,#ff8a80,#e53935)' : ''}">
-        ${active ? '<span id="ctrTime">0</span>' : '▶'}<small>${active ? 'انتهى الانقباض' : 'بدأ الانقباض'}</small></button>
-      ${recent.length ? `<div class="grid2"><div class="stat"><b>${avgGap.toFixed(1)} د</b><small>متوسط الفاصل</small></div>
-        <div class="stat"><b>${Math.round(avgDur)} ث</b><small>متوسط المدة</small></div></div>` : ''}
-      ${go511 ? `<div class="card warn-card" style="margin-top:12px"><b>🏥 الانقباضات منتظمة وقريبة — حان وقت التوجه للمستشفى!</b></div>` : ''}
-    </div>
-    <div class="card"><h3>السجل</h3>${rows.length ? `<table class="t"><tr><th>الوقت</th><th>المدة</th><th>الفاصل</th></tr>
-      ${rows.map(r => `<tr><td>${new Date(r.c.start).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}</td><td>${r.dur != null ? r.dur + ' ث' : '…'}</td><td>${r.gap != null ? r.gap + ' د' : '—'}</td></tr>`).join('')}</table>
-      <button class="btn ghost sm" id="ctrClear" style="margin-top:10px">مسح السجل</button>` : '<p class="muted">لا يوجد سجل.</p>'}</div>
-    <div class="card"><b>قاعدة 5-1-1:</b> انقباض كل 5 دقائق، يستمر دقيقة، لمدة ساعة ← توجهي للمستشفى. (في الحمل الثاني فأكثر قد تحتاجين التوجه أبكر.)</div>`;
-  },
+  // kicks / contractions: tools.js
 
   weight() {
     const p = S.profile, h = +p.height / 100, pre = +p.preWeight;
@@ -2495,12 +2506,20 @@ const SUBVIEWS = {
     const ws = [...S.weights].sort((a, b) => a.date.localeCompare(b.date));
     const last = ws[ws.length - 1];
     const gain = last && pre ? (last.kg - pre) : null;
+    // النطاق المتوقع للزيادة في هذا الأسبوع (IOM 2009): 0.5–2 كغ حتى الأسبوع 13 ثم زيادة أسبوعية ثابتة
+    const exp = w => [0, 1].map(g => { const t13 = g ? 2 : 0.5, tot = rng[g]; return w <= 13 ? (w / 13) * t13 : t13 + (Math.min(40, w) - 13) / 27 * (tot - t13); });
+    const [eLo, eHi] = exp(st.week).map(x => Math.round(x * 10) / 10);
+    const lastWk = last ? Math.floor(diffDays(parse(last.date), st.start) / 7) + 1 : 0;
+    const where = gain == null || !pre ? '' : (() => { const [lo, hi] = exp(lastWk); return gain < lo - 0.3 ? ['أقل من النطاق', 'var(--warn)'] : gain > hi + 0.3 ? ['أعلى من النطاق', 'var(--warn)'] : ['ضمن النطاق ✓', 'var(--ok)']; })();
     return `<div class="card">
       ${bmi ? `<div class="grid3"><div class="stat"><b>${bmi.toFixed(1)}</b><small>BMI قبل الحمل</small></div>
         <div class="stat"><b style="font-size:1rem">${cat}</b><small>التصنيف</small></div>
         <div class="stat"><b style="font-size:1rem">${rng[0]}–${rng[1]}</b><small>الزيادة الموصى بها (كغ)</small></div></div>`
         : `<p class="muted">أضيفي طولك ووزنك قبل الحمل من <a href="#" data-sub="profile">بيانات الحمل</a> لحساب الزيادة الموصى بها.</p>`}
-      ${gain != null ? `<p class="center" style="margin:12px 0 0">زيادتك حتى الآن: <b>${gain.toFixed(1)} كغ</b></p>` : ''}
+      ${bmi ? `<p class="center" style="margin:12px 0 0">المتوقع حتى الأسبوع ${st.week}: زيادة <b>${eLo}–${eHi} كغ</b></p>` : ''}
+      ${gain != null ? `<p class="center" style="margin:6px 0 0">زيادتك حتى الآن: <b>${gain.toFixed(1)} كغ</b>${where ? ` <span class="st-chip" style="--c:${where[1]}">${where[0]}</span>` : ''}</p>` : ''}
+      ${last && lastWk >= st.week ? '' : '<p class="muted center" style="margin:8px 0 0">⚖️ سجّلي وزن هذا الأسبوع (مرة أسبوعياً، نفس اليوم والوقت).</p>'}
+      <p class="muted center" style="margin:6px 0 0;font-size:.8rem">حسب توصيات IOM للحمل بجنين واحد. طبيبك قد يحدد نطاقاً مختلفاً لكِ.</p>
     </div>
     <div class="card"><h3>إضافة قياس</h3><div class="row">
       <input class="input grow" type="date" id="wDate" value="${iso(today())}" style="margin:0">
@@ -2557,9 +2576,9 @@ const SUBVIEWS = {
   bag() {
     const all = Object.values(HOSPITAL_BAG).flat();
     const n = all.filter(i => S.bag[i]).length;
-    return `<div class="card"><p class="muted" style="margin-top:0">جهّزي الحقيبة بحلول الأسبوع 34–36.</p>
+    return `<div class="card"><p class="muted" style="margin-top:0">جهّزي الحقيبة بحلول الأسبوع 34–36، وضعيها قرب الباب.</p>
       <div class="row"><b>${n} / ${all.length}</b><div class="progress grow"><i style="width:${n / all.length * 100}%"></i></div></div></div>
-      ${Object.entries(HOSPITAL_BAG).map(([g, items]) => `<div class="card"><h3>${g === 'للأم' ? '👩' : g === 'للمولود' ? '👶' : '🧑'} ${g}</h3>
+      ${Object.entries(HOSPITAL_BAG).map(([g, items]) => `<div class="card"><h3>${{ 'للأم': '👩', 'للمولود': '👶', 'الأوراق': '📄' }[g] || '🧑'} ${g}</h3>
         ${items.map(i => `<label class="check ${S.bag[i] ? 'done' : ''}"><input type="checkbox" data-bag="${esc(i)}" ${S.bag[i] ? 'checked' : ''}><span>${i}</span></label>`).join('')}</div>`).join('')}`;
   },
 
@@ -2697,10 +2716,17 @@ function bind() {
   on('#resetBtn', confirmTap('#resetBtn', () => { S = defaults(); save(); route = { view: 'home' }; render(); }));
   on('#setDetails', e => { route.setOpen = e.target.open; history.replaceState(route, ''); }, 'ontoggle');
   app.querySelectorAll('[data-rem]').forEach(c => c.onchange = async () => { S.reminders = { ...Notify.rem(), [c.dataset.rem]: c.checked }; save(); render(false); const ok = await Notify.sync(true); toast(ok ? 'تم حفظ التذكيرات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
+  app.querySelectorAll('[data-remw]').forEach(sel => sel.onchange = async () => {
+    const r = { ...Notify.rem(), [sel.dataset.remw]: +sel.value };
+    if (+r.waterTo < +r.waterFrom) r.waterTo = r.waterFrom;
+    S.reminders = r; save(); render(false); await Notify.sync(false); toast('تم ضبط تذكير الماء 💧');
+  });
   on('#remVitTime', async e => { S.reminders = { ...Notify.rem(), vitTime: e.target.value || '10:00' }; save(); await Notify.sync(false); toast('تم ضبط موعد التذكير ⏰'); }, 'onchange');
   on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
   on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); render(false); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
+  app.querySelectorAll('#fontSeg button').forEach(b => b.onclick = () => { S.font = b.dataset.font; save(); render(false); });
+  on('#crashOn', e => { S.crash = e.target.checked; save(); Crash.apply(); toast(S.crash ? 'تم تفعيل تقارير الأعطال' : 'تم إيقاف تقارير الأعطال'); }, 'onchange');
   app.querySelectorAll('#calSeg button').forEach(b => b.onclick = () => { S.calendar = b.dataset.cal; save(); render(false); toast(b.dataset.cal === 'hijri' ? 'التواريخ الآن بالهجري 🌙' : 'التواريخ الآن بالميلادي'); });
   on('#newsX', () => { S.news12 = 1; save(); render(false); });
   on('#newsGo', () => { S.news12 = 1; save(); route = { view: 'more', setOpen: true }; history.pushState(route, ''); render(); });
@@ -2713,34 +2739,6 @@ function bind() {
   }
 
   if (route.sub === 'profile') bindSetup();
-
-  // الركلات
-  on('#kickBtn', () => {
-    if (!S._kick) S._kick = { start: Date.now(), count: 0 }; else S._kick.count++;
-    if (navigator.vibrate) navigator.vibrate(30);
-    save(); render(false);
-    if (S._kick.count === 10) toast('🎉 وصلتِ لـ10 حركات!');
-  });
-  on('#kickUndo', () => { S._kick.count = Math.max(0, S._kick.count - 1); save(); render(false); });
-  on('#kickStop', () => { const k = S._kick; S.kicks.push({ at: k.start, count: k.count, sec: (Date.now() - k.start) / 1000 }); delete S._kick; save(); toast('تم الحفظ'); render(false); });
-  if ($('#kickTime')) {
-    const tick = () => { const s = Math.floor((Date.now() - S._kick.start) / 1000); $('#kickTime').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
-    tick(); timers.push(setInterval(tick, 1000));
-  }
-
-  // الانقباضات
-  on('#ctrBtn', () => {
-    const l = S.contractions, last = l[l.length - 1];
-    if (last && !last.end) last.end = Date.now(); else l.push({ start: Date.now() });
-    if (l.length > 100) l.splice(0, l.length - 100);
-    save(); render(false);
-  });
-  on('#ctrClear', confirmTap('#ctrClear', () => { S.contractions = []; save(); render(false); }));
-  if ($('#ctrTime')) {
-    const last = S.contractions[S.contractions.length - 1];
-    const tick = () => { $('#ctrTime').textContent = Math.floor((Date.now() - last.start) / 1000); };
-    tick(); timers.push(setInterval(tick, 500));
-  }
 
   // الوزن
   on('#wAdd', () => {
@@ -2807,11 +2805,15 @@ function bind() {
   on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
   const lt = $('#lblToggle'); if (lt) lt.onclick = () => { route.labels = !route.labels; history.replaceState(route, ''); render(false); };
   extrasBind();
+  toolsBind();
   featBind();
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { booted = true; if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); Widget.sync(); });
+window.addEventListener('DOMContentLoaded', () => { booted = true; if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render();
+  // زمن الإقلاع حتى أول رسم كامل
+  requestAnimationFrame(() => { window.NABD_BOOT = Math.round(performance.now()); Crash.apply(); });
+  Notify.start(); Widget.sync(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -3929,9 +3931,10 @@ const Notify = (() => {
   const HOUR = 10; // العاشرة صباحاً
   const short = (t, n = 110) => (t || '').length > n ? t.slice(0, n - 1).trim() + '…' : (t || '');
   const at = d => { const x = new Date(d); x.setHours(HOUR, 0, 0, 0); return x; };
-  const WATER_HOURS = [10, 12, 14, 16, 18];
+  // ساعات تذكير الماء حسب اختيار المستخدمة (الافتراضي: من 10 صباحاً حتى 6 مساءً كل ساعتين)
+  const waterHours = r => { const out = [], to = +r.waterTo, ev = Math.max(1, +r.waterEvery || 2); for (let h = +r.waterFrom; h <= to; h += ev) out.push(h); return out; };
   const TIP_DAYS = 14; // تُجدول معلومات الأيام القادمة وتتجدد عند كل فتح للتطبيق
-  const rem = () => ({ tip: true, water: true, vit: true, vitTime: '10:00', ...(S.reminders || {}) });
+  const rem = () => ({ tip: true, water: true, vit: true, vitTime: '10:00', waterFrom: 10, waterTo: 18, waterEvery: 2, ...(S.reminders || {}) });
   const months = m => m === 1 ? 'شهراً واحداً' : m === 2 ? 'شهرين' : m <= 10 ? `${m} أشهر` : `${m} شهراً`;
 
   function plan() {
@@ -3977,7 +3980,7 @@ const Notify = (() => {
         list.push({ id: 3000 + i, schedule: { at: d, allowWhileIdle: true }, title: '💡 معلومة اليوم', body: short(t, 160), extra: { view: S.baby ? 'home' : 'weeks' } });
       }
     }
-    if (r.water) WATER_HOURS.forEach(h => list.push({ id: 4000 + h, schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
+    if (r.water) waterHours(r).forEach(h => list.push({ id: 4000 + h, schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
       title: '💧 وقت كوب ماء', body: 'كوب ماء الآن يساعدك على النشاط ويقلل الإمساك والتورم.', extra: { view: 'track' } }));
     if (r.vit) {
       const [hh, mm] = (r.vitTime || '10:00').split(':').map(Number);
@@ -4031,7 +4034,7 @@ const Notify = (() => {
     return 'ok';
   }
 
-  return { native: () => !!plugin(), sync, listen, greet, test, rem, start() { listen(); greet(); sync(false); } };
+  return { waterHours, native: () => !!plugin(), sync, listen, greet, test, rem, start() { listen(); greet(); sync(false); } };
 })();
 
 </script>
@@ -4093,17 +4096,49 @@ const Account = (() => {
   async function signIn(ctx = {}) {
     if (!available()) return toast('تسجيل الدخول غير متاح حالياً');
     if (!native() || !ctx.provider) return sheet(ctx);
+    const FA = window.Capacitor.Plugins.FirebaseAuthentication, steps = [];
+    // تفاصيل الخطأ كاملة: نوع الاستثناء والكود (والإضافة الأصلية تضيف statusCode لـ GoogleSignIn)
+    const detail = e => [e && e.code, e && (e.errorMessage || e.message), !e || e.code || e.message ? '' : String(e)].filter(Boolean).join(' | ').slice(0, 400);
     try {
       // تسجيل دخول أصلي عبر Firebase، ثم توكن Firebase يتحقق منه السيرفر
-      const FA = window.Capacitor.Plugins.FirebaseAuthentication;
-      if (ctx.provider === 'facebook') await FA.signInWithFacebook({ scopes: ['email', 'public_profile'] });
-      else await FA.signInWithGoogle({ scopes: ['email', 'profile'] });
+      if (ctx.provider === 'facebook') {
+        steps.push('facebook');
+        await FA.signInWithFacebook({ scopes: ['email', 'public_profile'] });
+      } else {
+        // بدون scopes إضافية: الاسم والبريد داخل التوكن، وطلب صلاحيات إضافي يفتح شاشة قد تُغلق بصمت
+        steps.push('google:credential-manager');
+        try { await FA.signInWithGoogle(); }
+        catch (e1) {
+          const d1 = detail(e1);
+          if (/Cancellation|canceled by the user|cancelled by the user/i.test(d1)) throw e1;
+          steps.push('(' + d1 + ')', 'google:legacy');
+          await FA.signInWithGoogle({ useCredentialManager: false });
+        }
+      }
+      steps.push('token');
       const r = await FA.getIdToken({ forceRefresh: false });
       if (!r || !r.token) throw new Error('no_token');
+      steps.push('server');
       await finishLogin(r.token, ctx, 'firebase');
     } catch (e) {
-      if (!/cancel|closed|abort/i.test(String(e && (e.message || e.code)))) toast('تعذّر تسجيل الدخول — حاولي مرة أخرى');
+      const d = detail(e);
+      console.error('[nabd] sign-in failed', steps.join(' → '), e);
+      try { window.Capacitor.Plugins.FirebaseCrashlytics?.recordException({ message: `sign-in ${steps.join(' > ')}: ${d}` }); } catch {}
+      if (/Cancellation|canceled by the user|cancelled by the user/i.test(d)) return toast('تم إلغاء تسجيل الدخول');
+      loginError(`${steps.join(' → ')}\n(${d || 'unknown'})`);
     }
+  }
+  // رسالة خطأ تبقى ظاهرة ويمكن نسخها لإرسالها للدعم
+  function loginError(text) {
+    closeSheet();
+    const el = document.createElement('div'); el.className = 'sheet-bg'; el.id = 'accSheet';
+    el.innerHTML = `<div class="sheet" role="alertdialog" aria-modal="true"><h3>تعذّر تسجيل الدخول</h3>
+      <p class="muted">جرّبي مرة أخرى. لو تكرر، انسخي التفاصيل وأرسليها لنا.</p>
+      <pre class="err-box" dir="ltr">${esc(text)}</pre>
+      <div class="row"><button class="btn grow" id="errCopy">نسخ التفاصيل</button><button class="btn ghost grow" id="errX">إغلاق</button></div></div>`;
+    document.body.appendChild(el);
+    el.querySelector('#errX').onclick = closeSheet;
+    el.querySelector('#errCopy').onclick = () => navigator.clipboard?.writeText(text).then(() => toast('تم النسخ'), () => {});
   }
   const nativeOut = async del => {
     if (!native()) return;
@@ -4134,7 +4169,10 @@ const Account = (() => {
       acc = { token: r.token, exp: r.exp, name: r.user.name, email: r.user.email, last: 0 }; write(acc);
       if (r.user.name && !S.nick) S.nick = r.user.name.split(' ')[0];
       await reconcile(ctx);
-    } catch (e) { toast(e.code === 'rate_limited' ? 'محاولات كثيرة، جرّبي بعد قليل' : 'تعذّر تسجيل الدخول — حاولي مرة أخرى'); }
+    } catch (e) {
+      if (e.code === 'rate_limited') return toast('محاولات كثيرة، جرّبي بعد قليل');
+      loginError(`server (auth.php)\n(${e.status || ''} ${e.code || e.message || e})`);
+    }
   }
 
   /* ---------- المزامنة ---------- */
@@ -4224,7 +4262,7 @@ const Account = (() => {
 
   const FB_LOGO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#fff" d="M14 8h3V4h-3c-2.8 0-4.5 1.8-4.5 4.6V11H7v4h2.5v8h4v-8h3l.5-4h-3.5V9c0-.6.4-1 1-1z"/></svg>';
 
-  return { available, user, button, signIn, push, dirty: markDirty, signOut, remove, _finish: finishLogin };
+  return { _error: t => loginError(t), available, user, button, signIn, push, dirty: markDirty, signOut, remove, _finish: finishLogin };
 })();
 
 </script>
@@ -4380,6 +4418,238 @@ const Widget = (() => {
   }
   return { sync };
 })();
+
+/* ---------- تقارير الأعطال (Firebase Crashlytics) — بدون أي بيانات إعلانية، ويمكن إيقافها من الإعدادات ---------- */
+const Crash = (() => {
+  const P = () => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.FirebaseCrashlytics;
+  const on = () => S.crash !== false;
+  const rec = message => { const c = P(); if (c && on()) c.recordException({ message: String(message).slice(0, 500) }).catch(() => {}); };
+  window.addEventListener('error', e => rec(`${e.message} @${String(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+  window.addEventListener('unhandledrejection', e => rec(`unhandled: ${e.reason && (e.reason.stack || e.reason.message) || e.reason}`));
+  function apply() {
+    const c = P(); if (!c) return;
+    c.setEnabled({ enabled: on() }).catch(() => {});
+    if (on() && window.NABD_BOOT) c.setCustomKey({ key: 'boot_ms', value: String(window.NABD_BOOT), type: 'string' }).catch(() => {});
+  }
+  return { apply, available: () => !!P(), record: rec };
+})();
+
+</script>
+  <script>
+/* نبضٌ صغير — أدوات الثلث الأخير: عدّاد الركلات، مؤقّت الطلق (5-1-1)، المزاج السريع، وتصدير سجل الأعراض PDF للطبيب */
+'use strict';
+
+const KICK_GOAL = 10, KICK_WINDOW = 2 * 3600 * 1000;
+const arKicks = n => arCount(n, 'ركلة واحدة', 'ركلتان', 'ركلات', 'ركلة') || '0 ركلات';
+const arMins = n => arCount(n, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة') || 'أقل من دقيقة';
+const hms = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+const clock = t => new Date(t).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' });
+
+/* ---------- عدّاد الركلات: جلسة ساعتين وهدف 10 ركلات ---------- */
+function kickSave(reason) {
+  const k = S._kick; if (!k) return;
+  const end = Math.min(Date.now(), k.start + KICK_WINDOW);
+  S.kicks.push({ at: k.start, count: k.count, sec: (end - k.start) / 1000, goal: k.count >= KICK_GOAL });
+  route.kickDone = { count: k.count, min: Math.round((end - k.start) / 60000), reason };
+  delete S._kick; save();
+}
+// جلسة انتهت ساعتاها والتطبيق مغلق: تُحفظ عند الفتح
+function kickExpire() { if (S._kick && Date.now() - S._kick.start >= KICK_WINDOW) kickSave('time'); }
+
+function kickRing(n) {
+  const r = 70, C = 2 * Math.PI * r, f = Math.min(1, n / KICK_GOAL);
+  return `<svg class="kick-ring" viewBox="0 0 160 160" role="img" aria-label="${arKicks(n)} من ${KICK_GOAL}">
+    <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--track)" stroke-width="12"/>
+    <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--primary)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}" transform="rotate(-90 80 80)"/>
+    <text x="80" y="82" text-anchor="middle" class="kick-n">${n}</text><text x="80" y="108" text-anchor="middle" class="kick-of">من ${KICK_GOAL}</text></svg>`;
+}
+
+Object.assign(SUBVIEWS, {
+  kicks() {
+    kickExpire();
+    const s = S._kick, done = route.kickDone;
+    // السجل اليومي: آخر 14 يوماً
+    const days = {};
+    S.kicks.forEach(k => { const d = iso(new Date(k.at)); (days[d] = days[d] || []).push(k); });
+    const rows = Object.keys(days).sort().reverse().slice(0, 14).map(d => {
+      const l = days[d], best = l.filter(k => k.goal || k.count >= KICK_GOAL).map(k => k.sec / 60).sort((a, b) => a - b)[0];
+      return `<tr><td>${fmtShort.format(parse(d))}</td><td>${l.length}</td><td>${l.reduce((n, k) => n + k.count, 0)}</td><td>${best != null ? arMins(Math.max(1, Math.round(best))) : '<span style="color:var(--warn)">لم يكتمل</span>'}</td></tr>`;
+    }).join('');
+    return `${done ? `<div class="card result lv-${done.count >= KICK_GOAL ? 'ok' : 'high'}">
+        ${done.count >= KICK_GOAL ? `<b>🎉 ${arKicks(done.count)} خلال ${arMins(done.min)}</b><p style="margin:6px 0 0">طفلك نشيط. سُجّلت الجلسة في السجل.</p>`
+          : `<b>⚠️ ${arKicks(done.count)} فقط خلال ساعتين</b><p style="margin:6px 0 0">اشربي ماء أو كلي شيئاً واستلقي على جانبك الأيسر وأعيدي العدّ. وإذا بقيت الحركة قليلة، كلّمي طبيبك أو اذهبي للطوارئ اليوم.</p>`}</div>` : ''}
+      <div class="card center kick-card">
+        ${s ? `${kickRing(s.count)}
+          <div class="kick-left">متبقٍ <b id="kickLeft">${hms(s.start + KICK_WINDOW - Date.now())}</b> من الساعتين</div>
+          <button class="counter-big" id="kickBtn" aria-label="سجّلي ركلة">👣<small>اضغطي عند كل حركة</small></button>
+          <div class="row" style="justify-content:center"><button class="btn ghost" id="kickUndo" ${s.count ? '' : 'disabled'}>تراجع</button><button class="btn" id="kickStop">إنهاء وحفظ</button></div>`
+        : `<p class="muted" style="margin-top:0">اختاري وقتاً يكون فيه الجنين نشطاً (بعد الأكل غالباً)، واستلقي على جانبك الأيسر. الهدف: ${KICK_GOAL} حركات خلال ساعتين، وتنتهي الجلسة تلقائياً عند الوصول للهدف.</p>
+          <button class="counter-big" id="kickStart" aria-label="ابدئي جلسة عدّ الركلات">▶<small>ابدئي جلسة جديدة</small></button>`}
+      </div>
+      <div class="card"><h3>السجل اليومي</h3>${rows ? `<table class="t"><tr><th>اليوم</th><th>جلسات</th><th>ركلات</th><th>أسرع ${KICK_GOAL}</th></tr>${rows}</table>` : '<p class="muted">لا توجد جلسات بعد.</p>'}</div>
+      <div class="card warn-card"><b>⚠️ راجعي الطبيب</b> إذا لم تشعري بـ${KICK_GOAL} حركات خلال ساعتين، أو لاحظتِ انخفاضاً واضحاً في نشاط الجنين المعتاد. لا تنتظري لليوم التالي.</div>`;
+  },
+
+  contractions() {
+    const list = S.contractions.slice(-60), now = Date.now();
+    const active = list.length && !list[list.length - 1].end;
+    const rows = list.map((c, i) => ({ c, dur: c.end ? Math.round((c.end - c.start) / 1000) : null, gap: i ? (c.start - list[i - 1].start) / 60000 : null }));
+    const hour = rows.filter(r => r.dur != null && r.gap != null && r.c.start >= now - 3600e3);
+    const avg = (a, k) => a.length ? a.reduce((n, r) => n + r[k], 0) / a.length : 0;
+    const avgGap = avg(hour, 'gap'), avgDur = avg(hour, 'dur');
+    const span = hour.length ? (now - hour[0].c.start) / 60000 : 0;
+    const regular = hour.length >= 4 && avgGap <= 5.5 && avgDur >= 50;
+    // قاعدة 5-1-1: كل 5 دقائق أو أقل، تستمر دقيقة تقريباً، لمدة ساعة
+    const go511 = regular && span >= 55, soon = regular && !go511;
+    const last = rows.filter(r => r.dur != null).slice(-1)[0];
+    return `${go511 ? `<div class="card lv-danger go-hospital" role="alert"><h2>🏥 توجّهي للمستشفى الآن</h2>
+        <p>الانقباضات منتظمة: كل ${avgGap.toFixed(1)} دقيقة تقريباً، ومدة كل واحدة ${Math.round(avgDur)} ثانية، منذ ساعة (قاعدة 5-1-1).</p>
+        <a class="btn block" href="tel:${emergencyNo()}">📞 اتصلي بالطوارئ ${emergencyNo()}</a></div>`
+      : soon ? `<div class="card warn-card"><b>⏳ الانقباضات بدأت تنتظم</b><p style="margin:6px 0 0">جهّزي حقيبتك وأبلغي من سيرافقك. إذا استمرت هكذا ساعة كاملة توجّهي للمستشفى.</p></div>` : ''}
+      <div class="card center">
+        <p class="muted" style="margin-top:0">اضغطي عند بداية الانقباض، واضغطي مرة أخرى عند انتهائه.</p>
+        <button class="counter-big ${active ? 'live' : ''}" id="ctrBtn">${active ? '<span id="ctrTime">0</span>' : '▶'}<small>${active ? 'انتهى الانقباض' : 'بدأ الانقباض'}</small></button>
+        <div class="grid3" style="margin-top:12px"><div class="stat"><b>${last ? last.dur + ' ث' : '—'}</b><small>آخر مدة</small></div>
+          <div class="stat"><b>${last && last.gap != null ? last.gap.toFixed(1) + ' د' : '—'}</b><small>آخر فاصل</small></div>
+          <div class="stat"><b>${hour.length}</b><small>في آخر ساعة</small></div></div>
+        ${hour.length ? `<p class="muted" style="margin:10px 0 0">متوسط آخر ساعة: فاصل ${avgGap.toFixed(1)} د · مدة ${Math.round(avgDur)} ث</p>` : ''}
+      </div>
+      <div class="card"><h3>السجل</h3>${rows.length ? `<table class="t"><tr><th>الوقت</th><th>المدة</th><th>الفاصل</th></tr>
+        ${rows.slice().reverse().slice(0, 20).map(r => `<tr><td>${clock(r.c.start)}</td><td>${r.dur != null ? r.dur + ' ث' : '…'}</td><td>${r.gap != null ? r.gap.toFixed(1) + ' د' : '—'}</td></tr>`).join('')}</table>
+        <button class="btn ghost sm" id="ctrClear" style="margin-top:10px">مسح السجل</button>` : '<p class="muted">لا يوجد سجل.</p>'}</div>
+      <div class="card"><b>قاعدة 5-1-1:</b> انقباض كل 5 دقائق أو أقل، يستمر دقيقة، لمدة ساعة ← توجّهي للمستشفى. في الحمل الثاني فأكثر قد تحتاجين التوجّه أبكر.</div>
+      <div class="card warn-card"><b>⚕️ تنبيه طبي:</b> المؤقّت مؤشر عام وليس تشخيصاً. توجّهي للطوارئ فوراً دون انتظار إذا نزل ماء أو دم، أو قلّت حركة الجنين، أو كان الألم شديداً ومستمراً، أو بدأت الانقباضات قبل الأسبوع 37.</div>`;
+  }
+});
+
+/* ---------- مفكرة الأعراض والمزاج: إدخال سريع + تصدير PDF ---------- */
+const journalBase = SUBVIEWS.journal;
+SUBVIEWS.journal = () => `<div class="card row" style="justify-content:space-between"><div><b>📄 تقرير للطبيب</b><div class="muted">سجل المزاج والأعراض والضغط بصيغة PDF</div></div><button class="btn sm" id="jPdf">تصدير PDF</button></div>${journalBase()}`;
+
+// بطاقة «كيف حالك اليوم؟» بلمسة واحدة
+function quickMood() {
+  const e = S.journal.find(j => j.date === iso(today()));
+  return `<div class="card quick-mood"><div class="row" style="justify-content:space-between"><b>كيف حالك اليوم؟</b><button class="link" data-sub="journal">الأعراض والملاحظات ‹</button></div>
+    <div class="mood-row" role="group" aria-label="اختاري مزاجك">${MOODS.map(m => `<button class="${e && e.mood === m ? 'on' : ''}" data-qmood="${m}" aria-pressed="${!!(e && e.mood === m)}">${m}</button>`).join('')}</div></div>`;
+}
+
+// PDF صغير بدون مكتبات: كل صفحة تُرسم على canvas (العربية تُشكَّل صحيحاً) ثم تُضمَّن كصورة JPEG
+function pdfFromJpegs(pages) {
+  const enc = new TextEncoder(), parts = [], offs = [];
+  let len = 0;
+  const push = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  const obj = (n, body, stream) => { offs[n] = len; push(`${n} 0 obj\n${body}\n`); if (stream) { push('stream\n'); push(stream); push('\nendstream\n'); } push('endobj\n'); };
+  push('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  const n = pages.length, kids = pages.map((_, i) => `${3 + i * 3} 0 R`).join(' ');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, `<< /Type /Pages /Kids [${kids}] /Count ${n} >>`);
+  pages.forEach((p, i) => {
+    const pg = 3 + i * 3, ct = pg + 1, im = pg + 2, draw = enc.encode(`q 595 0 0 842 0 0 cm /Im0 Do Q`);
+    obj(pg, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 ${im} 0 R >> >> /Contents ${ct} 0 R >>`);
+    obj(ct, `<< /Length ${draw.length} >>`, draw);
+    obj(im, `<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.data.length} >>`, p.data);
+  });
+  const total = 3 + n * 3, xref = len;
+  push(`xref\n0 ${total}\n0000000000 65535 f \n${Array.from({ length: total - 1 }, (_, i) => `${String(offs[i + 1]).padStart(10, '0')} 00000 n \n`).join('')}`);
+  push(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts, { type: 'application/pdf' });
+}
+
+async function journalPdf() {
+  const W = 1240, H = 1754, M = 80, LH = 44;
+  try { await document.fonts.load('400 30px Rubik'); await document.fonts.load('700 30px Rubik'); } catch {}
+  const p = S.profile || {}, st = S.baby ? null : status();
+  const entries = [...S.journal].sort((a, b) => b.date.localeCompare(a.date));
+  const checks = Object.fromEntries((S.checks || []).map(c => [c.date, c]));
+  const pages = [];
+  let c, g, y;
+  const newPage = () => {
+    c = document.createElement('canvas'); c.width = W; c.height = H; g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.direction = 'rtl'; g.textAlign = 'right'; g.fillStyle = '#2c3048';
+    y = M; pages.push(c);
+  };
+  const text = (t, size = 28, bold = false, color = '#2c3048') => { g.font = `${bold ? 700 : 400} ${size}px Rubik, sans-serif`; g.fillStyle = color; g.fillText(t, W - M, y); };
+  const wrap = (t, size, maxW) => { g.font = `400 ${size}px Rubik, sans-serif`; const out = []; let line = ''; for (const w of t.split(/\s+/)) { const tr = line ? line + ' ' + w : w; if (g.measureText(tr).width > maxW && line) { out.push(line); line = w; } else line = tr; } if (line) out.push(line); return out; };
+  newPage();
+  text('سجل المزاج والأعراض', 44, true, '#c40f63'); y += 56;
+  text(`${p.name ? p.name + ' · ' : ''}${st ? `الأسبوع ${st.week} · موعد الولادة: ${Cal.both(st.due)}` : ''}`, 26, false, '#5c6080'); y += 40;
+  text(`تاريخ التقرير: ${fmtDate.format(today())} · من تطبيق ${APP_NAME}`, 24, false, '#7c8098'); y += 30;
+  g.fillStyle = '#efe3ea'; g.fillRect(M, y, W - 2 * M, 3); y += 50;
+  if (!entries.length) text('لا توجد يوميات مسجّلة بعد.', 28);
+  for (const e of entries) {
+    const wk = st ? Math.floor(diffDays(parse(e.date), st.start) / 7) + 1 : null, ck = checks[e.date];
+    const lines = [`${e.mood || '📝'}  ${fmtDate.format(parse(e.date))}${wk > 0 ? ` · الأسبوع ${wk}` : ''}${ck && ck.sys ? ` · الضغط ${ck.sys}/${ck.dia}` : ''}`];
+    const body = [...(e.symptoms.length ? wrap('الأعراض: ' + e.symptoms.join('، '), 26, W - 2 * M) : []), ...(e.note ? wrap('ملاحظات: ' + e.note, 26, W - 2 * M) : [])];
+    if (y + LH * (1 + body.length) > H - M) newPage();
+    text(lines[0], 28, true); y += LH;
+    body.forEach(l => { text(l, 26, false, '#3c4060'); y += LH - 6; });
+    y += 18; g.fillStyle = '#f3e6ee'; g.fillRect(M, y - 22, W - 2 * M, 2);
+  }
+  pages.forEach((pc, i) => { const x = pc.getContext('2d'); x.direction = 'rtl'; x.textAlign = 'center'; x.font = '400 22px Rubik, sans-serif'; x.fillStyle = '#9a9cb0';
+    x.fillText(`صفحة ${i + 1} من ${pages.length} · للتثقيف ولا يغني عن رأي الطبيب`, W / 2, H - 40); });
+  const jpgs = await Promise.all(pages.map(pc => new Promise(r => pc.toBlob(b => b.arrayBuffer().then(a => r({ data: new Uint8Array(a), w: W, h: H })), 'image/jpeg', 0.88))));
+  return pdfFromJpegs(jpgs);
+}
+async function shareFile(blob, name, title) {
+  const P = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins;
+  if (P && P.Share && P.Filesystem) {
+    const data = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
+    const f = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
+    return P.Share.share({ title, files: [f.uri], dialogTitle: title });
+  }
+  const file = new File([blob], name, { type: blob.type });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast('تم حفظ الملف 📄');
+}
+
+function toolsBind() {
+  const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+  // الركلات
+  on('#kickStart', () => { S._kick = { start: Date.now(), count: 0 }; route.kickDone = null; save(); render(false); });
+  on('#kickBtn', () => {
+    const k = S._kick; if (!k) return;
+    k.count++; k.last = Date.now();
+    if (navigator.vibrate) navigator.vibrate(30);
+    if (k.count >= KICK_GOAL) { kickSave('goal'); if (navigator.vibrate) navigator.vibrate([60, 60, 120]); }
+    else save();
+    render(false);
+  });
+  on('#kickUndo', () => { if (S._kick) { S._kick.count = Math.max(0, S._kick.count - 1); save(); render(false); } });
+  on('#kickStop', () => { kickSave('stop'); toast('تم الحفظ'); render(false); });
+  if ($('#kickLeft')) timers.push(setInterval(() => {
+    if (!S._kick) return;
+    const left = S._kick.start + KICK_WINDOW - Date.now();
+    if (left <= 0) { kickSave('time'); render(false); return; }
+    const el = $('#kickLeft'); if (el) el.textContent = hms(left);
+  }, 1000));
+  // الطلق
+  on('#ctrBtn', () => {
+    const l = S.contractions, last = l[l.length - 1];
+    if (last && !last.end) last.end = Date.now(); else l.push({ start: Date.now() });
+    if (l.length > 200) l.splice(0, l.length - 200);
+    save(); render(false);
+    if ($('.go-hospital') && navigator.vibrate) navigator.vibrate([300, 150, 300]);
+  });
+  const ctrClear = $('#ctrClear'); if (ctrClear) ctrClear.onclick = confirmTap(ctrClear, () => { S.contractions = []; save(); render(false); });
+  if ($('#ctrTime')) {
+    const last = S.contractions[S.contractions.length - 1];
+    const tick = () => { const el = $('#ctrTime'); if (el) el.textContent = Math.floor((Date.now() - last.start) / 1000); };
+    tick(); timers.push(setInterval(tick, 500));
+  }
+  // المزاج السريع
+  app.querySelectorAll('[data-qmood]').forEach(b => b.onclick = () => {
+    const t = iso(today()), e = S.journal.find(j => j.date === t);
+    if (e) e.mood = e.mood === b.dataset.qmood ? '' : b.dataset.qmood; else S.journal.push({ date: t, mood: b.dataset.qmood, symptoms: [], note: '' });
+    save(); render(false); toast('سُجّل مزاجك اليوم 💗');
+  });
+  on('#jPdf', async () => {
+    const b = $('#jPdf'); b.disabled = true; b.textContent = 'جاري التجهيز…';
+    try { await shareFile(await journalPdf(), `nabd-report-${iso(today())}.pdf`, 'تقرير المزاج والأعراض'); }
+    catch (e) { if (!/abort|cancel/i.test(String(e && (e.name || e.message)))) toast('تعذّر إنشاء الملف'); }
+    b.disabled = false; b.textContent = 'تصدير PDF';
+  });
+}
 
 </script>
   <script>

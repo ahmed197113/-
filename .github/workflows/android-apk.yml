@@ -57,9 +57,10 @@ jobs:
         run: |
           npm install
           # بدون إعداد Firebase لا نضمّن الإضافة (وإلا يتوقف التطبيق عند الفتح)
-          if [ "$HAS_FIREBASE" != "true" ]; then npm uninstall @capacitor-firebase/authentication; fi
+          if [ "$HAS_FIREBASE" != "true" ]; then npm uninstall @capacitor-firebase/authentication @capacitor-firebase/crashlytics; fi
           mkdir -p www
-          cp ../dist/nabd.html www/index.html
+          # نسخة التطبيق: الكود مدمج والصور ملفات منفصلة تُحمَّل عند الحاجة
+          cp -r ../dist/www/. www/
           npx cap add android
           if [ -f google-services.json ]; then cp google-services.json android/app/; fi
           npx @capacitor/assets generate --android --assetPath assets || echo "icon generation skipped"
@@ -67,10 +68,25 @@ jobs:
           python3 patch-android.py
           npx cap sync android
 
-      - name: Use a fixed signing key so updates install over older versions
+      # Google Sign-In يحتاج Web client ID (client_type 3) وبصمة التوقيع مسجّلة في Firebase
+      - name: Check the Google client IDs
+        if: ${{ env.HAS_FIREBASE == 'true' }}
         run: |
-          mkdir -p ~/.android
-          cp nabd-debug.keystore ~/.android/debug.keystore
+          python3 - <<'PY'
+          import json, subprocess
+          g = json.load(open('google-services.json'))
+          WEB = '987831438755-a2c3ljr526b3hplfhr27mc3shnvlo22k.apps.googleusercontent.com'
+          for c in g['client']:
+              if c['client_info']['android_client_info']['package_name'] != 'app.nabd.pregnancy': continue
+              for o in c.get('oauth_client', []):
+                  print('oauth_client type', o['client_type'], o['client_id'][:24] + '…', ('cert ' + o['android_info']['certificate_hash']) if 'android_info' in o else '')
+              webs = [o['client_id'] for o in c.get('oauth_client', []) if o['client_type'] == 3]
+              hashes = [o['android_info']['certificate_hash'].lower() for o in c.get('oauth_client', []) if 'android_info' in o]
+          print('serverClientId (client_type 3):', webs)
+          if WEB not in webs: print('::warning::Web client ID in google-services.json differs from', WEB)
+          if not webs: raise SystemExit('google-services.json has no Web client (client_type 3): enable Google sign-in in Firebase and download it again')
+          if 'd5f7a1a13f4c1dca4c6236d81d84b9827b592f37' not in hashes: print('::warning::debug SHA-1 D5:F7…2F:37 is not in google-services.json — download it again after adding the fingerprint')
+          PY
 
       - name: Build the APK
         working-directory: pregnancy-app/android-app/android
@@ -83,6 +99,15 @@ jobs:
         env:
           NABD_UPLOAD_PASSWORD: ${{ secrets.NABD_UPLOAD_PASSWORD }}
         run: ./gradlew bundleRelease --no-daemon
+
+      # نطبع بصمة التوقيع في السجل ونوقف النشر لو APK ليس موقّعاً بـ nabd-debug.keystore
+      - name: Verify signing fingerprints
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | tee certs.txt
+          grep -qi "SHA-1 digest: d5f7a1a13f4c1dca4c6236d81d84b9827b592f37" certs.txt || { echo "::error::APK is not signed with nabd-debug.keystore (expected SHA-1 D5:F7…2F:37)"; exit 1; }
+          if [ -f android/app/build/outputs/bundle/release/app-release.aab ]; then keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab | grep -E "Owner|SHA1|SHA256"; fi
+          "$BT/aapt2" dump badging android/app/build/outputs/apk/debug/app-debug.apk | head -1
 
       - uses: actions/upload-artifact@v4
         with:

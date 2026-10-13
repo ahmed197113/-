@@ -149,3 +149,18 @@ const Widget = (() => {
   }
   return { sync };
 })();
+
+/* ---------- تقارير الأعطال (Firebase Crashlytics) — بدون أي بيانات إعلانية، ويمكن إيقافها من الإعدادات ---------- */
+const Crash = (() => {
+  const P = () => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.FirebaseCrashlytics;
+  const on = () => S.crash !== false;
+  const rec = message => { const c = P(); if (c && on()) c.recordException({ message: String(message).slice(0, 500) }).catch(() => {}); };
+  window.addEventListener('error', e => rec(`${e.message} @${String(e.filename || '').split('/').pop()}:${e.lineno}:${e.colno}`));
+  window.addEventListener('unhandledrejection', e => rec(`unhandled: ${e.reason && (e.reason.stack || e.reason.message) || e.reason}`));
+  function apply() {
+    const c = P(); if (!c) return;
+    c.setEnabled({ enabled: on() }).catch(() => {});
+    if (on() && window.NABD_BOOT) c.setCustomKey({ key: 'boot_ms', value: String(window.NABD_BOOT), type: 'string' }).catch(() => {});
+  }
+  return { apply, available: () => !!P(), record: rec };
+})();

@@ -55,22 +55,49 @@ const Account = (() => {
   async function signIn(ctx = {}) {
     if (!available()) return toast('تسجيل الدخول غير متاح حالياً');
     if (!native() || !ctx.provider) return sheet(ctx);
+    const FA = window.Capacitor.Plugins.FirebaseAuthentication, steps = [];
+    // تفاصيل الخطأ كاملة: نوع الاستثناء والكود (والإضافة الأصلية تضيف statusCode لـ GoogleSignIn)
+    const detail = e => [e && e.code, e && (e.errorMessage || e.message), !e || e.code || e.message ? '' : String(e)].filter(Boolean).join(' | ').slice(0, 400);
     try {
       // تسجيل دخول أصلي عبر Firebase، ثم توكن Firebase يتحقق منه السيرفر
-      const FA = window.Capacitor.Plugins.FirebaseAuthentication;
-      if (ctx.provider === 'facebook') await FA.signInWithFacebook({ scopes: ['email', 'public_profile'] });
-      else {
-        // بعض الأجهزة يفشل فيها Credential Manager بصمت؛ نعيد المحاولة بنافذة Google التقليدية
-        try { await FA.signInWithGoogle({ scopes: ['email', 'profile'] }); }
-        catch (e1) { await FA.signInWithGoogle({ scopes: ['email', 'profile'], useCredentialManager: false }); }
+      if (ctx.provider === 'facebook') {
+        steps.push('facebook');
+        await FA.signInWithFacebook({ scopes: ['email', 'public_profile'] });
+      } else {
+        // بدون scopes إضافية: الاسم والبريد داخل التوكن، وطلب صلاحيات إضافي يفتح شاشة قد تُغلق بصمت
+        steps.push('google:credential-manager');
+        try { await FA.signInWithGoogle(); }
+        catch (e1) {
+          const d1 = detail(e1);
+          if (/Cancellation|canceled by the user|cancelled by the user/i.test(d1)) throw e1;
+          steps.push('(' + d1 + ')', 'google:legacy');
+          await FA.signInWithGoogle({ useCredentialManager: false });
+        }
       }
+      steps.push('token');
       const r = await FA.getIdToken({ forceRefresh: false });
       if (!r || !r.token) throw new Error('no_token');
+      steps.push('server');
       await finishLogin(r.token, ctx, 'firebase');
     } catch (e) {
-      const m = String(e && (e.code || e.message || e)).slice(0, 120);
-      toast('تعذّر تسجيل الدخول (' + m + ')');
+      const d = detail(e);
+      console.error('[nabd] sign-in failed', steps.join(' → '), e);
+      try { window.Capacitor.Plugins.FirebaseCrashlytics?.recordException({ message: `sign-in ${steps.join(' > ')}: ${d}` }); } catch {}
+      if (/Cancellation|canceled by the user|cancelled by the user/i.test(d)) return toast('تم إلغاء تسجيل الدخول');
+      loginError(`${steps.join(' → ')}\n(${d || 'unknown'})`);
     }
+  }
+  // رسالة خطأ تبقى ظاهرة ويمكن نسخها لإرسالها للدعم
+  function loginError(text) {
+    closeSheet();
+    const el = document.createElement('div'); el.className = 'sheet-bg'; el.id = 'accSheet';
+    el.innerHTML = `<div class="sheet" role="alertdialog" aria-modal="true"><h3>تعذّر تسجيل الدخول</h3>
+      <p class="muted">جرّبي مرة أخرى. لو تكرر، انسخي التفاصيل وأرسليها لنا.</p>
+      <pre class="err-box" dir="ltr">${esc(text)}</pre>
+      <div class="row"><button class="btn grow" id="errCopy">نسخ التفاصيل</button><button class="btn ghost grow" id="errX">إغلاق</button></div></div>`;
+    document.body.appendChild(el);
+    el.querySelector('#errX').onclick = closeSheet;
+    el.querySelector('#errCopy').onclick = () => navigator.clipboard?.writeText(text).then(() => toast('تم النسخ'), () => {});
   }
   const nativeOut = async del => {
     if (!native()) return;
@@ -101,7 +128,10 @@ const Account = (() => {
       acc = { token: r.token, exp: r.exp, name: r.user.name, email: r.user.email, last: 0 }; write(acc);
       if (r.user.name && !S.nick) S.nick = r.user.name.split(' ')[0];
       await reconcile(ctx);
-    } catch (e) { toast(e.code === 'rate_limited' ? 'محاولات كثيرة، جرّبي بعد قليل' : 'تعذّر تسجيل الدخول (server: ' + String(e.code || e.message || e).slice(0, 80) + ')'); }
+    } catch (e) {
+      if (e.code === 'rate_limited') return toast('محاولات كثيرة، جرّبي بعد قليل');
+      loginError(`server (auth.php)\n(${e.status || ''} ${e.code || e.message || e})`);
+    }
   }
 
   /* ---------- المزامنة ---------- */
@@ -191,5 +221,5 @@ const Account = (() => {
 
   const FB_LOGO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#fff" d="M14 8h3V4h-3c-2.8 0-4.5 1.8-4.5 4.6V11H7v4h2.5v8h4v-8h3l.5-4h-3.5V9c0-.6.4-1 1-1z"/></svg>';
 
-  return { available, user, button, signIn, push, dirty: markDirty, signOut, remove, _finish: finishLogin };
+  return { _error: t => loginError(t), available, user, button, signIn, push, dirty: markDirty, signOut, remove, _finish: finishLogin };
 })();

@@ -1,5 +1,14 @@
 # تفعيل تسجيل الدخول (اختياري) — نبضٌ صغير 1.2
 
+> ## تحديث 1.2.48 — سبب قفل قائمة Google بدون رسالة (اتصلّح)
+> ملف `nabd.apk` على GitHub كان بيتوقّع ببصمة **CD:0C:1A:D8:FB:68:FA:05:76:AE:39:74:D8:C4:65:A9:63:30:DF:85** مش **D5:F7…2F:37**
+> (البناء كان بيتجاهل `nabd-debug.keystore`). من 1.2.48 التوقيع بقى صريح في `build.gradle`، والبناء بيطبع البصمة ويقف لو مش D5:F7.
+> - **مرة واحدة بس:** امسحي نسخة الـ APK القديمة من الموبايل قبل تثبيت 1.2.48 (اختلاف التوقيع بيمنع التحديث فوقها). نسخ Google Play مش متأثرة.
+> - `serverClientId` = `default_web_client_id` من `google-services.json` (client_type 3) = `987831438755-a2c3…`، والبناء بيتأكد منه.
+> - أي فشل في الدخول بيظهر في نافذة فيها الخطوات ونوع الخطأ والكود (مثلاً `ApiException statusCode=10 DEVELOPER_ERROR` = بصمة أو Web client غلط)، ويتبعت لـ Crashlytics.
+> - **فيسبوك:** التطبيق لسه في وضع Development، فالدخول بيشتغل لحسابات المسؤولين والمختبرين بس. لازم يتحوّل لـ **Live** قبل النشر للعامة.
+
+
 > **تحديث:** تطبيق أندرويد بقى بيسجّل الدخول عبر **Firebase** (مشروع `nabd-saghir`) بـ **Google** و**Facebook**.
 > نسخة المتصفح بتفضل بزر Google العادي. السيرفر بيتحقق من الاتنين، وحساب Google واحد سواء دخلتِ من التطبيق أو من المتصفح.
 >
@@ -74,8 +83,11 @@
 | Personal info ← **User IDs** (معرّف Google + معرّف الجهاز العشوائي) | Yes | No | Optional للحساب / Required لمعرّف الجهاز | Account management, App functionality, Fraud prevention, security, and compliance |
 | Health and fitness ← **Health info** (نسخة بيانات الحمل في النسخ الاحتياطي، وأسئلة المساعد) | Yes | No | Optional | App functionality |
 | App activity ← **Other user-generated content** (أسئلة وردود المجتمع) | Yes | No | Optional | App functionality |
-| **App info and performance** | No | — | — | — |
+| App info and performance ← **Crash logs** | Yes | No | Optional (يمكن إيقافها من الإعدادات) | App functionality, Analytics |
+| App info and performance ← **Diagnostics** | Yes | No | Optional | App functionality, Analytics |
+| Device or other IDs (Firebase installation ID لـ Crashlytics) | Yes | No | Optional | App functionality, Analytics |
 
 - كل البيانات **Processed ephemerally: No** للنسخة والحساب (محفوظة لحد ما المستخدمة تحذفها)، و**Yes** لأسئلة المساعد (مش بنحفظها).
+- Crashlytics: بدون معرّف الإعلانات وبدون بيانات صحية في التقارير، وتُحذف بعد 90 يوماً.
 - Facebook SDK مضبوط بدون تتبّع (AutoLogAppEvents وAdvertiserID مقفولين، وإذن AD_ID متشال)، فـ **Advertising ID: No** و**App interactions: No**.
 - **Shared:** No في كل الأنواع (Gemini بيعالج الأسئلة كمزوّد خدمة بالنيابة عننا، وده مش بيتحسب "مشاركة" في تعريف Google).

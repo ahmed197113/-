@@ -4,19 +4,38 @@ d = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'android', 'app')
 run = int(os.environ.get('GITHUB_RUN_NUMBER', '1'))
 
 g = open(os.path.join(d, 'build.gradle'), encoding='utf-8').read()
-g = re.sub(r'versionCode \d+', f'versionCode {run + 100}', g)
-g = re.sub(r'versionName "[^"]*"', f'versionName "1.2.{run}"', g)
-if os.environ.get('NABD_UPLOAD_KEYSTORE_FILE'):
-    signing = '''    signingConfigs {
+# رقم الإصدار: من رقم البناء على GitHub، أو من version.json إن كان أكبر (لتثبيت رقم معيّن مثل 1.2.48)
+import json
+here = os.path.dirname(os.path.abspath(__file__))
+code, name = run + 100, f'1.2.{run}'
+vf = os.path.join(here, 'version.json')
+if os.path.exists(vf):
+    v = json.load(open(vf, encoding='utf-8'))
+    if v['code'] >= code: code, name = v['code'], v['name']
+g = re.sub(r'versionCode \d+', f'versionCode {code}', g)
+g = re.sub(r'versionName "[^"]*"', f'versionName "{name}"', g)
+# توقيع ثابت: نسخة التجربة (APK) دائماً بـ nabd-debug.keystore (SHA-1 D5:F7…2F:37 المسجّلة في Firebase وFacebook)
+debug_ks = os.path.join(here, 'nabd-debug.keystore').replace('\\', '/')
+release = '''
         release {
             storeFile file(System.getenv("NABD_UPLOAD_KEYSTORE_FILE"))
             storePassword System.getenv("NABD_UPLOAD_PASSWORD")
             keyAlias "nabd-upload"
             keyPassword System.getenv("NABD_UPLOAD_PASSWORD")
-        }
-    }
-    buildTypes {'''
-    g = g.replace('    buildTypes {', signing, 1)
+        }''' if os.environ.get('NABD_UPLOAD_KEYSTORE_FILE') else ''
+g = g.replace('    buildTypes {', f'''    signingConfigs {{
+        debug {{
+            storeFile file("{debug_ks}")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }}{release}
+    }}
+    buildTypes {{
+        debug {{
+            signingConfig signingConfigs.debug
+        }}''', 1)
+if release:
     g = re.sub(r'(release \{\s*\n\s*minifyEnabled false)', r'\1\n            signingConfig signingConfigs.release', g, count=1)
 open(os.path.join(d, 'build.gradle'), 'w', encoding='utf-8').write(g)
 
@@ -94,5 +113,50 @@ if firebase:
     </application>''', 1)
         x = x.replace('</manifest>', '    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />\n</manifest>', 1)
         open(m, 'w', encoding='utf-8').write(x)
+if firebase:
+    # Crashlytics: إضافة Gradle (بدونها يتوقف التطبيق عند الفتح)
+    rg = os.path.join(os.path.dirname(d), 'build.gradle')
+    r = open(rg, encoding='utf-8').read()
+    if 'firebase-crashlytics-gradle' not in r:
+        r = r.replace("classpath 'com.google.gms:google-services", "classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.3'\n        classpath 'com.google.gms:google-services", 1)
+        open(rg, 'w', encoding='utf-8').write(r)
+    ag = os.path.join(d, 'build.gradle')
+    t = open(ag, encoding='utf-8').read()
+    if 'com.google.firebase.crashlytics' not in t:
+        # خارج try/catch في القالب: لو فشل تطبيقها يفشل البناء بوضوح بدل تطبيق يتوقف عند الفتح
+        t += "\napply plugin: 'com.google.firebase.crashlytics'\n"
+        open(ag, 'w', encoding='utf-8').write(t)
+    # رسالة خطأ تسجيل الدخول كاملة: نوع الاستثناء وstatusCode لـ GoogleSignIn
+    fa = os.path.join(here, 'node_modules', '@capacitor-firebase', 'authentication', 'android', 'src', 'main', 'java', 'io', 'capawesome', 'capacitorjs', 'plugins', 'firebase', 'authentication', 'FirebaseAuthentication.java')
+    if os.path.exists(fa):
+        j = open(fa, encoding='utf-8').read()
+        old = '''        if (message == null && exception != null) {
+            message = exception.getMessage();
+        }
+        Logger.error(TAG, message, exception);
+        String code = FirebaseAuthenticationHelper.createErrorCode(exception);
+        call.reject(message, code);'''
+        new = '''        if (message == null && exception != null) {
+            message = exception.getMessage();
+        }
+        String code = FirebaseAuthenticationHelper.createErrorCode(exception);
+        if (exception != null) {
+            String type = exception.getClass().getSimpleName();
+            if (exception instanceof com.google.android.gms.common.api.ApiException) {
+                int sc = ((com.google.android.gms.common.api.ApiException) exception).getStatusCode();
+                type += " statusCode=" + sc + " " + com.google.android.gms.common.api.CommonStatusCodes.getStatusCodeString(sc);
+                if (code == null) code = "status-" + sc;
+            } else if (exception instanceof androidx.credentials.exceptions.GetCredentialException) {
+                type += " type=" + ((androidx.credentials.exceptions.GetCredentialException) exception).getType();
+            }
+            message = type + ": " + message;
+            if (code == null) code = exception.getClass().getSimpleName();
+        }
+        Logger.error(TAG, message, exception);
+        call.reject(message, code);'''
+        n = j.count(old)
+        j = j.replace(old, new)
+        open(fa, 'w', encoding='utf-8').write(j)
+        print('auth error details patched:', n)
 print('firebase login:', 'on' if firebase else 'off (no google-services.json)')
-print('patched: versionCode', run + 100, '| release signing' if os.environ.get('NABD_UPLOAD_KEYSTORE_FILE') else '| no release key')
+print('patched: versionCode', code, name, '| release signing' if os.environ.get('NABD_UPLOAD_KEYSTORE_FILE') else '| no release key')

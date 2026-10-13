@@ -74,6 +74,7 @@ function toast(msg) {
 
 function applyTheme() {
   const root = document.documentElement;
+  if (S.font && S.font !== 'md') root.dataset.font = S.font; else delete root.dataset.font;
   if (S.theme === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', S.theme);
   const dark = S.theme === 'dark' || (S.theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
   $('#themeBtn').textContent = dark ? '☀️' : '🌙';
@@ -382,7 +383,11 @@ function viewHome() {
   ${progressCard(st)}
   <div class="card nav-row" data-week="${sel}"><span class="ic">${w.emoji}</span><div class="grow"><b>${p.babyName ? esc(p.babyName) : 'طفلك'} هذا الأسبوع</b><div class="muted">${w.baby[0]}</div></div><span class="chev">‹</span></div>
   ${badLabs || (tr && tr.lvl >= 2) ? `<button class="alert-line" data-sub="${badLabs ? 'labs' : 'checkin'}">${badLabs ? `🧪 ${badLabs} تحليل يحتاج انتباهك` : `${tr.ic} ${tr.title}`} ‹</button>` : ''}
-  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:6px auto;color:var(--gold)">🎉 وُلد طفلي؟</button>` : ''}
+  ${st.week >= 28 ? (() => { const all = Object.values(HOSPITAL_BAG).flat(), n = all.filter(i => S.bag[i]).length; return `<div class="grid2 home-tools">
+    <div class="card mini tap" data-sub="kicks" role="button" tabindex="0"><span class="big-ic">👣</span><b>عدّ الركلات</b><small>${S._kick ? `جلسة جارية · ${arKicks(S._kick.count)}` : 'هدف 10 خلال ساعتين'}</small></div>
+    ${st.week >= 32 ? `<div class="card mini tap" data-sub="bag" role="button" tabindex="0"><span class="big-ic">🎒</span><b>شنطة المستشفى</b><small>${n} من ${all.length} جاهزة</small></div>`
+      : `<div class="card mini tap" data-sub="contractions" role="button" tabindex="0"><span class="big-ic">⏱️</span><b>مؤقّت الطلق</b><small>قاعدة 5-1-1</small></div>`}</div>`; })() : ''}
+  ${st.week >= 36 ? `<button class="link" data-sub="born" style="display:block;margin:6px auto;color:var(--ink-2)">🎉 وُلد طفلي؟</button>` : ''}
   <p class="disclaimer">المعلومات للتثقيف فقط ولا تغني عن استشارة الطبيب.</p>`;
 }
 const toolBtn = ([k, ic, name]) => `<div class="tool" data-sub="${k}"><span>${ic}</span>${name}</div>`;
@@ -480,10 +485,13 @@ function viewTrack() {
   const main = S.baby ? [navRow('momcare', 'التعافي والمزاج والرضاعة')] : [];
   main.push(navRow('labs', lat.length ? `${lat.length} تحاليل${bad ? ` · ${bad} تحتاج انتباه` : ' · كلها طبيعية'}` : 'أضيفي نتيجة واعرفي معناها'));
   main.push(navRow('appts', nextA ? `القادم: ${esc(nextA.title)} · ${fmtShort.format(parse(nextA.date))}` : 'لا توجد مواعيد قادمة'));
-  if (!S.baby && st.week >= 28) main.push(navRow('kicks', 'عدّ حركات الجنين'), navRow('contractions', 'حساب الطلق'));
-  const extra = ['weight', 'journal', 'file', 'medinfo', ...(S.baby ? [] : ['partner', 'bag', ...(st.week < 28 ? ['kicks', 'contractions'] : [])]), 'album', 'water']
+  const bagAll = Object.values(HOSPITAL_BAG).flat(), bagN = bagAll.filter(i => S.bag[i]).length;
+  if (!S.baby && st.week >= 28) main.push(navRow('kicks', S._kick ? `جلسة جارية · ${arKicks(S._kick.count)}` : 'هدف 10 حركات خلال ساعتين'), navRow('contractions', 'المدة والفاصل وقاعدة 5-1-1'));
+  if (!S.baby && st.week >= 32) main.push(navRow('bag', `${bagN} من ${bagAll.length} جاهزة`));
+  const extra = ['weight', 'journal', 'file', 'medinfo', ...(S.baby ? [] : ['partner', ...(st.week < 32 ? ['bag'] : []), ...(st.week < 28 ? ['kicks', 'contractions'] : [])]), 'album', 'water']
     .map(k => navRow(k, k === 'weight' && lw ? `آخر قياس: ${lw.kg} كغ` : ''));
   return `${todayCard}
+  ${quickMood()}
   <div class="card group">${main.join('')}</div>
   <details class="card group more-tools"><summary><b>أدوات أخرى</b><span class="muted">${extra.length}</span></summary>${extra.join('')}</details>`;
 }
@@ -519,14 +527,24 @@ function viewMore() {
     <label class="check"><input type="checkbox" id="notifyOn" ${S.notify !== false ? 'checked' : ''}><span>${S.baby ? 'إشعار كل شهر من عمر طفلك' : 'إشعار مع بداية كل أسبوع حمل جديد'}</span></label>
     ${S.notify === false ? '' : (r => `
     <label class="check"><input type="checkbox" data-rem="tip" ${r.tip ? 'checked' : ''}><span>💡 معلومة يومية (9 صباحاً)</span></label>
-    <label class="check"><input type="checkbox" data-rem="water" ${r.water ? 'checked' : ''}><span>💧 تذكير بشرب الماء (من 10 صباحاً حتى 6 مساءً كل ساعتين)</span></label>
+    <label class="check"><input type="checkbox" data-rem="water" ${r.water ? 'checked' : ''}><span>💧 تذكير بشرب الماء</span></label>
+    ${r.water ? (() => { const hr = h => `${h % 12 || 12} ${h < 12 ? 'صباحاً' : h < 17 ? 'ظهراً' : 'مساءً'}`;
+      return `<div class="grid3 rem-water"><label class="f">من<select data-remw="waterFrom">${Array.from({ length: 12 }, (_, i) => i + 6).map(h => `<option value="${h}" ${+r.waterFrom === h ? 'selected' : ''}>${hr(h)}</option>`).join('')}</select></label>
+      <label class="f">إلى<select data-remw="waterTo">${Array.from({ length: 12 }, (_, i) => i + 11).map(h => `<option value="${h}" ${+r.waterTo === h ? 'selected' : ''}>${hr(h)}</option>`).join('')}</select></label>
+      <label class="f">كل<select data-remw="waterEvery">${[1, 2, 3].map(h => `<option value="${h}" ${+r.waterEvery === h ? 'selected' : ''}>${arCount(h, 'ساعة', 'ساعتين', 'ساعات', 'ساعة')}</option>`).join('')}</select></label></div>
+      <p class="muted" style="margin:0 0 8px">${arCount(Notify.waterHours(r).length, 'تذكير واحد', 'تذكيران', 'تذكيرات', 'تذكيراً')} يومياً.</p>`; })() : ''}
     <label class="check"><input type="checkbox" data-rem="vit" ${r.vit ? 'checked' : ''}><span>💊 تذكير الفيتامين أو الدواء يومياً</span></label>
     ${r.vit ? `<label class="f" style="margin:4px 0 8px">موعد التذكير<input type="time" id="remVitTime" value="${esc(r.vitTime)}"></label>` : ''}
     <button class="btn ghost block" id="notifyTest">🔔 جرّبي إشعاراً الآن</button>
     <p class="muted" style="margin:8px 0 0">إن لم تصلك الإشعارات: من إعدادات الجهاز اسمحي للتطبيق بالإشعارات، وأوقفي «تحسين البطارية» له.</p>`)(Notify.rem())}
     ${Notify.native() ? '' : '<p class="muted" style="margin:0">تعمل الإشعارات في تطبيق الموبايل.</p>'}</div>
   <div class="set-block"><h3>🎨 المظهر</h3><div class="seg" id="themeSeg">
-    ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+    ${[['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(([k, v]) => `<button data-t="${k}" class="${S.theme === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <div class="muted">حجم الخط</div><div class="seg" id="fontSeg">
+    ${[['md', 'عادي'], ['lg', 'كبير'], ['xl', 'أكبر']].map(([k, v]) => `<button data-font="${k}" class="${(S.font || 'md') === k ? 'on' : ''}" aria-pressed="${(S.font || 'md') === k}">${v}</button>`).join('')}</div></div>
+  ${Crash.available() ? `<div class="set-block"><h3>🛡️ تقارير الأعطال</h3>
+    <label class="check"><input type="checkbox" id="crashOn" ${S.crash !== false ? 'checked' : ''}><span>أرسلي تقارير الأعطال لمساعدتنا على إصلاحها (بدون بياناتك الصحية أو أي بيانات إعلانية)</span></label></div>` : ''}
+  ${window.NABD_BOOT ? `<p class="muted center" style="font-size:.78rem">زمن فتح التطبيق: ${window.NABD_BOOT} مللي ثانية</p>` : ''}
   <div class="set-block"><button class="btn danger block" id="resetBtn">🗑️ حذف جميع البيانات</button></div>
   </details>
   <p class="disclaimer">${APP_NAME} · المعلومات الواردة للتثقيف العام ولا تغني عن استشارة طبيبك المختص.<br>في حالات الطوارئ اتصلي بالإسعاف فوراً (${emergencyNo()}).</p>`;
@@ -534,47 +552,7 @@ function viewMore() {
 
 /* ---------- الشاشات الفرعية ---------- */
 const SUBVIEWS = {
-  kicks() {
-    const s = S._kick;
-    const hist = S.kicks.slice(-10).reverse();
-    return `<div class="card center">
-      <p class="muted">ابدئي العدّ في وقت يكون فيه الجنين نشطاً (بعد الأكل عادة)، واستلقي على جانبك الأيسر. الهدف: 10 حركات خلال ساعتين.</p>
-      ${s ? `<div id="kickTime" class="muted">00:00</div>` : ''}
-      <button class="counter-big" id="kickBtn">${s ? s.count : '▶'}<small>${s ? 'اضغطي عند كل حركة' : 'ابدئي العدّ'}</small></button>
-      ${s ? `<div class="row" style="justify-content:center"><button class="btn ghost" id="kickUndo">تراجع</button><button class="btn" id="kickStop">إنهاء وحفظ</button></div>` : ''}
-    </div>
-    <div class="card"><h3>السجل</h3>${hist.length ? `<table class="t"><tr><th>التاريخ</th><th>الحركات</th><th>المدة</th></tr>
-      ${hist.map(k => `<tr><td>${fmtShort.format(new Date(k.at))} ${new Date(k.at).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}</td><td>${k.count}</td><td>${Math.round(k.sec / 60)} د</td></tr>`).join('')}</table>`
-      : '<p class="muted">لا توجد جلسات بعد.</p>'}</div>
-    <div class="card warn-card"><b>⚠️ راجعي الطبيب</b> إذا لم تشعري بـ10 حركات خلال ساعتين، أو لاحظتِ انخفاضاً واضحاً في نشاط الجنين المعتاد.</div>`;
-  },
-
-  contractions() {
-    const list = S.contractions.slice(-12);
-    const active = list.length && !list[list.length - 1].end;
-    const rows = list.map((c, i) => {
-      const dur = c.end ? Math.round((c.end - c.start) / 1000) : null;
-      const gap = i > 0 ? Math.round((c.start - list[i - 1].start) / 60000 * 10) / 10 : null;
-      return { c, dur, gap };
-    }).reverse();
-    const done = rows.filter(r => r.dur && r.gap);
-    const recent = done.slice(0, 6);
-    const avgGap = recent.length ? recent.reduce((a, r) => a + r.gap, 0) / recent.length : 0;
-    const avgDur = recent.length ? recent.reduce((a, r) => a + r.dur, 0) / recent.length : 0;
-    const go511 = recent.length >= 6 && avgGap <= 5 && avgDur >= 45;
-    return `<div class="card center">
-      <p class="muted">اضغطي عند بداية الانقباض، واضغطي مرة أخرى عند انتهائه.</p>
-      <button class="counter-big" id="ctrBtn" style="${active ? 'background:radial-gradient(circle,#ff8a80,#e53935)' : ''}">
-        ${active ? '<span id="ctrTime">0</span>' : '▶'}<small>${active ? 'انتهى الانقباض' : 'بدأ الانقباض'}</small></button>
-      ${recent.length ? `<div class="grid2"><div class="stat"><b>${avgGap.toFixed(1)} د</b><small>متوسط الفاصل</small></div>
-        <div class="stat"><b>${Math.round(avgDur)} ث</b><small>متوسط المدة</small></div></div>` : ''}
-      ${go511 ? `<div class="card warn-card" style="margin-top:12px"><b>🏥 الانقباضات منتظمة وقريبة — حان وقت التوجه للمستشفى!</b></div>` : ''}
-    </div>
-    <div class="card"><h3>السجل</h3>${rows.length ? `<table class="t"><tr><th>الوقت</th><th>المدة</th><th>الفاصل</th></tr>
-      ${rows.map(r => `<tr><td>${new Date(r.c.start).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}</td><td>${r.dur != null ? r.dur + ' ث' : '…'}</td><td>${r.gap != null ? r.gap + ' د' : '—'}</td></tr>`).join('')}</table>
-      <button class="btn ghost sm" id="ctrClear" style="margin-top:10px">مسح السجل</button>` : '<p class="muted">لا يوجد سجل.</p>'}</div>
-    <div class="card"><b>قاعدة 5-1-1:</b> انقباض كل 5 دقائق، يستمر دقيقة، لمدة ساعة ← توجهي للمستشفى. (في الحمل الثاني فأكثر قد تحتاجين التوجه أبكر.)</div>`;
-  },
+  // kicks / contractions: tools.js
 
   weight() {
     const p = S.profile, h = +p.height / 100, pre = +p.preWeight;
@@ -585,12 +563,20 @@ const SUBVIEWS = {
     const ws = [...S.weights].sort((a, b) => a.date.localeCompare(b.date));
     const last = ws[ws.length - 1];
     const gain = last && pre ? (last.kg - pre) : null;
+    // النطاق المتوقع للزيادة في هذا الأسبوع (IOM 2009): 0.5–2 كغ حتى الأسبوع 13 ثم زيادة أسبوعية ثابتة
+    const exp = w => [0, 1].map(g => { const t13 = g ? 2 : 0.5, tot = rng[g]; return w <= 13 ? (w / 13) * t13 : t13 + (Math.min(40, w) - 13) / 27 * (tot - t13); });
+    const [eLo, eHi] = exp(st.week).map(x => Math.round(x * 10) / 10);
+    const lastWk = last ? Math.floor(diffDays(parse(last.date), st.start) / 7) + 1 : 0;
+    const where = gain == null || !pre ? '' : (() => { const [lo, hi] = exp(lastWk); return gain < lo - 0.3 ? ['أقل من النطاق', 'var(--warn)'] : gain > hi + 0.3 ? ['أعلى من النطاق', 'var(--warn)'] : ['ضمن النطاق ✓', 'var(--ok)']; })();
     return `<div class="card">
       ${bmi ? `<div class="grid3"><div class="stat"><b>${bmi.toFixed(1)}</b><small>BMI قبل الحمل</small></div>
         <div class="stat"><b style="font-size:1rem">${cat}</b><small>التصنيف</small></div>
         <div class="stat"><b style="font-size:1rem">${rng[0]}–${rng[1]}</b><small>الزيادة الموصى بها (كغ)</small></div></div>`
         : `<p class="muted">أضيفي طولك ووزنك قبل الحمل من <a href="#" data-sub="profile">بيانات الحمل</a> لحساب الزيادة الموصى بها.</p>`}
-      ${gain != null ? `<p class="center" style="margin:12px 0 0">زيادتك حتى الآن: <b>${gain.toFixed(1)} كغ</b></p>` : ''}
+      ${bmi ? `<p class="center" style="margin:12px 0 0">المتوقع حتى الأسبوع ${st.week}: زيادة <b>${eLo}–${eHi} كغ</b></p>` : ''}
+      ${gain != null ? `<p class="center" style="margin:6px 0 0">زيادتك حتى الآن: <b>${gain.toFixed(1)} كغ</b>${where ? ` <span class="st-chip" style="--c:${where[1]}">${where[0]}</span>` : ''}</p>` : ''}
+      ${last && lastWk >= st.week ? '' : '<p class="muted center" style="margin:8px 0 0">⚖️ سجّلي وزن هذا الأسبوع (مرة أسبوعياً، نفس اليوم والوقت).</p>'}
+      <p class="muted center" style="margin:6px 0 0;font-size:.8rem">حسب توصيات IOM للحمل بجنين واحد. طبيبك قد يحدد نطاقاً مختلفاً لكِ.</p>
     </div>
     <div class="card"><h3>إضافة قياس</h3><div class="row">
       <input class="input grow" type="date" id="wDate" value="${iso(today())}" style="margin:0">
@@ -647,9 +633,9 @@ const SUBVIEWS = {
   bag() {
     const all = Object.values(HOSPITAL_BAG).flat();
     const n = all.filter(i => S.bag[i]).length;
-    return `<div class="card"><p class="muted" style="margin-top:0">جهّزي الحقيبة بحلول الأسبوع 34–36.</p>
+    return `<div class="card"><p class="muted" style="margin-top:0">جهّزي الحقيبة بحلول الأسبوع 34–36، وضعيها قرب الباب.</p>
       <div class="row"><b>${n} / ${all.length}</b><div class="progress grow"><i style="width:${n / all.length * 100}%"></i></div></div></div>
-      ${Object.entries(HOSPITAL_BAG).map(([g, items]) => `<div class="card"><h3>${g === 'للأم' ? '👩' : g === 'للمولود' ? '👶' : '🧑'} ${g}</h3>
+      ${Object.entries(HOSPITAL_BAG).map(([g, items]) => `<div class="card"><h3>${{ 'للأم': '👩', 'للمولود': '👶', 'الأوراق': '📄' }[g] || '🧑'} ${g}</h3>
         ${items.map(i => `<label class="check ${S.bag[i] ? 'done' : ''}"><input type="checkbox" data-bag="${esc(i)}" ${S.bag[i] ? 'checked' : ''}><span>${i}</span></label>`).join('')}</div>`).join('')}`;
   },
 
@@ -787,10 +773,17 @@ function bind() {
   on('#resetBtn', confirmTap('#resetBtn', () => { S = defaults(); save(); route = { view: 'home' }; render(); }));
   on('#setDetails', e => { route.setOpen = e.target.open; history.replaceState(route, ''); }, 'ontoggle');
   app.querySelectorAll('[data-rem]').forEach(c => c.onchange = async () => { S.reminders = { ...Notify.rem(), [c.dataset.rem]: c.checked }; save(); render(false); const ok = await Notify.sync(true); toast(ok ? 'تم حفظ التذكيرات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
+  app.querySelectorAll('[data-remw]').forEach(sel => sel.onchange = async () => {
+    const r = { ...Notify.rem(), [sel.dataset.remw]: +sel.value };
+    if (+r.waterTo < +r.waterFrom) r.waterTo = r.waterFrom;
+    S.reminders = r; save(); render(false); await Notify.sync(false); toast('تم ضبط تذكير الماء 💧');
+  });
   on('#remVitTime', async e => { S.reminders = { ...Notify.rem(), vitTime: e.target.value || '10:00' }; save(); await Notify.sync(false); toast('تم ضبط موعد التذكير ⏰'); }, 'onchange');
   on('#notifyTest', async () => { const r = await Notify.test(); toast(r === 'ok' ? 'سيصلك إشعار تجريبي خلال ثوانٍ' : r === 'denied' ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); });
   on('#notifyOn', async e => { const nOn = e.target; S.notify = nOn.checked; save(); render(false); const ok = await Notify.sync(true); toast(!nOn.checked ? 'تم إيقاف الإشعارات' : ok ? 'تم تفعيل الإشعارات 🔔' : Notify.native() ? 'اسمحي بالإشعارات من إعدادات الجهاز' : 'تعمل في تطبيق الموبايل'); }, 'onchange');
   app.querySelectorAll('#themeSeg button').forEach(b => b.onclick = () => { S.theme = b.dataset.t; save(); render(false); });
+  app.querySelectorAll('#fontSeg button').forEach(b => b.onclick = () => { S.font = b.dataset.font; save(); render(false); });
+  on('#crashOn', e => { S.crash = e.target.checked; save(); Crash.apply(); toast(S.crash ? 'تم تفعيل تقارير الأعطال' : 'تم إيقاف تقارير الأعطال'); }, 'onchange');
   app.querySelectorAll('#calSeg button').forEach(b => b.onclick = () => { S.calendar = b.dataset.cal; save(); render(false); toast(b.dataset.cal === 'hijri' ? 'التواريخ الآن بالهجري 🌙' : 'التواريخ الآن بالميلادي'); });
   on('#newsX', () => { S.news12 = 1; save(); render(false); });
   on('#newsGo', () => { S.news12 = 1; save(); route = { view: 'more', setOpen: true }; history.pushState(route, ''); render(); });
@@ -803,34 +796,6 @@ function bind() {
   }
 
   if (route.sub === 'profile') bindSetup();
-
-  // الركلات
-  on('#kickBtn', () => {
-    if (!S._kick) S._kick = { start: Date.now(), count: 0 }; else S._kick.count++;
-    if (navigator.vibrate) navigator.vibrate(30);
-    save(); render(false);
-    if (S._kick.count === 10) toast('🎉 وصلتِ لـ10 حركات!');
-  });
-  on('#kickUndo', () => { S._kick.count = Math.max(0, S._kick.count - 1); save(); render(false); });
-  on('#kickStop', () => { const k = S._kick; S.kicks.push({ at: k.start, count: k.count, sec: (Date.now() - k.start) / 1000 }); delete S._kick; save(); toast('تم الحفظ'); render(false); });
-  if ($('#kickTime')) {
-    const tick = () => { const s = Math.floor((Date.now() - S._kick.start) / 1000); $('#kickTime').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
-    tick(); timers.push(setInterval(tick, 1000));
-  }
-
-  // الانقباضات
-  on('#ctrBtn', () => {
-    const l = S.contractions, last = l[l.length - 1];
-    if (last && !last.end) last.end = Date.now(); else l.push({ start: Date.now() });
-    if (l.length > 100) l.splice(0, l.length - 100);
-    save(); render(false);
-  });
-  on('#ctrClear', confirmTap('#ctrClear', () => { S.contractions = []; save(); render(false); }));
-  if ($('#ctrTime')) {
-    const last = S.contractions[S.contractions.length - 1];
-    const tick = () => { $('#ctrTime').textContent = Math.floor((Date.now() - last.start) / 1000); };
-    tick(); timers.push(setInterval(tick, 500));
-  }
 
   // الوزن
   on('#wAdd', () => {
@@ -897,11 +862,15 @@ function bind() {
   on('#cLmp', calc, 'oninput'); on('#cCycle', calc, 'oninput');
   const lt = $('#lblToggle'); if (lt) lt.onclick = () => { route.labels = !route.labels; history.replaceState(route, ''); render(false); };
   extrasBind();
+  toolsBind();
   featBind();
 }
 
 /* ---------- تشغيل (بعد تحميل كل الملفات) ---------- */
-window.addEventListener('DOMContentLoaded', () => { booted = true; if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render(); Notify.start(); Widget.sync(); });
+window.addEventListener('DOMContentLoaded', () => { booted = true; if (!S.country) { S.country = guessCountry(); save(); } history.replaceState(route, ''); render();
+  // زمن الإقلاع حتى أول رسم كامل
+  requestAnimationFrame(() => { window.NABD_BOOT = Math.round(performance.now()); Crash.apply(); });
+  Notify.start(); Widget.sync(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', applyTheme);
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});

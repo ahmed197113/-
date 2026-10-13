@@ -8,9 +8,10 @@ const Notify = (() => {
   const HOUR = 10; // العاشرة صباحاً
   const short = (t, n = 110) => (t || '').length > n ? t.slice(0, n - 1).trim() + '…' : (t || '');
   const at = d => { const x = new Date(d); x.setHours(HOUR, 0, 0, 0); return x; };
-  const WATER_HOURS = [10, 12, 14, 16, 18];
+  // ساعات تذكير الماء حسب اختيار المستخدمة (الافتراضي: من 10 صباحاً حتى 6 مساءً كل ساعتين)
+  const waterHours = r => { const out = [], to = +r.waterTo, ev = Math.max(1, +r.waterEvery || 2); for (let h = +r.waterFrom; h <= to; h += ev) out.push(h); return out; };
   const TIP_DAYS = 14; // تُجدول معلومات الأيام القادمة وتتجدد عند كل فتح للتطبيق
-  const rem = () => ({ tip: true, water: true, vit: true, vitTime: '10:00', ...(S.reminders || {}) });
+  const rem = () => ({ tip: true, water: true, vit: true, vitTime: '10:00', waterFrom: 10, waterTo: 18, waterEvery: 2, ...(S.reminders || {}) });
   const months = m => m === 1 ? 'شهراً واحداً' : m === 2 ? 'شهرين' : m <= 10 ? `${m} أشهر` : `${m} شهراً`;
 
   function plan() {
@@ -56,7 +57,7 @@ const Notify = (() => {
         list.push({ id: 3000 + i, schedule: { at: d, allowWhileIdle: true }, title: '💡 معلومة اليوم', body: short(t, 160), extra: { view: S.baby ? 'home' : 'weeks' } });
       }
     }
-    if (r.water) WATER_HOURS.forEach(h => list.push({ id: 4000 + h, schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
+    if (r.water) waterHours(r).forEach(h => list.push({ id: 4000 + h, schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
       title: '💧 وقت كوب ماء', body: 'كوب ماء الآن يساعدك على النشاط ويقلل الإمساك والتورم.', extra: { view: 'track' } }));
     if (r.vit) {
       const [hh, mm] = (r.vitTime || '10:00').split(':').map(Number);
@@ -110,5 +111,5 @@ const Notify = (() => {
     return 'ok';
   }
 
-  return { native: () => !!plugin(), sync, listen, greet, test, rem, start() { listen(); greet(); sync(false); } };
+  return { waterHours, native: () => !!plugin(), sync, listen, greet, test, rem, start() { listen(); greet(); sync(false); } };
 })();
