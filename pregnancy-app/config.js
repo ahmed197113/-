@@ -4,7 +4,7 @@
    googleWebClientId: معرّف عميل الويب (ليس سراً) — لزر Google في نسخة المتصفح. في تطبيق أندرويد يتم الدخول عبر Firebase (Google وFacebook).
    تسجيل الدخول يظهر فقط بعد ضبط apiBase (راجعي server/GOOGLE_SETUP.md). */
 window.NABD_CONFIG = {
-  apiBase: '', // مثال: https://example.com/nabd-api
+  apiBase: 'https://nabd.khatta.net/nabd-api',
   supabaseUrl: '',
   supabaseKey: '',
   googleWebClientId: '987831438755-a2c3ljr526b3hplfhr27mc3shnvlo22k.apps.googleusercontent.com',
