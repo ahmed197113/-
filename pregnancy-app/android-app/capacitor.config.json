@@ -10,14 +10,12 @@
       "smallIcon": "ic_stat_nabd",
       "iconColor": "#FA1A7F"
     },
-    "SocialLogin": {
-      "providers": {
-        "google": true,
-        "facebook": false,
-        "apple": false,
-        "twitter": false
-      },
-      "logLevel": 1
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": [
+        "google.com",
+        "facebook.com"
+      ]
     }
   }
 }

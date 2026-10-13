@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "description": "غلاف أندرويد لتطبيق نبضٌ صغير (Capacitor)",
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.5.2",
     "@capacitor/android": "^8.5.0",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",
     "@capacitor/filesystem": "^8.1.4",
     "@capacitor/local-notifications": "^8.3.0",
     "@capacitor/preferences": "^8.0.1",
-    "@capacitor/share": "^8.0.3",
-    "@capgo/capacitor-social-login": "^8.5.17"
+    "@capacitor/share": "^8.0.3"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5"

@@ -16,9 +16,25 @@ sql = re.sub(r'UNIQUE KEY \w+ \(', 'UNIQUE (', sql)
 import sqlite3
 con = sqlite3.connect(db); con.executescript(sql); con.close()
 
+# مفتاح وشهادة وهميان لتوقيع توكنات Firebase في الاختبار (التحقق الحقيقي بـ openssl_verify)
+import base64
+key = os.path.join(tmp, 'fb.key'); crt = os.path.join(tmp, 'fb.crt')
+subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', crt, '-days', '1', '-subj', '/CN=test'], check=True, capture_output=True)
+certs = os.path.join(tmp, 'certs.json')
+json.dump({'kid1': open(crt).read()}, open(certs, 'w'))
+b64u = lambda b: base64.urlsafe_b64encode(b).rstrip(b'=').decode()
+def fb_token(sub, aud='nabd-saghir', exp=3600, google=None, kid='kid1', name='منى', email='m@example.com', provider='google.com', sign_key=key):
+    now = int(time.time())
+    c = {'iss': f'https://securetoken.google.com/{aud}', 'aud': aud, 'sub': sub, 'iat': now - 10, 'auth_time': now - 10, 'exp': now + exp, 'name': name, 'email': email,
+         'firebase': {'sign_in_provider': provider, 'identities': ({'google.com': [google]} if google else {'facebook.com': ['123']})}}
+    msg = b64u(json.dumps({'alg': 'RS256', 'kid': kid}).encode()) + '.' + b64u(json.dumps(c, ensure_ascii=False).encode())
+    sig = subprocess.run(['openssl', 'dgst', '-sha256', '-sign', sign_key], input=msg.encode(), capture_output=True, check=True).stdout
+    return msg + '.' + b64u(sig)
+
 open(os.path.join(tmp, 'api', 'config.php'), 'w').write(f"""<?php return [
+  'firebase_project_id' => 'nabd-saghir', 'firebase_certs_url' => 'file://{certs}',
   'db_dsn' => 'sqlite:{db}', 'gemini_key' => 'x', 'ai_daily_chat' => 30, 'ai_daily_labs' => 5, 'ai_daily_ip' => 200,
-  'admin_token' => 'test', 'google_client_ids' => ['web-client.apps.googleusercontent.com'], 'auth_daily_ip' => 6, 'test_mode' => true ];""")
+  'admin_token' => 'test', 'google_client_ids' => ['web-client.apps.googleusercontent.com'], 'auth_daily_ip' => 14, 'test_mode' => true ];""")
 port = 8765
 srv = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', '-t', os.path.join(tmp, 'api')], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(0.8)
@@ -82,6 +98,21 @@ try:
     check('account: طلب حذف من صفحة الويب', s == 200, r)
     s, r = call('POST', 'account.php', {'action': 'request_delete', 'email': 'bad'}, dev=None)
     check('account: رفض بريد غير صالح', s == 400, r)
+    # Firebase: Google من التطبيق = نفس حساب Google من المتصفح
+    s, r = call('POST', 'auth.php', {'id_token': 'test:google-77:g@example.com:هند'})
+    s, _ = call('PUT', 'backup.php', {'data': json.dumps({'profile': {'method': 'due', 'due': '2027-01-01'}})}, token=r['token'])
+    s, r = call('POST', 'auth.php', {'firebase_token': fb_token('fbuid-1', google='google-77')})
+    check('firebase: توكن Google من التطبيق موقّع وصحيح', s == 200 and len(r.get('token', '')) == 64, r)
+    s, r = call('GET', 'backup.php', token=r.get('token'))
+    check('firebase: نفس حساب Google في المتصفح والتطبيق', s == 200 and r.get('data') and '2027-01-01' in r['data'], r)
+    s, r = call('POST', 'auth.php', {'firebase_token': fb_token('fbuid-2', provider='facebook.com', email='')})
+    check('firebase: الدخول بـ Facebook حساب مستقل', s == 200 and r['user']['name'] == 'منى', r)
+    s, r = call('GET', 'backup.php', token=r.get('token'))
+    check('firebase: حساب Facebook الجديد بدون نسخة', r.get('data') is None, r)
+    other = os.path.join(tmp, 'other.key'); subprocess.run(['openssl', 'genrsa', '-out', other, '2048'], check=True, capture_output=True)
+    for name, tk in [('توقيع مزوّر', fb_token('x', sign_key=other)), ('مشروع آخر', fb_token('x', aud='other-proj')), ('منتهي', fb_token('x', exp=-60)), ('kid غير معروف', fb_token('x', kid='nope'))]:
+        s, r = call('POST', 'auth.php', {'firebase_token': tk})
+        check(f'firebase: رفض توكن ({name})', s == 401, r)
     codes = [call('POST', 'auth.php', {'id_token': 'test:sub-2:b@example.com:ب'})[0] for _ in range(6)]
     check('auth: حد المحاولات لكل IP', codes[-1] == 429, codes)
 finally:

@@ -676,3 +676,5 @@ ul.fav-list .fav-btn { margin-top: -4px; }
 @keyframes fadeIn { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .in-fwd, .in-back, .sheet, .sheet-bg, .fav-btn.pop svg { animation: none; } }
 .toast { z-index: 70; }
+.login-btns { display: grid; gap: 10px; width: 100%; max-width: 340px; margin: 0 auto; }
+.fb-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: #1877F2 !important; color: #fff !important; border-radius: 999px; }

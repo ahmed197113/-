@@ -698,6 +698,8 @@ ul.fav-list .fav-btn { margin-top: -4px; }
 @keyframes fadeIn { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .in-fwd, .in-back, .sheet, .sheet-bg, .fav-btn.pop svg { animation: none; } }
 .toast { z-index: 70; }
+.login-btns { display: grid; gap: 10px; width: 100%; max-width: 340px; margin: 0 auto; }
+.fb-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: #1877F2 !important; color: #fff !important; border-radius: 999px; }
 
 </style>
 </head>
@@ -1628,12 +1630,14 @@ APPOINTMENTS.forEach(a => { if (a.title.includes('Tdap')) { a.from = 16; a.to = 
 /* إعدادات النسخة المستقلة
    apiBase: رابط مجلد السيرفر على استضافتك (راجعي server/README.md) — يشغّل المساعد الذكي وقراءة التحاليل ومجتمع الأمهات.
    supabaseUrl/supabaseKey: بديل للمجتمع فقط عبر Supabase (راجعي COMMUNITY.md).
-   googleWebClientId: معرّف عميل الويب من Google Cloud (ليس سراً) — يفعّل تسجيل الدخول الاختياري والنسخ على السحابة (راجعي server/GOOGLE_SETUP.md). */
+   googleWebClientId: معرّف عميل الويب (ليس سراً) — لزر Google في نسخة المتصفح. في تطبيق أندرويد يتم الدخول عبر Firebase (Google وFacebook).
+   تسجيل الدخول يظهر فقط بعد ضبط apiBase (راجعي server/GOOGLE_SETUP.md). */
 window.NABD_CONFIG = {
   apiBase: '', // مثال: https://example.com/nabd-api
   supabaseUrl: '',
   supabaseKey: '',
-  googleWebClientId: '' // مثال: 1234567890-abc.apps.googleusercontent.com
+  googleWebClientId: '987831438755-a2c3ljr526b3hplfhr27mc3shnvlo22k.apps.googleusercontent.com',
+  facebook: true // زر Facebook في تطبيق أندرويد
 };
 
 </script>
@@ -4043,10 +4047,11 @@ const Account = (() => {
   const base = () => (cfg().apiBase || '').replace(/\/$/, '');
   const read = () => { try { return JSON.parse(localStorage.getItem(LS)) || null; } catch { return null; } };
   const write = a => { try { a ? localStorage.setItem(LS, JSON.stringify(a)) : localStorage.removeItem(LS); } catch {} };
-  let acc = read(), timer = null, dirty = false, pushing = false, restoring = false, nativeReady = false;
+  let acc = read(), timer = null, dirty = false, pushing = false, restoring = false;
   const user = () => acc && acc.exp > Date.now() ? acc : null;
-  const native = () => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.SocialLogin;
-  const available = () => !!(base() && cfg().googleWebClientId);
+  // في تطبيق أندرويد: Firebase Authentication (Google وFacebook)، وفي المتصفح: زر Google الرسمي
+  const native = () => window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins?.FirebaseAuthentication;
+  const available = () => !!(base() && (native() || cfg().googleWebClientId));
 
   async function api(method, file, body, extra = {}) {
     const r = await fetch(`${base()}/${file}`, { method, ...extra,
@@ -4059,12 +4064,13 @@ const Account = (() => {
   }
 
   /* ---------- تسجيل الدخول ---------- */
-  // زر Google: في التطبيق زر خاص يفتح حسابات الجهاز، وفي المتصفح زر Google الرسمي
+  // في التطبيق: زرّا Google وFacebook، وفي المتصفح زر Google الرسمي
   function button(host, ctx = {}) {
     if (!available()) { host.innerHTML = '<p class="muted center">تسجيل الدخول غير متاح حالياً.</p>'; return; }
     if (native()) {
-      host.innerHTML = `<button class="btn g-btn block" type="button">${G_LOGO}<span>المتابعة بحساب Google</span></button>`;
-      host.firstElementChild.onclick = () => signIn(ctx);
+      host.innerHTML = `<div class="login-btns"><button class="btn g-btn block" type="button" data-prov="google">${G_LOGO}<span>المتابعة بحساب Google</span></button>
+        ${cfg().facebook === false ? '' : `<button class="btn fb-btn block" type="button" data-prov="facebook">${FB_LOGO}<span>المتابعة بحساب Facebook</span></button>`}</div>`;
+      host.querySelectorAll('[data-prov]').forEach(b => b.onclick = () => signIn({ ...ctx, provider: b.dataset.prov }));
       return;
     }
     host.innerHTML = '<p class="muted center">جاري تحميل زر Google…</p>';
@@ -4083,20 +4089,28 @@ const Account = (() => {
   }));
 
   // تسجيل الدخول من أي مكان (رابط «لديّ حساب» أو صفحة حسابي)
+  // بدون مزوّد محدد (رابط «لديّ حساب»): نافذة فيها الأزرار
   async function signIn(ctx = {}) {
     if (!available()) return toast('تسجيل الدخول غير متاح حالياً');
-    if (!native()) return sheet(ctx);
+    if (!native() || !ctx.provider) return sheet(ctx);
     try {
-      const SL = window.Capacitor.Plugins.SocialLogin;
-      if (!nativeReady) { await SL.initialize({ google: { webClientId: cfg().googleWebClientId, mode: 'online' } }); nativeReady = true; }
-      const r = await SL.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
-      const tok = r && r.result && r.result.idToken;
-      if (!tok) throw new Error('no_token');
-      await finishLogin(tok, ctx);
+      // تسجيل دخول أصلي عبر Firebase، ثم توكن Firebase يتحقق منه السيرفر
+      const FA = window.Capacitor.Plugins.FirebaseAuthentication;
+      if (ctx.provider === 'facebook') await FA.signInWithFacebook({ scopes: ['email', 'public_profile'] });
+      else await FA.signInWithGoogle({ scopes: ['email', 'profile'] });
+      const r = await FA.getIdToken({ forceRefresh: false });
+      if (!r || !r.token) throw new Error('no_token');
+      await finishLogin(r.token, ctx, 'firebase');
     } catch (e) {
-      if (!/cancel/i.test(String(e && (e.message || e.code)))) toast('تعذّر تسجيل الدخول — حاولي مرة أخرى');
+      if (!/cancel|closed|abort/i.test(String(e && (e.message || e.code)))) toast('تعذّر تسجيل الدخول — حاولي مرة أخرى');
     }
   }
+  const nativeOut = async del => {
+    if (!native()) return;
+    const FA = window.Capacitor.Plugins.FirebaseAuthentication;
+    try { if (del) await FA.deleteUser(); } catch {}
+    try { await FA.signOut(); } catch {}
+  };
 
   // نافذة صغيرة فيها زر Google (للمتصفح)
   function sheet(ctx) {
@@ -4112,11 +4126,11 @@ const Account = (() => {
   }
   const closeSheet = () => document.getElementById('accSheet')?.remove();
 
-  async function finishLogin(idToken, ctx) {
+  async function finishLogin(idToken, ctx, kind = 'google') {
     closeSheet();
     toast('جاري تسجيل الدخول…');
     try {
-      const r = await api('POST', 'auth.php', { id_token: idToken });
+      const r = await api('POST', 'auth.php', kind === 'firebase' ? { firebase_token: idToken } : { id_token: idToken });
       acc = { token: r.token, exp: r.exp, name: r.user.name, email: r.user.email, last: 0 }; write(acc);
       if (r.user.name && !S.nick) S.nick = r.user.name.split(' ')[0];
       await reconcile(ctx);
@@ -4198,15 +4212,17 @@ const Account = (() => {
   async function signOut() {
     try { await api('POST', 'account.php', { action: 'logout' }); } catch {}
     acc = null; write(null); clearTimeout(timer); dirty = false;
-    try { if (native() && nativeReady) await window.Capacitor.Plugins.SocialLogin.logout({ provider: 'google' }); } catch {}
+    await nativeOut(false);
   }
   async function remove() {
     await api('POST', 'account.php', { action: 'delete' });
     acc = null; write(null); clearTimeout(timer); dirty = false;
-    try { if (native() && nativeReady) await window.Capacitor.Plugins.SocialLogin.logout({ provider: 'google' }); } catch {}
+    await nativeOut(true);
   }
 
   const G_LOGO = '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
+
+  const FB_LOGO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#fff" d="M14 8h3V4h-3c-2.8 0-4.5 1.8-4.5 4.6V11H7v4h2.5v8h4v-8h3l.5-4h-3.5V9c0-.6.4-1 1-1z"/></svg>';
 
   return { available, user, button, signIn, push, dirty: markDirty, signOut, remove, _finish: finishLogin };
 })();

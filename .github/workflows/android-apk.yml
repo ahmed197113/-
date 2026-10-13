@@ -44,12 +44,24 @@ jobs:
             echo "HAS_KEY=false" >> "$GITHUB_ENV"
           fi
 
+      # تسجيل الدخول بـ Google وFacebook عبر Firebase: يحتاج google-services.json
+      # (ملف pregnancy-app/android-app/google-services.json في المستودع، أو Secret باسم NABD_GOOGLE_SERVICES_JSON)
+      - name: Load the Firebase config
+        env:
+          GS: ${{ secrets.NABD_GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GS" ]; then printf '%s' "$GS" > google-services.json; fi
+          if [ -f google-services.json ]; then echo "HAS_FIREBASE=true" >> "$GITHUB_ENV"; else echo "HAS_FIREBASE=false" >> "$GITHUB_ENV"; echo "::warning::google-services.json not found — Google/Facebook login is disabled in this build"; fi
+
       - name: Create the Android project
         run: |
           npm install
+          # بدون إعداد Firebase لا نضمّن الإضافة (وإلا يتوقف التطبيق عند الفتح)
+          if [ "$HAS_FIREBASE" != "true" ]; then npm uninstall @capacitor-firebase/authentication; fi
           mkdir -p www
           cp ../dist/nabd.html www/index.html
           npx cap add android
+          if [ -f google-services.json ]; then cp google-services.json android/app/; fi
           npx @capacitor/assets generate --android --assetPath assets || echo "icon generation skipped"
           cp -r res/. android/app/src/main/res/
           python3 patch-android.py

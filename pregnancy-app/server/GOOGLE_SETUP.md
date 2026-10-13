@@ -1,4 +1,17 @@
-# تفعيل تسجيل الدخول بحساب Google (اختياري) — نبضٌ صغير 1.2
+# تفعيل تسجيل الدخول (اختياري) — نبضٌ صغير 1.2
+
+> **تحديث:** تطبيق أندرويد بقى بيسجّل الدخول عبر **Firebase** (مشروع `nabd-saghir`) بـ **Google** و**Facebook**.
+> نسخة المتصفح بتفضل بزر Google العادي. السيرفر بيتحقق من الاتنين، وحساب Google واحد سواء دخلتِ من التطبيق أو من المتصفح.
+>
+> **المطلوب لتفعيله في التطبيق:**
+> 1. ملف `google-services.json` (Firebase ← Project settings ← Your apps ← Nabd Saghir Android): يا إما يتحط في `pregnancy-app/android-app/google-services.json`، يا إما في GitHub ← Settings ← Secrets ← Actions ← `NABD_GOOGLE_SERVICES_JSON` (المحتوى كله). من غيره البناء بيقفل تسجيل الدخول تلقائياً.
+> 2. Firebase ← Authentication ← Sign-in method: فعّل **Google**، وفعّل **Facebook** بالـ App ID و**App Secret** من فيسبوك.
+> 3. انسخ **OAuth redirect URI** اللي Firebase بيعرضها في إعداد Facebook (`https://nabd-saghir.firebaseapp.com/__/auth/handler`) وحطها في Facebook ← Facebook Login ← Settings ← Valid OAuth Redirect URIs.
+> 4. Facebook ← App settings ← Basic: Privacy Policy URL = `https://nabd.khatta.net/privacy.html` و User data deletion = `https://nabd.khatta.net/delete-account.html`، وبعدين حوّل التطبيق لـ **Live**.
+> 5. في `config.php` على السيرفر: `'firebase_project_id' => 'nabd-saghir',`
+> 6. تسجيل الدخول بيظهر في التطبيق بعد ما `apiBase` يتحط في `config.js` (رابط السيرفر).
+>
+> الخطوات تحت (Google Cloud) لسه مهمة لزر المتصفح، وبصمات SHA-1 لازم تكون في Firebase (اتعملت).
 
 تسجيل الدخول اختياري تماماً. لو ما اتفعّلش، التطبيق بيشتغل عادي، وزرار «لديّ حساب» وصفحة «حسابي» مش بيظهروا.
 
@@ -56,7 +69,7 @@
 
 | نوع البيانات | Collected | Shared | Optional | الغرض |
 |---|---|---|---|---|
-| Personal info ← **Name** | Yes | No | Optional (الحساب اختياري) | Account management, App functionality |
+| Personal info ← **Name** | Yes | No | Optional (الحساب اختياري، بـ Google أو Facebook) | Account management, App functionality |
 | Personal info ← **Email address** | Yes | No | Optional | Account management |
 | Personal info ← **User IDs** (معرّف Google + معرّف الجهاز العشوائي) | Yes | No | Optional للحساب / Required لمعرّف الجهاز | Account management, App functionality, Fraud prevention, security, and compliance |
 | Health and fitness ← **Health info** (نسخة بيانات الحمل في النسخ الاحتياطي، وأسئلة المساعد) | Yes | No | Optional | App functionality |
@@ -64,4 +77,5 @@
 | **App info and performance** | No | — | — | — |
 
 - كل البيانات **Processed ephemerally: No** للنسخة والحساب (محفوظة لحد ما المستخدمة تحذفها)، و**Yes** لأسئلة المساعد (مش بنحفظها).
+- Facebook SDK مضبوط بدون تتبّع (AutoLogAppEvents وAdvertiserID مقفولين، وإذن AD_ID متشال)، فـ **Advertising ID: No** و**App interactions: No**.
 - **Shared:** No في كل الأنواع (Gemini بيعالج الأسئلة كمزوّد خدمة بالنيابة عننا، وده مش بيتحسب "مشاركة" في تعريف Google).
