@@ -64,7 +64,8 @@ const Account = (() => {
       if (!r || !r.token) throw new Error('no_token');
       await finishLogin(r.token, ctx, 'firebase');
     } catch (e) {
-      if (!/cancel|closed|abort/i.test(String(e && (e.message || e.code)))) toast('تعذّر تسجيل الدخول — حاولي مرة أخرى');
+      const m = String(e && (e.code || e.message || e)).slice(0, 120);
+      if (!/cancel|closed|abort/i.test(m)) toast('تعذّر تسجيل الدخول (' + m + ')');
     }
   }
   const nativeOut = async del => {
@@ -96,7 +97,7 @@ const Account = (() => {
       acc = { token: r.token, exp: r.exp, name: r.user.name, email: r.user.email, last: 0 }; write(acc);
       if (r.user.name && !S.nick) S.nick = r.user.name.split(' ')[0];
       await reconcile(ctx);
-    } catch (e) { toast(e.code === 'rate_limited' ? 'محاولات كثيرة، جرّبي بعد قليل' : 'تعذّر تسجيل الدخول — حاولي مرة أخرى'); }
+    } catch (e) { toast(e.code === 'rate_limited' ? 'محاولات كثيرة، جرّبي بعد قليل' : 'تعذّر تسجيل الدخول (server: ' + String(e.code || e.message || e).slice(0, 80) + ')'); }
   }
 
   /* ---------- المزامنة ---------- */
