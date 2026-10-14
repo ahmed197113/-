@@ -1,5 +1,7 @@
 package com.wafr.app.ui.screens
 
+import com.wafr.app.ui.components.holoEdge
+import com.wafr.app.ui.components.LocalHoloPhase
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -153,7 +155,7 @@ fun HistoryScreen(
             Spacer(Modifier.height(10.dp))
             // Range header with month/year stepping (RTL: right arrow = previous).
             Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.card).padding(6.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.cardFill).holoEdge(c, LocalHoloPhase.current, 20.dp).padding(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (canStep) IconButton(onClick = { step(-1) }) { Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "السابق") }

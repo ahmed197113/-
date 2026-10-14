@@ -1,5 +1,7 @@
 package com.wafr.app.ui.screens
 
+import com.wafr.app.ui.components.holoEdge
+import com.wafr.app.ui.components.LocalHoloPhase
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -213,7 +215,7 @@ private fun CardView(card: Game.Card, s: Game.State, onUpdate: (Game.State) -> U
 private fun WinCard(s: Game.State, onReset: () -> Unit) {
     val c = Mz.colors
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(c.hero).padding(24.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(c.hero).holoEdge(c, LocalHoloPhase.current, 28.dp, strength = 1.3f).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("🎉", fontSize = 64.sp)

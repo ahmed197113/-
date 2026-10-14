@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.wafr.app.ui.theme.Mz
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
@@ -55,6 +56,7 @@ fun AmountField(value: String, onChange: (String) -> Unit, label: String, suffix
 fun AmountDialog(title: String, initial: Long, currency: String, hint: String? = null, onDismiss: () -> Unit, onConfirm: (Long) -> Unit) {
     var text by remember { mutableStateOf(amountText(initial)) }
     AlertDialog(
+        modifier = Modifier.holoEdge(Mz.colors, LocalHoloPhase.current, 28.dp, strength = 1.2f),
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -78,6 +80,7 @@ fun CategoryDialog(initial: Category?, currency: String, onDismiss: () -> Unit, 
     var limit by remember { mutableStateOf(amountText(initial?.monthlyLimit ?: 0L)) }
     var need by remember { mutableStateOf(initial?.defaultNeed ?: true) }
     AlertDialog(
+        modifier = Modifier.holoEdge(Mz.colors, LocalHoloPhase.current, 28.dp, strength = 1.2f),
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "فئة جديدة" else "تعديل الفئة") },
         text = {
@@ -134,6 +137,7 @@ fun GoalDialog(initial: Goal?, currency: String, onDismiss: () -> Unit, onDelete
     var target by remember { mutableStateOf(amountText(initial?.target ?: 0L)) }
     var deposit by remember { mutableStateOf("") }
     AlertDialog(
+        modifier = Modifier.holoEdge(Mz.colors, LocalHoloPhase.current, 28.dp, strength = 1.2f),
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "هدف ادخار جديد" else "${initial.emoji} ${initial.name}") },
         text = {
@@ -185,6 +189,7 @@ fun BillDialog(initial: com.wafr.app.data.Bill?, categories: List<Category>, cur
     var day by remember { mutableStateOf((initial?.dayOfMonth ?: 1).toFloat()) }
     var catId by remember { mutableStateOf(initial?.categoryId ?: (categories.firstOrNull { it.name == "فواتير وسكن" } ?: categories.firstOrNull())?.id ?: 0L) }
     AlertDialog(
+        modifier = Modifier.holoEdge(Mz.colors, LocalHoloPhase.current, 28.dp, strength = 1.2f),
         onDismissRequest = onDismiss,
         title = { Text(if (initial == null) "التزام شهري جديد" else "تعديل الالتزام") },
         text = {
@@ -229,6 +234,7 @@ fun WishDialog(currency: String, onDismiss: () -> Unit, onSave: (String, Long) -
     var name by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     AlertDialog(
+        modifier = Modifier.holoEdge(Mz.colors, LocalHoloPhase.current, 28.dp, strength = 1.2f),
         onDismissRequest = onDismiss,
         title = { Text("🧊 فكّر قبل الشراء") },
         text = {

@@ -19,7 +19,7 @@ android {
         targetSdk = 36
         // Always increasing so every CI build installs as an update over the previous one.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 100
-        versionName = "2.1"
+        versionName = "3.0"
     }
 
     signingConfigs {

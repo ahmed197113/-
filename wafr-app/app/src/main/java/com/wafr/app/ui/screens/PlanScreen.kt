@@ -1,5 +1,6 @@
 package com.wafr.app.ui.screens
 
+import com.wafr.app.ui.components.ScreenTitle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -78,7 +79,7 @@ fun PlanScreen(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = contentPadding.calculateTopPadding() + 8.dp, bottom = contentPadding.calculateBottomPadding() + 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { Text("الخطة", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold) }
+        item { ScreenTitle("الخطة", hud = "BUDGET · MATRIX", subtitle = "ميزانيتك وبنودك وأهدافك في مكان واحد") }
         item {
             GlassCard(Modifier.fillMaxWidth(), onClick = onPlanner) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

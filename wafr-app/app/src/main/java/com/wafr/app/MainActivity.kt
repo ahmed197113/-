@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
                             )
                             else -> WafrRoot(vm, nav.value)
                         }
+                        com.wafr.app.ui.components.BootSequence()
                     }
                 }
             }

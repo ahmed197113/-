@@ -9,6 +9,22 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.foundation.layout.width
+import com.wafr.app.ui.components.LocalHoloPhase
+import com.wafr.app.ui.components.ScreenTitle
+import com.wafr.app.ui.components.holoEdge
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -135,7 +151,10 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
     AuroraBackground {
         AnimatedContent(
             targetState = overlay to tab,
-            transitionSpec = { (fadeIn(tween(250)) + slideInVertically(tween(300)) { it / 24 }) togetherWith fadeOut(tween(150)) },
+            transitionSpec = {
+                (fadeIn(tween(320)) + scaleIn(tween(380), initialScale = 0.94f) + slideInVertically(tween(380)) { it / 30 }) togetherWith
+                    (fadeOut(tween(160)) + scaleOut(tween(200), targetScale = 1.04f))
+            },
             label = "screens",
         ) { (ov, t) ->
             when (ov) {
@@ -175,6 +194,12 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
             onDismissRequest = { editor = null }, sheetState = sheet,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = Mz.colors.text,
+            dragHandle = {
+                Box(
+                    Modifier.padding(top = 12.dp, bottom = 6.dp).size(width = 54.dp, height = 5.dp)
+                        .clip(CircleShape).background(Mz.colors.neonH),
+                )
+            },
         ) {
             Box(Modifier.navigationBarsPadding()) {
                 ExpenseEditor(
@@ -206,52 +231,83 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
     }
 }
 
-/** Floating glass pill navigation with a glowing centre "+" button. */
+/** Floating holo dock: glass slab, glowing selection capsule and a spinning quantum "+" core. */
 @Composable
 private fun FloatingNav(tab: Tab, onTab: (Tab) -> Unit, onAdd: () -> Unit, modifier: Modifier = Modifier) {
     val c = Mz.colors
-    val pulse = rememberInfiniteTransition(label = "pulse")
-    val glow by pulse.animateFloat(0.92f, 1.06f, infiniteRepeatable(tween(1400), RepeatMode.Reverse), label = "g")
+    val haptic = LocalHapticFeedback.current
+    val anim = rememberInfiniteTransition(label = "core")
+    val glow by anim.animateFloat(0.9f, 1.12f, infiniteRepeatable(tween(1500), RepeatMode.Reverse), label = "g")
+    val spin = anim.animateFloat(0f, 360f, infiniteRepeatable(tween(4200, easing = LinearEasing)), label = "spin")
+    val dockShape = RoundedCornerShape(30.dp)
     Box(modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
         Row(
-            Modifier.fillMaxWidth().height(66.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(if (c.isDark) Color(0xF00A1226) else Color(0xF7FFFFFF))
-                .border(1.dp, c.border, RoundedCornerShape(26.dp)),
+            Modifier.fillMaxWidth().height(70.dp)
+                .drawBehind {
+                    drawRoundRect(c.glow2.copy(alpha = if (c.isDark) 0.16f else 0.08f), Offset(0f, 10f), size, androidx.compose.ui.geometry.CornerRadius(34.dp.toPx()))
+                }
+                .clip(dockShape)
+                .background(
+                    Brush.verticalGradient(
+                        if (c.isDark) listOf(Color(0xF0101A36), Color(0xF5050A1A)) else listOf(Color(0xFAFFFFFF), Color(0xF5EEF2FB)),
+                    ),
+                )
+                .holoEdge(c, LocalHoloPhase.current, 30.dp, strength = 1.2f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             NavItem(Tab.HOME, tab, onTab)
             NavItem(Tab.HISTORY, tab, onTab)
-            Spacer(Modifier.size(64.dp))
+            Spacer(Modifier.size(68.dp))
             NavItem(Tab.PLAN, tab, onTab)
             NavItem(Tab.GAME, tab, onTab)
         }
+        Box(Modifier.size(74.dp).scale(glow).clip(CircleShape).background(Brush.radialGradient(listOf(c.glow1.copy(alpha = 0.40f), Color.Transparent))))
+        // Spinning iridescent ring around the core.
         Box(
-            Modifier.size(64.dp).scale(glow).clip(CircleShape).background(c.glow1.copy(alpha = 0.25f)),
+            Modifier.size(64.dp).graphicsLayer { rotationZ = spin.value }.clip(CircleShape)
+                .background(Brush.sweepGradient(listOf(c.glow1, c.glow2, c.glow3, c.glow4, c.glow1))),
         )
         Box(
             Modifier.size(56.dp).clip(CircleShape).background(c.neon)
-                .clickable(onClick = onAdd),
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onAdd()
+                },
             contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Filled.Add, "إضافة مصروف", tint = Color(0xFF02101A), modifier = Modifier.size(30.dp)) }
+        ) {
+            Box(Modifier.matchParentSize().background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.45f), Color.Transparent), center = Offset(40f, 30f), radius = 90f)))
+            Icon(Icons.Filled.Add, "إضافة مصروف", tint = Color(0xFF02101A), modifier = Modifier.size(30.dp))
+        }
     }
 }
 
 @Composable
 private fun NavItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
     val c = Mz.colors
+    val haptic = LocalHapticFeedback.current
     val selected = t == current || (t == Tab.HISTORY && current == Tab.INSIGHTS)
     val color = if (selected) c.glow1 else c.muted
+    val lift by animateFloatAsState(if (selected) 1f else 0f, spring(dampingRatio = 0.6f), label = "lift")
+    val bar by animateDpAsState(if (selected) 18.dp else 0.dp, spring(dampingRatio = 0.6f), label = "bar")
     Column(
-        Modifier.clip(RoundedCornerShape(16.dp))
-            .clickable(remember { MutableInteractionSource() }, null) { onTab(t) }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+        Modifier.clip(RoundedCornerShape(18.dp))
+            .drawBehind {
+                if (lift > 0f) drawRoundRect(
+                    Brush.verticalGradient(listOf(c.glow1.copy(alpha = 0.20f * lift), c.glow3.copy(alpha = 0.06f * lift))),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(18.dp.toPx()),
+                )
+            }
+            .clickable(remember { MutableInteractionSource() }, null) {
+                if (!selected) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onTab(t)
+            }
+            .padding(horizontal = 9.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(t.icon, t.label, tint = color, modifier = Modifier.size(24.dp))
+        Icon(t.icon, t.label, tint = color, modifier = Modifier.size(24.dp).graphicsLayer { translationY = -3.dp.toPx() * lift; scaleX = 1f + 0.12f * lift; scaleY = 1f + 0.12f * lift })
         Text(t.label, color = color, fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
-        Box(Modifier.padding(top = 2.dp).size(width = if (selected) 16.dp else 0.dp, height = 3.dp).clip(CircleShape).background(c.neonH))
+        Box(Modifier.padding(top = 2.dp).size(width = bar, height = 3.dp).clip(CircleShape).background(c.neonH))
     }
 }
 
@@ -260,10 +316,11 @@ private fun NavItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
 private fun HistoryToggle(insights: Boolean, onSwitch: () -> Unit) {
     val c = Mz.colors
     Column {
-        Text("السجل", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(10.dp))
+        ScreenTitle("السجل", hud = "LEDGER · ARCHIVE")
+        Spacer(Modifier.height(12.dp))
         Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.card).border(1.dp, c.border, RoundedCornerShape(18.dp)).padding(4.dp),
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.cardFill)
+                .holoEdge(c, LocalHoloPhase.current, 18.dp).padding(4.dp),
         ) {
             listOf(false to "📋 كل العمليات", true to "📊 تحليلات الدورة").forEach { (isIns, label) ->
                 val sel = isIns == insights

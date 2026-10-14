@@ -1,5 +1,7 @@
 package com.wafr.app.ui.screens
 
+import com.wafr.app.ui.components.ScreenTitle
+import com.wafr.app.ui.components.HoloBack
 import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -130,8 +132,9 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "رجوع") }
-                Text("الإعدادات", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                HoloBack(onBack)
+                Spacer(Modifier.width(12.dp))
+                ScreenTitle("الإعدادات", hud = "SYSTEM · CONFIG")
             }
         }
 
