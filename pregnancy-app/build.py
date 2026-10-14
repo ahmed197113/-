@@ -4,8 +4,12 @@
   تُحمَّل عند الحاجة (lazy) فيفتح التطبيق أسرع."""
 import base64, json, os, re, shutil
 d = os.path.dirname(os.path.abspath(__file__)) + '/'
-SCRIPTS = ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'cal.js', 'app.js', 'features.js', 'community_seed.js', 'community.js', 'notify.js', 'account.js', 'extras.js', 'tools.js', 'onboarding.js']
+SCRIPTS = ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'cal.js', 'icons.js', 'app.js', 'features.js', 'community_seed.js', 'community.js', 'notify.js', 'account.js', 'extras.js', 'tools.js', 'onboarding.js']
 b64 = lambda p: base64.b64encode(open(d + p, 'rb').read()).decode()
+# رقم النسخة الظاهر في «عن التطبيق» = نفس منطق patch-android.py
+run = int(os.environ.get('GITHUB_RUN_NUMBER', '0'))
+vj = json.load(open(d + 'android-app/version.json', encoding='utf-8'))
+APP_VERSION = vj['name'] if vj['code'] >= run + 100 else f'1.2.{run}'
 womb_files = [g for g in range(1, 5) if os.path.exists(d + f'images/womb-{g}.webp')]
 
 
@@ -31,7 +35,7 @@ def build(single):
     h = h.replace('<link rel="stylesheet" href="styles.css">', '<style>\n' + open(d + 'styles.css', encoding='utf-8').read() + '\n</style>')
     h = h.replace('icons/icon.svg', 'data:image/svg+xml;base64,' + b64('icons/icon.svg'))
     h = re.sub(r'\s*<link rel="manifest"[^>]*>', '', h)
-    return h
+    return h.replace('__APP_VERSION__', APP_VERSION)
 
 
 # نسخة السيرفر من أسئلة البداية (نفس المحتوى)

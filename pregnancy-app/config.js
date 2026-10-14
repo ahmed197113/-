@@ -8,5 +8,7 @@ window.NABD_CONFIG = {
   supabaseUrl: '',
   supabaseKey: '',
   googleWebClientId: '987831438755-a2c3ljr526b3hplfhr27mc3shnvlo22k.apps.googleusercontent.com',
-  facebook: true // زر Facebook في تطبيق أندرويد
+  facebook: true, // زر Facebook في تطبيق أندرويد
+  privacyUrl: 'https://nabd.khatta.net/privacy.html', // يظهر في «عن التطبيق»
+  supportEmail: '' // بريد الدعم (اختياري)
 };
