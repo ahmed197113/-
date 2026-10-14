@@ -12,6 +12,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -27,7 +28,7 @@ val Plex = FontFamily(
     Font(R.font.plex_bold, FontWeight.ExtraBold),
 )
 
-/** Brand colours of the "2500" look: void black, iridescent holo spectrum, quantum glow. */
+/** Brand colours: calm, high-contrast and practical. */
 @Immutable
 data class WafrColors(
     val need: Color,
@@ -45,63 +46,60 @@ data class WafrColors(
     val bg: Color,
     val isDark: Boolean,
 ) {
-    val spectrum: List<Color> get() = listOf(glow1, glow2, glow3, glow4)
-    val neon: Brush get() = Brush.linearGradient(listOf(Color(0xFF00FFD1), Color(0xFF00D4FF), Color(0xFF9D6BFF)))
-    val neonH: Brush get() = Brush.horizontalGradient(listOf(Color(0xFF00FFD1), Color(0xFF00D4FF), Color(0xFF9D6BFF)))
-    val holo: Brush get() = Brush.linearGradient(listOf(glow1, glow2, glow3, glow4, glow1))
-    val hero: Brush get() = Brush.linearGradient(listOf(Color(0xFF041A33), Color(0xFF0B0B3D), Color(0xFF2A0845), Color(0xFF12052A)))
-    val border: Brush get() = Brush.linearGradient(listOf(glow1.copy(alpha = 0.6f), cardBorder, glow3.copy(alpha = 0.5f), glow4.copy(alpha = 0.35f)))
-    val cardFill: Brush get() = Brush.verticalGradient(
-        if (isDark) listOf(Color(0xD0121C38), Color(0xC8070C1E)) else listOf(Color(0xF7FFFFFF), Color(0xEEF3F6FE)),
-    )
+    /** Primary fill for buttons and highlights. */
+    val neon: Brush get() = SolidColor(glow1)
+    val neonH: Brush get() = SolidColor(glow1)
+    val hero: Brush get() = Brush.linearGradient(listOf(Color(0xFF0F3D33), Color(0xFF0B2A30)))
+    val border: Brush get() = SolidColor(cardBorder)
+    val cardFill: Brush get() = SolidColor(card)
 }
 
 private val DarkExtra = WafrColors(
-    need = Color(0xFF4DE1FF), want = Color(0xFFFFC247), good = Color(0xFF00FFD1), danger = Color(0xFFFF4D7E),
-    text = Color(0xFFF4F7FF), muted = Color(0xFFA7B3D4),
-    card = Color(0xC70A1228), cardBorder = Color(0x24FFFFFF),
-    glow1 = Color(0xFF00FFD1), glow2 = Color(0xFF00B4FF), glow3 = Color(0xFF9D6BFF), glow4 = Color(0xFFFF4FD8),
-    bg = Color(0xFF010208), isDark = true,
+    need = Color(0xFF60A5FA), want = Color(0xFFF59E0B), good = Color(0xFF10B981), danger = Color(0xFFEF4444),
+    text = Color(0xFFE8ECF2), muted = Color(0xFF9AA4B2),
+    card = Color(0xFF171C24), cardBorder = Color(0xFF262D38),
+    glow1 = Color(0xFF10B981), glow2 = Color(0xFF3B82F6), glow3 = Color(0xFF8B5CF6), glow4 = Color(0xFFEC4899),
+    bg = Color(0xFF0E1117), isDark = true,
 )
 
 private val LightExtra = WafrColors(
-    need = Color(0xFF0077CC), want = Color(0xFFC46A00), good = Color(0xFF008F72), danger = Color(0xFFD7263D),
-    text = Color(0xFF0A1022), muted = Color(0xFF4E5B7A),
-    card = Color(0xF2FFFFFF), cardBorder = Color(0x1A0A1022),
-    glow1 = Color(0xFF00C9A7), glow2 = Color(0xFF3AA0FF), glow3 = Color(0xFF8A5CFF), glow4 = Color(0xFFE040B0),
-    bg = Color(0xFFEDF1FA), isDark = false,
+    need = Color(0xFF2563EB), want = Color(0xFFB45309), good = Color(0xFF059669), danger = Color(0xFFDC2626),
+    text = Color(0xFF111827), muted = Color(0xFF6B7280),
+    card = Color(0xFFFFFFFF), cardBorder = Color(0xFFE3E7ED),
+    glow1 = Color(0xFF059669), glow2 = Color(0xFF2563EB), glow3 = Color(0xFF7C3AED), glow4 = Color(0xFFDB2777),
+    bg = Color(0xFFF4F6F9), isDark = false,
 )
 
 val LocalWafr = staticCompositionLocalOf { DarkExtra }
 
 private val DarkScheme = darkColorScheme(
-    primary = Color(0xFF00FFD1), onPrimary = Color(0xFF00241C),
-    primaryContainer = Color(0xFF003D31), onPrimaryContainer = Color(0xFFB8FFEC),
-    secondary = Color(0xFF9D6BFF), onSecondary = Color.White,
-    secondaryContainer = Color(0xFF2A1B5C), onSecondaryContainer = Color(0xFFE4DBFF),
-    tertiary = Color(0xFFFFB020),
-    background = Color(0xFF010208), onBackground = Color(0xFFF4F7FF),
-    surface = Color(0xFF080F22), onSurface = Color(0xFFF4F7FF),
-    surfaceVariant = Color(0xFF16213A), onSurfaceVariant = Color(0xFFC3CEE8),
-    surfaceContainer = Color(0xFF0E172C), surfaceContainerHigh = Color(0xFF152038),
-    surfaceContainerHighest = Color(0xFF1B2844), surfaceContainerLow = Color(0xFF0A1122),
-    outline = Color(0xFF3A4A6E), outlineVariant = Color(0xFF26334F),
-    error = Color(0xFFFF4D7E),
+    primary = Color(0xFF10B981), onPrimary = Color(0xFF02140E),
+    primaryContainer = Color(0xFF0F3D33), onPrimaryContainer = Color(0xFFB7F5DE),
+    secondary = Color(0xFF60A5FA), onSecondary = Color(0xFF04172E),
+    secondaryContainer = Color(0xFF1E3350), onSecondaryContainer = Color(0xFFD6E6FF),
+    tertiary = Color(0xFFF59E0B),
+    background = Color(0xFF0E1117), onBackground = Color(0xFFE8ECF2),
+    surface = Color(0xFF151A21), onSurface = Color(0xFFE8ECF2),
+    surfaceVariant = Color(0xFF212833), onSurfaceVariant = Color(0xFFC2CAD6),
+    surfaceContainer = Color(0xFF171C24), surfaceContainerHigh = Color(0xFF1C222B),
+    surfaceContainerHighest = Color(0xFF232A35), surfaceContainerLow = Color(0xFF12161D),
+    outline = Color(0xFF3A4350), outlineVariant = Color(0xFF262D38),
+    error = Color(0xFFEF4444),
 )
 
 private val LightScheme = lightColorScheme(
-    primary = Color(0xFF00876B), onPrimary = Color.White,
-    primaryContainer = Color(0xFFC8FFF0), onPrimaryContainer = Color(0xFF002A21),
-    secondary = Color(0xFF6A3FE0), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE6DDFF), onSecondaryContainer = Color(0xFF21005E),
-    tertiary = Color(0xFFC46A00),
-    background = Color(0xFFEEF2FA), onBackground = Color(0xFF0A1022),
-    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF0A1022),
-    surfaceVariant = Color(0xFFE3E8F4), onSurfaceVariant = Color(0xFF3B4766),
-    surfaceContainer = Color(0xFFFFFFFF), surfaceContainerHigh = Color(0xFFF2F5FB),
-    surfaceContainerHighest = Color(0xFFE8EDF7), surfaceContainerLow = Color(0xFFF7F9FD),
-    outline = Color(0xFFB9C3D9), outlineVariant = Color(0xFFD7DEEC),
-    error = Color(0xFFD7263D),
+    primary = Color(0xFF059669), onPrimary = Color.White,
+    primaryContainer = Color(0xFFD1FAE5), onPrimaryContainer = Color(0xFF052E22),
+    secondary = Color(0xFF2563EB), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFDBEAFE), onSecondaryContainer = Color(0xFF0B1F44),
+    tertiary = Color(0xFFB45309),
+    background = Color(0xFFF4F6F9), onBackground = Color(0xFF111827),
+    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF111827),
+    surfaceVariant = Color(0xFFEDF0F4), onSurfaceVariant = Color(0xFF4B5563),
+    surfaceContainer = Color(0xFFFFFFFF), surfaceContainerHigh = Color(0xFFF6F7F9),
+    surfaceContainerHighest = Color(0xFFEDF0F4), surfaceContainerLow = Color(0xFFF9FAFB),
+    outline = Color(0xFFCBD2DB), outlineVariant = Color(0xFFE3E7ED),
+    error = Color(0xFFDC2626),
 )
 
 private val AppTypography = Typography().let { t ->
@@ -121,8 +119,6 @@ private val AppTypography = Typography().let { t ->
 
 val AmountStyle = TextStyle(fontFamily = Plex, fontSize = 44.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1).sp)
 
-/** Small Latin HUD captions ("SYS · 2500"): wide tracking, like an instrument panel. */
-val HudStyle = TextStyle(fontFamily = Plex, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
 
 @Composable
 fun WafrTheme(themeMode: Int = 2, content: @Composable () -> Unit) {

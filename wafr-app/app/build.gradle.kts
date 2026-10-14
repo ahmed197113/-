@@ -19,7 +19,11 @@ android {
         targetSdk = 36
         // Always increasing so every CI build installs as an update over the previous one.
         versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 100
-        versionName = "3.0"
+        versionName = "3.1"
+        // Web OAuth client id for "Sign in with Google" (GitHub secret GOOGLE_WEB_CLIENT_ID or gradle property).
+        val googleClientId = System.getenv("GOOGLE_WEB_CLIENT_ID")?.takeIf { it.isNotBlank() }
+            ?: (project.findProperty("googleWebClientId") as String?).orEmpty()
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleClientId\"")
     }
 
     signingConfigs {
@@ -96,6 +100,13 @@ dependencies {
     implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("androidx.glance:glance-material3:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // Sign in with Google + Drive backup.
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")

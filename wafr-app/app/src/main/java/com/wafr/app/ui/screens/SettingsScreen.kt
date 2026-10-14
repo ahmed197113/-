@@ -1,7 +1,7 @@
 package com.wafr.app.ui.screens
 
 import com.wafr.app.ui.components.ScreenTitle
-import com.wafr.app.ui.components.HoloBack
+import com.wafr.app.ui.components.BackButton
 import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -132,11 +132,14 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                HoloBack(onBack)
+                BackButton(onBack)
                 Spacer(Modifier.width(12.dp))
-                ScreenTitle("الإعدادات", hud = "SYSTEM · CONFIG")
+                ScreenTitle("الإعدادات")
             }
         }
+
+        item { SectionTitle("حساب Google والنسخ السحابي ☁️") }
+        item { com.wafr.app.ui.components.GoogleAccountCard(vm, settings) }
 
         item { SectionTitle("الوصول السريع ⚡") }
         item {
@@ -212,7 +215,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
         item { SectionTitle("البيانات 🔒") }
         item {
             GlassCard(Modifier.fillMaxWidth()) {
-                Text("بياناتك محفوظة على جهازك فقط — بلا حسابات، بلا إعلانات، بلا تتبع.", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                Text("بياناتك محفوظة على جهازك، ونسختها السحابية (إن فعّلتها) في Google Drive الخاص بك فقط — بلا إعلانات ولا تتبع.", style = MaterialTheme.typography.bodySmall, color = c.muted)
                 Spacer(Modifier.height(6.dp))
                 ActionRow("📤", "تصدير إلى Excel (CSV)", "شارك سجلك كاملاً") {
                     scope.launch { exportCsv(context, settings) }
@@ -231,7 +234,7 @@ fun SettingsScreen(vm: MainViewModel, settings: Settings, contentPadding: Paddin
         }
         item {
             Text(
-                "وَفْر 2.0 — من المستقبل، لتبني ثروتك اليوم 🚀",
+                "وَفْر ${com.wafr.app.BuildConfig.VERSION_NAME}",
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp), color = c.muted, fontSize = 12.sp,
             )
         }

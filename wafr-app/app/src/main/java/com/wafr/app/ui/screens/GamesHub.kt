@@ -1,9 +1,8 @@
 package com.wafr.app.ui.screens
 
-import com.wafr.app.ui.components.holoEdge
-import com.wafr.app.ui.components.LocalHoloPhase
+import com.wafr.app.ui.components.cardEdge
 import com.wafr.app.ui.components.ScreenTitle
-import com.wafr.app.ui.components.HoloBack
+import com.wafr.app.ui.components.BackButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -89,7 +88,7 @@ private enum class G { HUB, FREEDOM, RUSH, QUIZ, TIME, CATCHER, MONTH }
 @Composable
 fun GameHeader(title: String, onBack: () -> Unit, subtitle: String? = null) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        HoloBack(onBack)
+        BackButton(onBack)
         Spacer(Modifier.width(12.dp))
         ScreenTitle(title, subtitle = subtitle)
     }
@@ -122,7 +121,7 @@ private fun Hub(settings: Settings, freedom: Game.State, contentPadding: Padding
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            ScreenTitle("العب وتعلّم 🎮", hud = "SIM · ACADEMY", subtitle = "ألعاب قصيرة تبني عقلية الثراء — دقيقة يومياً تكفي.")
+            ScreenTitle("العب وتعلّم 🎮", subtitle = "ألعاب قصيرة تبني عقلية الثراء — دقيقة يومياً تكفي.")
         }
         item {
             GameCard(
@@ -462,7 +461,7 @@ private fun TimeMachineGame(settings: Settings, contentPadding: PaddingValues, o
         item { GameHeader("آلة الزمن ⏳", onBack, "حرّك المؤشرات وشاهد قوة الفائدة المركبة") }
         item {
             Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(c.hero).holoEdge(c, LocalHoloPhase.current, 28.dp, strength = 1.3f).padding(20.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(c.hero).cardEdge(c, 28.dp).padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("بعد ${years.roundToInt()} سنة سيكون لديك", color = Color.White.copy(alpha = 0.75f))

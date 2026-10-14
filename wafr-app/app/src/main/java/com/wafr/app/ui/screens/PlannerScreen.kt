@@ -1,7 +1,7 @@
 package com.wafr.app.ui.screens
 
 import com.wafr.app.ui.components.ScreenTitle
-import com.wafr.app.ui.components.HoloBack
+import com.wafr.app.ui.components.BackButton
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -83,9 +83,9 @@ fun PlannerScreen(vm: MainViewModel, settings: Settings, bills: List<Bill>, cont
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                HoloBack(onBack)
+                BackButton(onBack)
                 Spacer(Modifier.width(12.dp))
-                ScreenTitle("مخطط الراتب 🧭", hud = "SALARY · ROUTER", subtitle = "قل لي راتبك، وأقول لك أين يذهب كل ريال")
+                ScreenTitle("مخطط الراتب 🧭", subtitle = "قل لي راتبك، وأقول لك أين يذهب كل ريال")
             }
         }
         item {

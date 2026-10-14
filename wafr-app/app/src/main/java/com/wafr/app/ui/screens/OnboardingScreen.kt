@@ -65,6 +65,8 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
     var income by rememberSaveable { mutableStateOf("") }
     var budget by rememberSaveable { mutableStateOf("") }
     var day by rememberSaveable { mutableStateOf(1f) }
+    var googleEmail by rememberSaveable { mutableStateOf("") }
+    var googleName by rememberSaveable { mutableStateOf("") }
 
     AuroraBackground(Modifier.systemBarsPadding()) {
         Column(Modifier.fillMaxSize().padding(24.dp)) {
@@ -100,6 +102,19 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                         }
                         1 -> {
                             Title("لنتعرّف 👋", "سنخصّص وَفْر لك في أقل من دقيقة.")
+                            if (googleEmail.isBlank()) {
+                                com.wafr.app.ui.components.GoogleSignInButton(Modifier.fillMaxWidth(), text = "المتابعة بحساب Google") { p ->
+                                    googleEmail = p.email
+                                    googleName = p.name
+                                    if (name.isBlank()) name = p.name
+                                }
+                                Text(
+                                    "اختياري: لحفظ نسخة من بياناتك في Google Drive واستعادتها عند تغيير الهاتف.",
+                                    style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp, bottom = 16.dp),
+                                )
+                            } else {
+                                Text("✓ متصل بـ $googleEmail", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 16.dp))
+                            }
                             OutlinedTextField(name, { name = it }, label = { Text("اسمك (اختياري)") }, singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth())
                             Spacer(Modifier.height(18.dp))
                             Text("عملتك", fontWeight = FontWeight.SemiBold)
@@ -170,7 +185,7 @@ fun OnboardingScreen(onFinish: (transform: (Settings) -> Settings) -> Unit, onAs
                             s.copy(
                                 onboarded = true, userName = name.trim(), currency = currency,
                                 monthlyIncome = parseAmount(income) ?: 0L, monthlyBudget = parseAmount(budget) ?: 0L,
-                                cycleStartDay = day.toInt(),
+                                cycleStartDay = day.toInt(), googleEmail = googleEmail, googleName = googleName,
                             )
                         }
                     },

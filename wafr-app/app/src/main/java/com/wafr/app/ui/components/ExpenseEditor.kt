@@ -227,12 +227,7 @@ fun ExpenseEditor(
                             Box(
                                 Modifier.weight(1f).height(keyHeight)
                                     .pressable(RoundedCornerShape(16.dp), { press(k) })
-                                    .background(
-                                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                                            listOf(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f), MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-                                        ),
-                                    )
-                                    .holoEdge(com.wafr.app.ui.theme.Mz.colors, LocalHoloPhase.current, 16.dp, strength = 0.45f),
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (k == "⌫") Icon(Icons.AutoMirrored.Outlined.Backspace, "مسح")

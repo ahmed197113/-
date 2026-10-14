@@ -22,9 +22,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.width
-import com.wafr.app.ui.components.LocalHoloPhase
 import com.wafr.app.ui.components.ScreenTitle
-import com.wafr.app.ui.components.holoEdge
+import com.wafr.app.ui.components.cardEdge
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
@@ -146,15 +145,12 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
     }
 
     val sys = WindowInsets.systemBars.asPaddingValues()
-    val padding = PaddingValues(top = sys.calculateTopPadding(), bottom = sys.calculateBottomPadding() + 84.dp)
+    val padding = PaddingValues(top = sys.calculateTopPadding(), bottom = sys.calculateBottomPadding() + 72.dp)
 
     AuroraBackground {
         AnimatedContent(
             targetState = overlay to tab,
-            transitionSpec = {
-                (fadeIn(tween(320)) + scaleIn(tween(380), initialScale = 0.94f) + slideInVertically(tween(380)) { it / 30 }) togetherWith
-                    (fadeOut(tween(160)) + scaleOut(tween(200), targetScale = 1.04f))
-            },
+            transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
             label = "screens",
         ) { (ov, t) ->
             when (ov) {
@@ -167,6 +163,7 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
                         onSettings = { overlay = Overlay.SETTINGS }, onSeeAll = { tab = Tab.HISTORY },
                         onEdit = { editor = EditorState(it) }, onInsights = { tab = Tab.INSIGHTS },
                         onPlanner = { overlay = Overlay.PLANNER }, onPayBill = { vm.payBill(it) },
+                        onAdd = { editor = EditorState() },
                     )
                     Tab.HISTORY -> HistoryScreen(
                         expenses, categories, s.currency, padding, onEdit = { editor = EditorState(it) },
@@ -185,7 +182,7 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 96.dp).navigationBarsPadding())
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp).navigationBarsPadding())
     }
 
     editor?.let { state ->
@@ -194,12 +191,6 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
             onDismissRequest = { editor = null }, sheetState = sheet,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = Mz.colors.text,
-            dragHandle = {
-                Box(
-                    Modifier.padding(top = 12.dp, bottom = 6.dp).size(width = 54.dp, height = 5.dp)
-                        .clip(CircleShape).background(Mz.colors.neonH),
-                )
-            },
         ) {
             Box(Modifier.navigationBarsPadding()) {
                 ExpenseEditor(
@@ -231,53 +222,30 @@ fun WafrRoot(vm: MainViewModel, request: NavRequest) {
     }
 }
 
-/** Floating holo dock: glass slab, glowing selection capsule and a spinning quantum "+" core. */
+/** Bottom navigation bar with the "+" add button in the middle. */
 @Composable
 private fun FloatingNav(tab: Tab, onTab: (Tab) -> Unit, onAdd: () -> Unit, modifier: Modifier = Modifier) {
     val c = Mz.colors
     val haptic = LocalHapticFeedback.current
-    val anim = rememberInfiniteTransition(label = "core")
-    val glow by anim.animateFloat(0.9f, 1.12f, infiniteRepeatable(tween(1500), RepeatMode.Reverse), label = "g")
-    val spin = anim.animateFloat(0f, 360f, infiniteRepeatable(tween(4200, easing = LinearEasing)), label = "spin")
-    val dockShape = RoundedCornerShape(30.dp)
-    Box(modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+    Column(modifier.fillMaxWidth().background(c.card)) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(c.cardBorder))
         Row(
-            Modifier.fillMaxWidth().height(70.dp)
-                .drawBehind {
-                    drawRoundRect(c.glow2.copy(alpha = if (c.isDark) 0.16f else 0.08f), Offset(0f, 10f), size, androidx.compose.ui.geometry.CornerRadius(34.dp.toPx()))
-                }
-                .clip(dockShape)
-                .background(
-                    Brush.verticalGradient(
-                        if (c.isDark) listOf(Color(0xF0101A36), Color(0xF5050A1A)) else listOf(Color(0xFAFFFFFF), Color(0xF5EEF2FB)),
-                    ),
-                )
-                .holoEdge(c, LocalHoloPhase.current, 30.dp, strength = 1.2f),
+            Modifier.fillMaxWidth().navigationBarsPadding().height(68.dp).padding(horizontal = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             NavItem(Tab.HOME, tab, onTab)
             NavItem(Tab.HISTORY, tab, onTab)
-            Spacer(Modifier.size(68.dp))
+            Box(
+                Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onAdd()
+                    },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.Add, "إضافة مصروف", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(28.dp)) }
             NavItem(Tab.PLAN, tab, onTab)
             NavItem(Tab.GAME, tab, onTab)
-        }
-        Box(Modifier.size(74.dp).scale(glow).clip(CircleShape).background(Brush.radialGradient(listOf(c.glow1.copy(alpha = 0.40f), Color.Transparent))))
-        // Spinning iridescent ring around the core.
-        Box(
-            Modifier.size(64.dp).graphicsLayer { rotationZ = spin.value }.clip(CircleShape)
-                .background(Brush.sweepGradient(listOf(c.glow1, c.glow2, c.glow3, c.glow4, c.glow1))),
-        )
-        Box(
-            Modifier.size(56.dp).clip(CircleShape).background(c.neon)
-                .clickable {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onAdd()
-                },
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(Modifier.matchParentSize().background(Brush.radialGradient(listOf(Color.White.copy(alpha = 0.45f), Color.Transparent), center = Offset(40f, 30f), radius = 90f)))
-            Icon(Icons.Filled.Add, "إضافة مصروف", tint = Color(0xFF02101A), modifier = Modifier.size(30.dp))
         }
     }
 }
@@ -285,29 +253,20 @@ private fun FloatingNav(tab: Tab, onTab: (Tab) -> Unit, onAdd: () -> Unit, modif
 @Composable
 private fun NavItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
     val c = Mz.colors
-    val haptic = LocalHapticFeedback.current
     val selected = t == current || (t == Tab.HISTORY && current == Tab.INSIGHTS)
-    val color = if (selected) c.glow1 else c.muted
-    val lift by animateFloatAsState(if (selected) 1f else 0f, spring(dampingRatio = 0.6f), label = "lift")
-    val bar by animateDpAsState(if (selected) 18.dp else 0.dp, spring(dampingRatio = 0.6f), label = "bar")
+    val color = if (selected) MaterialTheme.colorScheme.primary else c.muted
     Column(
-        Modifier.clip(RoundedCornerShape(18.dp))
-            .drawBehind {
-                if (lift > 0f) drawRoundRect(
-                    Brush.verticalGradient(listOf(c.glow1.copy(alpha = 0.20f * lift), c.glow3.copy(alpha = 0.06f * lift))),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(18.dp.toPx()),
-                )
-            }
-            .clickable(remember { MutableInteractionSource() }, null) {
-                if (!selected) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onTab(t)
-            }
-            .padding(horizontal = 9.dp, vertical = 6.dp),
+        Modifier.width(68.dp).clip(RoundedCornerShape(14.dp))
+            .clickable(remember { MutableInteractionSource() }, null) { onTab(t) }
+            .padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(t.icon, t.label, tint = color, modifier = Modifier.size(24.dp).graphicsLayer { translationY = -3.dp.toPx() * lift; scaleX = 1f + 0.12f * lift; scaleY = 1f + 0.12f * lift })
-        Text(t.label, color = color, fontSize = 10.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
-        Box(Modifier.padding(top = 2.dp).size(width = bar, height = 3.dp).clip(CircleShape).background(c.neonH))
+        Box(
+            Modifier.clip(RoundedCornerShape(50)).background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent)
+                .padding(horizontal = 16.dp, vertical = 3.dp),
+        ) { Icon(t.icon, t.label, tint = color, modifier = Modifier.size(22.dp)) }
+        Spacer(Modifier.height(2.dp))
+        Text(t.label, color = color, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
     }
 }
 
@@ -316,22 +275,22 @@ private fun NavItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
 private fun HistoryToggle(insights: Boolean, onSwitch: () -> Unit) {
     val c = Mz.colors
     Column {
-        ScreenTitle("السجل", hud = "LEDGER · ARCHIVE")
+        ScreenTitle("السجل")
         Spacer(Modifier.height(12.dp))
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.cardFill)
-                .holoEdge(c, LocalHoloPhase.current, 18.dp).padding(4.dp),
+                .cardEdge(c, 18.dp).padding(4.dp),
         ) {
             listOf(false to "📋 كل العمليات", true to "📊 تحليلات الدورة").forEach { (isIns, label) ->
                 val sel = isIns == insights
                 Box(
                     Modifier.weight(1f).clip(RoundedCornerShape(14.dp))
-                        .background(if (sel) c.neon else androidx.compose.ui.graphics.SolidColor(Color.Transparent))
+                        .background(if (sel) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .clickable(enabled = !sel, onClick = onSwitch)
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, fontWeight = FontWeight.Bold, color = if (sel) Color(0xFF02101A) else c.muted)
+                    Text(label, fontWeight = FontWeight.Bold, color = if (sel) MaterialTheme.colorScheme.onPrimary else c.muted)
                 }
             }
         }

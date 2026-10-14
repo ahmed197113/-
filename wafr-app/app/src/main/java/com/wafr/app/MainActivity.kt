@@ -78,7 +78,6 @@ class MainActivity : ComponentActivity() {
                             )
                             else -> WafrRoot(vm, nav.value)
                         }
-                        com.wafr.app.ui.components.BootSequence()
                     }
                 }
             }
@@ -102,6 +101,17 @@ class MainActivity : ComponentActivity() {
         appScope.launch {
             repo.changed()
             ReminderScheduler.ensure(this@MainActivity)
+            autoCloudBackup()
+        }
+    }
+
+    /** Daily silent Google Drive backup while the user is signed in (skipped if Google needs the user's approval). */
+    private suspend fun autoCloudBackup() {
+        val s = repo.settingsStore.current()
+        if (s.googleEmail.isBlank() || System.currentTimeMillis() - s.lastCloudBackup < 24 * 3600_000L) return
+        val token = com.wafr.app.cloud.DriveBackup.silentToken(this) ?: return
+        runCatching { com.wafr.app.cloud.DriveBackup.backup(repo, token) }.onSuccess {
+            repo.settingsStore.update { it.copy(lastCloudBackup = System.currentTimeMillis()) }
         }
     }
 

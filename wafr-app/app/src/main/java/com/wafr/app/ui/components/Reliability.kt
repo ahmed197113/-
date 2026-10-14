@@ -125,8 +125,8 @@ private fun CheckRow(ok: Boolean, title: String, subtitle: String, onFix: () -> 
         }
         if (!ok) {
             Text(
-                "فعّل", color = androidx.compose.ui.graphics.Color(0xFF02101A), fontWeight = FontWeight.Bold,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(c.neon).clickable(onClick = onFix).padding(horizontal = 14.dp, vertical = 8.dp),
+                "فعّل", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primary).clickable(onClick = onFix).padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
     }

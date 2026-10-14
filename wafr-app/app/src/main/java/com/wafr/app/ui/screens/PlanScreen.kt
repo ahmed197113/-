@@ -79,7 +79,7 @@ fun PlanScreen(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = contentPadding.calculateTopPadding() + 8.dp, bottom = contentPadding.calculateBottomPadding() + 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { ScreenTitle("الخطة", hud = "BUDGET · MATRIX", subtitle = "ميزانيتك وبنودك وأهدافك في مكان واحد") }
+        item { ScreenTitle("الخطة", subtitle = "ميزانيتك وبنودك وأهدافك في مكان واحد") }
         item {
             GlassCard(Modifier.fillMaxWidth(), onClick = onPlanner) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
