@@ -2,27 +2,22 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Big Five model, measured with the public-domain IPIP 50-item
-/// Big-Five Factor Markers (Goldberg, 1992; ipip.ori.org).
+/// Big Five model, measured with a short 20-item scale adapted from the
+/// public-domain Mini-IPIP (Donnellan et al., 2006; ipip.ori.org):
+/// four simple statements per trait, answered on a 5-point scale.
 ///
 /// Trait codes: O = Openness, C = Conscientiousness, E = Extraversion,
 /// A = Agreeableness, S = Emotional Stability (inverse of Neuroticism).
 class Personality {
   static const traits = ['O', 'C', 'E', 'A', 'S'];
 
-  /// (trait, keying) for each of the 50 items, in presentation order.
+  /// (trait, keying) for each item, in presentation order.
   /// Keying +1 = agreeing raises the trait, -1 = reverse-keyed.
   static const items = <(String, int)>[
-    ('E', 1), ('A', -1), ('C', 1), ('S', -1), ('O', 1),
-    ('E', -1), ('A', 1), ('C', -1), ('S', 1), ('O', -1),
-    ('E', 1), ('A', -1), ('C', 1), ('S', -1), ('O', 1),
-    ('E', -1), ('A', 1), ('C', -1), ('S', 1), ('O', -1),
-    ('E', 1), ('A', -1), ('C', 1), ('S', -1), ('O', 1),
-    ('E', -1), ('A', 1), ('C', -1), ('S', -1), ('O', -1),
-    ('E', 1), ('A', -1), ('C', 1), ('S', -1), ('O', 1),
-    ('E', -1), ('A', 1), ('C', -1), ('S', -1), ('O', 1),
     ('E', 1), ('A', 1), ('C', 1), ('S', -1), ('O', 1),
-    ('E', -1), ('A', 1), ('C', 1), ('S', -1), ('O', 1),
+    ('E', -1), ('A', -1), ('C', -1), ('S', 1), ('O', -1),
+    ('E', 1), ('A', 1), ('C', 1), ('S', -1), ('O', 1),
+    ('E', -1), ('A', -1), ('C', -1), ('S', 1), ('O', -1),
   ];
 
   static int get questionCount => items.length;
@@ -109,6 +104,20 @@ class Personality {
       'traditional': lo('O') && hi('C'),
     };
     return [for (final e in rules.entries) if (e.value) e.key];
+  }
+
+  /// The answers that most strongly shaped [trait], strongest first.
+  /// Each entry is (item index, agreed). Neutral answers are skipped.
+  static List<(int, bool)> evidence(Map<int, int> answers, String trait,
+      {int max = 2}) {
+    final picks = <(int, bool, int)>[];
+    for (var i = 0; i < items.length; i++) {
+      final a = answers[i];
+      if (a == null || a == 3 || items[i].$1 != trait) continue;
+      picks.add((i, a > 3, (a - 3).abs()));
+    }
+    picks.sort((x, y) => y.$3.compareTo(x.$3));
+    return [for (final p in picks.take(max)) (p.$1, p.$2)];
   }
 
   /// Distance between two profiles, 0 = identical, 100 = opposite.

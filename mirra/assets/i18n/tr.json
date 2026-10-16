@@ -1,0 +1,379 @@
+{
+  "app": { "tagline": "Kendini tanı. Her gün büyü." },
+  "common": { "back": "Geri", "cancel": "İptal", "confirm": "Onayla", "next": "İleri", "save": "Kaydet", "start": "Başlayalım" },
+  "nav": { "home": "Ana sayfa", "growth": "Gelişim", "journey": "Yolculuk", "profile": "Profil" },
+  "onboarding": {
+    "chooseLanguage": "Dilini seç",
+    "slides": [
+      { "title": "Gerçek seni keşfet", "body": "20 kısa soru, yaklaşık 3 dakika. Psikolojinin en güvenilir modeli olan Beş Büyük Faktör'e dayanır." },
+      { "title": "Sana özel yazılmış bir rapor", "body": "Sonucun yalnızca senin cevaplarından oluşur — hatta her özelliği hangi cevapların şekillendirdiğini bile gösterir." },
+      { "title": "En iyi halin ol", "body": "En önemli alanda gelişmen için her gün küçük bir görevle kişisel 21 günlük plan." }
+    ],
+    "nameTitle": "Sana nasıl hitap edelim?",
+    "nameBody": "Raporun doğrudan sana hitap edecek.",
+    "nameHint": "Adın",
+    "privacyNote": "Her şey telefonunda kalır. Hesap yok, sunucu yok, takip yok."
+  },
+  "home": {
+    "hello": "Merhaba {name} 👋",
+    "helloAnon": "Merhaba 👋",
+    "subtitle": "Kendini biraz daha tanımaya hazır mısın?",
+    "continueTitle": "Teste devam et",
+    "continueBody": "Kaldığın yerden devam et.",
+    "discoverTitle": "Sen gerçekte kimsin?",
+    "discoverBody": "Kendinle ilgili basit sorulara cevap ver, kişiliğinin derin ve kişisel bir analizini al.",
+    "chipQuestions": "20 soru",
+    "chipTime": "3 dakika",
+    "chipScience": "Bilime dayalı",
+    "startTest": "Teste başla",
+    "yourType": "Kişilik tipin",
+    "viewReport": "Tam raporumu gör",
+    "retake": "Testi tekrarla",
+    "todayChallenge": "Bugünün görevi",
+    "tipTitle": "Günün ipucu",
+    "scienceTitle": "Mirra'nın arkasındaki bilim",
+    "scienceBody": "Mirra, dünya çapında psikologların en çok kullandığı model olan Beş Büyük kişilik özelliğini ölçer. Her özellik bir yelpazedir: iyi ya da kötü puan yoktur, yalnızca farklı güçlü yönler vardır."
+  },
+  "test": {
+    "counter": "{n} / {total}",
+    "prompt": "Bu seni ne kadar anlatıyor?",
+    "saveExit": "Kaydet ve çık",
+    "saved": "İlerlemen kaydedildi. İstediğin zaman dön.",
+    "encourage": ["İlk hissinle cevap ver ✨", "Yanlış cevap yok 🙂", "Harika gidiyorsun 💪", "Yarıladın! 🎯", "Neredeyse bitti… 🔥", "Son sorular! 🚀"]
+  },
+  "likert": ["Hiç ben değilim", "Pek ben değilim", "Bazen", "Çoğunlukla benim", "Tamamen benim"],
+  "questions": [
+    { "q": "İlgi odağı olmaktan hoşlanırım.", "me": "İlgi odağı olmaktan hoşlanıyorsun.", "not": "Sahnede olmayı aramıyorsun." },
+    { "q": "Başkalarının ne hissettiğini kolayca hissederim.", "me": "Başkalarının duygularını kolayca hissediyorsun.", "not": "Başkalarının duygularına kapılmıyorsun." },
+    { "q": "İşlerimi hemen hallederim.", "me": "İşlerini hemen hallediyorsun.", "not": "İşleri sonraya bırakma eğilimindesin." },
+    { "q": "Ruh halim sık sık değişir.", "me": "Ruh halin sık sık değişiyor.", "not": "Ruh halin oldukça dengeli." },
+    { "q": "Canlı bir hayal gücüm var.", "me": "Canlı bir hayal gücün var.", "not": "Hayalci olmaktan çok pratiksin." },
+    { "q": "İnsanların arasında genelde sessizimdir.", "me": "İnsanların arasında genelde sessizsin.", "not": "İnsanların arasında rahatça konuşuyorsun." },
+    { "q": "Başkalarının sorunları beni pek ilgilendirmez.", "me": "Başkalarının sorunları seni pek etkilemiyor.", "not": "Başkalarının sorunlarını önemsiyorsun." },
+    { "q": "Eşyalarımı nereye koyduğumu sık sık unuturum.", "me": "Eşyalarını nereye koyduğunu sık sık unutuyorsun.", "not": "Eşyalarının yerini hep biliyorsun." },
+    { "q": "Çoğu zaman sakin ve rahatımdır.", "me": "Çoğu zaman sakin ve rahatsın.", "not": "Nadiren tamamen rahatlıyorsun." },
+    { "q": "Soyut ve felsefi fikirler beni sıkar.", "me": "Soyut fikirler seni pek çekmiyor.", "not": "Soyut ve felsefi fikirlerden keyif alıyorsun." },
+    { "q": "Tanımadığım insanlarla kolayca konuşurum.", "me": "Yabancılarla kolayca konuşuyorsun.", "not": "Yabancılarla konuşmak sana kolay gelmiyor." },
+    { "q": "İstemeseler bile insanlara yardım etmeyi severim.", "me": "İnsanlara istemeden de yardım ediyorsun.", "not": "İstendiğinde yardım ediyorsun, öncesinde değil." },
+    { "q": "Düzeni ve organizasyonu severim.", "me": "Düzeni ve organizasyonu seviyorsun.", "not": "Düzen ve rutin sana göre değil." },
+    { "q": "Çabuk sinirlenirim.", "me": "Çabuk sinirleniyorsun.", "not": "Seni sinirlendirmek kolay değil." },
+    { "q": "Yeni şeyler ve yerler denemeyi çok severim.", "me": "Yeni şeyler denemeyi çok seviyorsun.", "not": "Yeniye kıyasla tanıdık olanı tercih ediyorsun." },
+    { "q": "Arka planda kalmayı tercih ederim.", "me": "Arka planda kalmayı tercih ediyorsun.", "not": "Önde olmak seni rahatsız etmiyor." },
+    { "q": "Kırsa bile düşündüğümü söylerim.", "me": "Kırıcı olsa bile düşündüğünü söylüyorsun.", "not": "Başkalarını kırmamak için sözlerini seçiyorsun." },
+    { "q": "Pek çok şeye başlar, bitirmem.", "me": "Pek çok şeye başlıyor ama hep bitirmiyorsun.", "not": "Başladığını bitiriyorsun." },
+    { "q": "Baskıyla sakin bir şekilde başa çıkarım.", "me": "Baskı altında sakin kalıyorsun.", "not": "Baskı seni istediğinden fazla sarsıyor." },
+    { "q": "Yeni deneyimler yerine alışık olduğum rutinleri tercih ederim.", "me": "Alışık olduğun rutinleri tercih ediyorsun.", "not": "Rutini tekrarlamak yerine yeni şeyler denemeyi seçiyorsun." }
+  ],
+  "analyzing": ["Cevapların okunuyor…", "Beş özelliğin ölçülüyor…", "Kişilik tipin belirleniyor…", "Kişisel raporun yazılıyor…"],
+  "result": {
+    "youAre": "Sen",
+    "nameIs": "{name}, sen",
+    "evidenceTitle": "Bize anlattıkların",
+    "evidenceBody": "Bu rapor yalnızca {n} cevabına dayanıyor. Seni en çok tanımlayanlar şunlar:",
+    "portraitTitle": "Kişisel portren",
+    "portraitIntro": "{name}, cevaplarına göre sen böylesin.",
+    "portraitIntroAnon": "Cevaplarına göre sen böylesin.",
+    "superpower": "Süper gücün ve gelişim alanın",
+    "strongest": "En güçlü özellik",
+    "growthArea": "Gelişim alanı",
+    "insightsTitle": "Seni özel kılanlar",
+    "typeTitle": "Kişilik tipin",
+    "strengths": "Güçlü yönler",
+    "blindSpots": "Kör noktalar",
+    "careers": "Sana uygun olabilecek meslekler",
+    "traitsTitle": "Beş özelliğin ayrıntılı",
+    "whyScore": "Bu puan neden",
+    "challenges": "Zorluklar",
+    "atWork": "İş hayatında",
+    "inLove": "İlişkilerde",
+    "howToGrow": "Nasıl gelişirsin",
+    "planTitle": "21 günlük gelişim planın",
+    "planBody": "{a} ve {b} üzerine odaklanan küçük bir günlük görev — en büyük değişimi hissedeceğin alanlar.",
+    "planStart": "Planımı başlat",
+    "planRestart": "Yeni plan başlat",
+    "share": "Sonucumu paylaş"
+  },
+  "levels": { "low": "Düşük", "mid": "Dengeli", "high": "Yüksek" },
+  "traits": {
+    "O": {
+      "name": "Deneyime açıklık",
+      "desc": "Merak, hayal gücü ve yeni fikirlere ve deneyimlere duyulan ilgi.",
+      "low": {
+        "title": "Pratik gerçekçi",
+        "summary": "Ayakları yere basan ve pratik birisin: işe yarayana güvenir, soyut teoriler yerine somut şeyleri tercih edersin.",
+        "strengths": ["Gerçekçi ve sağduyulu", "İşe yarayana odaklı", "İstikrarlı ve güvenilir"],
+        "challenges": ["Yararlı olsa bile değişime direnebilirsin", "Fikirleri çok çabuk reddedebilirsin"],
+        "work": "Net yöntemlerin ve ölçülebilir sonuçların olduğu rollerde parlarsın. Planları gerçeğe dönüştürürsün.",
+        "love": "İstikrarlı ve öngörülebilir bir sevgi sunarsın — partnerin senden ne bekleyeceğini bilir.",
+        "tips": ["Her hafta küçük de olsa yeni bir şey dene", "Bir fikri reddetmeden önce iyi bir yanını bul", "Alışık olduğun ilgi alanlarının dışında bir şey oku veya izle"]
+      },
+      "mid": {
+        "title": "Dengeli kaşif",
+        "summary": "Merakı sağduyuyla dengelersin: yeni fikirlere açıksın, ama mantıklı olduklarında.",
+        "strengths": ["Açık ama saf değil", "Hayalperestlerle uygulayıcılar arasında köprü", "Hem değişime hem rutine uyum sağlar"],
+        "challenges": ["Yeni ile tanıdık arasında kararsız kalabilirsin", "Yaratıcı yanını bastırabilirsin"],
+        "work": "Hem iyileştirme önerebilir hem de işlerin yürümesini sağlayabilirsin.",
+        "love": "Hem sıcak rutinlerden hem de ara sıra sürprizlerden keyif alırsın.",
+        "tips": ["Yaratıcı fikirlerine daha çok alan aç", "Her ay yeni bir deneyim planla", "Fikirlerini yargılamadan önce yaz"]
+      },
+      "high": {
+        "title": "Meraklı zihin",
+        "summary": "Son derece meraklı ve hayal gücü güçlüsün: yeni fikirler, sanat ve deneyimler sana enerji verir.",
+        "strengths": ["Yaratıcı ve özgün", "Hızlı öğrenir, keşfetmeyi sever", "Başkalarının kaçırdığı bağlantıları görür"],
+        "challenges": ["Rutinden sıkılır", "Fikirlerin peşinden koşup bitirmeyebilir"],
+        "work": "Yaratıcılığın değer gördüğü yerlerde gelişirsin. Uygulamak için biraz yapıya ihtiyacın var.",
+        "love": "Dünyayı keşfedip derin sohbetler edebileceğin bir partner istersin.",
+        "tips": ["Bir fikir seç ve sonuna kadar götür", "Yaratıcılığını sabitleyecek basit bir rutin ekle", "Merakını somut bir projeye dönüştür"]
+      }
+    },
+    "C": {
+      "name": "Sorumluluk",
+      "desc": "Hedeflerine ulaşmada düzen, disiplin ve güvenilirlik.",
+      "low": {
+        "title": "Esnek ruh",
+        "summary": "Spontane ve esneksin: katı planlar yerine akışa bırakmayı tercih edersin.",
+        "strengths": ["Değişime hızla uyum sağlar", "Rahat ve spontane", "Beklenmedik durumlarda yaratıcı"],
+        "challenges": ["Erteleme ve kaçan teslim tarihleri", "Uzun projeleri bitirmekte zorlanma"],
+        "work": "Hızla değişen ortamlarda başarılısın; birkaç basit sistemle daha da ileri gidersin.",
+        "love": "Eğlence ve spontanlık katarsın, ama partnerin sözlerde daha fazla tutarlılık isteyebilir.",
+        "tips": ["2 dakika kuralı: 2 dakikadan kısa sürüyorsa hemen yap", "Her gece yarının 3 önceliğini yaz", "Büyük işleri küçük adımlara böl"]
+      },
+      "mid": {
+        "title": "Güvenilir uyumlu",
+        "summary": "İşleri bitirecek kadar düzenli, planlar değiştiğinde uyum sağlayacak kadar esneksin.",
+        "strengths": ["Katı olmadan güvenilir", "İş ve dinlenme dengesi", "Plan ve sürprizlerle başa çıkar"],
+        "challenges": ["Motivasyon düşünce disiplin azalabilir", "Bazen önemli işleri erteler"],
+        "work": "Ekip arkadaşların teslim edeceğine güvenir; öncelikler değişince uyum sağlarsın.",
+        "love": "Sözlerini tutarken rahat ve esnek kalırsın.",
+        "tips": ["Güçlü bir günlük alışkanlık edin", "Kişisel hedeflerine net tarihler koy", "Her pazar haftanı gözden geçir"]
+      },
+      "high": {
+        "title": "Başarıcı",
+        "summary": "Düzenli, disiplinli ve güvenilirsin: bir şeye söz verdiğinde bitirirsin.",
+        "strengths": ["Son derece güvenilir", "Önceden planlar ve odaklı kalır", "Güçlü öz disiplin"],
+        "challenges": ["Mükemmeliyetçi olabilir", "Rahatlamakta veya doğaçlamakta zorlanır"],
+        "work": "Herkesin güvendiği kişisin. Tükenmişliğe dikkat et ve görev devretmeyi öğren.",
+        "love": "Sevgini bağlılık ve eylemle gösterirsin, ama spontanlığa daha çok yer açabilirsin.",
+        "tips": ["Suçluluk duymadan gerçek dinlenme planla", "Küçük işlerde 'yeterince iyi'yi kabul et", "Her hafta spontane bir şey yap"]
+      }
+    },
+    "E": {
+      "name": "Dışadönüklük",
+      "desc": "Sosyal enerji, coşku ve insanlardan ve hareketten keyif alma.",
+      "low": {
+        "title": "Sessiz düşünür",
+        "summary": "Çekingen ve düşüncelisin: yalnızken enerji toplar, kalabalıklar yerine derin sohbetleri tercih edersin.",
+        "strengths": ["Harika bir dinleyici", "Derin ve düşünceli", "Bağımsız"],
+        "challenges": ["Mesafeli görünebilir", "Grupta söz almakta zorlanır"],
+        "work": "En iyi işini sakin ve odaklıyken çıkarırsın. Fikirlerin değerli — duyulmalarını sağla.",
+        "love": "Derin ve sadakatle seversin; kaliteli zamanı sosyal etkinliklere tercih edersin.",
+        "tips": ["Her toplantıda bir fikir paylaş", "Her hafta bir arkadaşına ulaş", "Kendine ayırdığın zamanı suçluluk duymadan koru"]
+      },
+      "mid": {
+        "title": "Ambivert",
+        "summary": "Sosyallik ile yalnızlık arasında dengelisin: insanlardan keyif alırsın ama kendine de zaman gerekir.",
+        "strengths": ["Hem grupta hem yalnızken rahat", "Sosyal durumları iyi okur", "Hem konuşur hem dinler"],
+        "challenges": ["Nedenini bilmeden yorgun hissedebilir", "Liderlik almakta tereddüt edebilir"],
+        "work": "Ekip çalışmasına da bireysel çalışmaya da aynı derecede uyum sağlarsın — nadir bir esneklik.",
+        "love": "Hem dışarı çıkmayı hem evde kalmayı seversin; bu seni kolay bir partner yapar.",
+        "tips": ["Seni neyin enerjilendirdiğini ve yorduğunu fark et", "Bu hafta küçük bir durumda liderliği al", "Sosyal planları dinlenme zamanıyla dengele"]
+      },
+      "high": {
+        "title": "Enerji kaynağı",
+        "summary": "Dışadönük ve enerjiksin: insanlar, hareket ve sohbet seni besler.",
+        "strengths": ["Özgüvenli ve coşkulu", "Kolayca ilişki kurar", "Doğuştan motive edici"],
+        "challenges": ["Dinlemekten çok konuşabilir", "Yalnızken sıkılır"],
+        "work": "İnsanlarla, liderlikle ve iletişimle ilgili rollerde parlarsın. Sessiz ve yalnız çalışmak daha zor gelir.",
+        "love": "Enerji, eğlence ve sevgi katarsın; sosyal bir partnere ihtiyaç duyarsın.",
+        "tips": ["Sözü kesmeden dinlemeyi çalış", "Her gün 15 dakika sessizce yalnız kal", "Daha sessiz insanlara fikirlerini sor"]
+      }
+    },
+    "A": {
+      "name": "Uyumluluk",
+      "desc": "Nezaket, empati ve başkalarıyla iş birliği.",
+      "low": {
+        "title": "Doğrudan meydan okuyan",
+        "summary": "Doğrudan ve bağımsızsın: düşündüğünü söyler, sırf hoş görünmek için geri adım atmazsın.",
+        "strengths": ["Dürüst ve açık sözlü", "Manipüle edilmesi zor", "Güçlü müzakereci"],
+        "challenges": ["Sert veya soğuk görünebilir", "Çatışmalar daha sık yaşanabilir"],
+        "work": "Zor kararlar alır ve görüşünü iyi savunursun. Biraz daha sıcaklık etkini artırır.",
+        "love": "Dürüst ve sadıksın, ama partnerin daha fazla yumuşaklık isteyebilir.",
+        "tips": ["Eleştirmeden önce olumlu bir şey söyle", "Daha sık 'Nasıl hissediyorsun?' diye sor", "Savaşlarını seç"]
+      },
+      "mid": {
+        "title": "Adil diplomat",
+        "summary": "Nazik ama kararlısın: başkalarını önemserken kendi ihtiyaçlarını da korursun.",
+        "strengths": ["Sıcak ama hayır diyebilen", "Çatışmalarda adil", "İş birliği ile dürüstlüğü dengeler"],
+        "challenges": ["Fazla yumuşak ile fazla sert arasında gidip gelebilir", "Duygusal durumlarda tereddüt edebilir"],
+        "work": "İyi iş birliği yapar ve fikirlerini de savunursun — değerli bir ekip üyesi.",
+        "love": "Sağlıklı sınırlarla ilgi ve saygı sunarsın.",
+        "tips": ["Her gün birine minnettarlığını ifade et", "Gerektiğinde nazikçe hayır de", "Tavsiye vermeden önce sonuna kadar dinle"]
+      },
+      "high": {
+        "title": "Şefkatli kalp",
+        "summary": "Sıcak, empatik ve cömertsin: başkalarının iyiliği senin için çok önemli.",
+        "strengths": ["Empatik ve nazik", "Güven ve uyum yaratır", "Cömert ve yardımsever"],
+        "challenges": ["Hayır demekte zorlanır", "Kendi ihtiyaçlarını ihmal edebilir"],
+        "work": "Ekibin kalbisin. İyiliğinin istismar edilmediğinden emin ol.",
+        "love": "Fedakâr ve ilgili bir partnersin — senin ihtiyaçlarının da önemli olduğunu unutma.",
+        "tips": ["Bu hafta bir kez özür dilemeden hayır de", "Her gün bir ihtiyacını öne koy", "Unutma: sınırlar bir saygı biçimidir"]
+      }
+    },
+    "S": {
+      "name": "Duygusal denge",
+      "desc": "Sakinlik, dayanıklılık ve stresle ve duygularla başa çıkma biçimin.",
+      "low": {
+        "title": "Derin hisseden",
+        "summary": "Duyguları yoğun yaşarsın: hassasiyetin seni farkında ve ilgili yapar, ama stres seni çok yorabilir.",
+        "strengths": ["Duygusal farkındalık", "Risklere ve ayrıntılara dikkatli", "Derinden empatik"],
+        "challenges": ["Endişe ve aşırı düşünme", "Stres altında ruh hali dalgalanmaları"],
+        "work": "Sorunları herkesten önce fark edersin. Sakin ve destekleyici ortamlar en iyini ortaya çıkarır.",
+        "love": "Yoğun sever ve her ayrıntıyı fark edersin, ama ekstra güvenceye ihtiyaç duyabilirsin.",
+        "tips": ["Stresliyken 4-7-8 nefesini dene", "Endişelerini yaz, her biri için bir adım belirle", "Her gün 20 dakika hareket et"]
+      },
+      "mid": {
+        "title": "İstikrarlı gerçekçi",
+        "summary": "Genelde sakinsin, ama işler gerçekten zorlaşınca stres hissedersin — sağlıklı bir denge.",
+        "strengths": ["Günlük stresle iyi başa çıkar", "Duygularına karşı dürüst", "Oldukça hızlı toparlanır"],
+        "challenges": ["Büyük baskı seni sarsabilir", "Stresi birikene kadar saklayabilir"],
+        "work": "Çoğu durumda sakin kalır, riskleri gerçekçi değerlendirirsin.",
+        "love": "İstikrarlı ve yanındasın, duygularını da gösterirsin.",
+        "tips": ["Stresin ilk işaretlerini fark et", "İşler birikince güvendiğin biriyle konuş", "Düzenli bir uyku saati koru"]
+      },
+      "high": {
+        "title": "Sakinlik çapası",
+        "summary": "Sakin ve dayanıklısın: stres seni nadiren sarsar ve hızla toparlanırsın.",
+        "strengths": ["Baskı altında sakin", "İyimser ve istikrarlı", "Güven veren bir varlık"],
+        "challenges": ["Riskleri hafife alabilir", "Başkaları umursamadığını düşünebilir"],
+        "work": "Kriz anında soğukkanlı kalan kişisin — her ekip için doğal bir dayanak.",
+        "love": "Huzur ve istikrar getirirsin, ama duygularını da göstermeyi unutma.",
+        "tips": ["Başkaları stresliyken empati göster", "Duygularını daha açık paylaş", "Büyük kararlardan önce riskleri kontrol et"]
+      }
+    }
+  },
+  "types": {
+    "1111": { "name": "İlham Veren", "tagline": "Sıcak, yaratıcı ve güvenilir — çevrendeki herkesi yükseltirsin.", "desc": "Sosyal enerjiyi, merakı, disiplini ve nezaketi birleştirirsin. Büyük fikirlerin ve onları gerçekleştirecek kararlılığın olduğu için insanlar sana çekilir.", "strengths": ["Doğal lider", "Yaratıcı ve düzenli", "Sevilen ve güvenilen"], "blind": ["Çok fazla yük alır", "Hayır demekte zorlanır"], "careers": ["Ekip lideri", "Öğretmen", "Girişimci", "İK yöneticisi"] },
+    "1110": { "name": "Öncü", "tagline": "Cesur, vizyoner ve kazanmaya kararlı.", "desc": "Enerjin, vizyonun ve disiplinin var; anlaşmazlıktan korkmazsın. İddialı hedefler koyar ve onlara ulaşmak için zorlarsın.", "strengths": ["Hırslı ve kararlı", "Vizyoner", "Sonuç alır"], "blind": ["Sabırsız olabilir", "Duyguları göz ardı edebilir"], "careers": ["Kurucu", "Yönetici", "Avukat", "İş geliştirme"] },
+    "1101": { "name": "Coşkulu", "tagline": "Arkadaş canlısı, hayalperest ve hayat dolu.", "desc": "İnsanları ve yeni fikirleri seversin; sıcaklığın bulaşıcıdır. Anı yaşar, katı planlar yerine özgürlüğü tercih edersin.", "strengths": ["İlham verici ve sıcak", "Yaratıcı", "Kolay arkadaş edinir"], "blind": ["Dağınık", "İşleri yarım bırakır"], "careers": ["İçerik üreticisi", "Pazarlamacı", "Koç", "Etkinlik planlayıcı"] },
+    "1100": { "name": "Asi", "tagline": "Özgür, cesur ve asla sıkıcı değil.", "desc": "Enerjik, meraklı ve bağımsızsın. Kendi yolunu çizer, kurallara meydan okur ve heyecanı seversin; rutin ve ayrıntılar sana göre değil.", "strengths": ["Korkusuz", "Özgün düşünür", "İkna edici"], "blind": ["Dürtüsel", "Sert görünebilir"], "careers": ["Girişimci", "Satış", "Gazeteci", "Kreatif direktör"] },
+    "1011": { "name": "Koruyucu Ev Sahibi", "tagline": "Sosyal, güvenilir ve her zaman başkalarının yanında.", "desc": "Düzenli, nazik ve insanlarla olmayı seven birisin. Denenmiş yolları tercih eder, bulunduğun her yerde uyum ve düzen yaratırsın.", "strengths": ["Güvenilir ve cömert", "Harika ev sahibi", "İnsanları bir arada tutar"], "blind": ["Değişimden hoşlanmaz", "Onay arar"], "careers": ["Hemşire", "Ofis yöneticisi", "Öğretmen", "Müşteri ilişkileri"] },
+    "1010": { "name": "Komutan", "tagline": "Düzenli, kendinden emin ve kontrolde.", "desc": "Liderliği alır, net kurallar koyar ve sonuç beklersin. Verimliliğe ve geleneğe değer verir, düşündüğünü açıkça söylersin.", "strengths": ["Kararlı", "Verimli", "Güçlü organizatör"], "blind": ["Katı", "Kontrolcü görünebilir"], "careers": ["Müdür", "Subay", "Proje yöneticisi", "Operasyon direktörü"] },
+    "1001": { "name": "Eğlendirici", "tagline": "Eğlenceli, sıcak ve her ortamın neşesi.", "desc": "İnsanları, kahkahayı ve anı seversin. Başkalarını hoş karşılanmış hissettirirsin, ama uzun vadeli planlama zor gelebilir.", "strengths": ["Eğlenceli ve nazik", "Sosyal yetenekli", "Pozitif enerji"], "blind": ["Çatışmadan kaçar", "Planlamada zayıf"], "careers": ["Konaklama", "Satış", "Sunucu", "Topluluk yöneticisi"] },
+    "1000": { "name": "Dinamo", "tagline": "Enerjik, doğrudan ve eylem odaklı.", "desc": "Dışadönük ve spontanesin; teoriden çok eylemi seversin. Açık konuşur, heyecanı ve rekabeti seversin.", "strengths": ["Eylem odaklı", "Özgüvenli", "Hızlı durumlarda başarılı"], "blind": ["Sabırsız", "Bazen dikkatsiz"], "careers": ["Satış", "Spor", "Emlak", "Saha operasyonları"] },
+    "0111": { "name": "Bilge", "tagline": "Sakin, bilge ve derinden ilgili.", "desc": "Düşünceli, meraklı, düzenli ve naziksin. Derin düşünür, içgörünle başkalarına yardım eder, ilgi yerine anlamlı işi tercih edersin.", "strengths": ["Bilge ve düşünceli", "Güvenilir", "Empatik"], "blind": ["Fikirlerini kendine saklar", "Aşırı düşünür"], "careers": ["Psikolog", "Yazar", "Araştırmacı", "Doktor"] },
+    "0110": { "name": "Stratejist", "tagline": "Bağımsız, mantıklı ve hep bir adım önde.", "desc": "Analitik, disiplinli ve meraklısın. Karmaşık sorunlar üzerinde yalnız çalışmayı tercih eder, duygulardan çok mantığa güvenirsin.", "strengths": ["Stratejik", "Bağımsız", "Yüksek standartlar"], "blind": ["Soğuk görünebilir", "Başkalarına karşı sabırsız"], "careers": ["Mühendis", "Yazılımcı", "Bilim insanı", "Analist"] },
+    "0101": { "name": "Hayalperest", "tagline": "Nazik, hayal gücü güçlü ve iç dünyası zengin.", "desc": "Hassas, yaratıcı ve naziksin. Zihninde zengin bir hayat yaşar, anlam ve güzelliği önemsersin; yapı ise sana doğal gelmez.", "strengths": ["Yaratıcı", "Şefkatli", "Otantik"], "blind": ["Erteleme", "Pratik ayrıntılardan kaçınma"], "careers": ["Sanatçı", "Tasarımcı", "Yazar", "Danışman"] },
+    "0100": { "name": "Kaşif", "tagline": "Bağımsız, meraklı ve özgür düşünceli.", "desc": "Meraklı ve özgünsün, kendi ilgi alanlarının peşinden gidersin. Her şeyi sorgular, kurallar ve kalabalıklar yerine özgürlüğü tercih edersin.", "strengths": ["Özgün", "Bağımsız düşünür", "Açık fikirli"], "blind": ["Plansız", "Mesafeli görünebilir"], "careers": ["Araştırmacı", "Fotoğrafçı", "Filozof", "Mucit"] },
+    "0011": { "name": "Koruyucu", "tagline": "Sadık, sorumlu ve sessizce nazik.", "desc": "Güvenilir, alçakgönüllü ve ilgilisin. İstikrarı ve geleneği tercih eder, sevgini pratik ihtiyaçlarla ilgilenerek gösterirsin.", "strengths": ["Sadık", "Sorumlu", "Sabırlı"], "blind": ["Değişime direnir", "Kendi ihtiyaçlarını ihmal eder"], "careers": ["Muhasebeci", "Hemşire", "İdari personel", "Kütüphaneci"] },
+    "0010": { "name": "Denetçi", "tagline": "Titiz, ciddi ve güvenilir.", "desc": "Düzenli, pratik ve bağımsızsın. Gerçeklere, kurallara ve kaliteye değer verir, her şeyi olduğu gibi söylersin.", "strengths": ["Titiz", "Disiplinli", "Nesnel"], "blind": ["Esnek değil", "Fazla eleştirel"], "careers": ["Denetçi", "Kalite kontrol", "Mühendis", "Hukukçu"] },
+    "0001": { "name": "Barışçı", "tagline": "Sakin, yumuşak ve birlikte olması kolay.", "desc": "Alçakgönüllü, nazik ve rahatsın. Dramadan kaçar, insanları oldukları gibi kabul eder, sade ve huzurlu bir hayata değer verirsin.", "strengths": ["Kabul edici", "Sakinleştirici", "Cömert"], "blind": ["Pasif", "Karar vermekten kaçar"], "careers": ["Bakım veren", "Asistan", "Zanaatkâr", "Destek uzmanı"] },
+    "0000": { "name": "Bağımsız", "tagline": "Kendine yeten, açık sözlü ve kendine sadık.", "desc": "Çekingen, pratik ve bağımsızsın. Kalabalığı takip etmez, özgürlüğüne değer verir ve hayatı sade tutarsın.", "strengths": ["Kendine yeten", "Dürüst", "Modalardan etkilenmez"], "blind": ["Yalnız kalabilir", "Yardımı reddeder"], "careers": ["Teknisyen", "Serbest çalışan", "Lojistik", "Zanaatkâr"] }
+  },
+  "variants": {
+    "steady": { "name": "Dengeli", "text": "Genel olarak baskı altında sakin kalır, hayat zorlaştığında soğukkanlılığını korursun." },
+    "sensitive": { "name": "Hassas", "text": "Genel olarak her şeyi derinden hissedersin; stresi yönetmeyi öğrenmek en iyi halini ortaya çıkaracak." }
+  },
+  "insights": {
+    "perfectionist": { "title": "Gizli mükemmeliyetçi", "text": "Yüksek standartlar koyar, onlara ulaşamamaktan endişelenirsin. Unutma: bitmiş, mükemmelden iyidir." },
+    "connector": { "title": "Doğal bağlayıcı", "text": "Kolayca arkadaş edinirsin ve insanlar yanında kendini iyi hisseder — nadir bir sosyal yetenek." },
+    "ideas": { "title": "Fikir dolu", "text": "Zihnin, uygulayabileceğinden hızlı fikir üretir. Basit bir sistem onları sonuca dönüştürür." },
+    "creator": { "title": "Yaratıcı inşacı", "text": "Yeni şeyler hayal edip onları gerçeğe dönüştürebilirsin — büyük yaratıcıların birleşimi." },
+    "innerWorld": { "title": "Zengin bir iç dünya", "text": "Sessiz yanının ardında derin ve hayal gücü güçlü bir zihin var. Yazmak ya da sanat harika bir çıkış yolu olabilir." },
+    "empath": { "title": "Empat", "text": "Başkalarının duygularını emersin. İlgilenmeye devam edebilmek için enerjini koru." },
+    "driven": { "title": "Hedef odaklı", "text": "Disiplinli ve çatışmadan korkmayan biri olarak liderlik için güçlü bir birleşime sahipsin." },
+    "spontaneous": { "title": "Spontane enerji", "text": "Anı yaşar ve eylemi seversin. Biraz planlama etkini katlar." },
+    "rock": { "title": "Kaya", "text": "Sakin ve düzenli olarak, zor zamanlarda insanların dayandığı kişisin." },
+    "withdraw": { "title": "Nazik bakıma ihtiyaç", "text": "Stresliyken içine kapanabilirsin. Küçük sosyal temaslar ve öz bakım rutinleri çok yardımcı olur." },
+    "visionary": { "title": "Vizyoner", "text": "Hayal gücünü onu paylaşacak enerjiyle birleştirirsin — fikirlerinle insanlara ilham verebilirsin." },
+    "competitor": { "title": "Rekabetçi", "text": "Kazanmayı sever, tartışmadan korkmazsın. Bunu dinlemeyle dengele, durdurulamazsın." },
+    "calmKind": { "title": "Huzurlu varlık", "text": "Sakin ve nazik olman insanlara güven verir — güçlü bir özellik." },
+    "traditional": { "title": "Düzenin bekçisi", "text": "Denenmiş yollara ve yapıya değer verirsin. Küçük değişikliklere açık olmak seni daha da güçlendirir." }
+  },
+  "challenges": {
+    "O": ["Daha önce hiç yemediğin bir yemeği dene.", "Sık gittiğin bir yere farklı bir yoldan git.", "Hiç bilmediğin bir konuda makale oku.", "Genelde dinlemediğin bir müzik türünü dinle.", "Günlük hayatını iyileştirecek 10 fikir yaz.", "Anlamadığın bir hobiyi birine sor.", "10 dakika boyunca çiz, yaz ya da bir şey üret.", "Yeni bir konuda belgesel izle.", "Şehrinde hiç gitmediğin bir yeri ziyaret et.", "Yeni bir dilde 5 kelime öğren."],
+    "C": ["Bugün için 3 öncelik yaz ve bitir.", "Evinin ya da masanın bir köşesini topla.", "Ertelediğin işe 25 dakika ayır.", "Yatmadan önce yarını planla.", "1 saatlik odaklı çalışma için bildirimleri kapat.", "Kendine verdiğin bir sözü tut.", "Kıyafetini ve çantanı önceki akşam hazırla.", "Gün boyunca tüm harcamalarını kaydet.", "Yarım bıraktığın bir işi bitir.", "Planladığın saatte kalk — erteleme yok."],
+    "E": ["Yeni biriyle sohbet başlat.", "Uzun zamandır konuşmadığın bir arkadaşını ara.", "Bir grupta veya toplantıda fikrini paylaş.", "Bir yabancıya içten bir iltifat et.", "Birini kahveye ya da yürüyüşe davet et.", "Bir iş arkadaşına hafta sonunu sor ve gerçekten dinle.", "Bir grup etkinliğine veya kursa katıl.", "Bugün mesaj yerine sesli mesaj gönder.", "Birbirine yardım edebilecek iki kişiyi tanıştır.", "Bugün karşılaştığın herkese ilk sen selam ver."],
+    "A": ["İstenmeden birine küçük bir iyilik yap.", "Birini 5 dakika sözünü kesmeden dinle.", "Birine teşekkür mesajı yaz.", "İtiraz etmeden önce karşındakinin görüşünü tekrar et.", "Birinin küçük bir hatasını affet.", "Birine sor: 'Gerçekten nasılsın?'", "Bir yabancıya küçük bir şekilde yardım et.", "Birinin işini başkalarının önünde öv.", "Gün boyu kimseyi eleştirme.", "Birinin önemli gününü hatırla ve kutla."],
+    "S": ["5 dakika yavaş ve derin nefes al.", "Telefonsuz 20 dakika yürü.", "Bugün yaşanan 3 güzel şeyi yaz.", "Bir endişeni yaz, ardından atabileceğin bir adımı.", "Bu gece düzenli bir saatte uyu.", "1 saat tamamen çevrimdışı kal.", "Olumsuz bir düşünceyi gerçekçi bir düşünceyle değiştir.", "15 dakika esneme ya da hafif egzersiz yap.", "Güvendiğin biriyle nasıl hissettiğini konuş.", "Suçluluk duymadan sadece eğlence için bir şey yap."]
+  },
+  "reflections": ["Bu görev sana nasıl hissettirdi?", "Bugün kendin hakkında ne öğrendin?", "En zor kısmı neydi?", "Tekrar yapar mıydın? Neden?", "Bugün hangi küçük başarınla gurur duyuyorsun?", "Başkaları nasıl tepki verdi?", "Yarın neyi farklı yapacaksın?"],
+  "tips": [
+    "Küçük günlük alışkanlıklar büyük ama seyrek çabalardan üstündür.",
+    "Kişiliğin sabit bir kader değildir — özellikler pratikle değişir.",
+    "Zayıf yönlerini bilmek bir kusur değil, güçtür.",
+    "İyi uyku ruh halini, odağı ve sabrı artırır.",
+    "Tepki vermeden önce üç nefes al.",
+    "Her sabah minnettar olduğun bir şeyi yaz.",
+    "Seni daha iyi yapan insanlarla çevrele.",
+    "Bitmiş, mükemmelden iyidir.",
+    "Dinlemek, en çok hafife alınan sosyal beceridir.",
+    "Hareket et: 20 dakika yürüyüş stresi azaltır.",
+    "Önemli olana evet demek için önemsize hayır de.",
+    "Her uzman bir zamanlar acemiydi.",
+    "Kendini yalnızca dünkü halinle karşılaştır.",
+    "Kendine nazik olmak başkalarına nazik olmayı kolaylaştırır."
+  ],
+  "growth": {
+    "title": "Gelişim planın",
+    "focusLine": "Odak: {traits}",
+    "streak": "{n} günlük seri",
+    "finished": "Plan tamamlandı — harika iş! 🎉",
+    "dayOf": "Gün {n} / {total}",
+    "day": "Gün {n}",
+    "locked": "Bu gün yakında açılacak. Bugünün görevine odaklan 🙂",
+    "reflect": "Düşün",
+    "noteHint": "Düşüncelerini yaz (isteğe bağlı)…",
+    "completed": "Tamamlandı!",
+    "markDone": "Tamamlandı olarak işaretle",
+    "retest": "Testi tekrar çöz ve ne kadar geliştiğini gör",
+    "endTitle": "Yeni plan başlatılsın mı?",
+    "endBody": "Mevcut ilerlemen kaybolacak.",
+    "newPlan": "Yeni plan başlat",
+    "emptyTitle": "Her gün %1 geliş",
+    "emptyBody": "Kişiliğine göre hazırlanmış, her gün küçük bir görev içeren 21 günlük plan.",
+    "chooseFocus": "Üzerinde çalışmak için 1–3 özellik seç:"
+  },
+  "journey": {
+    "title": "Yolculuğun",
+    "subtitle": "Kişiliğinin zamanla nasıl değiştiğini gör.",
+    "empty": "Yolculuğuna başlamak için ilk testini çöz.",
+    "compareTitle": "En son ve önceki",
+    "compareLegend": "Dolu = en son sonuç · Kesikli = önceki sonuç",
+    "allTests": "Tüm sonuçlar"
+  },
+  "settings": {
+    "name": "Adın",
+    "guest": "Misafir",
+    "noType": "Henüz test yok",
+    "testsTaken": "Çözülen test: {n}",
+    "preferences": "Tercihler",
+    "language": "Dil",
+    "theme": "Tema",
+    "themeSystem": "Otomatik",
+    "themeLight": "Açık",
+    "themeDark": "Koyu",
+    "learn": "Daha fazla bilgi",
+    "science": "Bilimsel temel",
+    "disclaimer": "Sorumluluk reddi",
+    "privacy": "Gizlilik politikası",
+    "about": "Mirra hakkında",
+    "shareApp": "Mirra'yı paylaş",
+    "data": "Veriler",
+    "reset": "Tüm verileri sil",
+    "resetSubtitle": "Sonuçlar, plan ve ayarlar",
+    "resetTitle": "Her şey silinsin mi?",
+    "resetBody": "Tüm sonuçların, planların ve notların bu cihazdan kalıcı olarak silinecek."
+  },
+  "legal": {
+    "disclaimerShort": "Mirra kendini keşfetme ve kişisel gelişim içindir. Tıbbi veya psikolojik bir teşhis değildir.",
+    "science": "Mirra, psikolojide en çok araştırılan ve kabul gören kişilik modeli olan Beş Büyük Faktör modeline (Deneyime açıklık, Sorumluluk, Dışadönüklük, Uyumluluk ve Duygusal denge) dayanır.\n\nSorular, kamuya açık International Personality Item Pool'dan (ipip.ori.org) türetilmiş kısa bir ölçek olan Mini-IPIP'ten (Donnellan ve ark., 2006) uyarlanmıştır; her özellik için 4 ifade vardır.\n\nPuanların 0–100 arası yüzde olarak gösterilir. 40'ın altı düşük, 60'ın üstü yüksek, arası dengeli kabul edilir. Hiçbir puan diğerinden daha iyi değildir.\n\nTipler ve öneriler, bu puanlara dayanan ve günlük hayatta kullanımı kolaylaştıran yorumlardır.",
+    "disclaimer": "Mirra bir öz yansıtma ve kişisel gelişim aracıdır. Tıbbi bir cihaz değildir ve hiçbir ruh sağlığı durumunu teşhis etmez, tedavi etmez veya önlemez.\n\nSonuçlar senin cevaplarına dayanır ve ruh haline ya da koşullarına göre değişebilir.\n\nDuygusal zorluklar yaşıyorsan lütfen bir ruh sağlığı uzmanına veya yerel bir yardım hattına başvur.",
+    "privacy": "Gizliliğin önemli.\n\n• Mirra'da hesap ve sunucu yoktur.\n• Adın, cevapların, sonuçların ve notların yalnızca cihazında saklanır.\n• Hiçbir kişisel veriyi toplamaz, satmaz veya paylaşmayız.\n• Uygulama reklam veya takip aracı kullanmaz.\n• Tüm verilerini istediğin zaman Profil → Tüm verileri sil yoluyla silebilirsin. Uygulamayı kaldırmak da her şeyi siler.",
+    "about": "Mirra — kendini keşfetme aynan.\n\nKişisel rapor ve 21 günlük gelişim planı içeren, bilime dayalı kısa bir kişilik testi. 6 dilde.\n\nSürüm 1.0.0"
+  },
+  "share": {
+    "headline": "Mirra'daki kişilik tipim: {type}",
+    "cta": "Seninkini Mirra ile keşfet 🪞",
+    "app": "Mirra ile 3 dakikada gerçek kişiliğini keşfet — kişisel gelişim planı içeren ücretsiz ve bilimsel bir test 🪞"
+  }
+}

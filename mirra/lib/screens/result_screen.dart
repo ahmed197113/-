@@ -40,6 +40,11 @@ class ResultScreen extends StatelessWidget {
     final ranked = Personality.ranked(s);
     final focus = Personality.focusTraits(s);
     final insights = Personality.insights(s);
+    final told = [
+      for (final t in ranked)
+        for (final (i, agreed) in Personality.evidence(result.answers, t, max: 1))
+          app.t('questions.$i.${agreed ? 'me' : 'not'}'),
+    ];
     final labels = {
       for (final t in Personality.traits) t: app.t('traits.$t.name')
     };
@@ -64,6 +69,27 @@ class ResultScreen extends StatelessWidget {
                   child: RadarChart(scores: s, labels: labels, size: 300),
                 ),
               ),
+              if (told.isNotEmpty) ...[
+                SectionTitle(app.t('result.evidenceTitle'),
+                    icon: Icons.record_voice_over_rounded),
+                Panel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                          app.t('result.evidenceBody',
+                              {'n': result.answers.length}),
+                          style: TextStyle(
+                              height: 1.5,
+                              color: theme.colorScheme.onSurfaceVariant)),
+                      const SizedBox(height: 10),
+                      BulletList(told,
+                          icon: Icons.format_quote_rounded,
+                          color: theme.colorScheme.primary),
+                    ],
+                  ),
+                ),
+              ],
               SectionTitle(app.t('result.portraitTitle'),
                   icon: Icons.auto_awesome_rounded),
               Panel(
@@ -146,7 +172,8 @@ class ResultScreen extends StatelessWidget {
               for (final t in Personality.traits)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: _TraitDetail(trait: t, value: s[t]!),
+                  child: _TraitDetail(
+                      trait: t, value: s[t]!, answers: result.answers),
                 ),
               const SizedBox(height: 12),
               GradientCard(
@@ -343,10 +370,12 @@ class _HighlightTile extends StatelessWidget {
 }
 
 class _TraitDetail extends StatelessWidget {
-  const _TraitDetail({required this.trait, required this.value});
+  const _TraitDetail(
+      {required this.trait, required this.value, required this.answers});
 
   final String trait;
   final double value;
+  final Map<int, int> answers;
 
   @override
   Widget build(BuildContext context) {
@@ -354,6 +383,10 @@ class _TraitDetail extends StatelessWidget {
     final level = Personality.level(value);
     final base = 'traits.$trait.$level';
     final color = Personality.colors[trait]!;
+    final why = [
+      for (final (i, agreed) in Personality.evidence(answers, trait))
+        app.t('questions.$i.${agreed ? 'me' : 'not'}'),
+    ];
 
     Widget block(IconData icon, String title, Widget body) => Padding(
           padding: const EdgeInsets.only(top: 14),
@@ -396,6 +429,9 @@ class _TraitDetail extends StatelessWidget {
                 style: TextStyle(
                     height: 1.6,
                     color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            if (why.isNotEmpty)
+              block(Icons.format_quote_rounded, app.t('result.whyScore'),
+                  BulletList(why, icon: Icons.check_rounded, color: color)),
             block(Icons.star_rounded, app.t('result.strengths'),
                 BulletList(app.l10n.list('$base.strengths'),
                     icon: Icons.check_rounded, color: color)),

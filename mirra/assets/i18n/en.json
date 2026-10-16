@@ -1,0 +1,379 @@
+{
+  "app": { "tagline": "Know yourself. Grow every day." },
+  "common": { "back": "Back", "cancel": "Cancel", "confirm": "Confirm", "next": "Next", "save": "Save", "start": "Let's start" },
+  "nav": { "home": "Home", "growth": "Growth", "journey": "Journey", "profile": "Profile" },
+  "onboarding": {
+    "chooseLanguage": "Choose your language",
+    "slides": [
+      { "title": "Discover the real you", "body": "20 quick questions. About 3 minutes. Built on the Big Five, the most trusted model in psychology." },
+      { "title": "A report written for you", "body": "Your result is built from your own answers — it even shows you which answers shaped each trait." },
+      { "title": "Become your best self", "body": "Get a personal 21-day plan with one small daily challenge to grow where it matters most." }
+    ],
+    "nameTitle": "What should we call you?",
+    "nameBody": "Your report will be addressed to you personally.",
+    "nameHint": "Your name",
+    "privacyNote": "Everything stays on your phone. No account, no servers, no tracking."
+  },
+  "home": {
+    "hello": "Hi {name} 👋",
+    "helloAnon": "Hi there 👋",
+    "subtitle": "Ready to know yourself a little better?",
+    "continueTitle": "Continue your test",
+    "continueBody": "Pick up right where you left off.",
+    "discoverTitle": "Who are you, really?",
+    "discoverBody": "Answer simple questions about yourself and get a deep, personal analysis of your personality.",
+    "chipQuestions": "20 questions",
+    "chipTime": "3 minutes",
+    "chipScience": "Science-based",
+    "startTest": "Start the test",
+    "yourType": "Your personality type",
+    "viewReport": "View my full report",
+    "retake": "Retake the test",
+    "todayChallenge": "Today's challenge",
+    "tipTitle": "Tip of the day",
+    "scienceTitle": "The science behind Mirra",
+    "scienceBody": "Mirra measures the Big Five personality traits — the model most used by psychologists worldwide. Each trait is a spectrum: there is no good or bad score, only different strengths."
+  },
+  "test": {
+    "counter": "{n} of {total}",
+    "prompt": "How well does this describe you?",
+    "saveExit": "Save & exit",
+    "saved": "Progress saved. Come back anytime.",
+    "encourage": ["Answer with your first instinct ✨", "There are no wrong answers 🙂", "You're doing great 💪", "Halfway there! 🎯", "Almost done… 🔥", "Last few questions! 🚀"]
+  },
+  "likert": ["Not me at all", "Not really me", "Sometimes", "Mostly me", "Totally me"],
+  "questions": [
+    { "q": "I enjoy being the center of attention.", "me": "You enjoy being the center of attention.", "not": "You don't seek the spotlight." },
+    { "q": "I easily feel what others are feeling.", "me": "You easily feel what others feel.", "not": "You don't get caught up in other people's emotions." },
+    { "q": "I get my tasks done right away.", "me": "You get tasks done right away.", "not": "You tend to put tasks off until later." },
+    { "q": "My mood changes a lot.", "me": "Your mood changes a lot.", "not": "Your mood stays fairly steady." },
+    { "q": "I have a vivid imagination.", "me": "You have a vivid imagination.", "not": "You're more practical than imaginative." },
+    { "q": "I'm usually quiet around people.", "me": "You're usually quiet around people.", "not": "You speak up easily around people." },
+    { "q": "Other people's problems don't really concern me.", "me": "Other people's problems don't weigh on you much.", "not": "You care about other people's problems." },
+    { "q": "I often forget where I put my things.", "me": "You often forget where you put things.", "not": "You keep track of your things." },
+    { "q": "I'm calm and relaxed most of the time.", "me": "You're calm and relaxed most of the time.", "not": "You're rarely fully relaxed." },
+    { "q": "Abstract and philosophical ideas bore me.", "me": "Abstract ideas don't interest you much.", "not": "You enjoy abstract and philosophical ideas." },
+    { "q": "I talk easily with people I don't know.", "me": "You talk easily with strangers.", "not": "Talking to strangers isn't easy for you." },
+    { "q": "I like to help people, even when they don't ask.", "me": "You help people even when they don't ask.", "not": "You help when asked, not before." },
+    { "q": "I like order and organization.", "me": "You like order and organization.", "not": "Order and routines aren't your thing." },
+    { "q": "I get upset easily.", "me": "You get upset easily.", "not": "It takes a lot to upset you." },
+    { "q": "I love trying new things and places.", "me": "You love trying new things and places.", "not": "You prefer what's familiar over what's new." },
+    { "q": "I prefer to stay in the background.", "me": "You prefer to stay in the background.", "not": "You don't mind being in front." },
+    { "q": "I say what I think, even if it hurts.", "me": "You say what you think, even if it stings.", "not": "You choose your words to spare others." },
+    { "q": "I start many things and don't finish them.", "me": "You start many things but don't always finish.", "not": "You finish what you start." },
+    { "q": "I handle pressure calmly.", "me": "You stay calm under pressure.", "not": "Pressure shakes you more than you'd like." },
+    { "q": "I prefer familiar routines to new experiences.", "me": "You prefer familiar routines.", "not": "You'd rather try something new than repeat a routine." }
+  ],
+  "analyzing": ["Reading your answers…", "Measuring your five traits…", "Finding your personality type…", "Writing your personal report…"],
+  "result": {
+    "youAre": "You are",
+    "nameIs": "{name}, you are",
+    "evidenceTitle": "What you told us",
+    "evidenceBody": "This report was built only from your {n} answers. These are the ones that defined you the most:",
+    "portraitTitle": "Your personal portrait",
+    "portraitIntro": "{name}, based on your answers, here is who you are.",
+    "portraitIntroAnon": "Based on your answers, here is who you are.",
+    "superpower": "Your superpower & your growth edge",
+    "strongest": "Strongest trait",
+    "growthArea": "Room to grow",
+    "insightsTitle": "What makes you unique",
+    "typeTitle": "Your personality type",
+    "strengths": "Strengths",
+    "blindSpots": "Blind spots",
+    "careers": "Careers that may suit you",
+    "traitsTitle": "Your five traits in depth",
+    "whyScore": "Why this score",
+    "challenges": "Challenges",
+    "atWork": "At work",
+    "inLove": "In relationships",
+    "howToGrow": "How to grow",
+    "planTitle": "Your 21-day growth plan",
+    "planBody": "One small daily challenge focused on {a} and {b} — the areas where you'll feel the biggest change.",
+    "planStart": "Start my plan",
+    "planRestart": "Start a new plan",
+    "share": "Share my result"
+  },
+  "levels": { "low": "Low", "mid": "Balanced", "high": "High" },
+  "traits": {
+    "O": {
+      "name": "Openness",
+      "desc": "Curiosity, imagination and love of new ideas and experiences.",
+      "low": {
+        "title": "The Practical Realist",
+        "summary": "You are grounded and practical: you trust what works and prefer clear, concrete things over abstract theories.",
+        "strengths": ["Realistic and down-to-earth", "Focused on what actually works", "Consistent and dependable"],
+        "challenges": ["Can resist change, even useful change", "May dismiss ideas too quickly"],
+        "work": "You shine in roles with clear methods and measurable results. You turn plans into reality instead of getting lost in ideas.",
+        "love": "You offer a stable, predictable love. Partners know what to expect from you — which is a gift.",
+        "tips": ["Try one new thing each week, however small", "Before rejecting an idea, find one good thing about it", "Read or watch something outside your usual interests"]
+      },
+      "mid": {
+        "title": "The Balanced Explorer",
+        "summary": "You balance curiosity with common sense: open to new ideas, but only when they make sense.",
+        "strengths": ["Open but not naive", "Bridges dreamers and doers", "Adapts to both change and routine"],
+        "challenges": ["May hesitate between the new and the familiar", "Can hold back your creative side"],
+        "work": "You can both suggest improvements and keep things running. Teams rely on you to test new ideas realistically.",
+        "love": "You enjoy both cozy routines and occasional surprises with your partner.",
+        "tips": ["Give your creative ideas more space", "Plan one new experience every month", "Write down ideas before judging them"]
+      },
+      "high": {
+        "title": "The Curious Mind",
+        "summary": "You are deeply curious and imaginative: new ideas, art and experiences give you energy.",
+        "strengths": ["Creative and original", "Learns fast and loves to explore", "Sees connections others miss"],
+        "challenges": ["Gets bored with routine", "May chase ideas without finishing them"],
+        "work": "You thrive where creativity and learning are valued. You bring fresh solutions, but you need some structure to deliver them.",
+        "love": "You want a partner you can explore the world and deep conversations with.",
+        "tips": ["Pick one idea and take it to the end", "Add a simple routine to anchor your creativity", "Turn your curiosity into a concrete project"]
+      }
+    },
+    "C": {
+      "name": "Conscientiousness",
+      "desc": "Organization, discipline and reliability in reaching your goals.",
+      "low": {
+        "title": "The Flexible Spirit",
+        "summary": "You are spontaneous and flexible: you prefer to go with the flow rather than follow strict plans.",
+        "strengths": ["Adapts quickly to change", "Relaxed and spontaneous", "Creative under unexpected situations"],
+        "challenges": ["Procrastination and missed deadlines", "Difficulty finishing long projects"],
+        "work": "You excel in fast-changing environments, but you'll go further with a few simple systems to keep track of tasks.",
+        "love": "You bring fun and spontaneity, but your partner may need more reliability on promises and details.",
+        "tips": ["Use the 2-minute rule: if it takes under 2 minutes, do it now", "Write tomorrow's 3 priorities every night", "Break big tasks into small steps"]
+      },
+      "mid": {
+        "title": "The Reliable Adapter",
+        "summary": "You are organized enough to get things done, yet flexible enough to adapt when plans change.",
+        "strengths": ["Reliable without being rigid", "Balances work and rest", "Handles both plans and surprises"],
+        "challenges": ["Discipline can drop when motivation is low", "Sometimes leaves important things for later"],
+        "work": "Colleagues trust you to deliver, and you adapt when priorities shift.",
+        "love": "You keep your promises while staying easygoing and flexible.",
+        "tips": ["Build one strong daily habit", "Set clear deadlines for personal goals", "Review your week every Sunday"]
+      },
+      "high": {
+        "title": "The Achiever",
+        "summary": "You are organized, disciplined and reliable: when you commit to something, you finish it.",
+        "strengths": ["Highly reliable", "Plans ahead and stays focused", "Strong self-discipline"],
+        "challenges": ["Can be a perfectionist", "Finds it hard to relax or improvise"],
+        "work": "You are the person everyone counts on. Watch out for burnout and learn to delegate.",
+        "love": "You show love through commitment and action, but may need to make more room for spontaneity.",
+        "tips": ["Schedule real rest — without guilt", "Accept 'good enough' for small tasks", "Do one spontaneous thing each week"]
+      }
+    },
+    "E": {
+      "name": "Extraversion",
+      "desc": "Social energy, enthusiasm and enjoyment of people and activity.",
+      "low": {
+        "title": "The Quiet Thinker",
+        "summary": "You are reserved and reflective: you recharge alone and prefer deep conversations over big crowds.",
+        "strengths": ["Great listener", "Deep and thoughtful", "Independent and self-sufficient"],
+        "challenges": ["May be seen as distant", "Finds it hard to speak up in groups"],
+        "work": "You do your best work with focus and calm. Your ideas are valuable — make sure they are heard.",
+        "love": "You love deeply and loyally, and you value quality time over social events.",
+        "tips": ["Share one idea in every meeting", "Reach out to one friend each week", "Protect your alone time without guilt"]
+      },
+      "mid": {
+        "title": "The Ambivert",
+        "summary": "You are balanced between social and solitary: you enjoy people, but you also need time for yourself.",
+        "strengths": ["Comfortable in groups and alone", "Reads social situations well", "Both a talker and a listener"],
+        "challenges": ["May feel drained without knowing why", "Can hesitate to take the lead"],
+        "work": "You adapt to teamwork and independent work equally well — a rare flexibility.",
+        "love": "You enjoy going out and staying in, which makes you an easy partner.",
+        "tips": ["Notice which activities energize or drain you", "Take the lead in one small situation this week", "Balance social plans with recharge time"]
+      },
+      "high": {
+        "title": "The Energizer",
+        "summary": "You are outgoing and energetic: people, action and conversation fuel you.",
+        "strengths": ["Confident and enthusiastic", "Builds relationships easily", "Natural motivator"],
+        "challenges": ["May talk more than listen", "Gets bored when alone"],
+        "work": "You shine in roles involving people, leadership and communication. Silence and solo work can be harder.",
+        "love": "You bring energy, fun and affection, and you need a partner who enjoys being social too.",
+        "tips": ["Practice listening without interrupting", "Spend 15 calm minutes alone each day", "Ask quieter people for their opinion"]
+      }
+    },
+    "A": {
+      "name": "Agreeableness",
+      "desc": "Kindness, empathy and cooperation with others.",
+      "low": {
+        "title": "The Direct Challenger",
+        "summary": "You are direct and independent: you say what you think and won't give in just to please others.",
+        "strengths": ["Honest and straightforward", "Not easily manipulated", "Strong negotiator"],
+        "challenges": ["Can seem harsh or cold", "Conflicts may happen more often"],
+        "work": "You make tough decisions and defend your position well. Adding warmth will make people follow you more.",
+        "love": "You are honest and loyal, but your partner may need more softness and patience.",
+        "tips": ["Before criticizing, mention something positive", "Ask 'How do you feel?' more often", "Choose your battles"]
+      },
+      "mid": {
+        "title": "The Fair Diplomat",
+        "summary": "You are kind but firm: you care about others while still protecting your own needs.",
+        "strengths": ["Warm yet able to say no", "Fair in conflicts", "Balances cooperation and honesty"],
+        "challenges": ["May switch between too soft and too hard", "Can hesitate in emotional situations"],
+        "work": "You cooperate well and also defend your ideas — a valued team member.",
+        "love": "You give care and respect, while keeping healthy boundaries.",
+        "tips": ["Express gratitude to someone daily", "Say no kindly when you need to", "Listen fully before giving advice"]
+      },
+      "high": {
+        "title": "The Caring Heart",
+        "summary": "You are warm, empathetic and generous: other people's well-being matters deeply to you.",
+        "strengths": ["Empathetic and kind", "Builds trust and harmony", "Generous and helpful"],
+        "challenges": ["Struggles to say no", "May neglect your own needs"],
+        "work": "You are the heart of the team. Make sure your kindness isn't taken advantage of.",
+        "love": "You are a devoted, caring partner — remember your needs matter too.",
+        "tips": ["Say no once this week without apologizing", "Put one of your own needs first each day", "Remember: boundaries are a form of respect"]
+      }
+    },
+    "S": {
+      "name": "Emotional Stability",
+      "desc": "Calm, resilience and how you handle stress and emotions.",
+      "low": {
+        "title": "The Deep Feeler",
+        "summary": "You feel emotions intensely: you are sensitive, which also makes you aware and caring, but stress can weigh heavily on you.",
+        "strengths": ["Emotionally aware", "Sensitive to danger and details", "Deeply empathetic"],
+        "challenges": ["Worry and overthinking", "Mood swings under stress"],
+        "work": "You notice problems before others do. Calm, supportive environments help you give your best.",
+        "love": "You love intensely and notice every detail, but may need extra reassurance.",
+        "tips": ["Practice 4-7-8 breathing when stressed", "Write your worries down, then one action for each", "Move your body for 20 minutes a day"]
+      },
+      "mid": {
+        "title": "The Steady Realist",
+        "summary": "You are generally calm, but you still feel stress when things get really hard — a healthy balance.",
+        "strengths": ["Handles normal stress well", "Emotionally honest", "Recovers fairly quickly"],
+        "challenges": ["Big pressure can still shake you", "May hide stress until it piles up"],
+        "work": "You stay calm in most situations and remain realistic about risks.",
+        "love": "You are stable and present, while still showing your emotions.",
+        "tips": ["Notice early signs of stress", "Talk to someone you trust when things pile up", "Keep a regular sleep schedule"]
+      },
+      "high": {
+        "title": "The Calm Anchor",
+        "summary": "You are calm and resilient: stress rarely shakes you, and you bounce back quickly.",
+        "strengths": ["Calm under pressure", "Optimistic and stable", "A reassuring presence"],
+        "challenges": ["May underestimate risks", "Others may think you don't care"],
+        "work": "You are the one who stays clear-headed in a crisis — a natural pillar for any team.",
+        "love": "You bring peace and stability, but make sure to show your feelings too.",
+        "tips": ["Show empathy when others are stressed", "Share your emotions more openly", "Double-check risks before big decisions"]
+      }
+    }
+  },
+  "types": {
+    "1111": { "name": "The Inspirer", "tagline": "Warm, creative and reliable — you lift everyone around you.", "desc": "You combine social energy, curiosity, discipline and kindness. People are drawn to you because you have big ideas and the follow-through to make them real, all while caring about others.", "strengths": ["Natural leader", "Creative and organized", "Trusted and liked"], "blind": ["Takes on too much", "Hard to say no"], "careers": ["Team leader", "Teacher", "Entrepreneur", "HR manager"] },
+    "1110": { "name": "The Trailblazer", "tagline": "Bold, visionary and driven to win.", "desc": "You have energy, vision and discipline, and you're not afraid of disagreement. You set ambitious goals and push to reach them, even if it means challenging others.", "strengths": ["Ambitious and decisive", "Visionary", "Gets results"], "blind": ["Can be impatient", "May overlook feelings"], "careers": ["Founder", "Executive", "Lawyer", "Business developer"] },
+    "1101": { "name": "The Enthusiast", "tagline": "Friendly, imaginative and full of life.", "desc": "You love people and new ideas, and your warmth is contagious. You live in the moment and prefer freedom over strict plans.", "strengths": ["Inspiring and warm", "Creative", "Makes friends easily"], "blind": ["Disorganized", "Leaves things unfinished"], "careers": ["Content creator", "Marketer", "Coach", "Event planner"] },
+    "1100": { "name": "The Maverick", "tagline": "Free, bold and never boring.", "desc": "You are energetic, curious and independent. You follow your own path, challenge rules and love excitement, but routine and details are not your thing.", "strengths": ["Fearless", "Original thinker", "Persuasive"], "blind": ["Impulsive", "Can seem blunt"], "careers": ["Entrepreneur", "Sales", "Journalist", "Creative director"] },
+    "1011": { "name": "The Caretaker", "tagline": "Sociable, dependable and always there for others.", "desc": "You are organized, kind and love being with people. You prefer proven methods and create harmony and structure wherever you are.", "strengths": ["Reliable and generous", "Great host", "Keeps people together"], "blind": ["Dislikes change", "Seeks approval"], "careers": ["Nurse", "Office manager", "Teacher", "Customer success"] },
+    "1010": { "name": "The Commander", "tagline": "Organized, confident and in charge.", "desc": "You take the lead, set clear rules and expect results. You value efficiency and tradition, and you speak your mind directly.", "strengths": ["Decisive", "Efficient", "Strong organizer"], "blind": ["Rigid", "Can seem controlling"], "careers": ["Manager", "Military / police officer", "Project manager", "Operations director"] },
+    "1001": { "name": "The Entertainer", "tagline": "Fun, warm and the life of every gathering.", "desc": "You love people, laughter and the present moment. You make others feel welcome, but plans and long-term discipline can be a challenge.", "strengths": ["Fun and kind", "Socially gifted", "Positive energy"], "blind": ["Avoids conflict", "Weak on planning"], "careers": ["Hospitality", "Sales", "Presenter", "Community manager"] },
+    "1000": { "name": "The Dynamo", "tagline": "Energetic, direct and action-driven.", "desc": "You are outgoing and spontaneous, and you prefer action over theory. You speak frankly and love excitement and competition.", "strengths": ["Action-oriented", "Confident", "Thrives in fast situations"], "blind": ["Impatient", "Can be careless"], "careers": ["Sales", "Sports", "Real estate", "Field operations"] },
+    "0111": { "name": "The Sage", "tagline": "Quiet, wise and deeply caring.", "desc": "You are reflective, curious, organized and kind. You think deeply, help others with insight, and prefer meaningful work over attention.", "strengths": ["Wise and thoughtful", "Reliable", "Empathetic"], "blind": ["Keeps ideas to yourself", "Overthinks"], "careers": ["Psychologist", "Writer", "Researcher", "Doctor"] },
+    "0110": { "name": "The Strategist", "tagline": "Independent, logical and always a step ahead.", "desc": "You are analytical, disciplined and curious. You prefer working alone on complex problems and you trust logic over emotions.", "strengths": ["Strategic", "Independent", "High standards"], "blind": ["Can seem cold", "Impatient with others"], "careers": ["Engineer", "Programmer", "Scientist", "Analyst"] },
+    "0101": { "name": "The Dreamer", "tagline": "Gentle, imaginative and full of inner worlds.", "desc": "You are sensitive, creative and kind. You live richly inside your mind and care about meaning and beauty, but structure doesn't come naturally.", "strengths": ["Creative", "Compassionate", "Authentic"], "blind": ["Procrastination", "Avoids practical details"], "careers": ["Artist", "Designer", "Writer", "Counselor"] },
+    "0100": { "name": "The Explorer", "tagline": "Independent, curious and free-thinking.", "desc": "You are curious and original, and you follow your own interests. You question everything and prefer freedom over rules and crowds.", "strengths": ["Original", "Independent thinker", "Open-minded"], "blind": ["Unstructured", "Can seem detached"], "careers": ["Researcher", "Photographer", "Philosopher", "Inventor"] },
+    "0011": { "name": "The Protector", "tagline": "Loyal, responsible and quietly kind.", "desc": "You are dependable, humble and caring. You prefer stability and tradition, and you show love by taking care of practical needs.", "strengths": ["Loyal", "Responsible", "Patient"], "blind": ["Resists change", "Neglects own needs"], "careers": ["Accountant", "Nurse", "Administrator", "Librarian"] },
+    "0010": { "name": "The Inspector", "tagline": "Precise, serious and dependable.", "desc": "You are organized, practical and independent. You value facts, rules and quality, and you say things as they are.", "strengths": ["Accurate", "Disciplined", "Objective"], "blind": ["Inflexible", "Too critical"], "careers": ["Auditor", "Quality control", "Engineer", "Lawyer"] },
+    "0001": { "name": "The Peacemaker", "tagline": "Calm, gentle and easy to be with.", "desc": "You are humble, kind and relaxed. You avoid drama, accept people as they are and value simple, peaceful living.", "strengths": ["Accepting", "Calming", "Generous"], "blind": ["Passive", "Avoids decisions"], "careers": ["Caregiver", "Assistant", "Craftsperson", "Support specialist"] },
+    "0000": { "name": "The Independent", "tagline": "Self-reliant, frank and true to yourself.", "desc": "You are reserved, practical and independent. You don't follow the crowd, you value freedom, and you keep life simple.", "strengths": ["Self-sufficient", "Honest", "Unbothered by trends"], "blind": ["Isolated", "Resists help"], "careers": ["Technician", "Freelancer", "Driver / logistics", "Craftsperson"] }
+  },
+  "variants": {
+    "steady": { "name": "Steady", "text": "Overall, you stay calm under pressure and keep a steady head when life gets hard." },
+    "sensitive": { "name": "Sensitive", "text": "Overall, you feel things deeply; learning to manage stress will unlock the best version of you." }
+  },
+  "insights": {
+    "perfectionist": { "title": "The hidden perfectionist", "text": "You set high standards and worry about not meeting them. Remember: done is better than perfect." },
+    "connector": { "title": "The natural connector", "text": "You make friends easily and people feel good around you — a rare social gift." },
+    "ideas": { "title": "Full of ideas", "text": "Your mind produces ideas faster than you can execute them. A simple system will turn them into results." },
+    "creator": { "title": "The creative builder", "text": "You can imagine new things AND make them real — the combination behind great creators." },
+    "innerWorld": { "title": "A rich inner world", "text": "Your quiet side hides a deep, imaginative mind. Writing or art can be great outlets for you." },
+    "empath": { "title": "The empath", "text": "You absorb other people's emotions. Protect your energy so you can keep caring." },
+    "driven": { "title": "Goal-driven", "text": "You're disciplined and not afraid of conflict — a strong combination for leadership." },
+    "spontaneous": { "title": "Spontaneous energy", "text": "You live in the moment and love action. A little planning will multiply your impact." },
+    "rock": { "title": "The rock", "text": "Calm and organized, you're the person people lean on in hard times." },
+    "withdraw": { "title": "Needs gentle care", "text": "When stressed, you may withdraw. Small social contacts and self-care routines help a lot." },
+    "visionary": { "title": "The visionary", "text": "You combine imagination with the energy to share it — you can inspire people with your ideas." },
+    "competitor": { "title": "The competitor", "text": "You love to win and aren't afraid of debate. Balance it with listening and you'll be unstoppable." },
+    "calmKind": { "title": "Peaceful presence", "text": "Calm and kind, you make people feel safe — a powerful quality." },
+    "traditional": { "title": "The keeper of order", "text": "You value proven ways and structure. Being open to small changes will make you even stronger." }
+  },
+  "challenges": {
+    "O": ["Try a food you've never eaten before.", "Take a different route to a place you often go.", "Read an article on a topic you know nothing about.", "Listen to a music genre you usually skip.", "Write down 10 ideas to improve your daily life.", "Ask someone about a hobby you don't understand.", "Draw, write or create something for 10 minutes.", "Watch a documentary on a new subject.", "Visit a place in your city you've never been.", "Learn 5 words in a new language."],
+    "C": ["Write your 3 priorities for today and finish them.", "Tidy one area of your home or desk.", "Do the task you've been postponing for 25 minutes.", "Plan tomorrow before going to bed.", "Turn off notifications for 1 hour of focused work.", "Keep one promise you made to yourself.", "Prepare your clothes and bag the night before.", "Track your spending for the whole day.", "Finish something you started and left.", "Wake up at the time you planned — no snooze."],
+    "E": ["Start a conversation with someone new.", "Call a friend you haven't spoken to in a while.", "Share your opinion in a group or meeting.", "Compliment a stranger sincerely.", "Invite someone for coffee or a walk.", "Ask a colleague about their weekend and really listen.", "Join a group activity or class.", "Send a voice message instead of text today.", "Introduce two people who could help each other.", "Say hello first to everyone you meet today."],
+    "A": ["Do a small favor for someone without being asked.", "Listen to someone for 5 minutes without interrupting.", "Write a thank-you message to someone.", "Before disagreeing, repeat the other person's point.", "Forgive a small mistake someone made.", "Ask someone: 'How are you, really?'", "Help a stranger in a small way.", "Praise someone's work in front of others.", "Avoid criticizing anyone for the whole day.", "Remember someone's important day and send a wish."],
+    "S": ["Do 5 minutes of slow, deep breathing.", "Walk for 20 minutes without your phone.", "Write down 3 good things that happened today.", "Write a worry down, then one action you can take.", "Sleep at a regular time tonight.", "Spend 1 hour completely offline.", "Replace one negative thought with a realistic one.", "Stretch or do light exercise for 15 minutes.", "Talk to someone you trust about how you feel.", "Do something just for fun, without guilt."]
+  },
+  "reflections": ["How did this challenge make you feel?", "What did you learn about yourself today?", "What was the hardest part?", "Would you do this again? Why?", "What small win are you proud of today?", "How did others react?", "What will you do differently tomorrow?"],
+  "tips": [
+    "Small daily habits beat big occasional efforts.",
+    "Your personality is not a fixed destiny — research shows traits change through practice.",
+    "Knowing your weaknesses is a strength, not a flaw.",
+    "Sleep well: it improves mood, focus and patience.",
+    "Before reacting, take three breaths.",
+    "Write down one thing you're grateful for every morning.",
+    "Surround yourself with people who make you better.",
+    "Done is better than perfect.",
+    "Listening is the most underrated social skill.",
+    "Move your body: 20 minutes of walking reduces stress.",
+    "Say no to the unimportant to say yes to what matters.",
+    "Every expert was once a beginner.",
+    "Compare yourself only to who you were yesterday.",
+    "Kindness to yourself makes kindness to others easier."
+  ],
+  "growth": {
+    "title": "Your growth plan",
+    "focusLine": "Focus: {traits}",
+    "streak": "{n}-day streak",
+    "finished": "Plan completed — amazing work! 🎉",
+    "dayOf": "Day {n} of {total}",
+    "day": "Day {n}",
+    "locked": "This day unlocks soon. Focus on today's challenge 🙂",
+    "reflect": "Reflect",
+    "noteHint": "Write your thoughts (optional)…",
+    "completed": "Completed!",
+    "markDone": "Mark as done",
+    "retest": "Retake the test and see how you've grown",
+    "endTitle": "Start a new plan?",
+    "endBody": "Your current progress will be lost.",
+    "newPlan": "Start a new plan",
+    "emptyTitle": "Grow 1% every day",
+    "emptyBody": "A 21-day plan with one small challenge a day, built around your personality.",
+    "chooseFocus": "Choose 1–3 traits to work on:"
+  },
+  "journey": {
+    "title": "Your journey",
+    "subtitle": "See how your personality changes over time.",
+    "empty": "Take your first test to start your journey.",
+    "compareTitle": "Latest vs previous",
+    "compareLegend": "Filled = latest result · Dashed = previous result",
+    "allTests": "All results"
+  },
+  "settings": {
+    "name": "Your name",
+    "guest": "Guest",
+    "noType": "No test yet",
+    "testsTaken": "Tests taken: {n}",
+    "preferences": "Preferences",
+    "language": "Language",
+    "theme": "Theme",
+    "themeSystem": "Auto",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "learn": "Learn more",
+    "science": "The science",
+    "disclaimer": "Disclaimer",
+    "privacy": "Privacy policy",
+    "about": "About Mirra",
+    "shareApp": "Share Mirra",
+    "data": "Data",
+    "reset": "Delete all data",
+    "resetSubtitle": "Results, plan and settings",
+    "resetTitle": "Delete everything?",
+    "resetBody": "All your results, plans and notes will be permanently deleted from this device."
+  },
+  "legal": {
+    "disclaimerShort": "Mirra is for self-discovery and personal growth. It is not a medical or psychological diagnosis.",
+    "science": "Mirra is based on the Big Five (Five-Factor) model of personality — Openness, Conscientiousness, Extraversion, Agreeableness and Emotional Stability — the most researched and widely accepted personality model in psychology.\n\nThe questions are adapted from the Mini-IPIP (Donnellan et al., 2006), a short scale derived from the public-domain International Personality Item Pool (ipip.ori.org), with 4 statements per trait.\n\nYour scores are shown as percentages from 0 to 100. Below 40 is considered low, above 60 high, and in between balanced. No score is better than another: each level has its own strengths.\n\nPersonality types and growth tips are interpretations built on these scores to make the results easier to use in daily life.",
+    "disclaimer": "Mirra is a self-reflection and personal development tool. It is not a medical device and does not diagnose, treat or prevent any mental health condition.\n\nResults are based on your own answers and may change with your mood or circumstances.\n\nIf you are going through emotional difficulties, please contact a qualified mental health professional or a local helpline.",
+    "privacy": "Your privacy matters.\n\n• Mirra has no accounts and no servers.\n• Your name, answers, results and notes are stored only on your device.\n• We do not collect, sell or share any personal data.\n• The app uses no advertising or analytics trackers.\n• You can delete all your data at any time from Profile → Delete all data. Uninstalling the app also deletes everything.",
+    "about": "Mirra — your mirror for self-discovery.\n\nA short, science-based personality test with a personal report and a 21-day growth plan, available in 6 languages.\n\nVersion 1.0.0"
+  },
+  "share": {
+    "headline": "My personality type on Mirra: {type}",
+    "cta": "Discover yours with Mirra 🪞",
+    "app": "Discover your real personality in 3 minutes with Mirra — a free, science-based test with a personal growth plan 🪞"
+  }
+}

@@ -24,19 +24,19 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<int>(
-      valueListenable: HomeShell.tab, builder: (context, _tab, _) => _build(context, _tab));
+      valueListenable: HomeShell.tab, builder: (context, tab, _) => _build(context, tab));
 
   void _select(int index) => HomeShell.tab.value = index;
 
-  Widget _build(BuildContext context, int _tab) {
+  Widget _build(BuildContext context, int tab) {
     final app = AppScope.of(context);
     return Scaffold(
       body: IndexedStack(
-        index: _tab,
+        index: tab,
         children: const [HomeTab(), GrowthTab(), HistoryTab(), SettingsTab()],
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
+        selectedIndex: tab,
         onDestinationSelected: _select,
         destinations: [
           NavigationDestination(

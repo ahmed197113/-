@@ -39,7 +39,9 @@ class AppState extends ChangeNotifier {
         .toList();
     progress = (jsonDecode(_prefs.getString('progress') ?? '{}')
             as Map<String, dynamic>)
-        .map((k, v) => MapEntry(int.parse(k), v as int));
+        .map((k, v) => MapEntry(int.parse(k), v as int))
+      // Drop answers saved by an older, longer version of the test.
+      ..removeWhere((k, _) => k >= Personality.questionCount);
     final p = _prefs.getString('plan');
     plan = p == null
         ? null
@@ -87,6 +89,7 @@ class AppState extends ChangeNotifier {
     final result = TestResult(
       date: DateTime.now(),
       scores: Personality.score(progress),
+      answers: Map.of(progress),
     );
     results.add(result);
     _saveResults();

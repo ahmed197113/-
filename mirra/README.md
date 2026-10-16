@@ -1,17 +1,10 @@
-# mirra
+# Mirra
 
-Mirra - personality test & growth
+Science-based personality test (Big Five, 20 questions) with a personal report
+that cites the user's own answers, and a 21-day growth plan.
+Languages: Arabic, English, French, Spanish, German, Turkish.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Questions & all texts: `assets/i18n/<lang>.json`
+- Scoring: `lib/core/personality.dart`
+- APK: built automatically by `.github/workflows/mirra-apk.yml` and published
+  as a GitHub release (`mirra-build-N`).

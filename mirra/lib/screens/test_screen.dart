@@ -19,6 +19,8 @@ class _TestScreenState extends State<TestScreen> {
   late int _index;
   bool _busy = false;
 
+  static const _likertEmoji = ['🙅', '🤔', '😐', '🙂', '💯'];
+
   static const _likertColors = [
     Color(0xFFEF4444),
     Color(0xFFF97316),
@@ -144,7 +146,7 @@ class _TestScreenState extends State<TestScreen> {
                             fontWeight: FontWeight.w600)),
                     const SizedBox(height: 14),
                     Text(
-                      app.t('questions.$_index'),
+                      app.t('questions.$_index.q'),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800, height: 1.4),
@@ -158,6 +160,7 @@ class _TestScreenState extends State<TestScreen> {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: _OptionButton(
                     label: app.t('likert.${v - 1}'),
+                    emoji: _likertEmoji[v - 1],
                     color: _likertColors[v - 1],
                     selected: selected == v,
                     onTap: () => _choose(v),
@@ -174,12 +177,14 @@ class _TestScreenState extends State<TestScreen> {
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
     required this.label,
+    required this.emoji,
     required this.color,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final String emoji;
   final Color color;
   final bool selected;
   final VoidCallback onTap;
@@ -204,6 +209,15 @@ class _OptionButton extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(children: [
+              Text(emoji, style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(label,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500)),
+              ),
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 22,
@@ -216,14 +230,6 @@ class _OptionButton extends StatelessWidget {
                 child: selected
                     ? const Icon(Icons.check, size: 14, color: Colors.white)
                     : null,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(label,
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight:
-                            selected ? FontWeight.w700 : FontWeight.w500)),
               ),
             ]),
           ),

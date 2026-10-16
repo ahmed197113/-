@@ -1,10 +1,14 @@
 import 'personality.dart';
 
 class TestResult {
-  TestResult({required this.date, required this.scores});
+  TestResult({required this.date, required this.scores, Map<int, int>? answers})
+      : answers = answers ?? const {};
 
   final DateTime date;
   final Map<String, double> scores;
+
+  /// Raw answers (item index → 1..5), used to explain the result.
+  final Map<int, int> answers;
 
   String get typeKey => Personality.typeKey(scores);
   String get variant => Personality.variant(scores);
@@ -13,12 +17,15 @@ class TestResult {
   Map<String, dynamic> toJson() => {
         'date': date.toIso8601String(),
         'scores': scores,
+        'answers': answers.map((k, v) => MapEntry('$k', v)),
       };
 
   factory TestResult.fromJson(Map<String, dynamic> j) => TestResult(
         date: DateTime.parse(j['date'] as String),
         scores: (j['scores'] as Map<String, dynamic>)
             .map((k, v) => MapEntry(k, (v as num).toDouble())),
+        answers: ((j['answers'] ?? const {}) as Map<String, dynamic>)
+            .map((k, v) => MapEntry(int.parse(k), v as int)),
       );
 }
 
