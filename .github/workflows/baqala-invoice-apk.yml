@@ -42,6 +42,7 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: baqala-invoice-build-${{ github.run_number }}
+          tag_name: zatca-invoice-${{ github.run_id }}
+          target_commitish: ${{ github.sha }}
           name: فواتير البقالة ${{ github.run_number }}
           files: invoice-app/baqala-invoice.apk
