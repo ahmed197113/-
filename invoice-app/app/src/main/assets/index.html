@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>فواتير البقالة</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar no-print">
+  <h1 id="title">فاتورة جديدة</h1>
+</header>
+
+<main>
+  <!-- فاتورة جديدة -->
+  <section id="page-new" class="page">
+    <div id="setup-warning" class="alert hidden">أكمل بيانات المحل من <b>الإعدادات</b> أولاً.</div>
+
+    <div class="card">
+      <div class="label">أصناف سريعة</div>
+      <div id="quick-items" class="chips"></div>
+      <div class="muted small" id="no-quick">أضف أصنافاً من تبويب «الأصناف» لتظهر هنا.</div>
+    </div>
+
+    <div class="card">
+      <div class="label">إضافة صنف يدوي</div>
+      <input id="line-name" placeholder="اسم الصنف">
+      <div class="row">
+        <input id="line-qty" type="number" inputmode="decimal" placeholder="الكمية" value="1">
+        <input id="line-price" type="number" inputmode="decimal" placeholder="السعر">
+      </div>
+      <button class="btn" onclick="addManualLine()">+ إضافة</button>
+    </div>
+
+    <div class="card">
+      <div class="label">أصناف الفاتورة</div>
+      <table class="lines">
+        <thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th><th></th></tr></thead>
+        <tbody id="cart"></tbody>
+      </table>
+      <div id="cart-empty" class="muted small">لا توجد أصناف بعد.</div>
+      <div class="totals" id="cart-totals"></div>
+    </div>
+
+    <div class="card">
+      <input id="customer-name" placeholder="اسم العميل (اختياري)">
+      <select id="pay-method">
+        <option value="نقداً">نقداً</option>
+        <option value="شبكة / مدى">شبكة / مدى</option>
+        <option value="تحويل">تحويل</option>
+        <option value="آجل">آجل</option>
+      </select>
+      <button class="btn primary big" onclick="saveInvoice()">حفظ وإصدار الفاتورة</button>
+      <button class="btn ghost" onclick="clearCart()">تفريغ</button>
+    </div>
+  </section>
+
+  <!-- الفواتير -->
+  <section id="page-list" class="page hidden">
+    <div class="card stats" id="stats"></div>
+    <input id="search" placeholder="بحث برقم الفاتورة أو اسم العميل" oninput="renderList()">
+    <div id="invoice-list"></div>
+  </section>
+
+  <!-- الأصناف -->
+  <section id="page-items" class="page hidden">
+    <div class="card">
+      <div class="label">إضافة صنف</div>
+      <input id="item-name" placeholder="اسم الصنف">
+      <input id="item-price" type="number" inputmode="decimal" placeholder="السعر">
+      <button class="btn primary" onclick="addItem()">حفظ الصنف</button>
+    </div>
+    <div id="item-list"></div>
+  </section>
+
+  <!-- الإعدادات -->
+  <section id="page-settings" class="page hidden">
+    <div class="card">
+      <div class="label">بيانات المحل</div>
+      <input id="s-name" placeholder="اسم المحل (كما في السجل)">
+      <input id="s-cr" placeholder="رقم السجل التجاري / الرخصة">
+      <input id="s-address" placeholder="العنوان">
+      <input id="s-phone" placeholder="رقم الجوال" inputmode="tel">
+    </div>
+
+    <div class="card">
+      <div class="label">ضريبة القيمة المضافة</div>
+      <label class="check"><input type="checkbox" id="s-vat" onchange="toggleVatFields()"> المحل مسجّل في ضريبة القيمة المضافة</label>
+      <div id="vat-fields">
+        <input id="s-vatno" placeholder="الرقم الضريبي (15 رقماً)" inputmode="numeric" maxlength="15">
+        <label class="check"><input type="checkbox" id="s-incl"> الأسعار شاملة الضريبة</label>
+        <div class="muted small">النسبة: 15%. تصدر «فاتورة ضريبية مبسطة» مع رمز QR حسب المرحلة الأولى.</div>
+      </div>
+      <div id="novat-note" class="alert">
+        المحل غير مسجّل ضريبياً: تصدر «فاتورة مبيعات» بدون ضريبة وبدون رقم ضريبي وبدون رمز QR الضريبي.
+        لا يجوز نظاماً تحصيل ضريبة أو كتابة رقم ضريبي من منشأة غير مسجّلة.
+      </div>
+    </div>
+
+    <div class="card">
+      <input id="s-footer" placeholder="ملاحظة أسفل الفاتورة (اختياري)">
+      <button class="btn primary big" onclick="saveSettings()">حفظ الإعدادات</button>
+    </div>
+
+    <div class="card">
+      <div class="label">نسخة احتياطية</div>
+      <div class="muted small">انسخ النص واحفظه (واتساب/ملاحظات). للاسترجاع الصقه واضغط «استرجاع».</div>
+      <textarea id="backup" rows="4"></textarea>
+      <div class="row">
+        <button class="btn" onclick="exportBackup()">إنشاء نسخة</button>
+        <button class="btn" onclick="importBackup()">استرجاع</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- عرض الفاتورة -->
+  <section id="page-view" class="page hidden">
+    <div class="no-print row actions">
+      <button class="btn primary" onclick="printInvoice()">طباعة / PDF</button>
+      <button class="btn" onclick="goBack()">رجوع</button>
+    </div>
+    <div id="receipt" class="receipt"></div>
+    <div class="no-print" id="view-extra"></div>
+  </section>
+</main>
+
+<nav class="tabs no-print">
+  <button data-page="new" class="active" onclick="show('new')">فاتورة</button>
+  <button data-page="list" onclick="show('list')">الفواتير</button>
+  <button data-page="items" onclick="show('items')">الأصناف</button>
+  <button data-page="settings" onclick="show('settings')">الإعدادات</button>
+</nav>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="qrcode.js"></script>
+<script src="zatca.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
