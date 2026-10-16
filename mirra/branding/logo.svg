@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B4BFF"/>
+      <stop offset="0.55" stop-color="#8B3DFF"/>
+      <stop offset="1" stop-color="#FF6B9A"/>
+    </linearGradient>
+    <clipPath id="c"><circle cx="512" cy="530" r="340"/></clipPath>
+    <path id="p" d="M140 120 L 400 120 C 420 200 440 260 452 318 C 456 340 452 358 446 374 C 466 402 490 428 504 448 C 510 460 498 470 470 474 C 476 490 474 502 466 512 C 476 522 474 536 462 546 C 470 562 468 584 456 598 C 452 626 466 650 484 672 C 448 700 420 740 410 960 L 140 960 Z"/>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="url(#bg)"/>
+  <circle cx="512" cy="530" r="340" fill="#1B0B4D" fill-opacity="0.18"/>
+  <g clip-path="url(#c)">
+    <use href="#p" fill="#FFFFFF"/>
+    <use href="#p" fill="#FFFFFF" fill-opacity="0.5" transform="translate(1024 0) scale(-1 1)"/>
+  </g>
+  <circle cx="512" cy="530" r="340" fill="none" stroke="#FFFFFF" stroke-width="16"/>
+  <path d="M512 228 C 518 262 528 272 562 278 C 528 284 518 294 512 328 C 506 294 496 284 462 278 C 496 272 506 262 512 228 Z" fill="#FFE27A"/>
+</svg>
