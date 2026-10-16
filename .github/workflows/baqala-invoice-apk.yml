@@ -1,10 +1,10 @@
-name: Build APK
+name: Baqala Invoice APK
 
 on:
   push:
     paths:
       - 'invoice-app/**'
-      - '.github/workflows/build-apk.yml'
+      - '.github/workflows/baqala-invoice-apk.yml'
   workflow_dispatch:
 
 permissions:
@@ -42,6 +42,6 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
+          tag_name: baqala-invoice-build-${{ github.run_number }}
           name: فواتير البقالة ${{ github.run_number }}
           files: invoice-app/baqala-invoice.apk
