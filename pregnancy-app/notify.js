@@ -12,28 +12,28 @@ const Notify = (() => {
   const waterHours = r => { const out = [], to = +r.waterTo, ev = Math.max(1, +r.waterEvery || 2); for (let h = +r.waterFrom; h <= to; h += ev) out.push(h); return out; };
   const TIP_DAYS = 14; // تُجدول معلومات الأيام القادمة وتتجدد عند كل فتح للتطبيق
   const rem = () => ({ tip: true, water: true, vit: true, vitTime: '10:00', waterFrom: 10, waterTo: 18, waterEvery: 2, ...(S.reminders || {}) });
-  const months = m => m === 1 ? 'شهراً واحداً' : m === 2 ? 'شهرين' : m <= 10 ? `${m} أشهر` : `${m} شهراً`;
+  const months = m => m === 1 ? L('شهراً واحداً') : m === 2 ? L('شهرين') : m <= 10 ? L`${m} أشهر` : L`${m} شهراً`;
 
   function plan() {
     const list = [], now = Date.now() + 60e3;
     if (S.baby && S.baby.date) {
-      const b = new Date(S.baby.date), name = S.baby.name || 'طفلك';
+      const b = new Date(S.baby.date), name = S.baby.name || L('طفلك');
       for (let m = 1; m <= 24; m++) {
         const d = at(new Date(b.getFullYear(), b.getMonth() + m, b.getDate()));
         if (d.getTime() <= now) continue;
         const g = BABY_GUIDE.find(x => x.m === m) || BABY_GUIDE[BABY_GUIDE.length - 1];
-        list.push({ id: 2000 + m, at: d, title: m % 12 === 0 ? `🎂 كل سنة و${name} بخير!` : `🌙 ${name} أتمّ اليوم ${months(m)}`,
+        list.push({ id: 2000 + m, at: d, title: m % 12 === 0 ? L`🎂 كل سنة و${name} بخير!` : L`🌙 ${name} أتمّ اليوم ${months(m)}`,
           body: short(`${g.t.split('—').pop().trim()}: ${g.dev}`), extra: { view: 'weeks', bm: Math.min(m, BABY_GUIDE.length - 1) } });
       }
     } else if (S.profile) {
-      const st = status(), name = S.profile.babyName || 'طفلك';
+      const st = status(), name = S.profile.babyName || L('طفلك');
       for (let w = st.week + 1; w <= 40; w++) {
         const d = at(weekDate(st, w));
         if (d.getTime() <= now) continue;
-        const x = WEEKS[w - 1], hasSize = x.size && !/لم|—/.test(x.size);
+        const x = WEEKS[w - 1], hasSize = x.size && !/لم|—|^Not /.test(x.size);
         list.push({ id: 1000 + w, at: d,
-          title: w === 40 ? '💗 الأسبوع 40 — موعد اللقاء اقترب!' : `${x.emoji} أهلاً بالأسبوع ${w}`,
-          body: short((hasSize ? `${name} الآن بحجم ${x.size}. ` : '') + (x.baby.find(t => !/طوله|وزنه/.test(t)) || x.baby[0]), 150), extra: { view: 'weeks', week: w } });
+          title: w === 40 ? L('💗 الأسبوع 40 — موعد اللقاء اقترب!') : L`${x.emoji} أهلاً بالأسبوع ${w}`,
+          body: short((hasSize ? L`${name} الآن بحجم ${x.size}. ` : '') + (x.baby.find(t => !/طوله|وزنه|\blong\b/.test(t)) || x.baby[0]), 150), extra: { view: 'weeks', week: w } });
       }
     }
     return list;
@@ -43,7 +43,7 @@ const Notify = (() => {
   function tipFor(day) {
     if (S.baby) return DAILY_TIPS[((diffDays(day, new Date(2024, 0, 1)) % DAILY_TIPS.length) + DAILY_TIPS.length) % DAILY_TIPS.length];
     const st = status(), w = Math.min(40, Math.max(1, Math.floor(diffDays(day, st.start) / 7) + 1)), x = WEEKS[w - 1];
-    const pool = [...x.tips, ...x.baby.filter(t => !/طوله|وزنه/.test(t))];
+    const pool = [...x.tips, ...x.baby.filter(t => !/طوله|وزنه|\blong\b/.test(t))];
     return pool.length ? pool[diffDays(day, st.start) % pool.length] : '';
   }
 
@@ -54,15 +54,15 @@ const Notify = (() => {
         const d = new Date(); d.setDate(d.getDate() + i); d.setHours(9, 0, 0, 0);
         if (d.getTime() <= now) continue;
         const t = tipFor(d); if (!t) continue;
-        list.push({ id: 3000 + i, schedule: { at: d, allowWhileIdle: true }, title: '💡 معلومة اليوم', body: short(t, 160), extra: { view: S.baby ? 'home' : 'weeks' } });
+        list.push({ id: 3000 + i, schedule: { at: d, allowWhileIdle: true }, title: L('💡 معلومة اليوم'), body: short(t, 160), extra: { view: S.baby ? 'home' : 'weeks' } });
       }
     }
     if (r.water) waterHours(r).forEach(h => list.push({ id: 4000 + h, schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true },
-      title: '💧 وقت كوب ماء', body: 'كوب ماء الآن يساعدك على النشاط ويقلل الإمساك والتورم.', extra: { view: 'track' } }));
+      title: L('💧 وقت كوب ماء'), body: L('كوب ماء الآن يساعدك على النشاط ويقلل الإمساك والتورم.'), extra: { view: 'track' } }));
     if (r.vit) {
       const [hh, mm] = (r.vitTime || '10:00').split(':').map(Number);
-      list.push({ id: 4100, schedule: { on: { hour: hh || 0, minute: mm || 0 }, allowWhileIdle: true }, title: '💊 موعد الفيتامين أو الدواء',
-        body: 'لا تنسي الفيتامين أو الدواء حسب وصف طبيبك، ثم سجّليه في «صحتي» ✅', extra: { view: 'track' } });
+      list.push({ id: 4100, schedule: { on: { hour: hh || 0, minute: mm || 0 }, allowWhileIdle: true }, title: L('💊 موعد الفيتامين أو الدواء'),
+        body: L('لا تنسي الفيتامين أو الدواء حسب وصف طبيبك، ثم سجّليه في «صحتي» ✅'), extra: { view: 'track' } });
     }
     return list;
   }
@@ -96,7 +96,7 @@ const Notify = (() => {
   function greet() {
     if (!S.profile || S.baby) return;
     const w = status().week;
-    if (S.seenWeek && w > S.seenWeek) setTimeout(() => toast(`${WEEKS[w - 1].emoji} أهلاً بالأسبوع ${w}! شوفي الجديد عن طفلك`), 900);
+    if (S.seenWeek && w > S.seenWeek) setTimeout(() => toast(L`${WEEKS[w - 1].emoji} أهلاً بالأسبوع ${w}! شوفي الجديد عن طفلك`), 900);
     if (S.seenWeek !== w) { S.seenWeek = w; save(); }
   }
 
@@ -106,7 +106,7 @@ const Notify = (() => {
     let perm = (await LN.checkPermissions()).display;
     if (perm !== 'granted') perm = (await LN.requestPermissions()).display;
     if (perm !== 'granted') return 'denied';
-    await LN.schedule({ notifications: [{ id: 9999, title: '🔔 الإشعارات تعمل', body: 'هكذا ستصلك تذكيرات نبض الصغير 💗', schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
+    await LN.schedule({ notifications: [{ id: 9999, title: L('🔔 الإشعارات تعمل'), body: L('هكذا ستصلك تذكيرات نبض الصغير 💗'), schedule: { at: new Date(Date.now() + 5000), allowWhileIdle: true },
       isExactNotification: false, smallIcon: 'ic_stat_nabd', iconColor: '#FA1A7F' }] });
     return 'ok';
   }

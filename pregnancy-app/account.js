@@ -17,7 +17,7 @@ const Account = (() => {
 
   async function api(method, file, body, extra = {}) {
     const r = await fetch(`${base()}/${file}`, { method, ...extra,
-      headers: { 'Content-Type': 'application/json', 'X-Device': Server.dev(), ...(acc ? { Authorization: `Bearer ${acc.token}` } : {}) },
+      headers: { 'Content-Type': 'application/json', 'X-Device': Server.dev(), 'X-Lang': I18N.lang, ...(acc ? { Authorization: `Bearer ${acc.token}` } : {}) },
       body: body ? JSON.stringify(body) : undefined });
     const j = await r.json().catch(() => ({}));
     if (r.status === 401) { acc = null; write(null); }
@@ -28,19 +28,19 @@ const Account = (() => {
   /* ---------- تسجيل الدخول ---------- */
   // في التطبيق: زرّا Google وFacebook، وفي المتصفح زر Google الرسمي
   function button(host, ctx = {}) {
-    if (!available()) { host.innerHTML = '<p class="muted center">تسجيل الدخول غير متاح حالياً.</p>'; return; }
+    if (!available()) { host.innerHTML = `<p class="muted center">${L`تسجيل الدخول غير متاح حالياً.`}</p>`; return; }
     if (native()) {
-      host.innerHTML = `<div class="login-btns"><button class="btn g-btn block" type="button" data-prov="google">${G_LOGO}<span>المتابعة بحساب Google</span></button>
-        ${cfg().facebook === false ? '' : `<button class="btn fb-btn block" type="button" data-prov="facebook">${FB_LOGO}<span>المتابعة بحساب Facebook</span></button>`}</div>`;
+      host.innerHTML = `<div class="login-btns"><button class="btn g-btn block" type="button" data-prov="google">${G_LOGO}<span>${L`المتابعة بحساب Google`}</span></button>
+        ${cfg().facebook === false ? '' : `<button class="btn fb-btn block" type="button" data-prov="facebook">${FB_LOGO}<span>${L`المتابعة بحساب Facebook`}</span></button>`}</div>`;
       host.querySelectorAll('[data-prov]').forEach(b => b.onclick = () => signIn({ ...ctx, provider: b.dataset.prov }));
       return;
     }
-    host.innerHTML = '<p class="muted center">جاري تحميل زر Google…</p>';
+    host.innerHTML = `<p class="muted center">${L`جاري تحميل زر Google…`}</p>`;
     gis().then(g => {
       host.innerHTML = '';
       g.accounts.id.initialize({ client_id: cfg().googleWebClientId, callback: r => r.credential && finishLogin(r.credential, ctx), ux_mode: 'popup', use_fedcm_for_prompt: true });
-      g.accounts.id.renderButton(host, { theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale: 'ar', width: Math.min(320, host.clientWidth || 300) });
-    }).catch(() => { host.innerHTML = '<p class="muted center">تعذّر تحميل تسجيل الدخول — تأكدي من الاتصال.</p>'; });
+      g.accounts.id.renderButton(host, { theme: document.documentElement.dataset.theme === 'dark' ? 'filled_black' : 'outline', size: 'large', shape: 'pill', text: 'continue_with', locale: I18N.lang, width: Math.min(320, host.clientWidth || 300) });
+    }).catch(() => { host.innerHTML = `<p class="muted center">${L`تعذّر تحميل تسجيل الدخول — تأكدي من الاتصال.`}</p>`; });
   }
   let gisP = null;
   const gis = () => gisP || (gisP = new Promise((res, rej) => {
@@ -53,7 +53,7 @@ const Account = (() => {
   // تسجيل الدخول من أي مكان (رابط «لديّ حساب» أو صفحة حسابي)
   // بدون مزوّد محدد (رابط «لديّ حساب»): نافذة فيها الأزرار
   async function signIn(ctx = {}) {
-    if (!available()) return toast('تسجيل الدخول غير متاح حالياً');
+    if (!available()) return toast(L('تسجيل الدخول غير متاح حالياً'));
     if (!native() || !ctx.provider) return sheet(ctx);
     const FA = window.Capacitor.Plugins.FirebaseAuthentication, steps = [];
     // تفاصيل الخطأ كاملة: نوع الاستثناء والكود (والإضافة الأصلية تضيف statusCode لـ GoogleSignIn)
@@ -83,7 +83,7 @@ const Account = (() => {
       const d = detail(e);
       console.error('[nabd] sign-in failed', steps.join(' → '), e);
       try { window.Capacitor.Plugins.FirebaseCrashlytics?.recordException({ message: `sign-in ${steps.join(' > ')}: ${d}` }); } catch {}
-      if (/Cancellation|canceled by the user|cancelled by the user/i.test(d)) return toast('تم إلغاء تسجيل الدخول');
+      if (/Cancellation|canceled by the user|cancelled by the user/i.test(d)) return toast(L('تم إلغاء تسجيل الدخول'));
       loginError(`${steps.join(' → ')}\n(${d || 'unknown'})`);
     }
   }
@@ -91,13 +91,13 @@ const Account = (() => {
   function loginError(text) {
     closeSheet();
     const el = document.createElement('div'); el.className = 'sheet-bg'; el.id = 'accSheet';
-    el.innerHTML = `<div class="sheet" role="alertdialog" aria-modal="true"><h3>تعذّر تسجيل الدخول</h3>
-      <p class="muted">جرّبي مرة أخرى. لو تكرر، انسخي التفاصيل وأرسليها لنا.</p>
+    el.innerHTML = `<div class="sheet" role="alertdialog" aria-modal="true"><h3>${L`تعذّر تسجيل الدخول`}</h3>
+      <p class="muted">${L`جرّبي مرة أخرى. لو تكرر، انسخي التفاصيل وأرسليها لنا.`}</p>
       <pre class="err-box" dir="ltr">${esc(text)}</pre>
-      <div class="row"><button class="btn grow" id="errCopy">نسخ التفاصيل</button><button class="btn ghost grow" id="errX">إغلاق</button></div></div>`;
+      <div class="row"><button class="btn grow" id="errCopy">${L`نسخ التفاصيل`}</button><button class="btn ghost grow" id="errX">${L`إغلاق`}</button></div></div>`;
     document.body.appendChild(el);
     el.querySelector('#errX').onclick = closeSheet;
-    el.querySelector('#errCopy').onclick = () => navigator.clipboard?.writeText(text).then(() => toast('تم النسخ'), () => {});
+    el.querySelector('#errCopy').onclick = () => navigator.clipboard?.writeText(text).then(() => toast(L('تم النسخ')), () => {});
   }
   const nativeOut = async del => {
     if (!native()) return;
@@ -110,9 +110,9 @@ const Account = (() => {
   function sheet(ctx) {
     closeSheet();
     const d = document.createElement('div'); d.className = 'sheet-bg'; d.id = 'accSheet';
-    d.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="تسجيل الدخول"><h3>تسجيل الدخول</h3>
-      <p class="muted">لاسترجاع بياناتك المحفوظة على السحابة.</p><div class="g-slot" id="sheetG"></div>
-      <button class="link" id="sheetX">إلغاء</button></div>`;
+    d.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${L`تسجيل الدخول`}"><h3>${L`تسجيل الدخول`}</h3>
+      <p class="muted">${L`لاسترجاع بياناتك المحفوظة على السحابة.`}</p><div class="g-slot" id="sheetG"></div>
+      <button class="link" id="sheetX">${L`إلغاء`}</button></div>`;
     document.body.appendChild(d);
     d.onclick = e => { if (e.target === d) closeSheet(); };
     d.querySelector('#sheetX').onclick = closeSheet;
@@ -122,14 +122,14 @@ const Account = (() => {
 
   async function finishLogin(idToken, ctx, kind = 'google') {
     closeSheet();
-    toast('جاري تسجيل الدخول…');
+    toast(L('جاري تسجيل الدخول…'));
     try {
       const r = await api('POST', 'auth.php', kind === 'firebase' ? { firebase_token: idToken } : { id_token: idToken });
       acc = { token: r.token, exp: r.exp, name: r.user.name, email: r.user.email, last: 0 }; write(acc);
       if (r.user.name && !S.nick) S.nick = r.user.name.split(' ')[0];
       await reconcile(ctx);
     } catch (e) {
-      if (e.code === 'rate_limited') return toast('محاولات كثيرة، جرّبي بعد قليل');
+      if (e.code === 'rate_limited') return toast(L('محاولات كثيرة، جرّبي بعد قليل'));
       loginError(`server (auth.php)\n(${e.status || ''} ${e.code || e.message || e})`);
     }
   }
@@ -148,9 +148,9 @@ const Account = (() => {
     try { const r = await api('GET', 'backup.php'); if (r.data) cloud = { data: JSON.parse(r.data), updated: r.updated }; } catch {}
     const hasLocal = !!S.profile;
     if (cloud && cloud.data && cloud.data.profile && hasLocal) return choose(cloud);
-    if (cloud && cloud.data && cloud.data.profile) { restore(cloud.data); toast('تم استرجاع بياناتك ☁️'); return; }
-    if (!S.profile) { toast('تم تسجيل الدخول ✅ — لا توجد نسخة محفوظة بعد، أكملي الإعداد'); if (S.onb && S.onb.step === 'welcome') Onb.go('cal'); return; }
-    await push(); toast('تم تسجيل الدخول ✅ ونسخ بياناتك');
+    if (cloud && cloud.data && cloud.data.profile) { restore(cloud.data); toast(L('تم استرجاع بياناتك ☁️')); return; }
+    if (!S.profile) { toast(L('تم تسجيل الدخول ✅ — لا توجد نسخة محفوظة بعد، أكملي الإعداد')); if (S.onb && S.onb.step === 'welcome') Onb.go('cal'); return; }
+    await push(); toast(L('تم تسجيل الدخول ✅ ونسخ بياناتك'));
     if (S.onb && ctx.from === 'onboarding') Onb.finish(); else render(false);
   }
 
@@ -169,28 +169,28 @@ const Account = (() => {
   // اختيار النسخة: هذا الجهاز أم السحابة (الأحدث مختار افتراضياً)
   function choose(cloud) {
     const localT = S._mt || 0, cloudT = cloud.data._mt || cloud.updated || 0, newer = cloudT > localT ? 'cloud' : 'local';
-    const when = t => t ? `${fmtDate.format(new Date(t))} · ${new Date(t).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}` : 'غير معروف';
-    const desc = d => d.baby ? `طفل وُلد ${fmtDate.format(parse(d.baby.date))}` : d.profile ? 'بيانات حمل' : '';
+    const when = t => t ? `${fmtDate.format(new Date(t))} · ${new Date(t).toLocaleTimeString(I18N.num, { hour: '2-digit', minute: '2-digit' })}` : L('غير معروف');
+    const desc = d => d.baby ? L`طفل وُلد ${fmtDate.format(parse(d.baby.date))}` : d.profile ? L('بيانات حمل') : '';
     closeSheet();
     const el = document.createElement('div'); el.className = 'sheet-bg'; el.id = 'accSheet';
-    el.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>أي نسخة تريدين الاحتفاظ بها؟</h3>
-      <p class="muted">وجدنا بيانات على هذا الجهاز وعلى السحابة.</p>
-      <label class="pick"><input type="radio" name="ver" value="local" ${newer === 'local' ? 'checked' : ''}><span><b>📱 هذا الجهاز</b><small>${desc(S)} · آخر تعديل ${when(localT)}${newer === 'local' ? ' · الأحدث' : ''}</small></span></label>
-      <label class="pick"><input type="radio" name="ver" value="cloud" ${newer === 'cloud' ? 'checked' : ''}><span><b>☁️ السحابة</b><small>${desc(cloud.data)} · آخر تعديل ${when(cloudT)}${newer === 'cloud' ? ' · الأحدث' : ''}</small></span></label>
-      <p class="muted" style="font-size:.85rem">النسخة الأخرى ستُستبدل.</p>
-      <button class="btn block" id="verOk">متابعة</button></div>`;
+    el.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${L`أي نسخة تريدين الاحتفاظ بها؟`}</h3>
+      <p class="muted">${L`وجدنا بيانات على هذا الجهاز وعلى السحابة.`}</p>
+      <label class="pick"><input type="radio" name="ver" value="local" ${newer === 'local' ? 'checked' : ''}><span><b>${L`📱 هذا الجهاز`}</b><small>${L`${desc(S)} · آخر تعديل ${when(localT)}${newer === 'local' ? L(' · الأحدث') : ''}`}</small></span></label>
+      <label class="pick"><input type="radio" name="ver" value="cloud" ${newer === 'cloud' ? 'checked' : ''}><span><b>${L`☁️ السحابة`}</b><small>${L`${desc(cloud.data)} · آخر تعديل ${when(cloudT)}${newer === 'cloud' ? L(' · الأحدث') : ''}`}</small></span></label>
+      <p class="muted" style="font-size:.85rem">${L`النسخة الأخرى ستُستبدل.`}</p>
+      <button class="btn block" id="verOk">${L`متابعة`}</button></div>`;
     document.body.appendChild(el);
     el.querySelector('#verOk').onclick = async () => {
       const v = el.querySelector('input[name=ver]:checked').value; closeSheet();
-      if (v === 'cloud') { restore(cloud.data); toast('تم استرجاع نسخة السحابة ☁️'); }
-      else { await push(); toast('تم حفظ نسخة هذا الجهاز على السحابة ☁️'); if (S.onb) Onb.finish(); else render(false); }
+      if (v === 'cloud') { restore(cloud.data); toast(L('تم استرجاع نسخة السحابة ☁️')); }
+      else { await push(); toast(L('تم حفظ نسخة هذا الجهاز على السحابة ☁️')); if (S.onb) Onb.finish(); else render(false); }
     };
   }
 
   async function push(opts = {}) {
     if (!user() || pushing) return false;
     const body = payload();
-    if (!body) { toast('بياناتك أكبر من حد النسخ الاحتياطي'); return false; }
+    if (!body) { toast(L('بياناتك أكبر من حد النسخ الاحتياطي')); return false; }
     pushing = true;
     try {
       // عند الخروج من التطبيق: keepalive حتى يكتمل الطلب (حدّه 64KB)

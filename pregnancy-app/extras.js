@@ -9,16 +9,16 @@ const isFav = id => (S.favorites || []).some(f => f.id === id);
 function favBtn(item, label = '') {
   FAVREG[item.id] = item;
   const on = isFav(item.id);
-  return `<button class="fav-btn ${on ? 'on' : ''}" data-fav="${esc(item.id)}" aria-pressed="${on}" aria-label="${on ? 'إزالة من المفضلة' : 'حفظ في المفضلة'}">${ICON.heart}${label ? `<span>${label}</span>` : ''}</button>`;
+  return `<button class="fav-btn ${on ? 'on' : ''}" data-fav="${esc(item.id)}" aria-pressed="${on}" aria-label="${on ? L('إزالة من المفضلة') : L('حفظ في المفضلة')}">${ICON.heart}${label ? `<span>${label}</span>` : ''}</button>`;
 }
 function toggleFav(id) {
   S.favorites = S.favorites || [];
-  if (isFav(id)) { S.favorites = S.favorites.filter(f => f.id !== id); save(); toast('أُزيلت من المفضلة'); return false; }
+  if (isFav(id)) { S.favorites = S.favorites.filter(f => f.id !== id); save(); toast(L('أُزيلت من المفضلة')); return false; }
   const it = FAVREG[id]; if (!it) return false;
-  S.favorites.unshift({ ...it, t: Date.now() }); save(); toast('حُفظت في المفضلة 💗'); return true;
+  S.favorites.unshift({ ...it, t: Date.now() }); save(); toast(L('حُفظت في المفضلة 💗')); return true;
 }
 
-const FAV_TYPES = [['week', '👶', 'معلومات الأسبوع'], ['tip', '💡', 'نصائح'], ['ai', '✨', 'ردود نبض'], ['cq', '👩‍👩‍👧', 'أسئلة المجتمع']];
+const FAV_TYPES = [['week', '👶', L('معلومات الأسبوع')], ['tip', '💡', L('نصائح')], ['ai', '✨', L('ردود نبض')], ['cq', '👩‍👩‍👧', L('أسئلة المجتمع')]];
 
 /* ---------- مشاركة الأسبوع كصورة ---------- */
 const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
@@ -39,46 +39,46 @@ async function weekCard(w) {
   } catch {}
   // الشعار والاسم
   try { const logo = await loadImg('icons/icon.svg'); g.drawImage(logo, W / 2 - 50, 70, 100, 100); } catch {}
-  g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#fff';
+  g.direction = I18N.dir; g.textAlign = 'center'; g.fillStyle = '#fff';
   g.font = '700 48px Rubik, sans-serif'; g.fillText(APP_NAME, W / 2, 230);
   const name = S.profile && S.profile.babyName;
-  g.font = '700 96px Rubik, sans-serif'; g.fillText(`الأسبوع ${w}`, W / 2, 1035);
+  g.font = '700 96px Rubik, sans-serif'; g.fillText(L`الأسبوع ${w}`, W / 2, 1035);
   g.fillStyle = '#ffb3cf'; g.font = '400 52px Rubik, sans-serif';
-  g.fillText(x.wt === '—' ? x.size : `${name ? name + ' ' : ''}بحجم ${x.size} ${x.emoji}`, W / 2, 1115);
-  if (x.wt !== '—') { g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '400 40px Rubik, sans-serif'; g.fillText(`الطول ${x.len} · الوزن ${wtLabel(x.wt)}`, W / 2, 1185); }
-  g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '400 34px Rubik, sans-serif'; g.fillText('تابعي حملك أسبوعاً بأسبوع مع نبضٌ صغير 💗', W / 2, 1290);
+  g.fillText(x.wt === '—' ? x.size : L`${name ? name + ' ' : ''}بحجم ${x.size} ${x.emoji}`, W / 2, 1115);
+  if (x.wt !== '—') { g.fillStyle = 'rgba(255,255,255,.8)'; g.font = '400 40px Rubik, sans-serif'; g.fillText(L`الطول ${x.len} · الوزن ${wtLabel(x.wt)}`, W / 2, 1185); }
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.font = '400 34px Rubik, sans-serif'; g.fillText(L('تابعي حملك أسبوعاً بأسبوع مع نبضٌ صغير 💗'), W / 2, 1290);
   return c;
 }
 async function shareWeek(w) {
-  toast('جاري تجهيز الصورة…');
-  const c = await weekCard(w), name = `nabd-week-${w}.png`, text = `الأسبوع ${w} من رحلتي مع ${APP_NAME} 💗`;
+  toast(L('جاري تجهيز الصورة…'));
+  const c = await weekCard(w), name = `nabd-week-${w}.png`, text = L`الأسبوع ${w} من رحلتي مع ${APP_NAME} 💗`;
   const P = window.Capacitor?.isNativePlatform?.() && window.Capacitor.Plugins;
   try {
     if (P && P.Share && P.Filesystem) {
       const data = c.toDataURL('image/png').split(',')[1];
       const f = await P.Filesystem.writeFile({ path: name, data, directory: 'CACHE' });
-      await P.Share.share({ title: text, text, files: [f.uri], dialogTitle: 'شاركي الأسبوع' });
+      await P.Share.share({ title: text, text, files: [f.uri], dialogTitle: L('شاركي الأسبوع') });
       return;
     }
     const blob = await new Promise(r => c.toBlob(r, 'image/png')), file = new File([blob], name, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast('تم حفظ الصورة 📸');
-  } catch (e) { if (!/abort|cancel/i.test(String(e && (e.name || e.message)))) toast('تعذّرت المشاركة'); }
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000); toast(L('تم حفظ الصورة 📸'));
+  } catch (e) { if (!/abort|cancel/i.test(String(e && (e.name || e.message)))) toast(L('تعذّرت المشاركة')); }
 }
 
 /* ---------- الشاشات ---------- */
 Object.assign(SUBVIEWS, {
   favs() {
     const list = S.favorites || [], f = route.tab && FAV_TYPES.some(t => t[0] === route.tab) ? route.tab : 'all';
-    if (!list.length) return `<div class="card center"><div style="font-size:2.6rem">💗</div><h3>لا توجد عناصر محفوظة بعد</h3>
-      <p class="muted">اضغطي القلب بجانب أي معلومة أو نصيحة في «رحلتي»، أو على رد من نبض، أو على سؤال في المجتمع.</p></div>`;
+    if (!list.length) return `<div class="card center"><div style="font-size:2.6rem">💗</div><h3>${L`لا توجد عناصر محفوظة بعد`}</h3>
+      <p class="muted">${L`اضغطي القلب بجانب أي معلومة أو نصيحة في «رحلتي»، أو على رد من نبض، أو على سؤال في المجتمع.`}</p></div>`;
     const shown = list.filter(x => f === 'all' || x.type === f);
-    return `<div class="seg" id="favSeg"><button data-ff="all" class="${f === 'all' ? 'on' : ''}">الكل ${list.length}</button>
+    return `<div class="seg" id="favSeg"><button data-ff="all" class="${f === 'all' ? 'on' : ''}">${L`الكل ${list.length}`}</button>
       ${FAV_TYPES.filter(([k]) => list.some(x => x.type === k)).map(([k, ic, n]) => `<button data-ff="${k}" class="${f === k ? 'on' : ''}">${ic} ${n}</button>`).join('')}</div>
       ${shown.map(x => { FAVREG[x.id] = x; const t = FAV_TYPES.find(y => y[0] === x.type) || FAV_TYPES[0];
         const body = x.type === 'cq' ? `<b>${esc(x.title)}</b><div class="muted clamp">${esc(x.text)}</div>` : x.type === 'ai' ? `<div class="clamp">${esc(x.text)}</div>` : `<div>${x.text}</div>`;
-        return `<div class="card fav-card"><div class="row"><span class="badge soft">${t[1]} ${x.week ? `الأسبوع ${x.week}` : t[2]}</span><span class="grow"></span>${favBtn(x)}</div>
+        return `<div class="card fav-card"><div class="row"><span class="badge soft">${t[1]} ${x.week ? L`الأسبوع ${x.week}` : t[2]}</span><span class="grow"></span>${favBtn(x)}</div>
           <div class="fav-open" data-fopen="${esc(x.id)}">${body}</div></div>`; }).join('')}`;
   },
 
@@ -86,20 +86,20 @@ Object.assign(SUBVIEWS, {
     const u = Account.user();
     if (!u) return `<div class="card center">
         <svg class="onb-art" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="56" fill="var(--soft)"/><path d="M38 80h46a16 16 0 0 0 0-32 22 22 0 0 0-42-5 14 14 0 0 0-4 37z" fill="var(--primary)"/></svg>
-        <h2>احفظي بياناتك على السحابة</h2>
-        <ul class="onb-list"><li>☁️ نسخة احتياطية تلقائية</li><li>📱 استرجاع كل شيء على جهاز جديد</li><li>👩 نفس اسمك في مجتمع الأمهات</li></ul>
-        <p class="muted">اختياري تماماً — كل الميزات تعمل بدون حساب. لا نحفظ الصور على السحابة.</p>
+        <h2>${L`احفظي بياناتك على السحابة`}</h2>
+        <ul class="onb-list"><li>${L`☁️ نسخة احتياطية تلقائية`}</li><li>${L`📱 استرجاع كل شيء على جهاز جديد`}</li><li>${L`👩 نفس اسمك في مجتمع الأمهات`}</li></ul>
+        <p class="muted">${L`اختياري تماماً — كل الميزات تعمل بدون حساب. لا نحفظ الصور على السحابة.`}</p>
         <div class="g-slot" id="accGoogle"></div></div>`;
-    const last = u.last ? `${fmtDate.format(new Date(u.last))} · ${new Date(u.last).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}` : 'لم يتم النسخ بعد';
-    return `<div class="card"><div class="row"><span class="av big">${esc((u.name || u.email || '؟').trim()[0])}</span><div class="grow"><b>${esc(u.name || '')}</b><div class="muted" dir="ltr" style="text-align:right">${esc(u.email || '')}</div></div></div></div>
-      <div class="card"><h3>☁️ النسخ الاحتياطي</h3><p class="muted" style="margin:0 0 10px">يتم تلقائياً بعد أي تعديل وعند الخروج من التطبيق.<br>آخر نسخ: <b>${last}</b></p>
-        <button class="btn block" id="accPush">نسخ الآن</button></div>
-      <div class="card"><button class="btn ghost block" id="accOut">تسجيل الخروج</button>
-        <p class="muted" style="margin:8px 0 0">بياناتك تبقى على هذا الجهاز بعد الخروج.</p></div>
-      <details class="card group more-tools" id="accAdv" ${route.delStep ? 'open' : ''}><summary><b>إعدادات متقدمة</b></summary>
-        <p class="muted" style="margin:10px 0">إزالة الحساب تمسح نسختك على السحابة وتخفي منشوراتك في المجتمع. بيانات هذا الجهاز تبقى كما هي.</p>
-        ${route.delStep ? `<p><b>هل أنتِ متأكدة؟ لا يمكن التراجع عن هذا.</b></p><button class="btn danger block" id="accDelFinal">نعم، أزيلي حسابي</button><button class="link" id="accDelCancel">إلغاء</button>`
-          : '<button class="btn ghost block" id="accDel">إزالة الحساب</button>'}</details>`;
+    const last = u.last ? `${fmtDate.format(new Date(u.last))} · ${new Date(u.last).toLocaleTimeString(I18N.num, { hour: '2-digit', minute: '2-digit' })}` : L('لم يتم النسخ بعد');
+    return `<div class="card"><div class="row"><span class="av big">${esc((u.name || u.email || L('؟')).trim()[0])}</span><div class="grow"><b>${esc(u.name || '')}</b><div class="muted" dir="ltr" style="text-align:right">${esc(u.email || '')}</div></div></div></div>
+      <div class="card"><h3>${L`☁️ النسخ الاحتياطي`}</h3><p class="muted" style="margin:0 0 10px">${L`يتم تلقائياً بعد أي تعديل وعند الخروج من التطبيق.`}<br>${L`آخر نسخ:`} <b>${last}</b></p>
+        <button class="btn block" id="accPush">${L`نسخ الآن`}</button></div>
+      <div class="card"><button class="btn ghost block" id="accOut">${L`تسجيل الخروج`}</button>
+        <p class="muted" style="margin:8px 0 0">${L`بياناتك تبقى على هذا الجهاز بعد الخروج.`}</p></div>
+      <details class="card group more-tools" id="accAdv" ${route.delStep ? 'open' : ''}><summary><b>${L`إعدادات متقدمة`}</b></summary>
+        <p class="muted" style="margin:10px 0">${L`إزالة الحساب تمسح نسختك على السحابة وتخفي منشوراتك في المجتمع. بيانات هذا الجهاز تبقى كما هي.`}</p>
+        ${route.delStep ? `<p><b>${L`هل أنتِ متأكدة؟ لا يمكن التراجع عن هذا.`}</b></p><button class="btn danger block" id="accDelFinal">${L`نعم، أزيلي حسابي`}</button><button class="link" id="accDelCancel">${L`إلغاء`}</button>`
+          : `<button class="btn ghost block" id="accDel">${L`إزالة الحساب`}</button>`}</details>`;
   }
 });
 
@@ -122,13 +122,13 @@ function extrasBind() {
   app.querySelectorAll('[data-share]').forEach(b => b.onclick = e => { e.stopPropagation(); shareWeek(+b.dataset.share); });
   // حسابي
   if ($('#accGoogle')) Account.button($('#accGoogle'), { from: 'account' });
-  on('#accPush', async () => { const b = $('#accPush'); b.disabled = true; const ok = await Account.push(); toast(ok ? 'تم النسخ ☁️' : 'تعذّر النسخ — تأكدي من الاتصال'); render(false); });
-  on('#accOut', confirmTap('#accOut', async () => { await Account.signOut(); toast('تم تسجيل الخروج'); render(false); }));
+  on('#accPush', async () => { const b = $('#accPush'); b.disabled = true; const ok = await Account.push(); toast(ok ? L('تم النسخ ☁️') : L('تعذّر النسخ — تأكدي من الاتصال')); render(false); });
+  on('#accOut', confirmTap('#accOut', async () => { await Account.signOut(); toast(L('تم تسجيل الخروج')); render(false); }));
   on('#accDel', () => { route.delStep = 1; history.replaceState(route, ''); render(false); });
   on('#accDelCancel', () => { route.delStep = 0; history.replaceState(route, ''); render(false); });
   on('#accDelFinal', confirmTap('#accDelFinal', async () => {
-    try { await Account.remove(); route.delStep = 0; toast('تمت إزالة حسابك'); render(false); }
-    catch { toast('تعذّر الحذف — تأكدي من الاتصال'); }
+    try { await Account.remove(); route.delStep = 0; toast(L('تمت إزالة حسابك')); render(false); }
+    catch { toast(L('تعذّر الحذف — تأكدي من الاتصال')); }
   }));
 }
 
@@ -141,8 +141,8 @@ const Widget = (() => {
     clearTimeout(t);
     t = setTimeout(() => {
       let data = {};
-      if (S.baby && S.baby.date) data = { baby: S.baby.date, name: S.baby.name || '' };
-      else if (S.profile && !S.onb) data = { due: iso(calcDue(S.profile)), name: S.profile.babyName || '', sizes: WEEKS.map(w => w.wt === '—' ? '' : `بحجم ${w.size} ${w.emoji}`) };
+      if (S.baby && S.baby.date) data = { baby: S.baby.date, name: S.baby.name || '', lang: I18N.lang };
+      else if (S.profile && !S.onb) data = { due: iso(calcDue(S.profile)), name: S.profile.babyName || '', sizes: WEEKS.map(w => w.wt === '—' ? '' : L`بحجم ${w.size} ${w.emoji}`), lang: I18N.lang };
       const v = JSON.stringify(data);
       if (v !== last) { last = v; P.set({ key: 'nabd_widget', value: v }).catch(() => {}); }
     }, 800);

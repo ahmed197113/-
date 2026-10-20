@@ -28,6 +28,13 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      # كل نص في الكود له ترجمة إنجليزية بنفس المتغيرات
+      - name: Check the translations
+        working-directory: pregnancy-app
+        run: |
+          npm i --no-save acorn acorn-walk
+          node tests/i18n_check.mjs en
+
       - name: Build the single-file web app
         working-directory: pregnancy-app
         run: python3 build.py

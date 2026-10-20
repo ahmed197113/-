@@ -11,8 +11,8 @@ const Cal = (() => {
     ok = num.resolvedOptions().calendar === 'islamic-umalqura';
   } catch { ok = false; }
 
-  const MONTHS_H = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
-  const gName = new Intl.DateTimeFormat('ar-u-nu-latn', { month: 'long' });
+  const MONTHS_H = [L('محرم'), L('صفر'), L('ربيع الأول'), L('ربيع الآخر'), L('جمادى الأولى'), L('جمادى الآخرة'), L('رجب'), L('شعبان'), L('رمضان'), L('شوال'), L('ذو القعدة'), L('ذو الحجة')];
+  const gName = new Intl.DateTimeFormat(I18N.num, { month: 'long' });
   const MONTHS_G = Array.from({ length: 12 }, (_, i) => gName.format(new Date(2026, i, 1)));
 
   const day0 = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -50,15 +50,15 @@ const Cal = (() => {
     return plus(table()[idx(y, m)], d - 1);
   }
 
-  const mode = () => ok && (typeof S !== 'undefined') && (S.calendar || (S.country === 'SA' ? 'hijri' : 'gregorian')) === 'hijri' ? 'hijri' : 'gregorian';
-  const mk = (cal, opts) => { try { return new Intl.DateTimeFormat(cal === 'hijri' ? 'ar-SA-u-ca-islamic-umalqura-nu-latn' : 'ar-u-nu-latn', opts); } catch { return new Intl.DateTimeFormat('ar', opts); } };
+  const mode = () => ok && (typeof S !== 'undefined') && (S.calendar || (S.country === 'SA' && I18N.lang === 'ar' ? 'hijri' : 'gregorian')) === 'hijri' ? 'hijri' : 'gregorian';
+  const mk = (cal, opts) => { try { return new Intl.DateTimeFormat(cal === 'hijri' ? (I18N.lang === 'ar' ? 'ar-SA' : I18N.loc) + '-u-ca-islamic-umalqura-nu-latn' : I18N.num, opts); } catch { return new Intl.DateTimeFormat(I18N.loc, opts); } };
   // منسّق يتبع إعداد التقويم لحظة العرض
   function fmt(opts) {
     const g = mk('gregorian', opts), h = ok ? mk('hijri', opts) : g;
     return { format: d => (mode() === 'hijri' ? h : g).format(d) };
   }
   const gFull = mk('gregorian', G_OPTS), hFull = ok ? mk('hijri', G_OPTS) : null;
-  const greg = d => `${gFull.format(d)} م`;
+  const greg = d => L`${gFull.format(d)} م`;
   const hijri = d => hFull ? hFull.format(d) : '';
   // التقويمان معاً، والمختار أولاً: «25 جمادى الآخرة 1448 هـ – 5 ديسمبر 2026 م»
   const both = d => !hFull ? greg(d) : mode() === 'hijri' ? `${hijri(d)} – ${greg(d)}` : `${greg(d)} – ${hijri(d)}`;
@@ -132,11 +132,11 @@ function datePicker(host, opts) {
   };
   const days = (y, m) => Array.from({ length: len(y, m) }, (_, i) => [i + 1, String(i + 1)]);
   const cd = Wheel.column(pick), cm = Wheel.column(pick), cy = Wheel.column(pick);
-  cd.el.setAttribute('aria-label', 'اليوم'); cm.el.setAttribute('aria-label', 'الشهر'); cy.el.setAttribute('aria-label', 'السنة');
+  cd.el.setAttribute('aria-label', L('اليوم')); cm.el.setAttribute('aria-label', L('الشهر')); cy.el.setAttribute('aria-label', L('السنة'));
   host.append(cd.el, cm.el, cy.el);
   cd.fill(days(p.y, p.m), p.d);
   cm.fill((H ? Cal.MONTHS_H : Cal.MONTHS_G).map((n, i) => [i + 1, n]), p.m);
-  const ys = []; for (let y = pMin.y; y <= pMax.y; y++) ys.push([y, H ? `${y} هـ` : `${y}`]);
+  const ys = []; for (let y = pMin.y; y <= pMax.y; y++) ys.push([y, H ? L`${y} هـ` : `${y}`]);
   cy.fill(ys, p.y);
   const api = {
     value: () => Cal.iso(date),

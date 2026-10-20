@@ -2,10 +2,12 @@
    التخزين: قاعدة بيانات Claude المشتركة داخل نسخة Claude، أو Supabase في النسخة المستقلة (config.js) */
 'use strict';
 
-const CATS = [['all', 'الكل'], ['t1', 'الثلث الأول'], ['t2', 'الثلث الثاني'], ['t3', 'الثلث الثالث'], ['birth', 'الولادة'],
-  ['bf', 'الرضاعة'], ['baby', 'الطفل'], ['sleep', 'النوم'], ['food', 'الأكل'], ['mental', 'نفسية'], ['other', 'عام']];
+const CATS = [['all', L('الكل')], ['t1', L('الثلث الأول')], ['t2', L('الثلث الثاني')], ['t3', L('الثلث الثالث')], ['birth', L('الولادة')],
+  ['bf', L('الرضاعة')], ['baby', L('الطفل')], ['sleep', L('النوم')], ['food', L('الأكل')], ['mental', L('نفسية')], ['other', L('عام')]];
+// أسئلة «فريق نبض» وإجاباتها محفوظة بالعربية (community_seed.js وقاعدة السيرفر): تُعرض مترجمة إن وُجدت ترجمتها
+const seedText = x => x.team || x.ai ? { ...x, title: L.t(x.title), body: L.t(x.body), stage: L.t(x.stage) } : x;
 const catName = k => (CATS.find(c => c[0] === k) || CATS[CATS.length - 1])[1];
-const URGENT_RE = /نزيف|ينزف|سائل ينزل|لا يتحرك|ما يتحرك|ما عم يتحرك|دم |دم$|نزل (مني )?ماء|نزلت مية|مش بيتحرك|مبيتحركش|حركته قلت|تشنج|ازرق|إغماء|اغماء|حرارة 3[89]|حرارته|مش بيتنفس|صعوبة (في )?التنفس|انتحار|أذي نفسي|اذي نفسي/;
+const URGENT_RE = /نزيف|ينزف|سائل ينزل|لا يتحرك|ما يتحرك|ما عم يتحرك|دم |دم$|نزل (مني )?ماء|نزلت مية|مش بيتحرك|مبيتحركش|حركته قلت|تشنج|ازرق|إغماء|اغماء|حرارة 3[89]|حرارته|مش بيتنفس|صعوبة (في )?التنفس|انتحار|أذي نفسي|اذي نفسي|\b(bleed(ing)?|blood|waters? (broke|breaking)|leaking fluid|not moving|stopped moving|moving less|seizure|convulsion|turned blue|blue lips|faint(ed|ing)?|fever|not breathing|can'?t breathe|suicid\w*|hurt (myself|my baby))\b/i;
 const BLOCK_RE = /(https?:\/\/|www\.)|(\d[\s-]?){8,}/;
 
 const CM = { mode: null, uid: null, canWrite: null, qs: [], loaded: false, loading: false, err: '', ans: {} };
@@ -59,8 +61,8 @@ const SupaStore = {
 
 /* ---------- بدون اتصال بالسيرفر: أسئلة «فريق نبض» للقراءة فقط ---------- */
 const LocalStore = {
-  async list() { return CM_SEED.map((s, i) => ({ id: 's' + i, uid: 'team', team: true, nick: 'فريق نبض', anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t: Date.now() - (CM_SEED.length - i) * 864e5, ac: 1 })); },
-  async answers(qid) { const s = CM_SEED[+qid.slice(1)]; return s ? [{ id: qid + 'a', uid: 'ai', ai: true, nick: 'نبض', body: s.answer, t: Date.now(), hp: 0 }] : []; },
+  async list() { return CM_SEED.map((s, i) => ({ id: 's' + i, uid: 'team', team: true, nick: L('فريق نبض'), anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t: Date.now() - (CM_SEED.length - i) * 864e5, ac: 1 })); },
+  async answers(qid) { const s = CM_SEED[+qid.slice(1)]; return s ? [{ id: qid + 'a', uid: 'ai', ai: true, nick: L('نبض'), body: s.answer, t: Date.now(), hp: 0 }] : []; },
   async helpful() {}
 };
 
@@ -103,12 +105,12 @@ CM.load = async (force) => {
   if (!CM.mode || CM.loading || (CM.loaded && !force)) return;
   CM.loading = true; CM.err = '';
   try {
-    CM.qs = await CM.store.list();
+    CM.qs = (await CM.store.list()).map(seedText);
     // أسئلة البداية: تُضاف مرة واحدة فقط (السيرفر يضيفها بنفسه)
-    if (CM.mode === 'claude' && CM.canWrite !== false && !CM.qs.some(q => q.team) && await seedClaude()) CM.qs = await CM.store.list();
+    if (CM.mode === 'claude' && CM.canWrite !== false && !CM.qs.some(q => q.team) && await seedClaude()) CM.qs = (await CM.store.list()).map(seedText);
     CM.loaded = true;
   }
-  catch (e) { CM.err = 'تعذّر تحميل المجتمع الآن. حاولي مرة أخرى.'; }
+  catch (e) { CM.err = L('تعذّر تحميل المجتمع الآن. حاولي مرة أخرى.'); }
   CM.loading = false;
   if (route.view === 'assist' || route.sub === 'cq' || route.view === 'home') render(false);
 };
@@ -119,15 +121,15 @@ async function seedClaude() {
   const now = Date.now();
   for (const [i, s] of CM_SEED.entries()) {
     const t = now - (CM_SEED.length - i) * 60000;
-    const id = await ClaudeStore.add({ uid: 'team', team: true, nick: 'فريق نبض', anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t, ac: 1 });
-    await CM.db.collection(`community/${id}/answers`).add({ uid: 'ai', ai: true, nick: 'نبض', body: s.answer, t: t + 1000, hp: 0 });
+    const id = await ClaudeStore.add({ uid: 'team', team: true, nick: L('فريق نبض'), anon: false, cat: s.cat, title: s.title, body: s.body, stage: s.stage, t, ac: 1 });
+    await CM.db.collection(`community/${id}/answers`).add({ uid: 'ai', ai: true, nick: L('نبض'), body: s.answer, t: t + 1000, hp: 0 });
   }
   return true;
 }
 CM.loadAnswers = async (qid, force) => {
   if (!force && CM.ans[qid]) return;
   CM.ans[qid] = CM.ans[qid] || null;
-  try { CM.ans[qid] = await CM.store.answers(qid); } catch { CM.ans[qid] = []; toast('تعذّر تحميل الردود'); }
+  try { CM.ans[qid] = (await CM.store.answers(qid)).map(seedText); } catch { CM.ans[qid] = []; toast(L('تعذّر تحميل الردود')); }
   if (route.sub === 'cq' && route.qid === qid) render(false);
 };
 
@@ -136,25 +138,25 @@ const myStage = () => {
   return fl + myStage0();
 };
 const myStage0 = () => {
-  if (S.baby) { const d = diffDays(today(), parse(S.baby.date)); return d < 60 ? `أم لطفل عمره ${Math.floor(d / 7)} أسابيع` : `أم لطفل عمره ${Math.floor(d / 30.44)} شهراً`; }
-  return `حامل · الأسبوع ${status().week}`;
+  if (S.baby) { const d = diffDays(today(), parse(S.baby.date)); return d < 60 ? L`أم لطفل عمره ${Math.floor(d / 7)} أسابيع` : L`أم لطفل عمره ${Math.floor(d / 30.44)} شهراً`; }
+  return L`حامل · الأسبوع ${status().week}`;
 };
 const myCat = () => S.baby ? 'baby' : ['t1', 't2', 't3'][status().tri - 1];
-const timeAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'الآن' : m < 60 ? `منذ ${m} د` : m < 1440 ? `منذ ${Math.floor(m / 60)} س` : `منذ ${Math.floor(m / 1440)} يوم`; };
-const author = x => x.ai ? 'نبض ✨' : x.team ? 'فريق نبض 💗' : x.anon ? 'أم مجهولة' : (x.nick || 'أم');
-const avatar = x => `<span class="av ${x.ai || x.team ? 'ai' : ''}">${x.ai ? '✨' : x.team ? '💗' : x.anon ? '🤍' : esc((x.nick || 'أ').trim()[0])}</span>`;
+const timeAgo = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? L('الآن') : m < 60 ? L`منذ ${m} د` : m < 1440 ? L`منذ ${Math.floor(m / 60)} س` : L`منذ ${Math.floor(m / 1440)} يوم`; };
+const author = x => x.ai ? L('نبض ✨') : x.team ? L('فريق نبض 💗') : x.anon ? L('أم مجهولة') : (x.nick || L('أم'));
+const avatar = x => `<span class="av ${x.ai || x.team ? 'ai' : ''}">${x.ai ? '✨' : x.team ? '💗' : x.anon ? '🤍' : esc((x.nick || L('أ')).trim()[0])}</span>`;
 // الحظر: تخفي المستخدمة محتوى شخص معيّن عن نفسها
 const authorKey = x => x.ai || x.team ? '' : (x.au || (x.uid && x.uid !== 'me' ? x.uid : ''));
 const isBlocked = x => { const k = authorKey(x); return !!k && (S.blocked || []).includes(k); };
-const rulesBox = () => S.cmRules ? '' : `<div class="card"><b>قواعد المجتمع</b><ul class="list"><li>الاحترام أولاً — لا تنمّر ولا أحكام.</li><li>لا أرقام هواتف ولا روابط ولا إعلانات.</li><li>التجارب الشخصية لا تغني عن الطبيب.</li><li>في الطوارئ لا تنتظري الردود — اذهبي للمستشفى.</li><li>يمكنك الإبلاغ عن أي محتوى مسيء أو حظر صاحبه، ونراجع البلاغات ونحذف المخالف.</li></ul>
-  <label class="check"><input type="checkbox" id="cmRulesOk"><span>قرأت قواعد المجتمع وأوافق عليها</span></label></div>`;
-const rulesOk = () => { if (S.cmRules) return true; if ($('#cmRulesOk') && $('#cmRulesOk').checked) { S.cmRules = true; save(); return true; } toast('وافقي على قواعد المجتمع أولاً'); return false; };
-const modBtns = (x, ref) => CM.mode === 'local' || (x.uid && x.uid === CM.uid) ? '' : `<button class="link" data-report="${ref}">🚩 إبلاغ</button>${authorKey(x) ? `<button class="link" data-block="${esc(authorKey(x))}">🚫 حظر</button>` : ''}`;
+const rulesBox = () => S.cmRules ? '' : `<div class="card"><b>${L`قواعد المجتمع`}</b><ul class="list"><li>${L`الاحترام أولاً — لا تنمّر ولا أحكام.`}</li><li>${L`لا أرقام هواتف ولا روابط ولا إعلانات.`}</li><li>${L`التجارب الشخصية لا تغني عن الطبيب.`}</li><li>${L`في الطوارئ لا تنتظري الردود — اذهبي للمستشفى.`}</li><li>${L`يمكنك الإبلاغ عن أي محتوى مسيء أو حظر صاحبه، ونراجع البلاغات ونحذف المخالف.`}</li></ul>
+  <label class="check"><input type="checkbox" id="cmRulesOk"><span>${L`قرأت قواعد المجتمع وأوافق عليها`}</span></label></div>`;
+const rulesOk = () => { if (S.cmRules) return true; if ($('#cmRulesOk') && $('#cmRulesOk').checked) { S.cmRules = true; save(); return true; } toast(L('وافقي على قواعد المجتمع أولاً')); return false; };
+const modBtns = (x, ref) => CM.mode === 'local' || (x.uid && x.uid === CM.uid) ? '' : `<button class="link" data-report="${ref}">${L`🚩 إبلاغ`}</button>${authorKey(x) ? `<button class="link" data-block="${esc(authorKey(x))}">${L`🚫 حظر`}</button>` : ''}`;
 
 function checkText(t, min, max) {
-  if (t.length < min) return `اكتبي ${min} حروف على الأقل`;
-  if (t.length > max) return `النص طويل (الحد ${max} حرف)`;
-  if (BLOCK_RE.test(t)) return 'لحمايتك: ممنوع نشر أرقام هواتف أو روابط';
+  if (t.length < min) return L`اكتبي ${min} حروف على الأقل`;
+  if (t.length > max) return L`النص طويل (الحد ${max} حرف)`;
+  if (BLOCK_RE.test(t)) return L('لحمايتك: ممنوع نشر أرقام هواتف أو روابط');
   return '';
 }
 
@@ -166,66 +168,66 @@ function viewCommunity() {
   if (tab === 'mine') list = list.filter(x => x.uid === CM.uid);
   if (tab === 'open') list = list.filter(x => !x.ac);
   return `
-    <div class="row" style="margin-bottom:10px"><button class="btn grow" data-sub="cnew" ${CM.canWrite === false ? 'disabled' : ''}>✍️ اطرحي سؤالاً</button><button class="btn ghost" id="cmRefresh" aria-label="تحديث">🔄</button></div>
-    ${CM.mode === 'local' ? '<p class="muted">أسئلة شائعة من فريق نبض 💗 — المشاركة بأسئلتك وردودك تتفعّل قريباً.</p>' : CM.canWrite === false ? '<p class="muted">يمكنك القراءة فقط في هذه الصفحة.</p>' : ''}
-    <input class="input" id="cmQ" placeholder="ابحثي في أسئلة الأمهات…" value="${esc(q)}" style="margin:0 0 10px">
-    <div class="seg">${[['all', 'الكل'], ['open', 'بدون رد'], ['mine', 'أسئلتي']].map(([k, v]) => `<button data-ct="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <div class="row" style="margin-bottom:10px"><button class="btn grow" data-sub="cnew" ${CM.canWrite === false ? 'disabled' : ''}>${L`✍️ اطرحي سؤالاً`}</button><button class="btn ghost" id="cmRefresh" aria-label="${L`تحديث`}">🔄</button></div>
+    ${CM.mode === 'local' ? `<p class="muted">${L`أسئلة شائعة من فريق نبض 💗 — المشاركة بأسئلتك وردودك تتفعّل قريباً.`}</p>` : CM.canWrite === false ? `<p class="muted">${L`يمكنك القراءة فقط في هذه الصفحة.`}</p>` : ''}
+    <input class="input" id="cmQ" placeholder="${L`ابحثي في أسئلة الأمهات…`}" value="${esc(q)}" style="margin:0 0 10px">
+    <div class="seg">${[['all', L('الكل')], ['open', L('بدون رد')], ['mine', L('أسئلتي')]].map(([k, v]) => `<button data-ct="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div>
     <div class="cat-strip">${CATS.map(([k, v]) => `<button class="chip ${f === k ? 'on' : ''}" data-cf="${k}">${v}</button>`).join('')}</div>
     ${CM.err ? `<div class="card warn-card">${CM.err}</div>` : ''}
-    ${!CM.loaded && !CM.err ? '<p class="muted center">جاري التحميل…</p>' : list.length ? list.map(x => `
+    ${!CM.loaded && !CM.err ? `<p class="muted center">${L`جاري التحميل…`}</p>` : list.length ? list.map(x => `
       <div class="card q-card" data-qid="${esc(x.id)}">
         <div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
         <h3 style="margin:10px 0 4px">${esc(x.title)}</h3><p class="muted clamp">${esc(x.body)}</p>
-        <div class="q-foot"><span>💬 ${x.ac || 0} ${x.ac === 1 ? 'رد' : 'ردود'}</span>${URGENT_RE.test(x.title + x.body) ? '<span class="st-chip" style="--c:#ef5350">قد تكون حالة طارئة</span>' : ''}</div>
-      </div>`).join('') : `<div class="card center"><div style="font-size:2.4rem">🌸</div><p>${q || f !== 'all' || tab !== 'all' ? 'لا توجد أسئلة مطابقة.' : 'كوني أول من يسأل في المجتمع!'}</p></div>`}
-    <p class="disclaimer">ردود الأمهات تجارب شخصية وليست نصيحة طبية. احترمي الجميع، ولا تنشري بيانات شخصية.</p>`;
+        <div class="q-foot"><span>💬 ${x.ac || 0} ${x.ac === 1 ? L('رد') : L('ردود')}</span>${URGENT_RE.test(x.title + x.body) ? `<span class="st-chip" style="--c:#ef5350">${L`قد تكون حالة طارئة`}</span>` : ''}</div>
+      </div>`).join('') : `<div class="card center"><div style="font-size:2.4rem">🌸</div><p>${q || f !== 'all' || tab !== 'all' ? L('لا توجد أسئلة مطابقة.') : L('كوني أول من يسأل في المجتمع!')}</p></div>`}
+    <p class="disclaimer">${L`ردود الأمهات تجارب شخصية وليست نصيحة طبية. احترمي الجميع، ولا تنشري بيانات شخصية.`}</p>`;
 }
 
 Object.assign(SUBVIEWS, {
   cnew() {
     const d = route.draft || {};
-    return `<div class="card"><label class="f">اسمك في المجتمع<input id="nNick" value="${esc(S.nick || '')}" placeholder="مثال: أم يوسف" maxlength="30"></label>
-      <label class="check"><input type="checkbox" id="nAnon" ${d.anon ? 'checked' : ''}><span>انشري بدون اسم 🤍</span></label>
-      <label class="f" style="margin-top:10px">التصنيف<select id="nCat">${CATS.slice(1).map(([k, v]) => `<option value="${k}" ${(d.cat || myCat()) === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
-      <label class="f">سؤالك باختصار<input id="nTitle" maxlength="120" value="${esc(d.title || '')}" placeholder="مثال: متى شعرتنّ بأول حركة للجنين؟"></label>
-      <label class="f">التفاصيل<textarea id="nBody" rows="5" maxlength="1500" placeholder="اكتبي التفاصيل حتى تستطيع الأمهات مساعدتك">${esc(d.body || '')}</textarea></label>
+    return `<div class="card"><label class="f">${L`اسمك في المجتمع`}<input id="nNick" value="${esc(S.nick || '')}" placeholder="${L`مثال: أم يوسف`}" maxlength="30"></label>
+      <label class="check"><input type="checkbox" id="nAnon" ${d.anon ? 'checked' : ''}><span>${L`انشري بدون اسم 🤍`}</span></label>
+      <label class="f" style="margin-top:10px">${L`التصنيف`}<select id="nCat">${CATS.slice(1).map(([k, v]) => `<option value="${k}" ${(d.cat || myCat()) === k ? 'selected' : ''}>${v}</option>`).join('')}</select></label>
+      <label class="f">${L`سؤالك باختصار`}<input id="nTitle" maxlength="120" value="${esc(d.title || '')}" placeholder="${L`مثال: متى شعرتنّ بأول حركة للجنين؟`}"></label>
+      <label class="f">${L`التفاصيل`}<textarea id="nBody" rows="5" maxlength="1500" placeholder="${L`اكتبي التفاصيل حتى تستطيع الأمهات مساعدتك`}">${esc(d.body || '')}</textarea></label>
       <div id="nWarn"></div>
-      <p class="muted" style="margin:0 0 10px">سيظهر مع سؤالك: «${esc(myStage())}»</p>
+      <p class="muted" style="margin:0 0 10px">${L`سيظهر مع سؤالك: «${esc(myStage())}»`}</p>
       ${rulesBox()}
-      <button class="btn block" id="nPost">نشر السؤال</button></div>`;
+      <button class="btn block" id="nPost">${L`نشر السؤال`}</button></div>`;
   },
 
   cq() {
     const x = CM.qs.find(q => q.id === route.qid);
-    if (!x) { CM.load(); return '<p class="muted center">جاري التحميل…</p>'; }
+    if (!x) { CM.load(); return `<p class="muted center">${L`جاري التحميل…`}</p>`; }
     if (CM.ans[x.id] === undefined) CM.loadAnswers(x.id);
     const ans = CM.ans[x.id], hasAi = (ans || []).some(a => a.ai);
     const sorted = (ans || []).filter(a => !isBlocked(a)).sort((a, b) => (b.ai - a.ai) || ((b.hp || 0) - (a.hp || 0)) || (a.t - b.t));
-    return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>🚨 لو الحالة طارئة لا تنتظري الردود</b><div>اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).</div></div>` : ''}
+    return `${URGENT_RE.test(x.title + x.body) ? `<div class="card lv-danger"><b>${L`🚨 لو الحالة طارئة لا تنتظري الردود`}</b><div>${L`اذهبي لأقرب طوارئ أو اتصلي بالإسعاف (${emergencyNo()}).`}</div></div>` : ''}
       <div class="card"><div class="q-head">${avatar(x)}<div class="grow"><b>${esc(author(x))}</b><div class="muted">${esc(x.stage || '')} · ${timeAgo(x.t)}</div></div><span class="st-chip" style="--c:var(--primary-2)">${catName(x.cat)}</span></div>
         <div class="row" style="align-items:flex-start;margin-top:12px"><h2 class="grow" style="margin:0 0 6px">${esc(x.title)}</h2>${favBtn({ id: 'cq:' + x.id, type: 'cq', title: x.title, text: x.body, qid: x.id })}</div><p style="white-space:pre-wrap;margin:0">${esc(x.body)}</p>
-        <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? '<button class="btn sm ghost" id="qDel">حذف سؤالي</button>' : modBtns(x, `q:${esc(x.id)}`)}</div></div>
-      ${!hasAi && AI.sample && ans ? '<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">✨ اطلبي رأي نبض في هذا السؤال</button>' : ''}
-      <h3>${ans ? `${ans.length} ${ans.length === 1 ? 'رد' : 'ردود'}` : 'جاري تحميل الردود…'}</h3>
-      ${sorted.map(a => `<div class="card a-card ${a.ai ? 'ai' : ''}"><div class="q-head">${avatar(a)}<div class="grow"><b>${esc(author(a))}</b><div class="muted">${a.ai ? 'إجابة ذكية للتثقيف' : esc(a.stage || '')} · ${timeAgo(a.t)}</div></div></div>
+        <div class="row" style="margin-top:10px">${x.uid && x.uid === CM.uid ? `<button class="btn sm ghost" id="qDel">${L`حذف سؤالي`}</button>` : modBtns(x, `q:${esc(x.id)}`)}</div></div>
+      ${!hasAi && AI.sample && ans ? `<button class="btn ghost block" id="aiAns" style="margin-bottom:14px">${L`✨ اطلبي رأي نبض في هذا السؤال`}</button>` : ''}
+      <h3>${ans ? `${ans.length} ${ans.length === 1 ? L('رد') : L('ردود')}` : L('جاري تحميل الردود…')}</h3>
+      ${sorted.map(a => `<div class="card a-card ${a.ai ? 'ai' : ''}"><div class="q-head">${avatar(a)}<div class="grow"><b>${esc(author(a))}</b><div class="muted">${a.ai ? L('إجابة ذكية للتثقيف') : esc(a.stage || '')} · ${timeAgo(a.t)}</div></div></div>
         <p style="white-space:pre-wrap;margin:10px 0 6px">${esc(a.body)}</p>
-        <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>👍 مفيد ${a.hp || 0}</button>${!a.ai && a.uid && a.uid === CM.uid ? `<button class="link" data-del-ans="${esc(a.id)}">🗑️ حذف ردي</button>` : modBtns(a, `a:${esc(x.id)}/${esc(a.id)}`)}</div></div>`).join('')}
-      ${CM.canWrite === false ? '' : `<div class="card"><b>اكتبي ردك</b>
-        <textarea class="input" id="aBody" rows="3" maxlength="1000" placeholder="شاركي تجربتك بلطف…"></textarea>
-        <label class="check"><input type="checkbox" id="aAnon"><span>رد بدون اسم 🤍</span></label>
+        <div class="row"><button class="chip ${S.voted[a.id] ? 'on' : ''}" data-help="${esc(a.id)}" ${S.voted[a.id] ? 'disabled' : ''}>${L`👍 مفيد ${a.hp || 0}`}</button>${!a.ai && a.uid && a.uid === CM.uid ? `<button class="link" data-del-ans="${esc(a.id)}">${L`🗑️ حذف ردي`}</button>` : modBtns(a, `a:${esc(x.id)}/${esc(a.id)}`)}</div></div>`).join('')}
+      ${CM.canWrite === false ? '' : `<div class="card"><b>${L`اكتبي ردك`}</b>
+        <textarea class="input" id="aBody" rows="3" maxlength="1000" placeholder="${L`شاركي تجربتك بلطف…`}"></textarea>
+        <label class="check"><input type="checkbox" id="aAnon"><span>${L`رد بدون اسم 🤍`}</span></label>
         ${rulesBox()}
-        <button class="btn block" id="aPost">إرسال الرد</button></div>`}`;
+        <button class="btn block" id="aPost">${L`إرسال الرد`}</button></div>`}`;
   }
 });
 
 async function aiAnswer(x) {
-  const b = $('#aiAns'); if (b) { b.disabled = true; b.textContent = 'نبض تكتب ردها…'; }
+  const b = $('#aiAns'); if (b) { b.disabled = true; b.textContent = L('نبض تكتب ردها…'); }
   try {
     if (CM.mode === 'server') { await CM.store.aiAnswer(x.id); x.ac = (x.ac || 0) + 1; await CM.loadAnswers(x.id, true); return; }
-    const r = await AI.sample(`${AI_RULES}\n\nهذا سؤال نشرته أم في مجتمع التطبيق (${x.stage}):\nالعنوان: ${x.title}\nالتفاصيل: ${x.body}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط.`, { modelTier: 'default' });
-    await CM.store.answer(x.id, { uid: 'ai', ai: true, nick: 'نبض', body: r.text.trim(), t: Date.now(), hp: 0 });
+    const r = await AI.sample(L`${AI_RULES}\n\nهذا سؤال نشرته أم في مجتمع التطبيق (${x.stage}):\nالعنوان: ${x.title}\nالتفاصيل: ${x.body}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط.`, { modelTier: 'default' });
+    await CM.store.answer(x.id, { uid: 'ai', ai: true, nick: L('نبض'), body: r.text.trim(), t: Date.now(), hp: 0 });
     x.ac = (x.ac || 0) + 1; await CM.loadAnswers(x.id, true);
-  } catch (e) { toast(e.code === 'not_granted' ? 'لم يتم السماح للمساعد' : 'تعذّر الحصول على رد نبض'); if (b) { b.disabled = false; b.textContent = '✨ اطلبي رأي نبض في هذا السؤال'; } }
+  } catch (e) { toast(e.code === 'not_granted' ? L('لم يتم السماح للمساعد') : L('تعذّر الحصول على رد نبض')); if (b) { b.disabled = false; b.textContent = L('✨ اطلبي رأي نبض في هذا السؤال'); } }
 }
 
 function cmBind() {
@@ -234,54 +236,54 @@ function cmBind() {
   app.querySelectorAll('[data-cf]').forEach(b => b.onclick = () => { route.cf = b.dataset.cf; render(false); });
   app.querySelectorAll('[data-ct]').forEach(b => b.onclick = () => { route.ct = b.dataset.ct; render(false); });
   on('#cmQ', e => { route.cq = e.target.value; const p = e.target.selectionStart; render(false); const i = $('#cmQ'); i.focus(); i.setSelectionRange(p, p); }, 'oninput');
-  on('#cmRefresh', () => { CM.load(true); toast('جاري التحديث…'); });
-  on('#nBody', e => { const w = $('#nWarn'); if (w) w.innerHTML = URGENT_RE.test(e.target.value) ? '<div class="card lv-danger" style="margin-bottom:10px">🚨 يبدو أنها قد تكون حالة طارئة — لا تنتظري الردود، اذهبي للطوارئ أو كلمي طبيبك الآن.</div>' : ''; }, 'oninput');
+  on('#cmRefresh', () => { CM.load(true); toast(L('جاري التحديث…')); });
+  on('#nBody', e => { const w = $('#nWarn'); if (w) w.innerHTML = URGENT_RE.test(e.target.value) ? `<div class="card lv-danger" style="margin-bottom:10px">${L`🚨 يبدو أنها قد تكون حالة طارئة — لا تنتظري الردود، اذهبي للطوارئ أو كلمي طبيبك الآن.`}</div>` : ''; }, 'oninput');
   on('#nPost', async () => {
     if (!rulesOk()) return;
     const nick = $('#nNick').value.trim(), anon = $('#nAnon').checked, title = $('#nTitle').value.trim(), body = $('#nBody').value.trim();
     route.draft = { title, body, anon, cat: $('#nCat').value };
-    if (!anon && nick.length < 2) return toast('اكتبي اسماً للمجتمع أو اختاري بدون اسم');
-    const err = checkText(title, 8, 120) || checkText(body, 10, 1500) || (BLOCK_RE.test(nick) ? 'الاسم غير مسموح' : '');
+    if (!anon && nick.length < 2) return toast(L('اكتبي اسماً للمجتمع أو اختاري بدون اسم'));
+    const err = checkText(title, 8, 120) || checkText(body, 10, 1500) || (BLOCK_RE.test(nick) ? L('الاسم غير مسموح') : '');
     if (err) return toast(err);
     if (nick) { S.nick = nick; save(); }
-    const btn = $('#nPost'); btn.disabled = true; btn.textContent = 'جاري النشر…';
+    const btn = $('#nPost'); btn.disabled = true; btn.textContent = L('جاري النشر…');
     try {
       const q = { uid: CM.uid || S.devId || 'anon', nick: anon ? '' : nick, anon, cat: route.draft.cat, title, body, stage: myStage(), t: Date.now(), ac: 0 };
       const id = await CM.store.add(q);
-      CM.qs.unshift({ id, ...q }); route.draft = null; toast('نُشر سؤالك 💗');
+      CM.qs.unshift({ id, ...q }); route.draft = null; toast(L('نُشر سؤالك 💗'));
       route = { view: route.view, sub: 'cq', qid: id }; history.replaceState(route, ''); render();
-    } catch (e) { btn.disabled = false; btn.textContent = 'نشر السؤال'; toast(e && e.code === 'quota_exceeded' ? 'المجتمع ممتلئ حالياً' : (e && e.text) || 'تعذّر النشر — تأكدي من الاتصال'); }
+    } catch (e) { btn.disabled = false; btn.textContent = L('نشر السؤال'); toast(e && e.code === 'quota_exceeded' ? L('المجتمع ممتلئ حالياً') : (e && e.text) || L('تعذّر النشر — تأكدي من الاتصال')); }
   });
   on('#aPost', async () => {
     if (!rulesOk()) return;
     const body = $('#aBody').value.trim(), anon = $('#aAnon').checked, err = checkText(body, 3, 1000);
     if (err) return toast(err);
-    if (!anon && !S.nick) { route.draftA = body; return toast('اختاري اسماً من «اطرحي سؤالاً» أو رد بدون اسم'); }
+    if (!anon && !S.nick) { route.draftA = body; return toast(L('اختاري اسماً من «اطرحي سؤالاً» أو رد بدون اسم')); }
     const x = CM.qs.find(q => q.id === route.qid), btn = $('#aPost'); btn.disabled = true;
     try {
       await CM.store.answer(x.id, { uid: CM.uid || S.devId || 'anon', nick: anon ? '' : S.nick, anon, body, stage: myStage(), t: Date.now(), hp: 0 });
-      x.ac = (x.ac || 0) + 1; toast('تم إرسال ردك 💗'); await CM.loadAnswers(x.id, true);
-    } catch (e) { btn.disabled = false; toast(e.text || 'تعذّر الإرسال'); }
+      x.ac = (x.ac || 0) + 1; toast(L('تم إرسال ردك 💗')); await CM.loadAnswers(x.id, true);
+    } catch (e) { btn.disabled = false; toast(e.text || L('تعذّر الإرسال')); }
   });
   app.querySelectorAll('[data-help]').forEach(b => b.onclick = async () => {
     const aid = b.dataset.help; if (S.voted[aid]) return;
     S.voted[aid] = 1; save(); b.disabled = true;
-    try { await CM.store.helpful(route.qid, aid); await CM.loadAnswers(route.qid, true); } catch { toast('تعذّر التسجيل'); }
+    try { await CM.store.helpful(route.qid, aid); await CM.loadAnswers(route.qid, true); } catch { toast(L('تعذّر التسجيل')); }
   });
   app.querySelectorAll('[data-report]').forEach(b => b.onclick = async () => {
-    try { await CM.store.report({ ref: b.dataset.report, by: CM.uid || S.devId || 'anon', t: Date.now() }); toast('شكراً، سنراجع البلاغ'); b.disabled = true; } catch { toast('تعذّر الإبلاغ'); }
+    try { await CM.store.report({ ref: b.dataset.report, by: CM.uid || S.devId || 'anon', t: Date.now() }); toast(L('شكراً، سنراجع البلاغ')); b.disabled = true; } catch { toast(L('تعذّر الإبلاغ')); }
   });
   app.querySelectorAll('[data-block]').forEach(b => b.onclick = confirmTap(b, () => {
     S.blocked = [...new Set([...(S.blocked || []), b.dataset.block])]; save();
-    toast('تم الحظر — لن يظهر لكِ محتوى هذا الشخص'); if (route.sub === 'cq' && isBlocked(CM.qs.find(q => q.id === route.qid) || {})) history.back(); else render(false);
+    toast(L('تم الحظر — لن يظهر لكِ محتوى هذا الشخص')); if (route.sub === 'cq' && isBlocked(CM.qs.find(q => q.id === route.qid) || {})) history.back(); else render(false);
   }));
   app.querySelectorAll('[data-del-ans]').forEach(b => b.onclick = confirmTap(b, async () => {
     const x = CM.qs.find(q => q.id === route.qid); b.disabled = true;
-    try { await CM.store.removeAnswer(route.qid, b.dataset.delAns); if (x) x.ac = Math.max(0, (x.ac || 0) - 1); toast('تم حذف ردك'); await CM.loadAnswers(route.qid, true); }
-    catch { b.disabled = false; toast('تعذّر الحذف'); }
+    try { await CM.store.removeAnswer(route.qid, b.dataset.delAns); if (x) x.ac = Math.max(0, (x.ac || 0) - 1); toast(L('تم حذف ردك')); await CM.loadAnswers(route.qid, true); }
+    catch { b.disabled = false; toast(L('تعذّر الحذف')); }
   }));
   on('#qDel', confirmTap('#qDel', async () => {
-    try { await CM.store.remove(route.qid); CM.qs = CM.qs.filter(q => q.id !== route.qid); toast('تم الحذف'); history.back(); } catch { toast('تعذّر الحذف'); }
+    try { await CM.store.remove(route.qid); CM.qs = CM.qs.filter(q => q.id !== route.qid); toast(L('تم الحذف')); history.back(); } catch { toast(L('تعذّر الحذف')); }
   }));
   on('#aiAns', () => { const x = CM.qs.find(q => q.id === route.qid); if (x) aiAnswer(x); });
 }

@@ -2,10 +2,10 @@
 'use strict';
 
 const KICK_GOAL = 10, KICK_WINDOW = 2 * 3600 * 1000;
-const arKicks = n => arCount(n, 'ركلة واحدة', 'ركلتان', 'ركلات', 'ركلة') || '0 ركلات';
-const arMins = n => arCount(n, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة') || 'أقل من دقيقة';
+const arKicks = n => arCount(n, L('ركلة واحدة'), L('ركلتان'), L('ركلات'), L('ركلة')) || L('0 ركلات');
+const arMins = n => arCount(n, L('دقيقة واحدة'), L('دقيقتان'), L('دقائق'), L('دقيقة')) || L('أقل من دقيقة');
 const hms = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
-const clock = t => new Date(t).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' });
+const clock = t => new Date(t).toLocaleTimeString(I18N.num, { hour: '2-digit', minute: '2-digit' });
 
 /* ---------- عدّاد الركلات: جلسة ساعتين وهدف 10 ركلات ---------- */
 function kickSave(reason) {
@@ -20,10 +20,10 @@ function kickExpire() { if (S._kick && Date.now() - S._kick.start >= KICK_WINDOW
 
 function kickRing(n) {
   const r = 70, C = 2 * Math.PI * r, f = Math.min(1, n / KICK_GOAL);
-  return `<svg class="kick-ring" viewBox="0 0 160 160" role="img" aria-label="${arKicks(n)} من ${KICK_GOAL}">
+  return `<svg class="kick-ring" viewBox="0 0 160 160" role="img" aria-label="${L`${arKicks(n)} من ${KICK_GOAL}`}">
     <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--track)" stroke-width="12"/>
     <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--primary)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}" transform="rotate(-90 80 80)"/>
-    <text x="80" y="82" text-anchor="middle" class="kick-n">${n}</text><text x="80" y="108" text-anchor="middle" class="kick-of">من ${KICK_GOAL}</text></svg>`;
+    <text x="80" y="82" text-anchor="middle" class="kick-n">${n}</text><text x="80" y="108" text-anchor="middle" class="kick-of">${L`من ${KICK_GOAL}`}</text></svg>`;
 }
 
 Object.assign(SUBVIEWS, {
@@ -35,21 +35,21 @@ Object.assign(SUBVIEWS, {
     S.kicks.forEach(k => { const d = iso(new Date(k.at)); (days[d] = days[d] || []).push(k); });
     const rows = Object.keys(days).sort().reverse().slice(0, 14).map(d => {
       const l = days[d], best = l.filter(k => k.goal || k.count >= KICK_GOAL).map(k => k.sec / 60).sort((a, b) => a - b)[0];
-      return `<tr><td>${fmtShort.format(parse(d))}</td><td>${l.length}</td><td>${l.reduce((n, k) => n + k.count, 0)}</td><td>${best != null ? arMins(Math.max(1, Math.round(best))) : '<span style="color:var(--warn)">لم يكتمل</span>'}</td></tr>`;
+      return `<tr><td>${fmtShort.format(parse(d))}</td><td>${l.length}</td><td>${l.reduce((n, k) => n + k.count, 0)}</td><td>${best != null ? arMins(Math.max(1, Math.round(best))) : `<span style="color:var(--warn)">${L`لم يكتمل`}</span>`}</td></tr>`;
     }).join('');
     return `${done ? `<div class="card result lv-${done.count >= KICK_GOAL ? 'ok' : 'high'}">
-        ${done.count >= KICK_GOAL ? `<b>🎉 ${arKicks(done.count)} خلال ${arMins(done.min)}</b><p style="margin:6px 0 0">طفلك نشيط. سُجّلت الجلسة في السجل.</p>`
-          : `<b>⚠️ ${arKicks(done.count)} فقط خلال ساعتين</b><p style="margin:6px 0 0">اشربي ماء أو كلي شيئاً واستلقي على جانبك الأيسر وأعيدي العدّ. وإذا بقيت الحركة قليلة، كلّمي طبيبك أو اذهبي للطوارئ اليوم.</p>`}</div>` : ''}
+        ${done.count >= KICK_GOAL ? `<b>${L`🎉 ${arKicks(done.count)} خلال ${arMins(done.min)}`}</b><p style="margin:6px 0 0">${L`طفلك نشيط. سُجّلت الجلسة في السجل.`}</p>`
+          : `<b>${L`⚠️ ${arKicks(done.count)} فقط خلال ساعتين`}</b><p style="margin:6px 0 0">${L`اشربي ماء أو كلي شيئاً واستلقي على جانبك الأيسر وأعيدي العدّ. وإذا بقيت الحركة قليلة، كلّمي طبيبك أو اذهبي للطوارئ اليوم.`}</p>`}</div>` : ''}
       <div class="card center kick-card">
         ${s ? `${kickRing(s.count)}
-          <div class="kick-left">متبقٍ <b id="kickLeft">${hms(s.start + KICK_WINDOW - Date.now())}</b> من الساعتين</div>
-          <button class="counter-big" id="kickBtn" aria-label="سجّلي ركلة">👣<small>اضغطي عند كل حركة</small></button>
-          <div class="row" style="justify-content:center"><button class="btn ghost" id="kickUndo" ${s.count ? '' : 'disabled'}>تراجع</button><button class="btn" id="kickStop">إنهاء وحفظ</button></div>`
-        : `<p class="muted" style="margin-top:0">اختاري وقتاً يكون فيه الجنين نشطاً (بعد الأكل غالباً)، واستلقي على جانبك الأيسر. الهدف: ${KICK_GOAL} حركات خلال ساعتين، وتنتهي الجلسة تلقائياً عند الوصول للهدف.</p>
-          <button class="counter-big" id="kickStart" aria-label="ابدئي جلسة عدّ الركلات">▶<small>ابدئي جلسة جديدة</small></button>`}
+          <div class="kick-left">${L`متبقٍ`} <b id="kickLeft">${hms(s.start + KICK_WINDOW - Date.now())}</b> ${L`من الساعتين`}</div>
+          <button class="counter-big" id="kickBtn" aria-label="${L`سجّلي ركلة`}">👣<small>${L`اضغطي عند كل حركة`}</small></button>
+          <div class="row" style="justify-content:center"><button class="btn ghost" id="kickUndo" ${s.count ? '' : 'disabled'}>${L`تراجع`}</button><button class="btn" id="kickStop">${L`إنهاء وحفظ`}</button></div>`
+        : `<p class="muted" style="margin-top:0">${L`اختاري وقتاً يكون فيه الجنين نشطاً (بعد الأكل غالباً)، واستلقي على جانبك الأيسر. الهدف: ${KICK_GOAL} حركات خلال ساعتين، وتنتهي الجلسة تلقائياً عند الوصول للهدف.`}</p>
+          <button class="counter-big" id="kickStart" aria-label="${L`ابدئي جلسة عدّ الركلات`}">▶<small>${L`ابدئي جلسة جديدة`}</small></button>`}
       </div>
-      <div class="card"><h3>السجل اليومي</h3>${rows ? `<table class="t"><tr><th>اليوم</th><th>جلسات</th><th>ركلات</th><th>أسرع ${KICK_GOAL}</th></tr>${rows}</table>` : '<p class="muted">لا توجد جلسات بعد.</p>'}</div>
-      <div class="card warn-card"><b>⚠️ راجعي الطبيب</b> إذا لم تشعري بـ${KICK_GOAL} حركات خلال ساعتين، أو لاحظتِ انخفاضاً واضحاً في نشاط الجنين المعتاد. لا تنتظري لليوم التالي.</div>`;
+      <div class="card"><h3>${L`السجل اليومي`}</h3>${rows ? `<table class="t"><tr><th>${L`اليوم`}</th><th>${L`جلسات`}</th><th>${L`ركلات`}</th><th>${L`أسرع ${KICK_GOAL}`}</th></tr>${rows}</table>` : `<p class="muted">${L`لا توجد جلسات بعد.`}</p>`}</div>
+      <div class="card warn-card"><b>${L`⚠️ راجعي الطبيب`}</b> ${L`إذا لم تشعري بـ${KICK_GOAL} حركات خلال ساعتين، أو لاحظتِ انخفاضاً واضحاً في نشاط الجنين المعتاد. لا تنتظري لليوم التالي.`}</div>`;
   },
 
   contractions() {
@@ -64,35 +64,35 @@ Object.assign(SUBVIEWS, {
     // قاعدة 5-1-1: كل 5 دقائق أو أقل، تستمر دقيقة تقريباً، لمدة ساعة
     const go511 = regular && span >= 55, soon = regular && !go511;
     const last = rows.filter(r => r.dur != null).slice(-1)[0];
-    return `${go511 ? `<div class="card lv-danger go-hospital" role="alert"><h2>🏥 توجّهي للمستشفى الآن</h2>
-        <p>الانقباضات منتظمة: كل ${avgGap.toFixed(1)} دقيقة تقريباً، ومدة كل واحدة ${Math.round(avgDur)} ثانية، منذ ساعة (قاعدة 5-1-1).</p>
-        <a class="btn block" href="tel:${emergencyNo()}">📞 اتصلي بالطوارئ ${emergencyNo()}</a></div>`
-      : soon ? `<div class="card warn-card"><b>⏳ الانقباضات بدأت تنتظم</b><p style="margin:6px 0 0">جهّزي حقيبتك وأبلغي من سيرافقك. إذا استمرت هكذا ساعة كاملة توجّهي للمستشفى.</p></div>` : ''}
+    return `${go511 ? `<div class="card lv-danger go-hospital" role="alert"><h2>${L`🏥 توجّهي للمستشفى الآن`}</h2>
+        <p>${L`الانقباضات منتظمة: كل ${avgGap.toFixed(1)} دقيقة تقريباً، ومدة كل واحدة ${Math.round(avgDur)} ثانية، منذ ساعة (قاعدة 5-1-1).`}</p>
+        <a class="btn block" href="tel:${emergencyNo()}">${L`📞 اتصلي بالطوارئ ${emergencyNo()}`}</a></div>`
+      : soon ? `<div class="card warn-card"><b>${L`⏳ الانقباضات بدأت تنتظم`}</b><p style="margin:6px 0 0">${L`جهّزي حقيبتك وأبلغي من سيرافقك. إذا استمرت هكذا ساعة كاملة توجّهي للمستشفى.`}</p></div>` : ''}
       <div class="card center">
-        <p class="muted" style="margin-top:0">اضغطي عند بداية الانقباض، واضغطي مرة أخرى عند انتهائه.</p>
-        <button class="counter-big ${active ? 'live' : ''}" id="ctrBtn">${active ? '<span id="ctrTime">0</span>' : '▶'}<small>${active ? 'انتهى الانقباض' : 'بدأ الانقباض'}</small></button>
-        <div class="grid3" style="margin-top:12px"><div class="stat"><b>${last ? last.dur + ' ث' : '—'}</b><small>آخر مدة</small></div>
-          <div class="stat"><b>${last && last.gap != null ? last.gap.toFixed(1) + ' د' : '—'}</b><small>آخر فاصل</small></div>
-          <div class="stat"><b>${hour.length}</b><small>في آخر ساعة</small></div></div>
-        ${hour.length ? `<p class="muted" style="margin:10px 0 0">متوسط آخر ساعة: فاصل ${avgGap.toFixed(1)} د · مدة ${Math.round(avgDur)} ث</p>` : ''}
+        <p class="muted" style="margin-top:0">${L`اضغطي عند بداية الانقباض، واضغطي مرة أخرى عند انتهائه.`}</p>
+        <button class="counter-big ${active ? 'live' : ''}" id="ctrBtn">${active ? '<span id="ctrTime">0</span>' : '▶'}<small>${active ? L('انتهى الانقباض') : L('بدأ الانقباض')}</small></button>
+        <div class="grid3" style="margin-top:12px"><div class="stat"><b>${last ? last.dur + L(' ث') : '—'}</b><small>${L`آخر مدة`}</small></div>
+          <div class="stat"><b>${last && last.gap != null ? last.gap.toFixed(1) + L(' د') : '—'}</b><small>${L`آخر فاصل`}</small></div>
+          <div class="stat"><b>${hour.length}</b><small>${L`في آخر ساعة`}</small></div></div>
+        ${hour.length ? `<p class="muted" style="margin:10px 0 0">${L`متوسط آخر ساعة: فاصل ${avgGap.toFixed(1)} د · مدة ${Math.round(avgDur)} ث`}</p>` : ''}
       </div>
-      <div class="card"><h3>السجل</h3>${rows.length ? `<table class="t"><tr><th>الوقت</th><th>المدة</th><th>الفاصل</th></tr>
-        ${rows.slice().reverse().slice(0, 20).map(r => `<tr><td>${clock(r.c.start)}</td><td>${r.dur != null ? r.dur + ' ث' : '…'}</td><td>${r.gap != null ? r.gap.toFixed(1) + ' د' : '—'}</td></tr>`).join('')}</table>
-        <button class="btn ghost sm" id="ctrClear" style="margin-top:10px">مسح السجل</button>` : '<p class="muted">لا يوجد سجل.</p>'}</div>
-      <div class="card"><b>قاعدة 5-1-1:</b> انقباض كل 5 دقائق أو أقل، يستمر دقيقة، لمدة ساعة ← توجّهي للمستشفى. في الحمل الثاني فأكثر قد تحتاجين التوجّه أبكر.</div>
-      <div class="card warn-card"><b>⚕️ تنبيه طبي:</b> المؤقّت مؤشر عام وليس تشخيصاً. توجّهي للطوارئ فوراً دون انتظار إذا نزل ماء أو دم، أو قلّت حركة الجنين، أو كان الألم شديداً ومستمراً، أو بدأت الانقباضات قبل الأسبوع 37.</div>`;
+      <div class="card"><h3>${L`السجل`}</h3>${rows.length ? `<table class="t"><tr><th>${L`الوقت`}</th><th>${L`المدة`}</th><th>${L`الفاصل`}</th></tr>
+        ${rows.slice().reverse().slice(0, 20).map(r => `<tr><td>${clock(r.c.start)}</td><td>${r.dur != null ? r.dur + L(' ث') : '…'}</td><td>${r.gap != null ? r.gap.toFixed(1) + L(' د') : '—'}</td></tr>`).join('')}</table>
+        <button class="btn ghost sm" id="ctrClear" style="margin-top:10px">${L`مسح السجل`}</button>` : `<p class="muted">${L`لا يوجد سجل.`}</p>`}</div>
+      <div class="card"><b>${L`قاعدة 5-1-1:`}</b> ${L`انقباض كل 5 دقائق أو أقل، يستمر دقيقة، لمدة ساعة ← توجّهي للمستشفى. في الحمل الثاني فأكثر قد تحتاجين التوجّه أبكر.`}</div>
+      <div class="card warn-card"><b>${L`⚕️ تنبيه طبي:`}</b> ${L`المؤقّت مؤشر عام وليس تشخيصاً. توجّهي للطوارئ فوراً دون انتظار إذا نزل ماء أو دم، أو قلّت حركة الجنين، أو كان الألم شديداً ومستمراً، أو بدأت الانقباضات قبل الأسبوع 37.`}</div>`;
   }
 });
 
 /* ---------- مفكرة الأعراض والمزاج: إدخال سريع + تصدير PDF ---------- */
 const journalBase = SUBVIEWS.journal;
-SUBVIEWS.journal = () => `<div class="card row" style="justify-content:space-between"><div><b>📄 تقرير للطبيب</b><div class="muted">سجل المزاج والأعراض والضغط بصيغة PDF</div></div><button class="btn sm" id="jPdf">تصدير PDF</button></div>${journalBase()}`;
+SUBVIEWS.journal = () => `<div class="card row" style="justify-content:space-between"><div><b>${L`📄 تقرير للطبيب`}</b><div class="muted">${L`سجل المزاج والأعراض والضغط بصيغة PDF`}</div></div><button class="btn sm" id="jPdf">${L`تصدير PDF`}</button></div>${journalBase()}`;
 
 // بطاقة «كيف حالك اليوم؟» بلمسة واحدة
 function quickMood() {
   const e = S.journal.find(j => j.date === iso(today()));
-  return `<div class="card quick-mood"><div class="row" style="justify-content:space-between"><b>كيف حالك اليوم؟</b><button class="link" data-sub="journal">الأعراض والملاحظات ‹</button></div>
-    <div class="mood-row" role="group" aria-label="اختاري مزاجك">${MOODS.map(m => `<button class="${e && e.mood === m ? 'on' : ''}" data-qmood="${m}" aria-pressed="${!!(e && e.mood === m)}">${m}</button>`).join('')}</div></div>`;
+  return `<div class="card quick-mood"><div class="row" style="justify-content:space-between"><b>${L`كيف حالك اليوم؟`}</b><button class="link" data-sub="journal">${L`الأعراض والملاحظات ‹`}</button></div>
+    <div class="mood-row" role="group" aria-label="${L`اختاري مزاجك`}">${MOODS.map(m => `<button class="${e && e.mood === m ? 'on' : ''}" data-qmood="${m}" aria-pressed="${!!(e && e.mood === m)}">${m}</button>`).join('')}</div></div>`;
 }
 
 // PDF صغير بدون مكتبات: كل صفحة تُرسم على canvas (العربية تُشكَّل صحيحاً) ثم تُضمَّن كصورة JPEG
@@ -127,28 +127,28 @@ async function journalPdf() {
   let c, g, y;
   const newPage = () => {
     c = document.createElement('canvas'); c.width = W; c.height = H; g = c.getContext('2d');
-    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.direction = 'rtl'; g.textAlign = 'right'; g.fillStyle = '#2c3048';
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.direction = I18N.dir; g.textAlign = I18N.rtl ? 'right' : 'left'; g.fillStyle = '#2c3048';
     y = M; pages.push(c);
   };
-  const text = (t, size = 28, bold = false, color = '#2c3048') => { g.font = `${bold ? 700 : 400} ${size}px Rubik, sans-serif`; g.fillStyle = color; g.fillText(t, W - M, y); };
+  const text = (t, size = 28, bold = false, color = '#2c3048') => { g.font = `${bold ? 700 : 400} ${size}px Rubik, sans-serif`; g.fillStyle = color; g.fillText(t, I18N.rtl ? W - M : M, y); };
   const wrap = (t, size, maxW) => { g.font = `400 ${size}px Rubik, sans-serif`; const out = []; let line = ''; for (const w of t.split(/\s+/)) { const tr = line ? line + ' ' + w : w; if (g.measureText(tr).width > maxW && line) { out.push(line); line = w; } else line = tr; } if (line) out.push(line); return out; };
   newPage();
-  text('سجل المزاج والأعراض', 44, true, '#c40f63'); y += 56;
-  text(`${p.name ? p.name + ' · ' : ''}${st ? `الأسبوع ${st.week} · موعد الولادة: ${Cal.both(st.due)}` : ''}`, 26, false, '#5c6080'); y += 40;
-  text(`تاريخ التقرير: ${fmtDate.format(today())} · من تطبيق ${APP_NAME}`, 24, false, '#7c8098'); y += 30;
+  text(L('سجل المزاج والأعراض'), 44, true, '#c40f63'); y += 56;
+  text(`${p.name ? p.name + ' · ' : ''}${st ? L`الأسبوع ${st.week} · موعد الولادة: ${Cal.both(st.due)}` : ''}`, 26, false, '#5c6080'); y += 40;
+  text(L`تاريخ التقرير: ${fmtDate.format(today())} · من تطبيق ${APP_NAME}`, 24, false, '#7c8098'); y += 30;
   g.fillStyle = '#efe3ea'; g.fillRect(M, y, W - 2 * M, 3); y += 50;
-  if (!entries.length) text('لا توجد يوميات مسجّلة بعد.', 28);
+  if (!entries.length) text(L('لا توجد يوميات مسجّلة بعد.'), 28);
   for (const e of entries) {
     const wk = st ? Math.floor(diffDays(parse(e.date), st.start) / 7) + 1 : null, ck = checks[e.date];
-    const lines = [`${e.mood || '📝'}  ${fmtDate.format(parse(e.date))}${wk > 0 ? ` · الأسبوع ${wk}` : ''}${ck && ck.sys ? ` · الضغط ${ck.sys}/${ck.dia}` : ''}`];
-    const body = [...(e.symptoms.length ? wrap('الأعراض: ' + e.symptoms.join('، '), 26, W - 2 * M) : []), ...(e.note ? wrap('ملاحظات: ' + e.note, 26, W - 2 * M) : [])];
+    const lines = [`${e.mood || '📝'}  ${fmtDate.format(parse(e.date))}${wk > 0 ? L` · الأسبوع ${wk}` : ''}${ck && ck.sys ? L` · الضغط ${ck.sys}/${ck.dia}` : ''}`];
+    const body = [...(e.symptoms.length ? wrap(L('الأعراض: ') + e.symptoms.map(L.t).join(L('، ')), 26, W - 2 * M) : []), ...(e.note ? wrap(L('ملاحظات: ') + e.note, 26, W - 2 * M) : [])];
     if (y + LH * (1 + body.length) > H - M) newPage();
     text(lines[0], 28, true); y += LH;
     body.forEach(l => { text(l, 26, false, '#3c4060'); y += LH - 6; });
     y += 18; g.fillStyle = '#f3e6ee'; g.fillRect(M, y - 22, W - 2 * M, 2);
   }
-  pages.forEach((pc, i) => { const x = pc.getContext('2d'); x.direction = 'rtl'; x.textAlign = 'center'; x.font = '400 22px Rubik, sans-serif'; x.fillStyle = '#9a9cb0';
-    x.fillText(`صفحة ${i + 1} من ${pages.length} · للتثقيف ولا يغني عن رأي الطبيب`, W / 2, H - 40); });
+  pages.forEach((pc, i) => { const x = pc.getContext('2d'); x.direction = I18N.dir; x.textAlign = 'center'; x.font = '400 22px Rubik, sans-serif'; x.fillStyle = '#9a9cb0';
+    x.fillText(L`صفحة ${i + 1} من ${pages.length} · للتثقيف ولا يغني عن رأي الطبيب`, W / 2, H - 40); });
   const jpgs = await Promise.all(pages.map(pc => new Promise(r => pc.toBlob(b => b.arrayBuffer().then(a => r({ data: new Uint8Array(a), w: W, h: H })), 'image/jpeg', 0.88))));
   return pdfFromJpegs(jpgs);
 }
@@ -162,7 +162,7 @@ async function shareFile(blob, name, title) {
   const file = new File([blob], name, { type: blob.type });
   if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast('تم حفظ الملف 📄');
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000); toast(L('تم حفظ الملف 📄'));
 }
 
 function toolsBind() {
@@ -178,7 +178,7 @@ function toolsBind() {
     render(false);
   });
   on('#kickUndo', () => { if (S._kick) { S._kick.count = Math.max(0, S._kick.count - 1); save(); render(false); } });
-  on('#kickStop', () => { kickSave('stop'); toast('تم الحفظ'); render(false); });
+  on('#kickStop', () => { kickSave('stop'); toast(L('تم الحفظ')); render(false); });
   if ($('#kickLeft')) timers.push(setInterval(() => {
     if (!S._kick) return;
     const left = S._kick.start + KICK_WINDOW - Date.now();
@@ -203,12 +203,12 @@ function toolsBind() {
   app.querySelectorAll('[data-qmood]').forEach(b => b.onclick = () => {
     const t = iso(today()), e = S.journal.find(j => j.date === t);
     if (e) e.mood = e.mood === b.dataset.qmood ? '' : b.dataset.qmood; else S.journal.push({ date: t, mood: b.dataset.qmood, symptoms: [], note: '' });
-    save(); render(false); toast('سُجّل مزاجك اليوم 💗');
+    save(); render(false); toast(L('سُجّل مزاجك اليوم 💗'));
   });
   on('#jPdf', async () => {
-    const b = $('#jPdf'); b.disabled = true; b.textContent = 'جاري التجهيز…';
-    try { await shareFile(await journalPdf(), `nabd-report-${iso(today())}.pdf`, 'تقرير المزاج والأعراض'); }
-    catch (e) { if (!/abort|cancel/i.test(String(e && (e.name || e.message)))) toast('تعذّر إنشاء الملف'); }
-    b.disabled = false; b.textContent = 'تصدير PDF';
+    const b = $('#jPdf'); b.disabled = true; b.textContent = L('جاري التجهيز…');
+    try { await shareFile(await journalPdf(), `nabd-report-${iso(today())}.pdf`, L('تقرير المزاج والأعراض')); }
+    catch (e) { if (!/abort|cancel/i.test(String(e && (e.name || e.message)))) toast(L('تعذّر إنشاء الملف')); }
+    b.disabled = false; b.textContent = L('تصدير PDF');
   });
 }

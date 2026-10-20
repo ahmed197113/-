@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.widget.RemoteViews;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.TimeZone;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -53,31 +54,41 @@ public class NabdWidget extends AppWidgetProvider {
         return n <= 10 ? n + " " + few : n + " " + many;
     }
 
+    // بالإنجليزية: 1 day / 5 days
+    private static String countEn(long n, String unit) {
+        return n + " " + unit + (n == 1 ? "" : "s");
+    }
+
     static RemoteViews build(Context context) {
         RemoteViews v = new RemoteViews(context.getPackageName(), R.layout.nabd_widget);
-        String big = "نبضٌ صغير", size = "", line = "افتحي التطبيق لبدء رحلتك 💗";
+        // اللغة: التي اختارتها المستخدمة في التطبيق، وقبل أول فتح لغة الجهاز
+        boolean en = !"ar".equals(Locale.getDefault().getLanguage());
+        String big = en ? "Nabd" : "نبضٌ صغير", size = "", line = en ? "Open the app to start your journey 💗" : "افتحي التطبيق لبدء رحلتك 💗";
         try {
             SharedPreferences sp = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
             String raw = sp.getString("nabd_widget", null);
             if (raw != null) {
                 JSONObject o = new JSONObject(raw);
+                en = "en".equals(o.optString("lang", en ? "en" : "ar"));
                 String name = o.optString("name", "");
                 long t = today();
                 if (o.optString("baby", "").length() > 0) {
                     long days = Math.max(0, t - parse(o.getString("baby")));
-                    big = name.isEmpty() ? "طفلي 👶" : name + " 👶";
-                    size = days < 60 ? "عمره " + count(Math.max(1, days / 7), "أسبوع واحد", "أسبوعان", "أسابيع", "أسبوعاً")
+                    big = name.isEmpty() ? (en ? "My baby 👶" : "طفلي 👶") : name + " 👶";
+                    if (en) size = (days < 60 ? countEn(Math.max(1, days / 7), "week") : countEn((long) Math.floor(days / 30.44), "month")) + " old";
+                    else size = days < 60 ? "عمره " + count(Math.max(1, days / 7), "أسبوع واحد", "أسبوعان", "أسابيع", "أسبوعاً")
                         : "عمره " + count((long) Math.floor(days / 30.44), "شهر واحد", "شهران", "أشهر", "شهراً");
-                    line = "نبضٌ صغير 💗";
+                    line = en ? "Nabd 💗" : "نبضٌ صغير 💗";
                 } else if (o.optString("due", "").length() > 0) {
                     long due = parse(o.getString("due"));
                     long days = Math.max(0, t - (due - 280));
                     long week = Math.min(40, Math.max(1, days / 7 + 1));
                     long left = due - t;
-                    big = "الأسبوع " + week;
+                    big = (en ? "Week " : "الأسبوع ") + week;
                     JSONArray sizes = o.optJSONArray("sizes");
-                    if (sizes != null && week <= sizes.length()) size = (name.isEmpty() ? "" : name + " ") + sizes.optString((int) week - 1, "");
-                    line = left > 0 ? "باقٍ " + count(left, "يوم واحد", "يومان", "أيام", "يوماً") + " على اللقاء 💗"
+                    if (sizes != null && week <= sizes.length()) size = (name.isEmpty() || en ? "" : name + " ") + sizes.optString((int) week - 1, "");
+                    if (en) line = left > 0 ? countEn(left, "day") + " until we meet 💗" : left == 0 ? "Today is meeting day 💗" : "Meeting day is close 💗";
+                    else line = left > 0 ? "باقٍ " + count(left, "يوم واحد", "يومان", "أيام", "يوماً") + " على اللقاء 💗"
                         : left == 0 ? "اليوم موعد اللقاء 💗" : "اقترب اللقاء 💗";
                 }
             }

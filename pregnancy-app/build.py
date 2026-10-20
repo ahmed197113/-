@@ -4,12 +4,13 @@
   تُحمَّل عند الحاجة (lazy) فيفتح التطبيق أسرع."""
 import base64, json, os, re, shutil
 d = os.path.dirname(os.path.abspath(__file__)) + '/'
-SCRIPTS = ['data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'cal.js', 'icons.js', 'app.js', 'features.js', 'community_seed.js', 'community.js', 'notify.js', 'account.js', 'extras.js', 'tools.js', 'onboarding.js']
+SCRIPTS = ['i18n.js', 'data.js', 'data2.js', 'data3.js', 'data_more.js', 'config.js', 'cal.js', 'icons.js', 'app.js', 'features.js', 'community_seed.js', 'community.js', 'notify.js', 'account.js', 'extras.js', 'tools.js', 'onboarding.js']
 b64 = lambda p: base64.b64encode(open(d + p, 'rb').read()).decode()
 # رقم النسخة الظاهر في «عن التطبيق» = نفس منطق patch-android.py
 run = int(os.environ.get('GITHUB_RUN_NUMBER', '0'))
 vj = json.load(open(d + 'android-app/version.json', encoding='utf-8'))
 APP_VERSION = vj['name'] if vj['code'] >= run + 100 else f'1.2.{run}'
+LANGS = sorted(f[:-3] for f in os.listdir(d + 'i18n') if f.endswith('.js'))
 womb_files = [g for g in range(1, 5) if os.path.exists(d + f'images/womb-{g}.webp')]
 
 
@@ -25,6 +26,10 @@ def build(single):
     # صور «داخل الرحم»: المتوفرة فقط، والشريحة تختفي لغير المتوفر
     womb = {g: (f'data:image/webp;base64,{b64(f"images/womb-{g}.webp")}' if single else f'images/womb-{g}.webp') for g in womb_files}
     ph = ph.replace('const WOMB = null;', 'const WOMB = ' + json.dumps(womb) + ';')
+    # الترجمات: مدمجة في الملف الواحد، وفي نسخة التطبيق ملف منفصل يُحمَّل فقط عند اختيار لغة غير العربية
+    if single:
+        for lang in LANGS:
+            h = h.replace('<script src="i18n.js"></script>', '<script>\n' + open(d + f'i18n/{lang}.js', encoding='utf-8').read() + '\n</script>\n<script src="i18n.js"></script>')
     for f in SCRIPTS:
         h = h.replace(f'<script src="{f}"></script>', '<script>\n' + open(d + f, encoding='utf-8').read() + '\n</script>')
     h = h.replace('<script src="photos.js"></script>', '<script>\n' + ph + '\n</script>')
@@ -54,5 +59,6 @@ open(www + 'index.html', 'w', encoding='utf-8').write(build(False))
 for f in os.listdir(d + 'images'):
     if f.endswith('.webp'): shutil.copy(d + 'images/' + f, www + 'images/')
 shutil.copytree(d + 'fonts', www + 'fonts')
+shutil.copytree(d + 'i18n', www + 'i18n')
 shutil.copy(d + 'fonts.css', www)
 print('dist/www/index.html', os.path.getsize(www + 'index.html') // 1024, 'KB + images/ + fonts/')

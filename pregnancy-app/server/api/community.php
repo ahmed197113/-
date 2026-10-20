@@ -52,7 +52,7 @@ switch ($act) {
     $title = clean((string)($in['title'] ?? ''), 160);
     $body = clean((string)($in['body'] ?? ''), 2000, true);
     if (mb_strlen($title) < 5) out(['error' => 'short'], 400);
-    if (preg_match(BLOCK_RE, $title . ' ' . $body)) out(['error' => 'blocked', 'text' => 'ممنوع وضع روابط أو أرقام هواتف'], 400);
+    if (preg_match(BLOCK_RE, $title . ' ' . $body)) out(['error' => 'blocked', 'text' => t('ممنوع وضع روابط أو أرقام هواتف', "Links and phone numbers aren't allowed")], 400);
     if (!bump("q:$dev", 10)) out(['error' => 'rate_limited'], 429);
     $pdo->prepare('INSERT INTO questions (dev, nick, anon, cat, title, body, stage, t, ip) VALUES (?,?,?,?,?,?,?,?,?)')
       ->execute([$dev, clean((string)($in['nick'] ?? ''), 40), empty($in['anon']) ? 0 : 1, preg_replace('/[^a-z0-9]/', '', (string)($in['cat'] ?? 'other')) ?: 'other',
@@ -69,7 +69,7 @@ switch ($act) {
     $q = question((int)($in['qid'] ?? 0));
     $body = clean((string)($in['body'] ?? ''), 1000, true);
     if (mb_strlen($body) < 2) out(['error' => 'short'], 400);
-    if (preg_match(BLOCK_RE, $body)) out(['error' => 'blocked', 'text' => 'ممنوع وضع روابط أو أرقام هواتف'], 400);
+    if (preg_match(BLOCK_RE, $body)) out(['error' => 'blocked', 'text' => t('ممنوع وضع روابط أو أرقام هواتف', "Links and phone numbers aren't allowed")], 400);
     if (!bump("a:$dev", 40)) out(['error' => 'rate_limited'], 429);
     $pdo->prepare('INSERT INTO answers (qid, dev, nick, anon, ai, body, stage, t, ip) VALUES (?,?,?,?,0,?,?,?,?)')
       ->execute([$q['id'], $dev, clean((string)($in['nick'] ?? ''), 40), empty($in['anon']) ? 0 : 1, $body, clean((string)($in['stage'] ?? ''), 80), now_ms(), client_ip()]);
@@ -82,7 +82,7 @@ switch ($act) {
     $s->execute([$q['id']]);
     if ($s->fetchColumn()) out(['ok' => true]); // رد واحد لنبض لكل سؤال
     if (!bump("ai:$dev", (int)$CFG['ai_daily_chat']) || !bump('ip:' . client_ip(), (int)$CFG['ai_daily_ip'])) out(['error' => 'rate_limited'], 429);
-    $text = llm(RULES, [['role' => 'user', 'content' => "هذا سؤال نشرته أم في مجتمع التطبيق ({$q['stage']}):\nالعنوان: {$q['title']}\nالتفاصيل: {$q['body']}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط."]], 2000);
+    $text = llm(RULES . ' أجيبي بنفس لغة السؤال (عربي أو إنجليزي).', [['role' => 'user', 'content' => "هذا سؤال نشرته أم في مجتمع التطبيق ({$q['stage']}):\nالعنوان: {$q['title']}\nالتفاصيل: {$q['body']}\n\nاكتبي رداً مختصراً ومفيداً لها ولكل من يقرأ، في 4–7 نقاط."]], 2000);
     if ($text === '') out(['error' => 'empty'], 502);
     $pdo->prepare('INSERT INTO answers (qid, dev, nick, anon, ai, body, stage, t, ip) VALUES (?,?,?,0,1,?,?,?,?)')
       ->execute([$q['id'], 'ai', 'نبض', $text, '', now_ms(), '']);

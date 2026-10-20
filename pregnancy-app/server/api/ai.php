@@ -11,10 +11,10 @@ if (!in_array($mode, ['chat', 'labs'], true)) out(['error' => 'bad_mode'], 400);
 if (banned($dev)) out(['error' => 'banned'], 403);
 $limit = $mode === 'labs' ? (int)$CFG['ai_daily_labs'] : (int)$CFG['ai_daily_chat'];
 if (!bump("ip:" . client_ip(), (int)$CFG['ai_daily_ip']) || !bump("$mode:$dev", $limit)) {
-  out(['error' => 'rate_limited', 'text' => 'وصلتِ للحد اليومي للمساعد، جرّبي غداً 💗'], 429);
+  out(['error' => 'rate_limited', 'text' => t('وصلتِ للحد اليومي للمساعد، جرّبي غداً 💗', "You've reached today's limit for the assistant — try again tomorrow 💗")], 429);
 }
 
-$system = RULES;
+$system = rules();
 $ctx = clean((string)($in['context'] ?? ''), 6000, true);
 if ($ctx !== '') $system .= "\n\nمعلومات عن المستخدمة وتعليمات الأسلوب:\n" . $ctx;
 

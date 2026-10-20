@@ -47,12 +47,22 @@ if 'xmlns:tools' not in x:
 x = x.replace('</manifest>', '    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />\n</manifest>', 1)
 # ويدجت الشاشة الرئيسية
 if 'NabdWidget' not in x:
-    x = x.replace('</application>', '''        <receiver android:name=".NabdWidget" android:exported="false" android:label="نبضٌ صغير">
+    x = x.replace('</application>', '''        <receiver android:name=".NabdWidget" android:exported="false" android:label="@string/app_name">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/nabd_widget_info" />
         </receiver>
     </application>''', 1)
 open(m, 'w', encoding='utf-8').write(x)
+
+# اسم التطبيق على الأجهزة بالإنجليزية (الافتراضي من capacitor.config.json بالعربية)
+en_dir = os.path.join(d, 'src', 'main', 'res', 'values-en')
+os.makedirs(en_dir, exist_ok=True)
+open(os.path.join(en_dir, 'strings.xml'), 'w', encoding='utf-8').write('''<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nabd</string>
+    <string name="title_activity_main">Nabd</string>
+</resources>
+''')
 
 w = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'widget')
 src = os.path.join(d, 'src', 'main')

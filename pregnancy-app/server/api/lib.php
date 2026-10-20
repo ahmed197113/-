@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type, X-Device, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, X-Device, X-Lang, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS');
 header('Content-Type: application/json; charset=utf-8');
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { http_response_code(204); exit; }
@@ -16,6 +16,18 @@ const RULES = 'أنتِ "نبض"، رفيقة ذكية داخل تطبيق عر�
 const CFG_FILE = __DIR__ . '/config.php';
 if (!is_file(CFG_FILE)) out(['error' => 'not_configured'], 500);
 $CFG = require CFG_FILE;
+
+/* لغة التطبيق (X-Lang): الرسائل والمساعد بالعربية افتراضياً، أو بالإنجليزية */
+function lang(): string {
+  return ($_SERVER['HTTP_X_LANG'] ?? '') === 'en' ? 'en' : 'ar';
+}
+function t(string $ar, string $en): string {
+  return lang() === 'en' ? $en : $ar;
+}
+/* تعليمات المساعد مع لغة الرد */
+function rules(): string {
+  return RULES . (lang() === 'en' ? ' The app is being used in English: always reply in clear, simple English (or in the language the user writes in).' : '');
+}
 
 function out(array $data, int $code = 200): void {
   http_response_code($code);
@@ -111,7 +123,7 @@ function llm(string $system, array $messages, int $maxTokens): string {
   if ($code !== 200 || !is_array($res)) {
     error_log('nabd ai error ' . $code . ' ' . substr((string)$raw, 0, 500));
     $busy = in_array($code, [429, 503], true);
-    out(['error' => $busy ? 'busy' : 'upstream', 'text' => $busy ? 'المساعد مشغول الآن، جرّبي بعد دقيقة.' : 'تعذّر الوصول للمساعد الآن.'], 502);
+    out(['error' => $busy ? 'busy' : 'upstream', 'text' => $busy ? t('المساعد مشغول الآن، جرّبي بعد دقيقة.', 'The assistant is busy right now, try again in a minute.') : t('تعذّر الوصول للمساعد الآن.', "Couldn't reach the assistant right now.")], 502);
   }
   $text = '';
   foreach ($res['candidates'][0]['content']['parts'] ?? [] as $part) {

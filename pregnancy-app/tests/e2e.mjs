@@ -213,6 +213,33 @@ try {
     await p.close();
   }
 
+  /* 13) الإنجليزية: الاكتشاف التلقائي، والاتجاه، ولا نص عربي ظاهر، والرجوع للعربية */
+  {
+    const arabicLeft = p => p.evaluate(() => { const out = []; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n; (n = w.nextNode());) if (/[\u0600-\u06FF]/.test(n.nodeValue) && n.parentElement.offsetParent !== null && !n.parentElement.closest('[lang="ar"]')) out.push(n.nodeValue.trim()); return out; });
+    const ctx = await browser.newContext({ viewport: { width: 360, height: 780 }, serviceWorkers: 'block', locale: 'en-US', timezoneId: 'America/Chicago' });
+    await ctx.route('**/config.js', r => r.fulfill({ contentType: 'text/javascript', body: `window.NABD_CONFIG = { apiBase: '', supabaseUrl: '', supabaseKey: '', googleWebClientId: '', facebook: false };` }));
+    const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    await p.goto(URL0); await wait(p, 600);
+    const d = await p.evaluate(() => ({ lang: I18N.lang, dir: document.documentElement.dir, country: guessCountry(), start: document.querySelector('#onbStart').textContent }));
+    ok('[EN] جهاز إنجليزي في أمريكا: الإنجليزية من اليسار لليمين والبلد US', d.lang === 'en' && d.dir === 'ltr' && d.country === 'US' && /start/i.test(d.start), d);
+    ok('[EN] شاشة الترحيب بلا نص عربي', !(await arabicLeft(p)).length, await arabicLeft(p));
+    await p.evaluate(s => { localStorage.setItem('rihlati_v1', s); localStorage.setItem('nabd_lang', 'en'); }, JSON.stringify({ theme: 'dark', ...profileState(200, { country: 'US' }), profile: { ...profileState(200).profile, name: 'Sarah', babyName: 'Bean' } }));
+    await p.reload(); await wait(p, 600);
+    const left = [];
+    for (const view of ['home', 'weeks', 'assist', 'track', 'more']) { await p.evaluate(v => { route = { view: v }; render(false); }, view); await wait(p, 250); left.push(...await arabicLeft(p)); }
+    for (let w = 4; w <= 40; w++) { await p.evaluate(w => { route = { view: 'weeks', week: w, mode: 'week' }; render(false); }, w); left.push(...await arabicLeft(p)); }
+    ok('[EN] الشاشات الرئيسية وكل الأسابيع بلا نص عربي', !left.length, [...new Set(left)].slice(0, 10));
+    await p.evaluate(() => { route = { view: 'home' }; render(false); }); await wait(p, 400);
+    const home = await p.evaluate(() => document.querySelector('#app').innerText);
+    ok('[EN] الرئيسية: الأسبوع والشهر بالإنجليزية', /Week 29/.test(home) && /Month 7/.test(home) && /Pregnancy so far/.test(home), home.slice(0, 300));
+    await p.evaluate(() => { route = { view: 'more', sub: 'settings' }; render(false); }); await wait(p, 250);
+    await p.selectOption('#setLang', 'ar'); await p.waitForLoadState('load'); await wait(p, 600);
+    ok('[EN] الرجوع للعربية من الإعدادات يحفظ البيانات', await p.evaluate(() => I18N.lang === 'ar' && document.documentElement.dir === 'rtl' && S.profile && S.profile.name === 'Sarah' && document.title === 'نبضٌ صغير'));
+    ok('[EN] لا أخطاء', errs.length === 0, errs);
+    await ctx.close();
+  }
+
   /* 6) كل الأسابيع 4–40 + الرئيسية لكل أسبوع، في الوضعين */
   for (const theme of ['light', 'dark']) {
     const p = await page({ theme, state: profileState(150, { theme }) });
@@ -458,6 +485,7 @@ try {
     ok('dist/nabd.html: شاشة الترحيب بلا أخطاء', await p.isVisible('#onbStart') && errs.length === 0, errs);
     await ctx.close();
   }
+
 } finally {
   await browser.close(); php.kill(); web.close(); fs.rmSync(tmp, { recursive: true, force: true });
 }
