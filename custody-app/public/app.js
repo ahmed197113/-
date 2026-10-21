@@ -455,7 +455,7 @@ const btn = (label, { act, href, icon, cls = '', data = '' } = {}) => href ? `<a
 function custodyItem(c) {
   return `<a class="item" href="#/custody/${c.id}">
     <div class="item-ic ${c.status === 'closed' ? 'muted-ic' : c.overdue ? 'bad-ic' : ''}">${ic('wallet')}</div>
-    <div class="item-main"><div class="item-title">${esc(c.no)} · ${esc(isStaff() ? c.employeeName : c.purpose)} ${c.overdue ? tag('متأخرة', 'bad') : ''} ${c.status === 'closed' ? tag('مغلقة') : ''}</div>
+    <div class="item-main"><div class="item-title">${esc(c.no)} · ${esc(isStaff() ? c.employeeName : c.purpose)} ${c.direct ? tag('تعميد مباشر', 'info') : ''} ${c.overdue ? tag('متأخرة', 'bad') : ''} ${c.status === 'closed' ? tag('مغلقة') : ''}</div>
       <div class="item-sub">${esc(c.kindName)}${isStaff() ? ' — ' + esc(c.purpose) : ''}</div>
       <div class="item-sub">${esc(c.costCenterName)}</div>
       ${progress(c.spent, c.received)}</div>
@@ -574,7 +574,7 @@ const STAFF_VIEWS = {
       ${tabs([['status=pending', 'الجديدة'], ['status=approved', 'الموافق عليها'], ['status=rejected', 'المرفوضة'], ['status=', 'الكل']], 'status=' + status, '#/requests')}
       ${list.length ? `<div class="list cards">${list.map(r => `<div class="item">
         <div class="item-ic">${ic(r.type === 'cash' ? 'wallet' : 'box')}</div>
-        <div class="item-main"><div class="item-title">${esc(r.employeeName)} — ${r.type === 'cash' ? 'عهدة نقدية' : 'عهدة عينية'} ${tag({ pending: 'جديد', approved: 'موافق عليه', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}</div>
+        <div class="item-main"><div class="item-title">${esc(r.employeeName)} — ${r.type === 'cash' ? 'عهدة نقدية' : 'عهدة عينية'} ${tag({ pending: 'جديد', approved: 'موافق عليه', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}${r.direct ? ' ' + tag('تعميد مباشر', 'info') : ''}</div>
           <div class="item-sub">${esc(r.purpose)}</div><div class="item-meta">${esc(r.no)} · ${ago(r.createdAt)}${r.costCenterId ? ' · ' + esc(r.costCenterName) : ''}${r.neededBy ? ' · مطلوب قبل ' + fmtDate(r.neededBy) : ''}${r.decisionNote ? ' · ' + esc(r.decisionNote) : ''}</div>
           ${r.status === 'pending' ? `<div class="actions mt"><button class="btn sm primary" data-act="req-ok" data-id="${r.id}">موافقة${r.type === 'cash' ? ' وصرف العهدة' : ''}</button><button class="btn sm danger-o" data-act="req-no" data-id="${r.id}">رفض</button></div>` : ''}
           ${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة المصروفة ←</a>` : ''}</div>
@@ -720,7 +720,7 @@ async function custodyDetail(id) {
   const pendingTx = d.tx.filter(t => t.status === 'pending');
   view(`العهدة ${c.no}`, `
     <div class="hero-card ${c.balance < 0 ? 'neg' : ''}">
-      <div class="hero-top"><div><div class="hero-label">الرصيد المتبقي</div><div class="hero-value">${money(c.balance)}</div></div><div class="hero-tags">${tag(c.kindName, 'light')} ${tag(open ? 'مفتوحة' : 'مغلقة', 'light')} ${c.overdue ? tag('متأخرة', 'bad') : ''}</div></div>
+      <div class="hero-top"><div><div class="hero-label">الرصيد المتبقي</div><div class="hero-value">${money(c.balance)}</div></div><div class="hero-tags">${tag(c.kindName, 'light')} ${c.direct ? tag('تعميد مباشر', 'light') : ''} ${tag(open ? 'مفتوحة' : 'مغلقة', 'light')} ${c.overdue ? tag('متأخرة', 'bad') : ''}</div></div>
       ${progress(c.spent, c.received, 'light')}
       <div class="hero-stats"><div><small>المستلم</small>${money(c.received)}</div><div><small>المصروف</small>${money(c.spent)}</div><div><small>المردود</small>${money(c.returned)}</div></div>
     </div>
@@ -1012,6 +1012,7 @@ function userForm(u) {
       { name: 'phone', label: 'الجوال', value: u?.phone, attrs: 'inputmode="tel" dir="ltr"' },
       { type: 'select', name: 'role', label: 'الصلاحية', value: u?.role || 'employee', options: [{ value: 'employee', label: 'موظف — يسجل مصروفاته فقط' }, { value: 'accountant', label: 'محاسب — يعتمد ويصرف ويسوي' }, { value: 'admin', label: 'مدير النظام — كل الصلاحيات' }] },
       { type: 'number', name: 'custodyLimit', label: 'الحد الأعلى للعهدة (اختياري)', value: u?.custodyLimit || '', attrs: 'min="0"' },
+      { type: 'toggle', name: 'directCustody', label: 'تعميد مباشر: يستلم عهدته من المالك مباشرة ويسجلها بنفسه بدون طلب', value: u?.directCustody },
       { name: 'username', label: 'اسم المستخدم للدخول', required: !u, value: u?.username, attrs: `dir="ltr" autocapitalize="off" ${u ? 'disabled' : ''}` },
       { name: 'password', label: u ? 'كلمة مرور جديدة (اتركها فارغة)' : 'كلمة المرور', required: !u, attrs: 'dir="ltr" minlength="4"' },
       ...(u ? [{ type: 'toggle', name: 'active', label: 'الحساب نشط', value: u.active }] : []),
@@ -1173,7 +1174,7 @@ const EMP_VIEWS = {
       <div class="qa">
         <button class="qa-i main" data-act="q-expenseForm"><span>${ic('plus', 24)}</span>مصروف جديد</button>
         <button class="qa-i" data-act="q-returnForm"><span>${ic('undo', 22)}</span>رد مبلغ</button>
-        <button class="qa-i" data-act="q-requestForm"><span>${ic('inbox', 22)}</span>طلب عهدة</button>
+        ${S.user.directCustody ? `<button class="qa-i" data-act="q-directForm"><span>${ic('wallet', 22)}</span>استلمت عهدة</button>` : `<button class="qa-i" data-act="q-requestForm"><span>${ic('inbox', 22)}</span>طلب عهدة</button>`}
         <a class="qa-i" href="#/report/statement"><span>${ic('chart', 22)}</span>كشف حسابي</a>
       </div>
       ${notifNotice()}
@@ -1207,7 +1208,7 @@ const EMP_VIEWS = {
   asset: assetDetail,
   async requests() {
     const list = await api('GET', '/api/requests');
-    view('طلباتي', list.length ? `<div class="list cards">${list.map(r => `<div class="item"><div class="item-ic">${ic(r.type === 'cash' ? 'wallet' : 'box')}</div><div class="item-main"><div class="item-title">${esc(r.purpose)} ${tag({ pending: 'قيد الدراسة', approved: 'تمت الموافقة', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}</div><div class="item-meta">${esc(r.no)} · ${ago(r.createdAt)}${r.decisionNote ? ' · ' + esc(r.decisionNote) : ''}</div>${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة ←</a>` : ''}</div><div class="item-end">${r.type === 'cash' ? money(r.amount) : ''}</div></div>`).join('')}</div>` : empty('لم تقدم طلبات'),
+    view('طلباتي', list.length ? `<div class="list cards">${list.map(r => `<div class="item"><div class="item-ic">${ic(r.type === 'cash' ? 'wallet' : 'box')}</div><div class="item-main"><div class="item-title">${esc(r.purpose)} ${r.direct ? tag('تعميد مباشر', 'info') : tag({ pending: 'قيد الدراسة', approved: 'تمت الموافقة', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}</div><div class="item-meta">${esc(r.no)} · ${ago(r.createdAt)}${r.decisionNote ? ' · ' + esc(r.decisionNote) : ''}</div>${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة ←</a>` : ''}</div><div class="item-end">${r.type === 'cash' ? money(r.amount) : ''}</div></div>`).join('')}</div>` : empty('لم تقدم طلبات'),
     { toolbar: btn('طلب عهدة جديد', { act: 'q-requestForm', icon: 'plus', cls: 'primary' }) });
   },
   report: reportView,
@@ -1224,17 +1225,40 @@ async function returnForm() {
     onSubmit: async (d, close) => { await api('POST', `/api/custodies/${d.custodyId}/tx`, { ...d, type: 'return' }); close(); toast('تم التسجيل — بانتظار التأكيد'); router(); },
   });
 }
-function requestForm() {
+function requestForm(direct = false) {
+  const canDirect = !!S.user.directCustody;
+  const ownerSrc = S.b.fundSources.find(x => x.active !== false && x.type === 'owner');
   formSheet({
-    title: 'طلب عهدة', submit: 'إرسال الطلب',
+    title: direct ? 'تسجيل عهدة مستلمة (تعميد مباشر)' : 'طلب عهدة', submit: direct ? 'تسجيل العهدة' : 'إرسال الطلب',
     fields: [
+      ...(canDirect ? [{ type: 'toggle', name: 'alreadyPaid', label: 'تم صرف العهدة لي بالفعل (تعميد مباشر من المالك)', value: direct }] : []),
       { type: 'chips', name: 'type', label: 'نوع الطلب', value: 'cash', options: [{ value: 'cash', label: 'عهدة نقدية' }, { value: 'asset', label: 'عهدة عينية (جهاز / معدة)' }] },
       { type: 'money', name: 'amount', label: 'المبلغ المطلوب (للنقدية)' },
+      ...(canDirect ? [srcField('استلمت المبلغ من', ownerSrc?.id), { type: 'date', name: 'issueDate', label: 'تاريخ الاستلام', value: today() }, { type: 'select', name: 'method', label: 'طريقة الاستلام', options: PAY_METHODS }] : []),
       { name: 'purpose', label: 'الغرض / الوصف', required: true, full: true },
       { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), empty: '— اختر —', full: true },
       { type: 'date', name: 'neededBy', label: 'مطلوب قبل تاريخ' },
     ],
-    onSubmit: async (d, close) => { await api('POST', '/api/requests', d); close(); toast('تم إرسال الطلب للإدارة'); go('#/requests'); },
+    onMount: (el, _close, form) => {
+      if (!canDirect) return;
+      const box = name => form.querySelector(`[name="${name}"]`).closest('.field');
+      const sync = () => {
+        const on = form.alreadyPaid.checked;
+        ['sourceId', 'issueDate', 'method'].forEach(n => { box(n).hidden = !on; });
+        box('type').hidden = on; box('neededBy').hidden = on;
+        $('[name=amount]', form).closest('.field').querySelector('label').firstChild.textContent = on ? 'المبلغ المستلم' : 'المبلغ المطلوب (للنقدية)';
+        $('[type=submit]', form).textContent = on ? 'تسجيل العهدة' : 'إرسال الطلب';
+      };
+      form.alreadyPaid.addEventListener('change', sync); sync();
+    },
+    onSubmit: async (d, close) => {
+      if (d.alreadyPaid) {
+        const r = await api('POST', '/api/requests', { ...d, type: 'cash' });
+        close(); toast('تم تسجيل العهدة وإبلاغ الإدارة'); go('#/custody/' + r.custodyId);
+        return;
+      }
+      await api('POST', '/api/requests', d); close(); toast('تم إرسال الطلب للإدارة'); go('#/requests');
+    },
   });
 }
 
@@ -1246,6 +1270,7 @@ ACT['q-userForm'] = () => userForm();
 ACT['q-ccForm'] = () => ccForm();
 ACT['q-returnForm'] = () => returnForm();
 ACT['q-requestForm'] = () => requestForm();
+ACT['q-directForm'] = () => requestForm(true);
 
 // ================= تنبيه «هل صرفت شيئاً؟» =================
 let timers = [];

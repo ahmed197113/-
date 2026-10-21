@@ -78,7 +78,7 @@
       if (!id) { if (required && D().fundSources.some(x => x.active !== false)) fail(400, 'اختر مصدر المبلغ (من أين / إلى أين)'); return null; }
       return find('fundSources', id, 'مصدر المبلغ').id;
     };
-    const publicUser = u => u && ({ id: u.id, name: u.name, username: u.username, role: u.role, roleName: ROLES[u.role], jobTitle: u.jobTitle || '', phone: u.phone || '', department: u.department || '', custodyLimit: u.custodyLimit || 0, active: u.active !== false });
+    const publicUser = u => u && ({ id: u.id, name: u.name, username: u.username, role: u.role, roleName: ROLES[u.role], jobTitle: u.jobTitle || '', phone: u.phone || '', department: u.department || '', custodyLimit: u.custodyLimit || 0, directCustody: !!u.directCustody, active: u.active !== false });
 
     function log(user, action, summary, entity, entityId) {
       D().audit.push({ id: env.uid(), at: env.now(), userId: user ? user.id : null, userName: user ? user.name : 'النظام', action, summary, entity, entityId });
@@ -196,11 +196,11 @@
       const c = {
         id: env.uid(), no: nextNo('CU'), employeeId: emp.id, kind, purpose: text(b.purpose, 'الغرض من العهدة'), costCenterId: b.costCenterId || null,
         issueDate: dateOr(b.issueDate), dueDate: kind === 'temporary' && /^\d{4}-\d{2}-\d{2}$/.test(b.dueDate || '') ? b.dueDate : null,
-        status: 'open', createdBy: user.id, createdAt: env.now(), closedAt: null, notes: opt(b.notes),
+        status: 'open', createdBy: user.id, createdAt: env.now(), closedAt: null, notes: opt(b.notes), ...(b.direct ? { direct: true } : {}),
       };
       D().custodies.push(c);
-      addTx(user, c, 'issue', amount, { date: c.issueDate, method: b.method, ref: b.ref, note: 'صرف العهدة', sourceId });
-      notify(emp.id, `تم صرف ${KINDS[kind]} رقم ${c.no} بمبلغ ${amount} — ${c.purpose}`, '#/custody/' + c.id);
+      addTx(user, c, 'issue', amount, { date: c.issueDate, method: b.method, ref: b.ref, note: b.direct ? 'تعميد مباشر' : 'صرف العهدة', sourceId });
+      if (!b.direct) notify(emp.id, `تم صرف ${KINDS[kind]} رقم ${c.no} بمبلغ ${amount} — ${c.purpose}`, '#/custody/' + c.id);
       log(user, 'إنشاء عهدة', `${c.no} لـ ${emp.name} بمبلغ ${amount}${sourceId ? ' من ' + srcName(sourceId) : ''}`, 'custody', c.id);
       return c;
     }
@@ -571,10 +571,23 @@
     });
     on('POST', '/api/requests', ({ user, b }) => {
       const type = b.type === 'asset' ? 'asset' : 'cash';
+      // تعميد مباشر: الموظف استلم العهدة فعلاً (من المالك غالباً) ويسجلها بنفسه بدل أن يطلبها
+      const direct = !!b.alreadyPaid && type === 'cash';
+      if (direct && !isStaff(user) && !user.directCustody) fail(403, 'غير مسموح لك بتسجيل عهدة مصروفة مباشرة — اطلبها من الإدارة');
+      const src = direct ? sourceOf(b.sourceId) : null;
+      if (direct && b.costCenterId) find('costCenters', b.costCenterId, 'مركز التكلفة');
       const r = {
         id: env.uid(), no: nextNo('RQ'), type, employeeId: user.id, amount: type === 'cash' ? money(b.amount) : 0, kind: KINDS[b.kind] ? b.kind : 'temporary',
         purpose: text(b.purpose, 'الغرض'), costCenterId: b.costCenterId || null, neededBy: b.neededBy || null, status: 'pending', decisionNote: '', createdAt: env.now(),
       };
+      if (direct) {
+        const c = createCustody(user, { employeeId: user.id, kind: r.kind, amount: r.amount, purpose: r.purpose, costCenterId: r.costCenterId, issueDate: b.issueDate, dueDate: r.neededBy, sourceId: b.sourceId, method: b.method, ref: b.ref, notes: b.notes, direct: true, force: true });
+        Object.assign(r, { status: 'approved', direct: true, custodyId: c.id, decisionNote: 'تعميد مباشر', decidedAt: env.now() });
+        D().requests.push(r);
+        notify(staffIds(), `${user.name} سجل استلام عهدة بتعميد مباشر ${c.no} بمبلغ ${r.amount} من ${srcName(src) || 'غير محدد'} — ${r.purpose}`, '#/custody/' + c.id);
+        log(user, 'عهدة بتعميد مباشر', `${r.no} / ${c.no} بمبلغ ${r.amount}`, 'request', r.id);
+        return r;
+      }
       D().requests.push(r);
       notify(staffIds(), `${user.name} طلب ${type === 'cash' ? 'عهدة نقدية بمبلغ ' + r.amount : 'عهدة عينية'} — ${r.purpose}`, '#/requests');
       log(user, 'طلب عهدة', `${r.no} ${r.purpose}`, 'request', r.id);
@@ -753,7 +766,7 @@
       const username = text(b.username, 'اسم المستخدم').toLowerCase();
       if (D().users.some(u => u.username === username)) fail(400, 'اسم المستخدم مستخدم مسبقاً');
       if (String(b.password || '').length < 4) fail(400, 'كلمة المرور يجب ألا تقل عن 4 أحرف');
-      const u = { id: env.uid(), name: text(b.name, 'الاسم'), username, role: ROLES[b.role] ? b.role : 'employee', jobTitle: opt(b.jobTitle), phone: opt(b.phone), department: opt(b.department), custodyLimit: num(b.custodyLimit), active: true, createdAt: env.now(), ...(await env.hashPassword(b.password)) };
+      const u = { id: env.uid(), name: text(b.name, 'الاسم'), username, role: ROLES[b.role] ? b.role : 'employee', jobTitle: opt(b.jobTitle), phone: opt(b.phone), department: opt(b.department), custodyLimit: num(b.custodyLimit), directCustody: !!b.directCustody, active: true, createdAt: env.now(), ...(await env.hashPassword(b.password)) };
       D().users.push(u);
       log(user, 'إضافة مستخدم', `${u.name} (${ROLES[u.role]})`, 'user', u.id);
       return publicUser(u);
@@ -764,6 +777,7 @@
       for (const k of ['name', 'jobTitle', 'phone', 'department']) if (b[k] !== undefined) u[k] = opt(b[k]);
       if (!u.name) fail(400, 'الاسم مطلوب');
       if (b.custodyLimit !== undefined) u.custodyLimit = num(b.custodyLimit);
+      if (b.directCustody !== undefined) u.directCustody = !!b.directCustody;
       if (b.role && ROLES[b.role]) { if (u.id === user.id && b.role !== 'admin') fail(400, 'لا يمكنك تغيير صلاحيتك'); u.role = b.role; }
       if (b.active !== undefined) { if (u.id === user.id && !b.active) fail(400, 'لا يمكنك إيقاف حسابك'); u.active = !!b.active; }
       if (b.password) { if (String(b.password).length < 4) fail(400, 'كلمة المرور قصيرة'); Object.assign(u, await env.hashPassword(b.password)); }

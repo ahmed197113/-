@@ -174,6 +174,41 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     const a2 = (await api('GET', '/api/assets/' + id.asset, null, T.admin)).data.asset; assert(a2.acknowledged === true, 'لم يسجل الإقرار');
     const other = await api('POST', `/api/assets/${id.asset}/ack`, {}, T.emp2); assert(other.status === 403, 'إقرار من غير الحامل');
   });
+  await step('تعميد مباشر: الموظف يسجل عهدة استلمها من المالك', async () => {
+    const no = await api('POST', '/api/requests', { alreadyPaid: true, amount: 900, purpose: 'محاولة غير مسموحة' }, T.emp1);
+    assert(no.status === 403, 'موظف غير مسموح سجل تعميداً مباشراً ' + no.status);
+    await login('admin', 'secret1'); T.admin = await token();
+    await go('#/user/' + id.emp2); await act('u-edit');
+    await modal().locator('label.toggle').filter({ has: page.locator('[name=directCustody]') }).click();
+    await submit(); await toast('تم الحفظ');
+    await login('emp2', '1234'); T.emp2 = await token();
+    await act('q-directForm'); await modal().locator('[name=amount]').waitFor();
+    assert(await modal().locator('[name=alreadyPaid]').isChecked(), 'خانة «تم الصرف بالفعل» غير مفعلة');
+    assert(await modal().locator('[data-chips="sourceId"] .chip.on').textContent() === 'المالك', 'المصدر الافتراضي ليس المالك');
+    await fill('amount', 2000); await fill('purpose', 'مصاريف موقع بتعميد المالك'); await selectPart('costCenterId', 'T-1-1');
+    await submit(); await toast('تم تسجيل العهدة'); await page.waitForURL(/#\/custody\//);
+    await page.locator('.hero-tags').getByText('تعميد مباشر').waitFor();
+    const cid = page.url().split('/').pop();
+    const c = (await api('GET', '/api/custodies/' + cid, null, T.admin)).data;
+    assert(c.custody.direct === true && c.custody.balance === 2000 && c.custody.employeeId === id.emp2, 'العهدة المباشرة ' + JSON.stringify(c.custody));
+    assert(c.tx[0].sourceName === 'المالك' && c.tx[0].note === 'تعميد مباشر', 'حركة الصرف ' + JSON.stringify(c.tx[0]));
+    const rq = (await api('GET', '/api/requests', null, T.admin)).data.find(r => r.custodyId === cid);
+    assert(rq && rq.status === 'approved' && rq.direct, 'الطلب المرتبط');
+    const n = (await api('GET', '/api/notifications', null, T.admin)).data[0];
+    assert(n.text.includes('تعميد مباشر') && n.text.includes('المالك'), 'إشعار الإدارة ' + n.text);
+    const src = (await api('GET', '/api/reports/sources', null, T.admin)).data.rows.find(r => r.name === 'المالك');
+    assert(src.out === 2000, 'تقرير المصادر للمالك ' + JSON.stringify(src));
+    const st = (await api('GET', '/api/reports/statement', null, T.emp2)).data;
+    assert(st.rows.some(r => r.desc.includes('تعميد مباشر') && r.in === 2000), 'كشف الحساب');
+    // الطلب العادي ما زال يعمل للموظف نفسه
+    await go('#/requests'); await act('q-requestForm');
+    await modal().locator('label.toggle').filter({ has: page.locator('[name=alreadyPaid]') }).waitFor();
+    assert(!(await modal().locator('[name=alreadyPaid]').isChecked()), 'الطلب العادي يبدأ بالتعميد المباشر');
+    assert(await modal().locator('[name=neededBy]').isVisible(), 'حقل «مطلوب قبل» مخفي في الطلب العادي');
+    await fill('amount', 300); await fill('purpose', 'طلب عادي'); await submit(); await toast('تم إرسال الطلب');
+    const mine = (await api('GET', '/api/requests', null, T.emp2)).data; assert(mine.find(r => r.purpose === 'طلب عادي').status === 'pending', 'الطلب العادي');
+    await login('emp1', '1234'); T.emp1 = await token();
+  });
   await step('كشف حسابي للموظف', async () => {
     await go('#/report/statement'); await page.locator('table.report').waitFor(); await noErrToast();
   });
@@ -196,11 +231,11 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     const [dl] = await Promise.all([page.waitForEvent('download'), act('s-backup')]);
     backupFile = path.join(OUT, 'backup.json'); await dl.saveAs(backupFile);
     const b = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-    assert(b.users.length === 3 && !b.sessions && b.expenses.length === 2, 'محتوى النسخة');
+    assert(b.users.length === 3 && !b.sessions && b.expenses.length === 2 && b.custodies.some(c => c.direct), 'محتوى النسخة');
     assert(JSON.stringify(b.settings.counters).startsWith('{'), 'counters ليست كائناً');
   });
   await step('استعادة النسخة الاحتياطية', async () => {
-    await api('POST', '/api/expenses', { custodyId: (await api('GET', '/api/requests', null, T.admin)).data[0].custodyId, amount: 99, categoryId: 'cat1', costCenterId: id.cc1, description: 'سيُحذف بالاستعادة' }, T.admin);
+    await api('POST', '/api/expenses', { custodyId: (await api('GET', '/api/requests', null, T.admin)).data.find(r => r.custodyId && !r.direct).custodyId, amount: 99, categoryId: 'cat1', costCenterId: id.cc1, description: 'سيُحذف بالاستعادة' }, T.admin);
     assert((await api('GET', '/api/expenses', null, T.admin)).data.length === 3, 'إضافة مصروف قبل الاستعادة');
     await go('#/settings');
     await page.locator('#s-restore').setInputFiles(backupFile); await page.locator('#cf-ok').click(); await toast('تمت الاستعادة');

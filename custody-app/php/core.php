@@ -161,7 +161,7 @@ class Core {
     return $this->find('fundSources', $id, 'مصدر المبلغ')->id;
   }
   public function publicUser($u) {
-    return $u ? obj(['id' => $u->id, 'name' => $u->name, 'username' => $u->username, 'role' => $u->role, 'roleName' => ROLES[$u->role] ?? null, 'jobTitle' => orv($u->jobTitle ?? null, ''), 'phone' => orv($u->phone ?? null, ''), 'department' => orv($u->department ?? null, ''), 'custodyLimit' => orv($u->custodyLimit ?? null, 0), 'active' => ($u->active ?? null) !== false]) : $u;
+    return $u ? obj(['id' => $u->id, 'name' => $u->name, 'username' => $u->username, 'role' => $u->role, 'roleName' => ROLES[$u->role] ?? null, 'jobTitle' => orv($u->jobTitle ?? null, ''), 'phone' => orv($u->phone ?? null, ''), 'department' => orv($u->department ?? null, ''), 'custodyLimit' => orv($u->custodyLimit ?? null, 0), 'directCustody' => truthy($u->directCustody ?? null), 'active' => ($u->active ?? null) !== false]) : $u;
   }
 
   private function log($user, $action, $summary, $entity, $entityId) {
@@ -293,9 +293,11 @@ class Core {
       'issueDate' => $this->dateOr(g($b, 'issueDate')), 'dueDate' => $kind === 'temporary' && isDate(g($b, 'dueDate')) ? g($b, 'dueDate') : null,
       'status' => 'open', 'createdBy' => $user->id, 'createdAt' => $this->env->now(), 'closedAt' => null, 'notes' => $this->opt(g($b, 'notes')),
     ]);
+    $direct = truthy(g($b, 'direct'));
+    if ($direct) $c->direct = true;
     $this->D()->custodies[] = $c;
-    $this->addTx($user, $c, 'issue', $amount, ['date' => $c->issueDate, 'method' => g($b, 'method'), 'ref' => g($b, 'ref'), 'note' => 'صرف العهدة', 'sourceId' => $sourceId]);
-    $this->notify($emp->id, 'تم صرف ' . KINDS[$kind] . " رقم {$c->no} بمبلغ " . jsstr($amount) . " — {$c->purpose}", '#/custody/' . $c->id);
+    $this->addTx($user, $c, 'issue', $amount, ['date' => $c->issueDate, 'method' => g($b, 'method'), 'ref' => g($b, 'ref'), 'note' => $direct ? 'تعميد مباشر' : 'صرف العهدة', 'sourceId' => $sourceId]);
+    if (!$direct) $this->notify($emp->id, 'تم صرف ' . KINDS[$kind] . " رقم {$c->no} بمبلغ " . jsstr($amount) . " — {$c->purpose}", '#/custody/' . $c->id);
     $this->log($user, 'إنشاء عهدة', "{$c->no} لـ {$emp->name} بمبلغ " . jsstr($amount) . ($sourceId ? ' من ' . $this->srcName($sourceId) : ''), 'custody', $c->id);
     return $c;
   }
@@ -695,11 +697,24 @@ class Core {
     });
     $this->on('POST', '/api/requests', function ($user, $p, $q, $b) use ($D) {
       $type = g($b, 'type') === 'asset' ? 'asset' : 'cash';
+      // تعميد مباشر: الموظف استلم العهدة فعلاً (من المالك غالباً) ويسجلها بنفسه بدل أن يطلبها
+      $direct = truthy(g($b, 'alreadyPaid')) && $type === 'cash';
+      if ($direct && !$this->isStaff($user) && !truthy($user->directCustody ?? null)) fail(403, 'غير مسموح لك بتسجيل عهدة مصروفة مباشرة — اطلبها من الإدارة');
+      $src = $direct ? $this->sourceOf(g($b, 'sourceId')) : null;
+      if ($direct && truthy(g($b, 'costCenterId'))) $this->find('costCenters', g($b, 'costCenterId'), 'مركز التكلفة');
       $kind = g($b, 'kind');
       $r = obj([
         'id' => $this->env->uid(), 'no' => $this->nextNo('RQ'), 'type' => $type, 'employeeId' => $user->id, 'amount' => $type === 'cash' ? $this->money(g($b, 'amount')) : 0, 'kind' => is_string($kind) && isset(KINDS[$kind]) ? $kind : 'temporary',
         'purpose' => $this->text(g($b, 'purpose'), 'الغرض'), 'costCenterId' => orv(g($b, 'costCenterId'), null), 'neededBy' => orv(g($b, 'neededBy'), null), 'status' => 'pending', 'decisionNote' => '', 'createdAt' => $this->env->now(),
       ]);
+      if ($direct) {
+        $c = $this->createCustody($user, obj(['employeeId' => $user->id, 'kind' => $r->kind, 'amount' => $r->amount, 'purpose' => $r->purpose, 'costCenterId' => $r->costCenterId, 'issueDate' => g($b, 'issueDate'), 'dueDate' => $r->neededBy, 'sourceId' => g($b, 'sourceId'), 'method' => g($b, 'method'), 'ref' => g($b, 'ref'), 'notes' => g($b, 'notes'), 'direct' => true, 'force' => true]));
+        foreach (['status' => 'approved', 'direct' => true, 'custodyId' => $c->id, 'decisionNote' => 'تعميد مباشر', 'decidedAt' => $this->env->now()] as $k => $v) $r->$k = $v;
+        $D()->requests[] = $r;
+        $this->notify($this->staffIds(), "{$user->name} سجل استلام عهدة بتعميد مباشر {$c->no} بمبلغ " . jsstr($r->amount) . ' من ' . orv($this->srcName($src), 'غير محدد') . " — {$r->purpose}", '#/custody/' . $c->id);
+        $this->log($user, 'عهدة بتعميد مباشر', "{$r->no} / {$c->no} بمبلغ " . jsstr($r->amount), 'request', $r->id);
+        return $r;
+      }
       $D()->requests[] = $r;
       $this->notify($this->staffIds(), "{$user->name} طلب " . ($type === 'cash' ? 'عهدة نقدية بمبلغ ' . jsstr($r->amount) : 'عهدة عينية') . " — {$r->purpose}", '#/requests');
       $this->log($user, 'طلب عهدة', "{$r->no} {$r->purpose}", 'request', $r->id);
@@ -861,7 +876,7 @@ class Core {
       if (some($D()->users, fn($u) => $u->username === $username)) fail(400, 'اسم المستخدم مستخدم مسبقاً');
       if (mb_strlen(jsstr(orv(g($b, 'password'), ''))) < 4) fail(400, 'كلمة المرور يجب ألا تقل عن 4 أحرف');
       $role = g($b, 'role');
-      $u = obj(array_merge(['id' => $this->env->uid(), 'name' => $this->text(g($b, 'name'), 'الاسم'), 'username' => $username, 'role' => is_string($role) && isset(ROLES[$role]) ? $role : 'employee', 'jobTitle' => $this->opt(g($b, 'jobTitle')), 'phone' => $this->opt(g($b, 'phone')), 'department' => $this->opt(g($b, 'department')), 'custodyLimit' => num(g($b, 'custodyLimit')), 'active' => true, 'createdAt' => $this->env->now()], $this->env->hashPassword(g($b, 'password'))));
+      $u = obj(array_merge(['id' => $this->env->uid(), 'name' => $this->text(g($b, 'name'), 'الاسم'), 'username' => $username, 'role' => is_string($role) && isset(ROLES[$role]) ? $role : 'employee', 'jobTitle' => $this->opt(g($b, 'jobTitle')), 'phone' => $this->opt(g($b, 'phone')), 'department' => $this->opt(g($b, 'department')), 'custodyLimit' => num(g($b, 'custodyLimit')), 'directCustody' => truthy(g($b, 'directCustody')), 'active' => true, 'createdAt' => $this->env->now()], $this->env->hashPassword(g($b, 'password'))));
       $D()->users[] = $u;
       $this->log($user, 'إضافة مستخدم', "{$u->name} (" . ROLES[$u->role] . ')', 'user', $u->id);
       return $this->publicUser($u);
@@ -872,6 +887,7 @@ class Core {
       foreach (['name', 'jobTitle', 'phone', 'department'] as $k) if (has($b, $k)) $u->$k = $this->opt($b->$k);
       if (!truthy($u->name ?? null)) fail(400, 'الاسم مطلوب');
       if (has($b, 'custodyLimit')) $u->custodyLimit = num($b->custodyLimit);
+      if (has($b, 'directCustody')) $u->directCustody = truthy($b->directCustody);
       $role = g($b, 'role');
       if (truthy($role) && is_string($role) && isset(ROLES[$role])) { if ($u->id === $user->id && $role !== 'admin') fail(400, 'لا يمكنك تغيير صلاحيتك'); $u->role = $role; }
       if (has($b, 'active')) { if ($u->id === $user->id && !truthy($b->active)) fail(400, 'لا يمكنك إيقاف حسابك'); $u->active = truthy($b->active); }
