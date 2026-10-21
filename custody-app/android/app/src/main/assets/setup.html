@@ -2,41 +2,64 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>إعداد التطبيق</title>
+<title>نظام إدارة العهد</title>
 <style>
-  :root { --p: #0f5c4d; }
+  :root { --p: #0f5c4d; --muted: #5d6b66; --border: #dfe5e2; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; font-family: system-ui, sans-serif; background: linear-gradient(160deg, var(--p), #0a3a31); color: #17201d; }
-  .card { background: #fff; border-radius: 18px; padding: 26px; width: 100%; max-width: 380px; text-align: center; }
-  h1 { font-size: 21px; margin: 10px 0 4px; } p { color: #5f6b67; font-size: 14px; margin: 0 0 18px; line-height: 1.6; }
-  input { width: 100%; padding: 12px; border: 1px solid #dde3e0; border-radius: 10px; font-size: 16px; direction: ltr; text-align: left; }
-  button { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 10px; background: var(--p); color: #fff; font-size: 17px; font-weight: 700; }
-  button.alt { background: #fff; color: var(--p); border: 2px solid var(--p); margin-top: 0; }
-  .or { color: #5f6b67; font-size: 13px; margin: 14px 0 10px; }
-  .hint { font-size: 12px; margin: 8px 0 0; }
-  .err { color: #c0392b; font-size: 13px; min-height: 18px; margin-top: 8px; }
+  body { margin: 0; min-height: 100vh; padding: 22px 16px; font-family: system-ui, sans-serif; background: radial-gradient(circle at 20% 0%, #1b7a65, transparent 50%), linear-gradient(160deg, var(--p), #06261f); color: #15201c; display: flex; flex-direction: column; justify-content: center; }
+  .head { text-align: center; color: #fff; margin-bottom: 18px; }
+  .head h1 { font-size: 23px; margin: 10px 0 4px; } .head p { margin: 0; opacity: .85; font-size: 14px; }
+  .opt { display: flex; gap: 14px; align-items: flex-start; background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 12px; width: 100%; border: 0; text-align: start; font: inherit; color: inherit; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+  .opt .ic { width: 46px; height: 46px; border-radius: 14px; background: #e3f1ed; display: grid; place-items: center; font-size: 24px; flex-shrink: 0; }
+  .opt b { display: block; font-size: 16.5px; margin-bottom: 3px; }
+  .opt span { color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+  .opt.main { outline: 3px solid #d9a441; }
+  .badge { display: inline-block; background: #d9a441; color: #2a1d00; border-radius: 99px; padding: 0 8px; font-size: 11px; font-weight: 800; margin-inline-start: 6px; vertical-align: middle; }
+  .server { display: none; margin-top: 12px; }
+  .server.show { display: block; }
+  input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 11px; font-size: 16px; direction: ltr; text-align: left; }
+  .go { width: 100%; margin-top: 10px; padding: 13px; border: 0; border-radius: 11px; background: var(--p); color: #fff; font-size: 16px; font-weight: 700; }
+  .err { color: #c0392b; font-size: 13px; min-height: 16px; margin-top: 6px; }
 </style>
 </head>
 <body>
-  <div class="card">
-    <svg width="64" height="64" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#0f5c4d"/><rect x="96" y="150" width="320" height="220" rx="36" fill="#fff"/><rect x="96" y="196" width="320" height="44" fill="#d9a441"/><circle cx="350" cy="310" r="26" fill="#0f5c4d"/></svg>
+  <div class="head">
+    <svg width="68" height="68" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#fff"/><rect x="96" y="150" width="320" height="220" rx="36" fill="#0f5c4d"/><rect x="96" y="196" width="320" height="44" fill="#d9a441"/><circle cx="350" cy="310" r="26" fill="#fff"/></svg>
     <h1>نظام إدارة العهد</h1>
-    <p>أدخل عنوان خادم الشركة (يعطيك إياه المدير)</p>
-    <input id="url" placeholder="https://custody.example.com" inputmode="url" autocomplete="url">
-    <div class="err" id="err"></div>
-    <button id="go">متابعة</button>
-    <div class="or">أو</div>
-    <button id="demo" class="alt">🧪 تجربة التطبيق بدون خادم</button>
-    <p class="hint">يفتح التطبيق ببيانات تجريبية لتتعرف على شاشات المدير والموظف</p>
+    <p>اختر طريقة التشغيل</p>
   </div>
+
+  <button class="opt main" id="local">
+    <div class="ic">📱</div>
+    <div><b>استخدام على هذا الجوال <span class="badge">موصى به للبدء</span></b><span>النظام كاملاً على جوالك بدون خادم ولا إنترنت. تسجل عهد الموظفين ومصروفاتهم بنفسك، مع نسخ احتياطي.</span></div>
+  </button>
+
+  <div class="opt" id="srv">
+    <div class="ic">🌐</div>
+    <div style="flex:1"><b>الربط بخادم الشركة</b><span>ليدخل كل موظف من جواله ويسجل مصروفاته، وترى أنت كل شيء لحظياً.</span>
+      <div class="server" id="box">
+        <input id="url" placeholder="https://custody.example.com" inputmode="url" autocomplete="url">
+        <div class="err" id="err"></div>
+        <button class="go" id="go">اتصال</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="opt" id="demo">
+    <div class="ic">🧪</div>
+    <div><b>تجربة ببيانات تجريبية</b><span>شركة وهمية فيها موظفون ومشاريع وعهد ومصروفات لتتعرف على كل الشاشات (مدير، محاسب، موظف).</span></div>
+  </button>
+
 <script>
-  const input = document.getElementById('url');
-  document.getElementById('demo').onclick = () => window.AndroidBridge.startDemo();
-  document.getElementById('go').onclick = async () => {
-    let url = input.value.trim().replace(/\/+$/, '');
-    if (!url) return (document.getElementById('err').textContent = 'أدخل عنوان الخادم');
+  const $ = id => document.getElementById(id);
+  $('local').onclick = () => AndroidBridge.startLocal();
+  $('demo').onclick = () => AndroidBridge.startDemo();
+  $('srv').onclick = e => { if (e.target.closest('#box')) return; $('box').classList.add('show'); $('url').focus(); };
+  $('go').onclick = () => {
+    let url = $('url').value.trim().replace(/\/+$/, '');
+    if (!url) return ($('err').textContent = 'أدخل عنوان الخادم');
     if (!/^https?:\/\//.test(url)) url = 'http://' + url;
-    window.AndroidBridge.setServer(url);
+    AndroidBridge.setServer(url);
   };
 </script>
 </body>

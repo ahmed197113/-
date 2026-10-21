@@ -2,8 +2,8 @@ package com.custody.app;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -14,8 +14,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.print.PrintManager;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.webkit.JavascriptInterface;
-import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -26,12 +26,21 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-/** غلاف WebView للتطبيق مع جسر JavaScript للتنبيهات الأصلية والطباعة ورفع الصور. */
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+
+/**
+ * غلاف WebView للتطبيق. ثلاث طرق تشغيل:
+ * local  — النظام كاملاً على الجوال (الملفات من داخل التطبيق والبيانات في IndexedDB)
+ * demo   — مثل local ببيانات تجريبية منفصلة
+ * server — الاتصال بخادم الشركة لمشاركة البيانات بين المدير والموظفين
+ */
 public class MainActivity extends Activity {
     static final String PREFS = "custody";
     static final String EXTRA_REMINDER = "reminder";
-    /** عنوان وهمي يُخدَم من ملفات التطبيق نفسه (الوضع التجريبي بدون خادم) */
-    static final String DEMO_ORIGIN = "https://app.local";
+    /** عنوان وهمي يُخدَم من ملفات التطبيق نفسه */
+    static final String LOCAL_ORIGIN = "https://app.local";
     private static final int REQ_FILE = 1;
 
     private WebView web;
@@ -41,6 +50,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        migratePrefs();
         web = new WebView(this);
         setContentView(web);
 
@@ -48,15 +58,15 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setUserAgentString(s.getUserAgentString() + " CustodyApp/1");
+        s.setUserAgentString(s.getUserAgentString() + " CustodyApp/2");
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri u = req.getUrl();
-                String server = getServer();
-                if ("file".equals(u.getScheme()) || (!server.isEmpty() && u.toString().startsWith(server))) return false;
+                String server = prefs().getString("server", "");
+                if ("file".equals(u.getScheme()) || "app.local".equals(u.getHost()) || (!server.isEmpty() && u.toString().startsWith(server))) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (ActivityNotFoundException ignored) { }
                 return true;
             }
@@ -87,7 +97,6 @@ public class MainActivity extends Activity {
                 return openFileChooser(cb, params);
             }
         });
-        web.setDownloadListener((url, ua, disposition, mime, length) -> download(url, disposition, mime));
 
         ReminderScheduler.createChannel(this);
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -96,16 +105,24 @@ public class MainActivity extends Activity {
         loadStart(getIntent());
     }
 
-    private String getServer() {
-        String saved = getSharedPreferences(PREFS, MODE_PRIVATE).getString("server", null);
-        return saved != null ? saved : BuildConfig.SERVER_URL;
+    private SharedPreferences prefs() { return getSharedPreferences(PREFS, MODE_PRIVATE); }
+
+    /** نسخة 1.x كانت تحفظ الوضع التجريبي كعنوان خادم */
+    private void migratePrefs() {
+        SharedPreferences p = prefs();
+        if (p.contains("mode")) return;
+        String server = p.getString("server", BuildConfig.SERVER_URL);
+        if (LOCAL_ORIGIN.equals(server)) p.edit().putString("mode", "demo").putString("server", "").apply();
+        else if (server != null && !server.isEmpty()) p.edit().putString("mode", "server").putString("server", server).apply();
     }
 
     private void loadStart(Intent intent) {
-        String server = getServer();
-        if (server.isEmpty()) { web.loadUrl("file:///android_asset/setup.html"); return; }
+        String mode = prefs().getString("mode", "");
         String answer = intent != null ? intent.getStringExtra(EXTRA_REMINDER) : null;
-        web.loadUrl(server + "/" + (answer != null ? "#/reminder/" + answer : ""));
+        String hash = answer != null ? "#/reminder/" + answer : "";
+        if ("local".equals(mode) || "demo".equals(mode)) web.loadUrl(LOCAL_ORIGIN + "/?mode=" + mode + hash);
+        else if ("server".equals(mode) && !prefs().getString("server", "").isEmpty()) web.loadUrl(prefs().getString("server", "") + "/" + hash);
+        else web.loadUrl("file:///android_asset/setup.html");
     }
 
     @Override
@@ -114,11 +131,8 @@ public class MainActivity extends Activity {
         String answer = intent.getStringExtra(EXTRA_REMINDER);
         String url = web.getUrl();
         if (answer == null) return;
-        if (url != null && url.startsWith("http")) {
-            web.evaluateJavascript("location.hash='#/reminder/" + answer + "'", null);
-        } else {
-            loadStart(intent);
-        }
+        if (url != null && url.startsWith("http")) web.evaluateJavascript("location.hash='#/reminder/" + answer + "'", null);
+        else loadStart(intent);
     }
 
     @Override
@@ -126,12 +140,13 @@ public class MainActivity extends Activity {
         if (web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 
-    // ---------- رفع صورة الإيصال (من الكاميرا أو المعرض) ----------
+    // ---------- إرفاق صور الفواتير (كاميرا / معرض / PDF، مع تعدد الملفات) ----------
     private boolean openFileChooser(ValueCallback<Uri[]> cb, WebChromeClient.FileChooserParams params) {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
         fileCallback = cb;
         Intent pick = params.createIntent();
-        Intent chooser = Intent.createChooser(pick, "صورة الإيصال");
+        if (params.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        Intent chooser = Intent.createChooser(pick, "إرفاق صورة الفاتورة");
         cameraUri = null;
         if (Build.VERSION.SDK_INT >= 29) {
             try {
@@ -156,8 +171,15 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != REQ_FILE || fileCallback == null) return;
-        Uri[] result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
-        boolean usedCamera = resultCode == RESULT_OK && (result == null || result.length == 0) && cameraUri != null;
+        Uri[] result = null;
+        if (resultCode == RESULT_OK && data != null) {
+            ClipData clip = data.getClipData();
+            if (clip != null && clip.getItemCount() > 0) {
+                result = new Uri[clip.getItemCount()];
+                for (int i = 0; i < clip.getItemCount(); i++) result[i] = clip.getItemAt(i).getUri();
+            } else if (data.getData() != null) result = new Uri[]{data.getData()};
+        }
+        boolean usedCamera = resultCode == RESULT_OK && result == null && cameraUri != null;
         if (usedCamera) result = new Uri[]{cameraUri};
         else if (cameraUri != null) getContentResolver().delete(cameraUri, null, null);
         fileCallback.onReceiveValue(result);
@@ -165,53 +187,68 @@ public class MainActivity extends Activity {
         cameraUri = null;
     }
 
-    // ---------- تنزيل ملفات Excel ----------
-    private void download(String url, String disposition, String mime) {
+    // ---------- حفظ ملفات Excel والنسخ الاحتياطية في مجلد التنزيلات ----------
+    private void saveFile(String name, String mime, String base64) {
+        byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
         try {
-            String name = URLUtil.guessFileName(url, disposition, mime);
-            DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url))
-                    .setMimeType(mime)
-                    .setTitle(name)
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, name);
-            ((DownloadManager) getSystemService(DOWNLOAD_SERVICE)).enqueue(r);
-            Toast.makeText(this, "جارٍ التنزيل إلى مجلد التنزيلات", Toast.LENGTH_SHORT).show();
+            Uri uri;
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentValues v = new ContentValues();
+                v.put(MediaStore.Downloads.DISPLAY_NAME, name);
+                v.put(MediaStore.Downloads.MIME_TYPE, mime);
+                uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                try (OutputStream os = getContentResolver().openOutputStream(uri)) { os.write(bytes); }
+            } else {
+                File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                File f = new File(dir, name);
+                try (FileOutputStream os = new FileOutputStream(f)) { os.write(bytes); }
+                runOnUiThread(() -> Toast.makeText(this, "تم الحفظ في: " + f.getAbsolutePath(), Toast.LENGTH_LONG).show());
+                return;
+            }
+            runOnUiThread(() -> Toast.makeText(this, "تم الحفظ في مجلد التنزيلات: " + name, Toast.LENGTH_LONG).show());
+            Intent open = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            try { startActivity(Intent.createChooser(open, "فتح " + name)); } catch (Exception ignored) { }
         } catch (Exception e) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            runOnUiThread(() -> Toast.makeText(this, "تعذر حفظ الملف: " + e.getMessage(), Toast.LENGTH_LONG).show());
         }
     }
 
     /** الدوال المتاحة لصفحة الويب عبر window.AndroidBridge */
     class Bridge {
         @JavascriptInterface
-        public String getServer() { return MainActivity.this.getServer(); }
+        public String getServer() { return prefs().getString("server", ""); }
+
+        @JavascriptInterface
+        public String getMode() { return prefs().getString("mode", ""); }
 
         @JavascriptInterface
         public void setServer(String url) {
             String clean = url.trim().replaceAll("/+$", "");
             if (!clean.startsWith("http")) clean = "http://" + clean;
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("server", clean).apply();
+            prefs().edit().putString("server", clean).putString("mode", "server").apply();
             runOnUiThread(() -> loadStart(null));
         }
 
         @JavascriptInterface
-        public void startDemo() { setServer(DEMO_ORIGIN); }
+        public void startLocal() { prefs().edit().putString("mode", "local").apply(); runOnUiThread(() -> loadStart(null)); }
+
+        @JavascriptInterface
+        public void startDemo() { prefs().edit().putString("mode", "demo").apply(); runOnUiThread(() -> loadStart(null)); }
 
         @JavascriptInterface
         public void changeServer() {
             ReminderScheduler.stop(MainActivity.this);
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("server", "").apply();
+            prefs().edit().putString("mode", "").apply();
             runOnUiThread(() -> web.loadUrl("file:///android_asset/setup.html"));
         }
 
         @JavascriptInterface
         public void reload() { runOnUiThread(() -> loadStart(null)); }
 
-        /** يبدأ تنبيهات "هل صرفت شيئاً؟" — config: JSON فيه token و workStart و workEnd و workDays و minutes */
+        /** يبدأ تنبيهات "هل صرفت شيئاً؟" — config: JSON فيه token و workStart و workEnd و workDays و minutes و local */
         @JavascriptInterface
         public void startReminders(String config) {
-            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
-            p.edit().putString("reminder", config).apply();
+            prefs().edit().putString("reminder", config).apply();
             ReminderScheduler.scheduleNext(MainActivity.this);
         }
 
@@ -236,10 +273,13 @@ public class MainActivity extends Activity {
         public void testReminder() { ReminderReceiver.showNotification(MainActivity.this); }
 
         @JavascriptInterface
+        public void saveFile(String name, String mime, String base64) { MainActivity.this.saveFile(name, mime, base64); }
+
+        @JavascriptInterface
         public void print() {
             runOnUiThread(() -> {
                 PrintManager pm = (PrintManager) getSystemService(PRINT_SERVICE);
-                pm.print("كشف العهدة", web.createPrintDocumentAdapter("custody"), null);
+                pm.print("إدارة العهد", web.createPrintDocumentAdapter("custody"), null);
             });
         }
     }

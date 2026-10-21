@@ -47,6 +47,12 @@ public class ReminderReceiver extends BroadcastReceiver {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         Intent no = new Intent(c, ReminderReceiver.class).setAction(ACTION_NO);
         int f = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
+        // في التشغيل على الجوال (بدون خادم) يُسجَّل الرد داخل التطبيق نفسه
+        JSONObject cfg = ReminderScheduler.config(c);
+        boolean local = cfg != null && cfg.optBoolean("local");
+        Intent noOpen = new Intent(c, MainActivity.class).putExtra(MainActivity.EXTRA_REMINDER, "no")
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent noIntent = local ? PendingIntent.getActivity(c, 13, noOpen, f) : PendingIntent.getBroadcast(c, 12, no, f);
 
         Notification n = new Notification.Builder(c, ReminderScheduler.CHANNEL)
                 .setSmallIcon(R.drawable.ic_notify)
@@ -57,7 +63,7 @@ public class ReminderReceiver extends BroadcastReceiver {
                 .setAutoCancel(true)
                 .setContentIntent(PendingIntent.getActivity(c, 10, open, f))
                 .addAction(new Notification.Action.Builder(null, "نعم، سأسجل المصروف", PendingIntent.getActivity(c, 11, yes, f)).build())
-                .addAction(new Notification.Action.Builder(null, "لا، لم أصرف", PendingIntent.getBroadcast(c, 12, no, f)).build())
+                .addAction(new Notification.Action.Builder(null, "لا، لم أصرف", noIntent).build())
                 .build();
         try {
             c.getSystemService(NotificationManager.class).notify(NOTIFICATION_ID, n);
@@ -68,7 +74,7 @@ public class ReminderReceiver extends BroadcastReceiver {
     private static void postCheckin(Context c) {
         try {
             JSONObject cfg = ReminderScheduler.config(c);
-            String server = c.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE).getString("server", BuildConfig.SERVER_URL);
+            String server = c.getSharedPreferences(MainActivity.PREFS, Context.MODE_PRIVATE).getString("server", "");
             if (cfg == null || server == null || server.isEmpty()) return;
             HttpURLConnection con = (HttpURLConnection) new URL(server + "/api/checkins").openConnection();
             con.setRequestMethod("POST");

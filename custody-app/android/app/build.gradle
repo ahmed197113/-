@@ -11,7 +11,7 @@ android {
         minSdk 26
         targetSdk 34
         versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
-        versionName "1.0.${System.getenv('VERSION_CODE') ?: '0'}"
+        versionName "2.0.${System.getenv('VERSION_CODE') ?: '0'}"
         // عنوان الخادم الافتراضي (اختياري) — إن تُرك فارغاً يطلبه التطبيق عند أول تشغيل
         buildConfigField 'String', 'SERVER_URL', "\"${System.getenv('SERVER_URL') ?: ''}\""
     }

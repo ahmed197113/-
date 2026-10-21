@@ -1,89 +1,214 @@
-// نظام إدارة العهد — واجهة المستخدم (صفحة واحدة بدون مكتبات)
+// نظام إدارة العهد — واجهة المستخدم
 'use strict';
 
-// داخل تطبيق أندرويد (APK) يتوفر جسر للتنبيهات الأصلية التي تعمل حتى والتطبيق مغلق
+// ================= البيئة والاتصال =================
 const NATIVE = window.AndroidBridge || null;
 if (NATIVE) window.print = () => NATIVE.print();
-
-const S = { token: null, user: null, settings: {}, projects: [], employees: [], pendingBadge: 0 };
-try { S.token = localStorage.getItem('custody_token'); } catch {}
-
-// ---------- أدوات ----------
-const $ = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmt = n => (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-const money = n => `<span class="num">${fmt(n)}</span> ${esc(S.settings.currency || '')}`;
-const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
-const nowTime = () => new Date().toTimeString().slice(0, 5);
-const STATUS = { pending: 'قيد المراجعة', approved: 'معتمد', rejected: 'مرفوض' };
-const statusTag = s => `<span class="tag ${s}">${STATUS[s] || s}</span>`;
-const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-function ago(iso) {
-  if (!iso) return '—';
-  const m = Math.round((Date.now() - new Date(iso)) / 6e4);
-  if (m < 1) return 'الآن';
-  if (m < 60) return `منذ ${m} دقيقة`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `منذ ${h} ساعة`;
-  return new Date(iso).toLocaleDateString('ar-EG-u-nu-latn');
-}
+const URLQ = new URLSearchParams(location.search);
+const MODE = URLQ.get('mode') || (URLQ.has('demo') ? 'demo' : location.hostname === 'app.local' ? 'local' : 'server');
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
-  del(k) { try { localStorage.removeItem(k); } catch {} },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { } },
+  del(k) { try { localStorage.removeItem(k); } catch { } },
 };
+const TOKEN_KEY = 'custody_token_' + MODE;
+const S = { token: store.get(TOKEN_KEY), user: null, b: null, backend: null, unread: 0 };
 
+async function serverApi(method, url, body, token) {
+  const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(data.error || 'تعذر الاتصال بالخادم'), { status: res.status });
+  return data;
+}
+async function initBackend() {
+  if (MODE === 'server') return { mode: 'server', api: serverApi, fileSrc: async id => `/api/files/${id}?token=${encodeURIComponent(S.token)}` };
+  return window.createLocalBackend(MODE === 'demo' ? 'custody-demo' : 'custody-local', { demo: MODE === 'demo' });
+}
+async function api(method, url, body) {
+  try { return await S.backend.api(method, url, body, S.token); } catch (e) {
+    if (e.status === 401 && !/\/api\/(login|setup)/.test(url) && S.user) logout(true);
+    throw e;
+  }
+}
+
+// ================= أدوات =================
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const cur = () => esc(S.b?.settings.currency || '');
+const money = (n, cls = '') => `<span class="money ${cls}"><span class="num">${fmt(n)}</span> <small>${cur()}</small></span>`;
+const signed = n => money(n, n < 0 ? 'neg' : '');
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const isStaff = () => S.user && S.user.role !== 'employee';
+const isAdmin = () => S.user && S.user.role === 'admin';
+const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+const fmtDate = d => d ? `<span class="num">${esc(String(d).slice(0, 10))}</span>` : '—';
+function ago(iso) {
+  if (!iso) return 'لا يوجد';
+  const m = Math.round((Date.now() - new Date(iso)) / 6e4);
+  if (m < 1) return 'الآن';
+  if (m < 60) return `منذ ${m} د`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `منذ ${h} س`;
+  const d = Math.round(h / 24);
+  return d < 30 ? `منذ ${d} يوم` : iso.slice(0, 10);
+}
 function toast(msg, err = false) {
   const el = document.createElement('div');
   el.className = 'toast' + (err ? ' err' : '');
   el.textContent = msg;
   $('#toast').appendChild(el);
-  setTimeout(() => el.remove(), 3200);
+  setTimeout(() => el.remove(), 3500);
 }
+const go = hash => { location.hash = hash; };
+const qsOf = obj => new URLSearchParams(Object.entries(obj).filter(([, v]) => v !== undefined && v !== null && v !== '')).toString();
 
-async function api(method, url, body) {
-  if (window.DEMO) {
-    try { return await DEMO.api(method, url, body, S.token); } catch (e) { if (e.status === 401) logout(true); throw e; }
-  }
-  const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(S.token ? { Authorization: 'Bearer ' + S.token } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (res.status === 401 && url !== '/api/login') { logout(true); throw new Error(data.error); }
-  if (!res.ok) throw new Error(data.error || 'حدث خطأ');
-  return data;
-}
-const fileUrl = url => window.DEMO ? (url.startsWith('/api/receipts/') ? url.slice(14) : '#demo-export') : url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(S.token);
+const ICONS = {
+  home: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z|M9 22V12h6v10',
+  wallet: 'M21 12V7H5a2 2 0 0 1 0-4h14v4|M3 5v14a2 2 0 0 0 2 2h16v-5|M18 12a2 2 0 0 0 0 4h4v-4z',
+  receipt: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z|M14 2v6h6|M16 13H8|M16 17H8|M10 9H8',
+  check: 'M9 11l3 3L22 4|M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+  box: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z|M3.27 6.96L12 12.01l8.73-5.05|M12 22.08V12',
+  users: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z|M23 21v-2a4 4 0 0 0-3-3.87|M16 3.13a4 4 0 0 1 0 7.75',
+  layers: 'M12 2L2 7l10 5 10-5-10-5z|M2 17l10 5 10-5|M2 12l10 5 10-5',
+  tag: 'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z|M7 7h.01',
+  chart: 'M18 20V10|M12 20V4|M6 20v-6',
+  settings: 'M4 21v-7|M4 10V3|M12 21v-9|M12 8V3|M20 21v-5|M20 12V3|M1 14h6|M9 8h6|M17 16h6',
+  list: 'M8 6h13|M8 12h13|M8 18h13|M3 6h.01|M3 12h.01|M3 18h.01',
+  bell: 'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9|M13.73 21a2 2 0 0 1-3.46 0',
+  plus: 'M12 5v14|M5 12h14',
+  back: 'M5 12h14|M12 5l7 7-7 7',
+  chev: 'M15 18l-6-6 6-6',
+  grid: 'M3 3h7v7H3z|M14 3h7v7h-7z|M14 14h7v7h-7z|M3 14h7v7H3z',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2|M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z',
+  print: 'M6 9V2h12v7|M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2|M6 14h12v8H6z',
+  download: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|M7 10l5 5 5-5|M12 15V3',
+  upload: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4|M17 8l-5-5-5 5|M12 3v12',
+  search: 'M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z|M21 21l-4.35-4.35',
+  x: 'M18 6L6 18|M6 6l12 12',
+  camera: 'M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z|M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9',
+  alert: 'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z|M12 9v4|M12 17h.01',
+  swap: 'M17 1l4 4-4 4|M3 11V9a4 4 0 0 1 4-4h14|M7 23l-4-4 4-4|M21 13v2a4 4 0 0 1-4 4H3',
+  undo: 'M9 14L4 9l5-5|M20 20v-7a4 4 0 0 0-4-4H4',
+  lock: 'M5 11h14v10H5z|M7 11V7a5 5 0 0 1 10 0v4',
+  edit: 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7|M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
+  trash: 'M3 6h18|M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6|M10 11v6|M14 11v6|M9 6V4h6v2',
+  ok: 'M20 6L9 17l-5-5',
+  clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z|M12 6v6l4 2',
+  clip: 'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48',
+  user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  file: 'M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z|M13 2v7h7',
+};
+const ic = (name, size = 20) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name].split('|').map(d => `<path d="${d}"/>`).join('')}</svg>`;
 
-// ---------- النوافذ ----------
-function modal(html, { onMount, wide } = {}) {
+// ================= النوافذ والنماذج =================
+function modal(html, { onMount, wide, onClose } = {}) {
   const back = document.createElement('div');
   back.className = 'modal-back';
-  back.innerHTML = `<div class="modal" style="${wide ? 'max-width:820px' : ''}">${html}</div>`;
-  const close = () => back.remove();
+  back.innerHTML = `<div class="modal ${wide ? 'wide' : ''}" role="dialog"><button class="modal-x" data-close aria-label="إغلاق">${ic('x')}</button>${html}</div>`;
+  const close = () => { back.remove(); onClose && onClose(); };
   back.addEventListener('click', e => { if (e.target === back || e.target.closest('[data-close]')) close(); });
   $('#modal-root').appendChild(back);
   onMount && onMount(back, close);
+  hydrateFiles(back);
   return close;
 }
-function confirmBox(msg) {
-  return new Promise(resolve => {
-    modal(`<h3>${esc(msg)}</h3><div class="foot"><button class="btn" data-close>إلغاء</button><button class="btn primary" id="cf-ok">تأكيد</button></div>`, {
-      onMount: (el, close) => $('#cf-ok', el).onclick = () => { close(); resolve(true); },
+const closeAllModals = () => $$('.modal-back').forEach(m => m.remove());
+function confirmBox(msg, { ok = 'تأكيد', danger } = {}) {
+  return new Promise(resolve => modal(`<h3>${esc(msg)}</h3><div class="sheet-foot"><button class="btn ghost" data-close>إلغاء</button><button class="btn ${danger ? 'danger' : 'primary'}" id="cf-ok">${ok}</button></div>`, {
+    onMount: (el, close) => { $('#cf-ok', el).onclick = () => { resolve(true); close(); }; },
+    onClose: () => resolve(false),
+  }));
+}
+
+const opts = (list, selected, empty) => (empty !== undefined ? `<option value="">${esc(empty)}</option>` : '') + list.map(o => `<option value="${esc(o.value)}" ${String(o.value) === String(selected ?? '') ? 'selected' : ''} ${o.disabled ? 'disabled' : ''}>${esc(o.label)}</option>`).join('');
+const ccOptions = ({ activeOnly = true } = {}) => S.b.costCenters.filter(c => !activeOnly || c.active !== false).map(c => ({ value: c.id, label: (c.depth ? '   '.repeat(c.depth) + '└ ' : '') + (c.code ? c.code + ' · ' : '') + c.name }));
+const userOptions = (filter = () => true) => S.b.users.filter(u => u.active && filter(u)).map(u => ({ value: u.id, label: `${u.name}${u.jobTitle ? ' — ' + u.jobTitle : ''}` }));
+const ccName = id => { const c = S.b.costCenters.find(x => x.id === id); return c ? (c.code ? c.code + ' · ' : '') + c.name : '—'; };
+
+function fieldHtml(f) {
+  const full = f.full ? 'full' : '';
+  const req = f.required ? 'required' : '';
+  const label = f.label ? `<label for="f-${f.name}">${esc(f.label)}${f.required ? ' <b class="req">*</b>' : ''}</label>` : '';
+  const hint = f.hint ? `<div class="hint">${f.hint}</div>` : '';
+  const val = f.value ?? '';
+  switch (f.type) {
+    case 'section': return `<div class="full form-section">${esc(f.label)}</div>`;
+    case 'html': return `<div class="${f.half ? '' : 'full'}">${f.html}</div>`;
+    case 'select': return `<div class="field ${full}">${label}<select id="f-${f.name}" name="${f.name}" ${req}>${f.optionsHtml || opts(f.options || [], val, f.empty)}</select>${hint}</div>`;
+    case 'textarea': return `<div class="field full">${label}<textarea id="f-${f.name}" name="${f.name}" ${req} placeholder="${esc(f.placeholder || '')}">${esc(val)}</textarea>${hint}</div>`;
+    case 'money': return `<div class="field full">${label}<div class="money-input"><input id="f-${f.name}" class="amount-input" name="${f.name}" type="number" step="0.01" min="0" inputmode="decimal" ${req} value="${esc(val)}" placeholder="0.00"><span>${cur()}</span></div>${hint}</div>`;
+    case 'toggle': return `<label class="toggle ${f.half ? '' : 'full'}"><input type="checkbox" name="${f.name}" data-bool ${val ? 'checked' : ''}><span class="switch"></span><span>${esc(f.label)}</span></label>`;
+    case 'chips': return `<div class="field full">${label}<input type="hidden" name="${f.name}" value="${esc(val)}"><div class="chips" data-chips="${f.name}">${(f.options || []).map(o => `<button type="button" class="chip ${String(o.value) === String(val) ? 'on' : ''}" data-v="${esc(o.value)}">${esc(o.label)}</button>`).join('')}</div>${hint}</div>`;
+    case 'days': return `<div class="field full">${label}<div class="chips" data-days="${f.name}">${DAYS.map((d, i) => `<button type="button" class="chip ${(val || []).includes(i) ? 'on' : ''}" data-v="${i}">${d}</button>`).join('')}</div></div>`;
+    case 'files': return `<div class="field full" data-files="${f.name}">${label}<div class="thumbs"></div><label class="btn ghost file-btn">${ic('camera')} <span>${esc(f.button || 'إرفاق صورة الفاتورة')}</span><input type="file" accept="image/*,application/pdf" multiple hidden></label>${hint}</div>`;
+    default: return `<div class="field ${full}">${label}<input id="f-${f.name}" name="${f.name}" type="${f.type || 'text'}" ${req} value="${esc(val)}" placeholder="${esc(f.placeholder || '')}" ${f.attrs || ''}>${hint}</div>`;
+  }
+}
+function readForm(form) {
+  const d = {};
+  for (const el of form.elements) {
+    if (!el.name || el.type === 'file') continue;
+    d[el.name] = el.dataset.bool !== undefined ? el.checked : el.value;
+  }
+  $$('[data-days]', form).forEach(w => { d[w.dataset.days] = $$('.chip.on', w).map(c => +c.dataset.v); });
+  $$('[data-files]', form).forEach(w => { d[w.dataset.files] = (w._files || []).slice(); });
+  return d;
+}
+function bindWidgets(root) {
+  $$('[data-chips]', root).forEach(w => w.addEventListener('click', e => {
+    const c = e.target.closest('.chip'); if (!c) return;
+    $$('.chip', w).forEach(x => x.classList.toggle('on', x === c));
+    const input = $(`input[name="${w.dataset.chips}"]`, w.parentNode);
+    input.value = c.dataset.v;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }));
+  $$('[data-days]', root).forEach(w => w.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) c.classList.toggle('on'); }));
+  $$('[data-files]', root).forEach(w => {
+    w._files = w._files || [];
+    const render = () => {
+      $('.thumbs', w).innerHTML = w._files.map((f, i) => `<div class="thumb">${String(f).startsWith('data:application/pdf') ? `<div class="pdf">${ic('file', 28)}PDF</div>` : String(f).startsWith('data:') ? `<img src="${f}" alt="">` : `<img data-file="${esc(f)}" alt="">`}<button type="button" data-rm="${i}" aria-label="حذف">${ic('x', 14)}</button></div>`).join('');
+      hydrateFiles(w);
+    };
+    w._render = render;
+    render();
+    w.addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { w._files.splice(+b.dataset.rm, 1); render(); } });
+    $('input[type=file]', w).addEventListener('change', async e => {
+      for (const file of [...e.target.files].slice(0, 6 - w._files.length)) {
+        try {
+          if (file.type === 'application/pdf') {
+            if (file.size > 5e6) { toast('ملف PDF أكبر من 5 ميجا', true); continue; }
+            w._files.push(await readAsDataUrl(file));
+          } else w._files.push(await compressImage(file));
+        } catch (err) { toast(err.message, true); }
+      }
+      e.target.value = '';
+      render();
     });
   });
 }
-const formData = form => Object.fromEntries(new FormData(form).entries());
-async function submitWith(btn, fn) {
-  btn.disabled = true;
-  try { await fn(); } catch (e) { toast(e.message, true); } finally { btn.disabled = false; }
+function formSheet({ title, intro = '', fields, submit = 'حفظ', onSubmit, onMount, wide, files }) {
+  return modal(`<h3>${title}</h3>${intro}<form class="form" novalidate>${fields.map(fieldHtml).join('')}<div class="sheet-foot full"><button type="button" class="btn ghost" data-close>إلغاء</button><button class="btn primary" type="submit">${submit}</button></div></form>`, {
+    wide,
+    onMount: (el, close) => {
+      const form = $('form', el);
+      if (files) for (const [name, list] of Object.entries(files)) { const w = $(`[data-files="${name}"]`, form); if (w) w._files = list.slice(); }
+      bindWidgets(form);
+      form.onsubmit = async ev => {
+        ev.preventDefault();
+        if (!form.reportValidity()) return;
+        const btn = $('[type=submit]', form);
+        btn.disabled = true;
+        try { await onSubmit(readForm(form), close, el); } catch (e) { toast(e.message, true); } finally { btn.disabled = false; }
+      };
+      onMount && onMount(el, close, form);
+    },
+  });
 }
-
-// ضغط صورة الإيصال قبل الرفع
-function compressImage(file, max = 1280) {
+const readAsDataUrl = file => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('تعذر قراءة الملف')); r.readAsDataURL(file); });
+function compressImage(file, max = 1400) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -98,647 +223,1074 @@ function compressImage(file, max = 1280) {
     img.src = URL.createObjectURL(file);
   });
 }
-
-// ---------- الدخول ----------
-function renderLogin() {
-  $('#app').innerHTML = `
-    <div class="login"><div class="card">
-      <div class="logo"><img src="/icon.svg" alt=""></div>
-      <h1>نظام إدارة العهد</h1>
-      <p class="muted" style="text-align:center;margin:0 0 18px">متابعة العهد والمصروفات لحظة بلحظة</p>
-      <form id="login-form" class="form" style="grid-template-columns:1fr">
-        <div class="field"><label>اسم المستخدم</label><input name="username" autocomplete="username" required></div>
-        <div class="field"><label>كلمة المرور</label><input name="password" type="password" autocomplete="current-password" required></div>
-        <button class="btn primary lg">دخول</button>
-      </form>
-      ${window.DEMO ? `<div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-        <p class="muted" style="text-align:center;margin:0 0 10px">🧪 وضع تجريبي ببيانات وهمية — اختر حساباً للتجربة</p>
-        <div style="display:grid;gap:8px">${DEMO.accounts.map(([u, p, label]) => `<button class="btn" data-demo="${u}|${p}">${label}</button>`).join('')}</div>
-        ${NATIVE ? '<button class="btn sm" style="margin-top:12px;width:100%" onclick="AndroidBridge.changeServer()">الربط بخادم الشركة</button>' : ''}
-      </div>` : ''}
-    </div></div>`;
-  $$('[data-demo]').forEach(b => b.onclick = () => {
-    const [u, p] = b.dataset.demo.split('|');
-    $('[name=username]').value = u; $('[name=password]').value = p;
-    $('#login-form').requestSubmit();
+async function hydrateFiles(root) {
+  for (const img of $$('img[data-file]', root)) {
+    const id = img.dataset.file;
+    img.removeAttribute('data-file');
+    try { img.src = await S.backend.fileSrc(id); } catch { }
+  }
+}
+function openFile(id) {
+  S.backend.fileSrc(id).then(src => {
+    if (String(src).startsWith('data:application/pdf') || /\.pdf/.test(src)) {
+      if (String(src).startsWith('data:')) downloadFile('مرفق.pdf', src.split(',')[1], 'application/pdf', true); else window.open(src);
+    } else modal(`<h3>المرفق</h3><img class="receipt-img" src="${esc(src)}" alt="مرفق">`, { wide: true });
   });
-  $('#login-form').onsubmit = e => {
+}
+
+// تنزيل ملف (Excel / نسخة احتياطية) — في تطبيق أندرويد عبر الجسر الأصلي
+function downloadFile(name, content, mime, isBase64 = false) {
+  if (NATIVE && NATIVE.saveFile) {
+    const b64 = isBase64 ? content : btoa(unescape(encodeURIComponent(content)));
+    NATIVE.saveFile(name, mime, b64);
+    return;
+  }
+  const blob = isBase64 ? new Blob([Uint8Array.from(atob(content), c => c.charCodeAt(0))], { type: mime }) : new Blob([content], { type: mime });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function exportCsv(name, columns, rows, totals) {
+  const e = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [columns.map(c => e(c.label)).join(',')];
+  for (const r of rows) lines.push(columns.map(c => e(typeof r[c.key] === 'string' ? r[c.key].replace(/ /g, '  ') : r[c.key])).join(','));
+  if (totals) lines.push(columns.map((c, i) => e(i === 0 ? 'الإجمالي' : totals[c.key] ?? '')).join(','));
+  downloadFile(name + '.csv', '﻿' + lines.join('\r\n'), 'text/csv');
+  toast('تم تصدير الملف (يفتح في Excel)');
+}
+
+// الطباعة: مستند مستقل يُطبع وحده
+function printDoc(html) {
+  $('#print-root').innerHTML = `<div class="print-doc">${printHeader()}${html}</div>`;
+  document.body.classList.add('printing');
+  setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 800); }, 150);
+}
+function printHeader() {
+  const s = S.b.settings;
+  return `<div class="ph"><div><div class="ph-co">${esc(s.companyName || 'الشركة')}</div>${s.address ? `<div>${esc(s.address)}</div>` : ''}${s.vatNumber ? `<div>الرقم الضريبي: <span class="num">${esc(s.vatNumber)}</span></div>` : ''}</div><div class="ph-date">تاريخ الطباعة: <span class="num">${today()}</span></div></div>`;
+}
+const signatures = names => `<div class="sigs">${names.map(n => `<div><div class="sig-line"></div>${esc(n)}</div>`).join('')}</div>`;
+
+// ================= البدء والدخول =================
+(async function start() {
+  try { S.backend = await initBackend(); } catch (e) { $('#app').innerHTML = `<div class="center-msg">تعذر تشغيل التطبيق: ${esc(e.message)}</div>`; return; }
+  let st;
+  try { st = await api('GET', '/api/status'); } catch (e) { return renderOffline(e); }
+  if (st.needsSetup) return renderSetup();
+  if (S.token) { try { await boot(); return; } catch { } }
+  renderLogin(st);
+})();
+
+function renderOffline(e) {
+  $('#app').innerHTML = `<div class="auth"><div class="card auth-card"><div class="auth-logo"><img src="/icon.svg" alt=""></div><h1>تعذر الاتصال بالخادم</h1><p class="muted center">${esc(e.message)}</p><button class="btn primary lg" onclick="location.reload()">إعادة المحاولة</button>${NATIVE ? '<button class="btn ghost lg" onclick="AndroidBridge.changeServer()">تغيير طريقة التشغيل</button>' : ''}</div></div>`;
+}
+const MODE_NOTE = { local: 'البيانات محفوظة على هذا الجهاز — يعمل بدون إنترنت', demo: 'وضع تجريبي ببيانات وهمية', server: '' };
+function authShell(inner) {
+  $('#app').innerHTML = `<div class="auth"><div class="card auth-card">
+    <div class="auth-logo"><img src="/icon.svg" alt=""></div>
+    <h1>نظام إدارة العهد</h1>
+    <p class="muted center">العهد النقدية والعينية · مراكز التكلفة · التسويات والتقارير</p>
+    ${MODE_NOTE[MODE] ? `<div class="mode-pill">${MODE === 'demo' ? '🧪' : '📱'} ${MODE_NOTE[MODE]}</div>` : ''}
+    ${inner}
+    ${NATIVE ? `<button class="btn link" onclick="AndroidBridge.changeServer()">تغيير طريقة التشغيل</button>` : ''}
+  </div></div>`;
+}
+function renderSetup() {
+  authShell(`<h2 class="center">إعداد النظام لأول مرة</h2>
+    <form id="setup" class="form one">
+      ${fieldHtml({ name: 'companyName', label: 'اسم الشركة / المؤسسة', required: true, full: true })}
+      ${fieldHtml({ name: 'name', label: 'اسمك (مدير النظام)', required: true, full: true })}
+      ${fieldHtml({ name: 'username', label: 'اسم المستخدم للدخول', required: true, full: true, attrs: 'dir="ltr" autocapitalize="off"' })}
+      ${fieldHtml({ name: 'password', label: 'كلمة المرور', type: 'password', required: true, full: true, attrs: 'minlength="4"' })}
+      <button class="btn primary lg full">إنشاء النظام والبدء</button>
+    </form>`);
+  $('#setup').onsubmit = async e => {
     e.preventDefault();
-    submitWith(e.submitter || $('button', e.target), async () => {
-      const r = await api('POST', '/api/login', formData(e.target));
-      S.token = r.token; store.set('custody_token', r.token);
-      history.replaceState(null, '', location.pathname + location.search);
-      await boot();
-    });
+    try { const r = await api('POST', '/api/setup', readForm(e.target)); setToken(r.token); await boot(); } catch (err) { toast(err.message, true); }
   };
 }
+function renderLogin(st = {}) {
+  const demo = MODE === 'demo' ? `<div class="demo-box"><p class="muted center">اختر حساباً تجريبياً:</p><div class="demo-grid">
+    ${[['admin', 'admin', 'مدير النظام'], ['sara', '1234', 'محاسبة'], ['mohamed', '1234', 'موظف: محمد'], ['khaled', '1234', 'موظف: خالد']].map(([u, p, l]) => `<button class="btn ghost" data-demo="${u}|${p}">${l}</button>`).join('')}</div></div>` : '';
+  authShell(`${st.companyName ? `<div class="center co-name">${esc(st.companyName)}</div>` : ''}
+    <form id="login" class="form one">
+      ${fieldHtml({ name: 'username', label: 'اسم المستخدم', required: true, full: true, attrs: 'dir="ltr" autocapitalize="off" autocomplete="username"' })}
+      ${fieldHtml({ name: 'password', label: 'كلمة المرور', type: 'password', required: true, full: true, attrs: 'autocomplete="current-password"' })}
+      <button class="btn primary lg full">دخول</button>
+    </form>${demo}`);
+  const doLogin = async d => { const r = await api('POST', '/api/login', d); setToken(r.token); history.replaceState(null, '', location.pathname + location.search); await boot(); };
+  $('#login').onsubmit = e => { e.preventDefault(); doLogin(readForm(e.target)).catch(err => toast(err.message, true)); };
+  $$('[data-demo]').forEach(b => b.onclick = () => { const [username, password] = b.dataset.demo.split('|'); doLogin({ username, password }).catch(err => toast(err.message, true)); });
+}
+const setToken = t => { S.token = t; store.set(TOKEN_KEY, t); };
 async function logout(silent) {
-  if (!silent) { try { await api('POST', '/api/logout'); } catch {} }
-  S.token = null; S.user = null; store.del('custody_token');
+  if (!silent) { try { await api('POST', '/api/logout'); } catch { } }
   stopTimers();
-  renderLogin();
+  S.token = null; S.user = null; store.del(TOKEN_KEY);
+  closeAllModals();
+  history.replaceState(null, '', location.pathname + location.search);
+  renderLogin(await api('GET', '/api/status').catch(() => ({})));
 }
-
-// ---------- الهيكل والتنقل ----------
-const NAV = {
-  manager: [
-    ['dashboard', '📊', 'لوحة التحكم'], ['expenses', '🧾', 'المصروفات'], ['custodies', '💰', 'العهد'],
-    ['checkins', '🔔', 'متابعة التنبيهات'], ['employees', '👥', 'الموظفون'], ['projects', '🏗️', 'المشاريع'], ['settings', '⚙️', 'الإعدادات'],
-  ],
-  employee: [
-    ['home', '🏠', 'عهدتي'], ['add', '➕', 'مصروف جديد'], ['history', '🧾', 'مصروفاتي'], ['received', '💰', 'العهد المستلمة'], ['settings', '⚙️', 'الإعدادات'],
-  ],
-};
-function shell(title, content, actions = '') {
-  const page = (location.hash.split('?')[0].split('/')[1]) || '';
-  const items = NAV[S.user.role];
-  const link = ([k, ico, label]) => `<a href="#/${k}" class="${page === k ? 'active' : ''}"><span class="ico">${ico}</span><span>${label}</span>${k === 'expenses' && S.pendingBadge ? `<span class="badge">${S.pendingBadge}</span>` : ''}</a>`;
-  $('#app').innerHTML = `
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="brand"><img src="/icon.svg" alt="">${esc(S.settings.companyName || 'إدارة العهد')}</div>
-        ${window.DEMO ? '<div class="tag pending" style="margin:0 10px 10px;text-align:center">🧪 وضع تجريبي</div>' : ''}
-        <nav class="nav">${items.map(link).join('')}</nav>
-        <div class="me">${esc(S.user.name)}<br><span style="opacity:.75">${S.user.role === 'manager' ? 'مدير' : 'موظف'}</span><br><button id="logout">تسجيل الخروج</button></div>
-      </aside>
-      <main class="main">
-        <div class="topbar"><h1>${title}</h1><div class="actions">${actions}</div></div>
-        ${content}
-      </main>
-      <nav class="mobile-nav">${items.map(link).join('')}</nav>
-    </div>`;
-  $('#logout').onclick = () => logout();
+async function refreshBootstrap() {
+  S.b = await api('GET', '/api/bootstrap');
+  S.user = S.b.user;
+  S.unread = S.b.unread;
+  updateBadges();
 }
-
-async function router() {
-  if (!S.user) return;
-  const [, page = '', arg] = location.hash.split('?')[0].split('/');
-  const views = S.user.role === 'manager' ? managerViews : employeeViews;
-  const fallback = S.user.role === 'manager' ? 'dashboard' : 'home';
-  if (page === 'reminder') { location.hash = '#/' + fallback; return handleReminderAction(arg); }
-  const view = views[page] || views[fallback];
-  try { await view(arg); } catch (e) { toast(e.message, true); }
-}
-window.addEventListener('hashchange', router);
-document.addEventListener('click', e => {
-  if (e.target.closest('a[href="#demo-export"]')) { e.preventDefault(); toast('التصدير إلى Excel يعمل بعد ربط التطبيق بخادم الشركة'); }
-});
-
 async function boot() {
-  try {
-    const b = await api('GET', '/api/bootstrap');
-    Object.assign(S, b);
-  } catch { return renderLogin(); }
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  await refreshBootstrap();
+  renderShell();
   startTimers();
+  if ('serviceWorker' in navigator && MODE === 'server') navigator.serviceWorker.register('/sw.js').catch(() => { });
   router();
 }
 
-// ================= واجهة المدير =================
-const managerViews = {
-  async dashboard() {
-    const sm = await api('GET', '/api/summary');
-    S.pendingBadge = sm.totals.pendingCount;
-    const th = S.settings.lowBalanceThreshold || 0;
-    const balClass = v => v < 0 ? 'neg' : v <= th ? 'low' : 'pos';
-    const maxSpent = Math.max(1, ...sm.projects.map(p => Math.max(p.spent, p.budget || 0)));
-    const content = `
-      <div class="kpis">
-        <div class="kpi"><div class="label">إجمالي العهد المصروفة للموظفين</div><div class="value">${money(sm.totals.received)}</div></div>
-        <div class="kpi"><div class="label">إجمالي ما تم صرفه</div><div class="value">${money(sm.totals.spent)}</div></div>
-        <div class="kpi hero"><div class="label">المتبقي لدى الموظفين</div><div class="value">${money(sm.totals.remaining)}</div></div>
-        <div class="kpi"><div class="label">مصروفات بانتظار المراجعة</div><div class="value"><span class="num">${sm.totals.pendingCount}</span></div><div class="sub"><a href="#/expenses?status=pending">مراجعة الآن ←</a></div></div>
-      </div>
-      <div class="card">
-        <h2>أرصدة الموظفين <span class="muted">يتحدث تلقائياً كل دقيقة</span></h2>
-        ${sm.employees.length ? `<div class="table-wrap"><table>
-          <thead><tr><th>الموظف</th><th>استلم عهدة</th><th>صرف</th><th>المتبقي معه</th><th>بانتظار المراجعة</th><th class="hide-mobile">آخر مصروف</th><th class="hide-mobile">آخر رد على التنبيه</th><th></th></tr></thead>
-          <tbody>${sm.employees.map(e => `<tr style="${e.active ? '' : 'opacity:.5'}">
-            <td><b>${esc(e.name)}</b><div class="muted">${esc(e.jobTitle || '')}</div></td>
-            <td class="amt">${money(e.received)}</td>
-            <td class="amt">${money(e.spent)}</td>
-            <td class="amt ${balClass(e.remaining)}">${money(e.remaining)}</td>
-            <td>${e.pendingCount ? `<span class="tag pending">${e.pendingCount} — ${fmt(e.pendingAmount)}</span>` : '—'}</td>
-            <td class="hide-mobile muted">${ago(e.lastExpenseAt)}</td>
-            <td class="hide-mobile muted">${ago(e.lastCheckinAt)}</td>
-            <td><div class="actions"><button class="btn sm primary" data-give="${e.id}">+ عهدة</button><a class="btn sm" href="#/statement/${e.id}">كشف حساب</a></div></td>
-          </tr>`).join('')}</tbody></table></div>` : `<div class="empty">لا يوجد موظفون بعد. <a href="#/employees">أضف موظفاً</a></div>`}
-      </div>
-      <div class="card">
-        <h2>المصروف حسب المشروع</h2>
-        ${sm.projects.length ? `<div class="bars">${sm.projects.map(p => `
-          <div class="bar-row"><div>${esc(p.name)}</div>
-          <div class="bar ${p.budget && p.spent > p.budget ? 'over' : ''}" title="${p.budget ? 'الميزانية ' + fmt(p.budget) : ''}"><span style="width:${(p.spent / maxSpent * 100).toFixed(1)}%"></span></div>
-          <div class="amt">${money(p.spent)}${p.budget ? `<div class="muted">من ${fmt(p.budget)}</div>` : ''}</div></div>`).join('')}</div>` : `<div class="empty">لا توجد مشاريع. <a href="#/projects">أضف مشروعاً</a></div>`}
-      </div>`;
-    shell('لوحة التحكم', content, `<a class="btn" href="${fileUrl('/api/export/summary.csv')}">⬇ تصدير الأرصدة</a><button class="btn primary" data-give="">+ صرف عهدة</button>`);
-    $$('[data-give]').forEach(b => b.onclick = () => giveCustodyModal(b.dataset.give));
-  },
+// ================= الهيكل والتنقل =================
+const NAV_STAFF = [
+  ['', [['dashboard', 'home', 'الرئيسية']]],
+  ['العمليات', [['custodies', 'wallet', 'العهد النقدية'], ['expenses', 'check', 'المصروفات والاعتماد', 'pending'], ['requests', 'inbox', 'طلبات العهد', 'requests'], ['assets', 'box', 'العهد العينية']]],
+  ['البيانات الأساسية', [['users', 'users', 'الموظفون'], ['cost-centers', 'layers', 'مراكز التكلفة'], ['categories', 'tag', 'بنود المصروفات']]],
+  ['التحليل', [['reports', 'chart', 'التقارير'], ['audit', 'list', 'سجل العمليات']]],
+  ['', [['settings', 'settings', 'الإعدادات']]],
+];
+const NAV_EMP = [['', [['home', 'home', 'الرئيسية'], ['custodies', 'wallet', 'عهدي النقدية'], ['expenses', 'receipt', 'مصروفاتي'], ['assets', 'box', 'عهدي العينية'], ['requests', 'inbox', 'طلباتي'], ['report/statement', 'chart', 'كشف حسابي'], ['settings', 'settings', 'الإعدادات']]]];
+const BOTTOM_STAFF = [['dashboard', 'home', 'الرئيسية'], ['custodies', 'wallet', 'العهد'], ['expenses', 'check', 'الاعتماد', 'pending'], ['reports', 'chart', 'التقارير'], ['more', 'grid', 'المزيد']];
+const BOTTOM_EMP = [['home', 'home', 'الرئيسية'], ['expenses', 'receipt', 'مصروفاتي'], ['custodies', 'wallet', 'عهدي'], ['notifications', 'bell', 'الإشعارات', 'unread'], ['more', 'grid', 'المزيد']];
 
-  async expenses() {
-    const q = new URLSearchParams(location.hash.split('?')[1] || '');
-    const list = await api('GET', '/api/expenses?' + q);
-    const total = list.filter(e => e.status !== 'rejected').reduce((s, e) => s + e.amount, 0);
-    const opt = (arr, sel, all) => `<option value="">${all}</option>` + arr.map(x => `<option value="${x.id}" ${sel === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
-    const content = `
-      <div class="card no-print">
-        <form id="flt" class="form">
-          <div class="field"><label>الموظف</label><select name="employeeId">${opt(S.employees, q.get('employeeId'), 'الكل')}</select></div>
-          <div class="field"><label>المشروع</label><select name="projectId">${opt(S.projects, q.get('projectId'), 'الكل')}</select></div>
-          <div class="field"><label>الحالة</label><select name="status"><option value="">الكل</option>${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${q.get('status') === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
-          <div class="field"><label>النوع</label><select name="category"><option value="">الكل</option>${S.settings.categories.map(c => `<option ${q.get('category') === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-          <div class="field"><label>من تاريخ</label><input type="date" name="from" value="${esc(q.get('from') || '')}"></div>
-          <div class="field"><label>إلى تاريخ</label><input type="date" name="to" value="${esc(q.get('to') || '')}"></div>
-        </form>
-      </div>
-      <div class="card">
-        <h2><span>${list.length} مصروف — الإجمالي ${money(total)}</span>${list.some(e => e.status === 'pending') ? '<button class="btn sm ok" id="approve-all">✓ اعتماد كل المعروض قيد المراجعة</button>' : ''}</h2>
-        ${expenseTable(list, true)}
-      </div>`;
-    shell('المصروفات', content, `<a class="btn" href="${fileUrl('/api/export/expenses.csv?' + q)}">⬇ تصدير Excel</a><button class="btn" onclick="print()">🖨 طباعة</button>`);
-    $('#flt').onchange = e => {
-      const p = new URLSearchParams(Object.entries(formData(e.currentTarget)).filter(([, v]) => v));
-      location.hash = '#/expenses' + (p.toString() ? '?' + p : '');
-    };
-    bindExpenseActions(list);
-    const all = $('#approve-all');
-    if (all) all.onclick = async () => {
-      const pend = list.filter(e => e.status === 'pending');
-      if (!await confirmBox(`اعتماد ${pend.length} مصروف؟`)) return;
-      for (const e of pend) await api('PUT', '/api/expenses/' + e.id, { status: 'approved' });
-      toast('تم الاعتماد'); router();
-    };
-  },
+function renderShell() {
+  const nav = isStaff() ? NAV_STAFF : NAV_EMP;
+  const bottom = isStaff() ? BOTTOM_STAFF : BOTTOM_EMP;
+  const link = ([k, icon, label, badge]) => `<a href="#/${k}" data-nav="${k}">${ic(icon)}<span>${label}</span>${badge ? `<b class="badge" data-badge="${badge}" hidden></b>` : ''}</a>`;
+  $('#app').innerHTML = `
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><img src="/icon.svg" alt=""><div><div class="brand-name">${esc(S.b.settings.companyName || 'إدارة العهد')}</div><div class="brand-sub">نظام إدارة العهد</div></div></div>
+      ${MODE !== 'server' ? `<div class="side-mode">${MODE === 'demo' ? '🧪 وضع تجريبي' : '📱 على هذا الجهاز'}</div>` : ''}
+      <nav class="nav">${nav.map(([g, items]) => `${g ? `<div class="nav-group">${g}</div>` : ''}${items.map(link).join('')}`).join('')}</nav>
+      <div class="me"><div class="avatar">${esc(S.user.name.trim()[0] || '؟')}</div><div><div class="me-name">${esc(S.user.name)}</div><div class="me-role">${esc(S.user.roleName)}</div></div><button class="icon-btn" data-act="logout" title="تسجيل الخروج">${ic('logout')}</button></div>
+    </aside>
+    <div class="main-col">
+      <header class="appbar">
+        <button class="icon-btn back-btn" data-act="back" hidden aria-label="رجوع">${ic('back')}</button>
+        <h1 id="page-title"></h1>
+        <a class="icon-btn bell" href="#/notifications" aria-label="الإشعارات">${ic('bell')}<b class="badge" data-badge="unread" hidden></b></a>
+      </header>
+      <main id="view"></main>
+    </div>
+    <nav class="bottom-nav">${bottom.map(link).join('')}</nav>
+    <button class="fab" data-act="fab" aria-label="إضافة">${ic('plus', 26)}</button>
+  </div>`;
+  updateBadges();
+}
+function updateBadges() {
+  const vals = { unread: S.unread, pending: S.pendingCount || 0, requests: S.requestsCount || 0 };
+  $$('[data-badge]').forEach(b => { const v = vals[b.dataset.badge]; b.hidden = !v; b.textContent = v > 99 ? '99+' : v; });
+}
+function view(title, html, { back, toolbar } = {}) {
+  $('#page-title').textContent = title;
+  document.title = title + ' — إدارة العهد';
+  const bb = $('.back-btn');
+  bb.hidden = !back;
+  bb.dataset.to = back === true ? '' : back || '';
+  $('#view').innerHTML = (toolbar ? `<div class="toolbar">${toolbar}</div>` : '') + html;
+  const page = (location.hash.split('?')[0].split('/')[1]) || '';
+  $$('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === page || a.dataset.nav === page + '/' + (location.hash.split('?')[0].split('/')[2] || '')));
+  hydrateFiles($('#view'));
+  bindWidgets($('#view'));
+}
+function parseHash() {
+  const [path, qs] = location.hash.replace(/^#/, '').split('?');
+  const parts = path.split('/').filter(Boolean);
+  return { page: parts[0] || '', arg: parts[1], q: Object.fromEntries(new URLSearchParams(qs || '')) };
+}
+async function router() {
+  if (!S.user) return;
+  const { page, arg, q } = parseHash();
+  if (page === 'reminder') { history.replaceState(null, '', location.pathname + location.search + '#/' + (isStaff() ? 'dashboard' : 'home')); router(); return handleReminderAction(arg); }
+  const views = isStaff() ? STAFF_VIEWS : EMP_VIEWS;
+  const fn = views[page] || views[isStaff() ? 'dashboard' : 'home'];
+  $('#view') && ($('#view').innerHTML = '<div class="loading"><span></span></div>');
+  try { await fn(arg, q); } catch (e) { toast(e.message, true); }
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', router);
 
-  async custodies() {
-    const list = await api('GET', '/api/custodies');
-    const pend = list.filter(c => c.status === 'pending');
-    const content = `
-      ${pend.length ? `<div class="card"><h2>عهد سجلها الموظفون بانتظار تأكيدك</h2>${custodyTable(pend, true)}</div>` : ''}
-      <div class="card"><h2>سجل العهد</h2>${custodyTable(list, true)}</div>`;
-    shell('العهد', content, `<button class="btn primary" id="give">+ صرف عهدة لموظف</button>`);
-    $('#give').onclick = () => giveCustodyModal();
-    bindCustodyActions();
-  },
-
-  async statement(id) {
-    const emp = S.employees.find(e => e.id === id);
-    if (!emp) { location.hash = '#/dashboard'; return; }
-    const [cust, exps, sm] = await Promise.all([api('GET', '/api/custodies?employeeId=' + id), api('GET', '/api/expenses?employeeId=' + id), api('GET', '/api/summary')]);
-    const bal = sm.employees.find(e => e.id === id);
-    // كشف حساب بترتيب زمني مع الرصيد الجاري
-    const rows = [
-      ...cust.filter(c => c.status !== 'rejected').map(c => ({ date: c.date, at: c.createdAt, desc: `استلام عهدة (${c.method})${c.note ? ' — ' + c.note : ''}`, in: c.amount, out: 0, status: c.status })),
-      ...exps.filter(e => e.status !== 'rejected').map(e => ({ date: e.date, at: e.createdAt, desc: `${e.category}: ${e.description}`, project: e.projectName, in: 0, out: e.amount, status: e.status })),
-    ].sort((a, b) => (a.date + a.at).localeCompare(b.date + b.at));
-    let run = 0;
-    const content = `
-      <div class="kpis">
-        <div class="kpi"><div class="label">إجمالي العهد</div><div class="value">${money(bal.received)}</div></div>
-        <div class="kpi"><div class="label">إجمالي المصروف</div><div class="value">${money(bal.spent)}</div></div>
-        <div class="kpi hero"><div class="label">المتبقي مع ${esc(emp.name)}</div><div class="value">${money(bal.remaining)}</div></div>
-      </div>
-      <div class="card"><h2>كشف حساب العهدة — ${esc(emp.name)}</h2>
-        ${rows.length ? `<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>البيان</th><th>المشروع</th><th>وارد (عهدة)</th><th>صادر (مصروف)</th><th>الرصيد</th><th>الحالة</th></tr></thead><tbody>
-        ${rows.map(r => { run += r.in - r.out; return `<tr><td class="num">${r.date}</td><td>${esc(r.desc)}</td><td>${esc(r.project || '—')}</td><td class="amt pos">${r.in ? fmt(r.in) : ''}</td><td class="amt neg">${r.out ? fmt(r.out) : ''}</td><td class="amt">${fmt(run)}</td><td>${statusTag(r.status)}</td></tr>`; }).join('')}
-        </tbody></table></div>` : '<div class="empty">لا توجد حركات</div>'}
-      </div>`;
-    shell('كشف حساب', content, `<button class="btn" onclick="print()">🖨 طباعة</button><a class="btn" href="#/expenses?employeeId=${id}">المصروفات</a><button class="btn primary" id="give">+ عهدة</button>`);
-    $('#give').onclick = () => giveCustodyModal(id);
-  },
-
-  async checkins() {
-    const day = (location.hash.split('?d=')[1] || today());
-    const list = await api('GET', '/api/checkins?date=' + day);
-    const by = {};
-    for (const c of list) (by[c.employeeId] = by[c.employeeId] || { name: c.employeeName, yes: 0, no: 0, last: null })[c.answer]++;
-    for (const c of list) { const b = by[c.employeeId]; if (!b.last || c.at > b.last) b.last = c.at; }
-    const emps = S.employees.filter(e => e.active);
-    const content = `
-      <div class="card no-print"><div class="form"><div class="field"><label>اليوم</label><input type="date" id="day" value="${day}"></div></div>
-        <p class="muted">يصل الموظف تنبيه كل ${S.settings.reminderMinutes} دقيقة خلال ساعات العمل (${S.settings.workStart} – ${S.settings.workEnd}) يسأله: هل صرفت شيئاً؟ ولأي مشروع؟ هنا ترى تفاعل كل موظف مع التنبيهات.</p></div>
-      <div class="card"><h2>تفاعل الموظفين مع التنبيهات</h2>
-        ${emps.length ? `<div class="table-wrap"><table><thead><tr><th>الموظف</th><th>أجاب "نعم صرفت"</th><th>أجاب "لم أصرف"</th><th>آخر رد</th></tr></thead><tbody>
-        ${emps.map(e => { const b = by[e.id] || { yes: 0, no: 0 }; return `<tr><td><b>${esc(e.name)}</b></td><td class="num">${b.yes}</td><td class="num">${b.no}</td><td>${b.last ? new Date(b.last).toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : '<span class="tag rejected">لم يرد</span>'}</td></tr>`; }).join('')}
-        </tbody></table></div>` : '<div class="empty">لا يوجد موظفون</div>'}
-      </div>`;
-    shell('متابعة التنبيهات', content);
-    $('#day').onchange = e => location.hash = '#/checkins?d=' + e.target.value;
-  },
-
-  async employees() {
-    const sm = await api('GET', '/api/summary');
-    S.employees = sm.employees;
-    const content = `<div class="card"><h2>الموظفون</h2>
-      ${sm.employees.length ? `<div class="table-wrap"><table><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الجوال</th><th>المتبقي</th><th>الحالة</th><th></th></tr></thead><tbody>
-      ${sm.employees.map(e => `<tr><td><b>${esc(e.name)}</b><div class="muted">${esc(e.jobTitle || '')}</div></td><td class="num">${esc(e.username)}</td><td class="num">${esc(e.phone || '')}</td><td class="amt">${money(e.remaining)}</td>
-        <td>${e.active ? '<span class="tag approved">نشط</span>' : '<span class="tag rejected">موقوف</span>'}</td>
-        <td><div class="actions"><button class="btn sm" data-edit="${e.id}">تعديل</button><a class="btn sm" href="#/statement/${e.id}">كشف حساب</a></div></td></tr>`).join('')}
-      </tbody></table></div>` : '<div class="empty">لم تضف أي موظف بعد</div>'}</div>`;
-    shell('الموظفون', content, `<button class="btn primary" id="add">+ موظف جديد</button>`);
-    $('#add').onclick = () => employeeModal();
-    $$('[data-edit]').forEach(b => b.onclick = () => employeeModal(sm.employees.find(e => e.id === b.dataset.edit)));
-  },
-
-  async projects() {
-    const sm = await api('GET', '/api/summary');
-    S.projects = sm.projects;
-    const content = `<div class="card"><h2>المشاريع</h2>
-      ${sm.projects.length ? `<div class="table-wrap"><table><thead><tr><th>المشروع</th><th>الرمز</th><th>الميزانية</th><th>المصروف من العهد</th><th>عدد المصروفات</th><th>الحالة</th><th></th></tr></thead><tbody>
-      ${sm.projects.map(p => `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.code || '—')}</td><td class="amt">${p.budget ? money(p.budget) : '—'}</td><td class="amt ${p.budget && p.spent > p.budget ? 'neg' : ''}">${money(p.spent)}</td><td class="num">${p.count}</td>
-        <td>${p.active ? '<span class="tag approved">جارٍ</span>' : '<span class="tag rejected">مغلق</span>'}</td>
-        <td><div class="actions"><button class="btn sm" data-edit="${p.id}">تعديل</button><a class="btn sm" href="#/expenses?projectId=${p.id}">المصروفات</a></div></td></tr>`).join('')}
-      </tbody></table></div>` : '<div class="empty">أضف المشاريع ليختار الموظف المشروع التابع له كل مصروف</div>'}</div>`;
-    shell('المشاريع', content, `<button class="btn primary" id="add">+ مشروع جديد</button>`);
-    $('#add').onclick = () => projectModal();
-    $$('[data-edit]').forEach(b => b.onclick = () => projectModal(sm.projects.find(p => p.id === b.dataset.edit)));
-  },
-
-  async settings() {
-    const s = S.settings;
-    const content = `
-      <div class="card"><h2>إعدادات العمل والتنبيهات</h2>
-        <form id="set-form" class="form">
-          <div class="field"><label>اسم الشركة</label><input name="companyName" value="${esc(s.companyName)}"></div>
-          <div class="field"><label>العملة</label><input name="currency" value="${esc(s.currency)}"></div>
-          <div class="field"><label>بداية الدوام</label><input type="time" name="workStart" value="${s.workStart}"></div>
-          <div class="field"><label>نهاية الدوام</label><input type="time" name="workEnd" value="${s.workEnd}"></div>
-          <div class="field"><label>التنبيه كل (دقيقة)</label><input type="number" min="5" max="240" name="reminderMinutes" value="${s.reminderMinutes}"></div>
-          <div class="field"><label>تنبيه انخفاض الرصيد عند أقل من</label><input type="number" min="0" name="lowBalanceThreshold" value="${s.lowBalanceThreshold}"></div>
-          <div class="field full"><label>أيام العمل</label><div class="chips" id="days">${DAYS.map((d, i) => `<button type="button" class="chip ${s.workDays.includes(i) ? 'on' : ''}" data-d="${i}">${d}</button>`).join('')}</div></div>
-          <div class="field full"><label>أنواع المصروفات (نوع في كل سطر)</label><textarea name="categories" rows="6">${esc(s.categories.join('\n'))}</textarea></div>
-          <div class="full"><button class="btn primary">حفظ الإعدادات</button></div>
-        </form>
-      </div>
-      ${passwordCard()}`;
-    shell('الإعدادات', content);
-    $$('#days .chip').forEach(c => c.onclick = () => c.classList.toggle('on'));
-    $('#set-form').onsubmit = e => {
-      e.preventDefault();
-      submitWith(e.submitter, async () => {
-        const d = formData(e.target);
-        d.categories = d.categories.split('\n');
-        d.workDays = $$('#days .chip.on').map(c => +c.dataset.d);
-        S.settings = await api('PUT', '/api/settings', d);
-        toast('تم حفظ الإعدادات');
-      });
-    };
-    bindPasswordForm();
-  },
+// النقرات العامة
+const ACT = {};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (el && ACT[el.dataset.act]) { e.preventDefault(); ACT[el.dataset.act](el, e); }
+  const f = e.target.closest('[data-open-file]');
+  if (f) { e.preventDefault(); openFile(f.dataset.openFile); }
+});
+ACT.logout = async () => { if (await confirmBox('تسجيل الخروج من النظام؟', { ok: 'خروج' })) logout(); };
+ACT.back = el => { if (el.dataset.to) go(el.dataset.to); else history.back(); };
+ACT.fab = () => {
+  const items = isStaff()
+    ? [['wallet', 'صرف عهدة نقدية', () => custodyForm()], ['receipt', 'تسجيل مصروف', () => expenseForm()], ['box', 'إضافة / تسليم أصل', () => assetForm()], ['users', 'إضافة موظف', () => userForm()], ['layers', 'إضافة مركز تكلفة', () => ccForm()]]
+    : [['receipt', 'تسجيل مصروف', () => expenseForm()], ['undo', 'رد مبلغ نقدي', () => returnForm()], ['inbox', 'طلب عهدة', () => requestForm()]];
+  modal(`<h3>إجراء سريع</h3><div class="action-list">${items.map(([i, l], n) => `<button class="action-item" data-i="${n}">${ic(i)}<span>${l}</span>${ic('chev', 16)}</button>`).join('')}</div>`, {
+    onMount: (el, close) => $$('[data-i]', el).forEach(b => b.onclick = () => { close(); items[+b.dataset.i][2](); }),
+  });
 };
 
-function expenseTable(list, manager) {
-  if (!list.length) return '<div class="empty">لا توجد مصروفات</div>';
-  return `<div class="table-wrap"><table><thead><tr><th>التاريخ</th>${manager ? '<th>الموظف</th>' : ''}<th>المشروع</th><th>النوع / البيان</th><th>المبلغ</th><th>الحالة</th><th class="no-print"></th></tr></thead><tbody>
-  ${list.map(e => `<tr>
-    <td><span class="num">${e.date}</span><div class="muted num">${esc(e.time || '')}</div></td>
-    ${manager ? `<td>${esc(e.employeeName)}</td>` : ''}
-    <td>${esc(e.projectName)}</td>
-    <td><b>${esc(e.category)}</b> — ${esc(e.description)}${e.vendor ? `<div class="muted">المورد: ${esc(e.vendor)}</div>` : ''}${e.managerNote ? `<div class="muted">ملاحظة المدير: ${esc(e.managerNote)}</div>` : ''}${e.viaReminder ? '<div class="muted">🔔 سُجل من التنبيه</div>' : ''}</td>
-    <td class="amt">${money(e.amount)}</td>
-    <td>${statusTag(e.status)}</td>
-    <td class="no-print"><div class="actions">
-      ${e.receipt ? `<button class="btn sm" data-receipt="${esc(e.receipt)}">📎 الإيصال</button>` : ''}
-      ${manager && e.status !== 'approved' ? `<button class="btn sm ok" data-st="approved" data-id="${e.id}">اعتماد</button>` : ''}
-      ${manager && e.status !== 'rejected' ? `<button class="btn sm bad" data-st="rejected" data-id="${e.id}">رفض</button>` : ''}
-      ${!manager && e.status === 'pending' ? `<button class="btn sm" data-edit="${e.id}">تعديل</button><button class="btn sm bad" data-del="${e.id}">حذف</button>` : ''}
-    </div></td></tr>`).join('')}</tbody></table></div>`;
+// مكونات عرض
+const kpi = (label, value, { sub = '', tone = '', go: href } = {}) => `<${href ? `a href="${href}"` : 'div'} class="kpi ${tone}"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ''}</${href ? 'a' : 'div'}>`;
+const empty = (text, action = '') => `<div class="empty"><div class="empty-ic">${ic('inbox', 34)}</div><div>${text}</div>${action}</div>`;
+const tag = (text, tone = '') => `<span class="tag ${tone}">${esc(text)}</span>`;
+const STATUS_TONE = { pending: 'warn', approved: 'ok', rejected: 'bad', open: 'ok', closed: '', confirmed: 'ok' };
+const expTag = e => tag(e.statusName || S.b.expenseStatus[e.status], STATUS_TONE[e.status]) + (e.settlementNo ? ' ' + tag('مسوّى', '') : '');
+const tabs = (items, active, base) => `<div class="tabs" role="tablist">${items.map(([v, l, n]) => `<a href="${base}${v ? (base.includes('?') ? '&' : '?') + v : ''}" class="${active === v ? 'on' : ''}">${l}${n ? ` <b>${n}</b>` : ''}</a>`).join('')}</div>`;
+const progress = (used, total, cls = '') => { const p = total ? Math.min(100, Math.round(used / total * 100)) : 0; return `<div class="progress ${p >= 100 ? 'over' : p >= 85 ? 'warn' : ''} ${cls}"><span style="width:${p}%"></span></div>`; };
+const card = (title, body, actions = '') => `<section class="card">${title ? `<div class="card-head"><h2>${title}</h2><div class="card-actions">${actions}</div></div>` : ''}${body}</section>`;
+const rows = pairs => `<dl class="dl">${pairs.filter(Boolean).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+const btn = (label, { act, href, icon, cls = '', data = '' } = {}) => href ? `<a class="btn ${cls}" href="${href}">${icon ? ic(icon, 18) : ''}<span>${label}</span></a>` : `<button class="btn ${cls}" ${act ? `data-act="${act}"` : ''} ${data}>${icon ? ic(icon, 18) : ''}<span>${label}</span></button>`;
+
+function custodyItem(c) {
+  return `<a class="item" href="#/custody/${c.id}">
+    <div class="item-ic ${c.status === 'closed' ? 'muted-ic' : c.overdue ? 'bad-ic' : ''}">${ic('wallet')}</div>
+    <div class="item-main"><div class="item-title">${esc(c.no)} · ${esc(isStaff() ? c.employeeName : c.purpose)} ${c.overdue ? tag('متأخرة', 'bad') : ''} ${c.status === 'closed' ? tag('مغلقة') : ''}</div>
+      <div class="item-sub">${esc(c.kindName)}${isStaff() ? ' — ' + esc(c.purpose) : ''}</div>
+      <div class="item-sub">${esc(c.costCenterName)}</div>
+      ${progress(c.spent, c.received)}</div>
+    <div class="item-end">${signed(c.balance)}<div class="item-endsub">من ${fmt(c.received)}</div>${c.pendingCount ? `<div class="item-endsub warn-t">${c.pendingCount} بانتظار الاعتماد</div>` : ''}</div></a>`;
 }
-function bindExpenseActions(list) {
-  $$('[data-receipt]').forEach(b => b.onclick = () => modal(`<h3>صورة الإيصال</h3><img class="receipt-img" src="${fileUrl('/api/receipts/' + b.dataset.receipt)}" alt="إيصال"><div class="foot"><button class="btn" data-close>إغلاق</button></div>`));
-  $$('[data-st]').forEach(b => b.onclick = async () => {
-    let note;
-    if (b.dataset.st === 'rejected') {
-      note = await new Promise(res => modal(`<h3>سبب الرفض</h3><div class="field"><textarea id="rn" placeholder="اختياري"></textarea></div><div class="foot"><button class="btn" data-close>إلغاء</button><button class="btn bad" id="rok">رفض المصروف</button></div>`,
-        { onMount: (el, close) => $('#rok', el).onclick = () => { res($('#rn', el).value); close(); } }));
-      if (note === undefined) return;
+function expenseItem(e, { select } = {}) {
+  return `<div class="item ${select ? 'selectable' : ''}">
+    ${select && e.status === 'pending' && !e.settlementId ? `<label class="chk"><input type="checkbox" data-sel="${e.id}"></label>` : ''}
+    <a class="item-link" href="#/expense/${e.id}">
+      <div class="item-main"><div class="item-title">${esc(e.description)} ${e.attachments?.length ? `<span class="clip">${ic('clip', 14)}</span>` : ''}</div>
+        <div class="item-sub">${esc(e.categoryName)} · ${esc(e.costCenterName)}</div>
+        <div class="item-meta">${esc(e.no)} · ${fmtDate(e.date)}${isStaff() ? ' · ' + esc(e.employeeName) : ''}${e.viaReminder ? ' · 🔔' : ''}</div></div>
+      <div class="item-end">${money(e.amount)}<div>${expTag(e)}</div></div>
+    </a></div>`;
+}
+
+// ================= واجهة الإدارة =================
+const STAFF_VIEWS = {
+  async dashboard() {
+    const d = await api('GET', '/api/dashboard');
+    S.pendingCount = d.kpis.pendingCount; S.requestsCount = d.alerts.requests; updateBadges();
+    const al = d.alerts;
+    const alerts = [
+      d.kpis.pendingCount && ['check', 'warn', `${d.kpis.pendingCount} مصروف بانتظار الاعتماد بقيمة ${fmt(d.kpis.pendingAmount)}`, '#/expenses'],
+      al.requests && ['inbox', 'warn', `${al.requests} طلب عهدة جديد`, '#/requests'],
+      al.pendingTx && ['undo', 'warn', `${al.pendingTx} رد نقدي بانتظار تأكيد الاستلام`, '#/custodies?status=open'],
+      ...al.overdue.map(c => ['clock', 'bad', `العهدة ${c.no} (${c.employeeName}) متأخرة عن التسوية`, '#/custody/' + c.id]),
+      ...al.negative.map(c => ['alert', 'bad', `العهدة ${c.no} (${c.employeeName}) بالسالب ${fmt(c.balance)} — يستحق للموظف`, '#/custody/' + c.id]),
+      ...al.low.map(c => ['wallet', 'warn', `رصيد العهدة ${c.no} (${c.employeeName}) منخفض: ${fmt(c.balance)}`, '#/custody/' + c.id]),
+      ...al.overBudget.map(c => ['layers', c.spent > c.budget ? 'bad' : 'warn', `مركز ${c.name}: صرف ${fmt(c.spent)} من ميزانية ${fmt(c.budget)}`, '#/cost-centers']),
+      al.unacknowledged && ['box', 'warn', `${al.unacknowledged} عهدة عينية لم يقر الموظف باستلامها`, '#/assets?status=assigned'],
+    ].filter(Boolean);
+    const st = d.setup;
+    const setupSteps = [[st.costCenters, 'أضف مراكز التكلفة (المشاريع / الأقسام)', '#/cost-centers'], [st.employees, 'أضف الموظفين وحساباتهم', '#/users'], [st.custodies, 'اصرف أول عهدة لموظف', '#/custodies']];
+    const showSetup = setupSteps.some(s => !s[0]);
+    view('الرئيسية', `
+      <div class="hello"><div><div class="hello-t">مرحباً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="muted">${new Date().toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div></div></div>
+      ${showSetup ? card('ابدأ في ٣ خطوات', `<div class="steps">${setupSteps.map(([done, t, h], i) => `<a class="step ${done ? 'done' : ''}" href="${h}"><span class="step-n">${done ? ic('ok', 16) : i + 1}</span><span>${t}</span>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
+      <div class="quick">
+        ${[['wallet', 'صرف عهدة', 'custodyForm'], ['receipt', 'تسجيل مصروف', 'expenseForm'], ['check', 'اعتماد المصروفات', '#/expenses'], ['box', 'تسليم أصل', 'assetForm'], ['chart', 'التقارير', '#/reports']].map(([i, l, a]) => a.startsWith('#') ? `<a class="q" href="${a}">${ic(i, 24)}<span>${l}</span></a>` : `<button class="q" data-act="q-${a}">${ic(i, 24)}<span>${l}</span></button>`).join('')}
+      </div>
+      <div class="kpis">
+        ${kpi('المبالغ لدى الموظفين', money(d.kpis.outstanding), { tone: 'hero', sub: `${d.kpis.openCount} عهدة مفتوحة`, go: '#/custodies' })}
+        ${kpi('مصروفات هذا الشهر', money(d.kpis.monthSpent), { go: '#/reports' })}
+        ${kpi('بانتظار الاعتماد', `<span class="num">${d.kpis.pendingCount}</span>`, { sub: money(d.kpis.pendingAmount), tone: d.kpis.pendingCount ? 'warn' : '', go: '#/expenses' })}
+        ${kpi('العهد العينية المسلّمة', `<span class="num">${d.kpis.assetsAssigned}</span>`, { sub: 'بقيمة ' + money(d.kpis.assetsValue), go: '#/assets' })}
+      </div>
+      ${alerts.length ? card('تنبيهات تحتاج متابعة', `<div class="alerts">${alerts.slice(0, 12).map(([i, t, text, h]) => `<a class="alert ${t}" href="${h}">${ic(i, 18)}<span>${esc(text)}</span>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
+      <div class="grid2">
+        ${card('أرصدة الموظفين', d.employees.length ? `<div class="list">${d.employees.map(u => `<a class="item" href="#/user/${u.id}">
+            <div class="avatar sm">${esc(u.name.trim()[0])}</div>
+            <div class="item-main"><div class="item-title">${esc(u.name)}</div><div class="item-sub">${u.openCount} عهدة مفتوحة · ${u.assetsCount} أصل${u.overdueCount ? ' · ' + tag('متأخرة', 'bad') : ''}</div><div class="item-meta">آخر رد على التنبيه: ${ago(u.lastCheckin)}</div></div>
+            <div class="item-end">${signed(u.balance)}${u.pendingCount ? `<div class="item-endsub warn-t">${u.pendingCount} بانتظار الاعتماد</div>` : ''}</div></a>`).join('')}</div>` : empty('لا يوجد موظفون بعد', btn('إضافة موظف', { act: 'q-userForm', cls: 'primary sm' })), btn('الكل', { href: '#/users', cls: 'sm ghost' }))}
+        ${card('الصرف حسب مراكز التكلفة', d.costCenters.length ? `<div class="bars">${d.costCenters.map(c => `<div class="bar-row"><div class="bar-name">${esc(c.name.trim())}</div>${progress(c.spent, c.budget || Math.max(...d.costCenters.map(x => x.spent), 1))}<div class="bar-val">${money(c.spent)}${c.budget ? `<small class="muted"> / ${fmt(c.budget)}</small>` : ''}</div></div>`).join('')}</div>` : empty('لم تضف مراكز تكلفة بعد', btn('إضافة مركز تكلفة', { act: 'q-ccForm', cls: 'primary sm' })), btn('التقرير', { href: '#/report/cost-centers', cls: 'sm ghost' }))}
+      </div>
+      ${card('آخر المصروفات', d.recent.length ? `<div class="list">${d.recent.map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات بعد'), btn('عرض الكل', { href: '#/expenses?status=', cls: 'sm ghost' }))}
+    `);
+  },
+
+  async custodies(_, q) {
+    const status = q.status ?? 'open';
+    const list = await api('GET', '/api/custodies?' + qsOf({ status: status === 'overdue' ? 'open' : status, flag: status === 'overdue' ? 'overdue' : '', q: q.q, employeeId: q.employeeId }));
+    const total = list.reduce((s, c) => s + c.balance, 0);
+    view('العهد النقدية', `
+      ${tabs([['status=open', 'المفتوحة'], ['status=overdue', 'المتأخرة'], ['status=closed', 'المغلقة'], ['status=', 'الكل']], 'status=' + status, '#/custodies')}
+      ${searchBox(q.q, 'ابحث برقم العهدة أو الموظف أو الغرض')}
+      <div class="summary-line"><span>${list.length} عهدة</span><span>الرصيد: ${signed(total)}</span></div>
+      ${list.length ? `<div class="list cards">${list.map(custodyItem).join('')}</div>` : empty('لا توجد عهد هنا', btn('صرف عهدة جديدة', { act: 'q-custodyForm', cls: 'primary' }))}
+    `, { toolbar: btn('صرف عهدة', { act: 'q-custodyForm', icon: 'plus', cls: 'primary' }) });
+  },
+
+  custody: custodyDetail,
+
+  async expenses(_, q) {
+    const status = q.status ?? 'pending';
+    const filters = { ...q, status };
+    const list = await api('GET', '/api/expenses?' + qsOf(filters));
+    const total = list.filter(e => e.status !== 'rejected').reduce((s, e) => s + e.amount, 0);
+    const hasFilter = q.employeeId || q.costCenterId || q.categoryId || q.from || q.to;
+    view('المصروفات والاعتماد', `
+      ${tabs([['status=pending', 'بانتظار الاعتماد'], ['status=approved', 'المعتمدة'], ['status=rejected', 'المرفوضة'], ['status=', 'الكل']], 'status=' + status, '#/expenses')}
+      <details class="filters" ${hasFilter ? 'open' : ''}><summary>${ic('search', 16)} بحث وتصفية ${hasFilter ? tag('مفعّل', 'warn') : ''}</summary>
+        <form class="form" id="flt">
+          ${fieldHtml({ name: 'q', label: 'بحث', value: q.q, placeholder: 'رقم، بيان، مورد، فاتورة' })}
+          ${fieldHtml({ type: 'select', name: 'employeeId', label: 'الموظف', options: userOptions(), value: q.employeeId, empty: 'الكل' })}
+          ${fieldHtml({ type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions({ activeOnly: false }), value: q.costCenterId, empty: 'الكل' })}
+          ${fieldHtml({ type: 'select', name: 'categoryId', label: 'البند', options: S.b.categories.map(c => ({ value: c.id, label: c.name })), value: q.categoryId, empty: 'الكل' })}
+          ${fieldHtml({ type: 'date', name: 'from', label: 'من تاريخ', value: q.from })}
+          ${fieldHtml({ type: 'date', name: 'to', label: 'إلى تاريخ', value: q.to })}
+          <div class="full actions"><button class="btn primary">تطبيق</button><a class="btn ghost" href="#/expenses?status=${status}">مسح التصفية</a></div>
+        </form></details>
+      <div class="summary-line"><span>${list.length} مصروف</span><span>الإجمالي: ${money(total)}</span></div>
+      ${status === 'pending' && list.length ? `<div class="bulk"><label class="chk"><input type="checkbox" id="sel-all"> تحديد الكل</label><span class="muted" id="sel-n"></span><div class="actions"><button class="btn sm ok-btn" data-act="bulk" data-s="approved">${ic('ok', 16)} اعتماد المحدد</button><button class="btn sm danger-o" data-act="bulk" data-s="rejected">${ic('x', 16)} رفض المحدد</button></div></div>` : ''}
+      ${list.length ? `<div class="list cards">${list.map(e => expenseItem(e, { select: status === 'pending' })).join('')}</div>` : empty(status === 'pending' ? 'لا توجد مصروفات بانتظار الاعتماد 👍' : 'لا توجد مصروفات')}
+    `, { toolbar: btn('تسجيل مصروف', { act: 'q-expenseForm', icon: 'plus', cls: 'primary' }) + btn('تصدير Excel', { act: 'export-exp', icon: 'download', cls: 'ghost' }) });
+    $('#flt').onsubmit = e => { e.preventDefault(); go('#/expenses?' + qsOf({ ...readForm(e.target), status })); };
+    const upd = () => { const n = $$('[data-sel]:checked').length; const el = $('#sel-n'); if (el) el.textContent = n ? `${n} محدد` : ''; };
+    $('#sel-all') && ($('#sel-all').onchange = e => { $$('[data-sel]').forEach(c => { c.checked = e.target.checked; }); upd(); });
+    $$('[data-sel]').forEach(c => c.onchange = upd);
+    ACT['export-exp'] = () => exportCsv('المصروفات', [{ key: 'date', label: 'التاريخ' }, { key: 'no', label: 'الرقم' }, { key: 'employeeName', label: 'الموظف' }, { key: 'custodyNo', label: 'العهدة' }, { key: 'costCenterName', label: 'مركز التكلفة' }, { key: 'categoryName', label: 'البند' }, { key: 'description', label: 'البيان' }, { key: 'vendor', label: 'المورد' }, { key: 'invoiceNo', label: 'رقم الفاتورة' }, { key: 'vat', label: 'الضريبة' }, { key: 'amount', label: 'الإجمالي' }, { key: 'statusName', label: 'الحالة' }], list);
+  },
+
+  expense: expenseDetail,
+
+  async requests(_, q) {
+    const status = q.status ?? 'pending';
+    const list = await api('GET', '/api/requests?' + qsOf({ status }));
+    view('طلبات العهد', `
+      ${tabs([['status=pending', 'الجديدة'], ['status=approved', 'الموافق عليها'], ['status=rejected', 'المرفوضة'], ['status=', 'الكل']], 'status=' + status, '#/requests')}
+      ${list.length ? `<div class="list cards">${list.map(r => `<div class="item">
+        <div class="item-ic">${ic(r.type === 'cash' ? 'wallet' : 'box')}</div>
+        <div class="item-main"><div class="item-title">${esc(r.employeeName)} — ${r.type === 'cash' ? 'عهدة نقدية' : 'عهدة عينية'} ${tag({ pending: 'جديد', approved: 'موافق عليه', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}</div>
+          <div class="item-sub">${esc(r.purpose)}</div><div class="item-meta">${esc(r.no)} · ${ago(r.createdAt)}${r.costCenterId ? ' · ' + esc(r.costCenterName) : ''}${r.neededBy ? ' · مطلوب قبل ' + fmtDate(r.neededBy) : ''}${r.decisionNote ? ' · ' + esc(r.decisionNote) : ''}</div>
+          ${r.status === 'pending' ? `<div class="actions mt"><button class="btn sm primary" data-act="req-ok" data-id="${r.id}">موافقة${r.type === 'cash' ? ' وصرف العهدة' : ''}</button><button class="btn sm danger-o" data-act="req-no" data-id="${r.id}">رفض</button></div>` : ''}
+          ${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة المصروفة ←</a>` : ''}</div>
+        <div class="item-end">${r.type === 'cash' ? money(r.amount) : ''}</div></div>`).join('')}</div>` : empty('لا توجد طلبات')}`);
+    ACT['req-ok'] = el => {
+      const r = list.find(x => x.id === el.dataset.id);
+      if (r.type !== 'cash') return api('POST', `/api/requests/${r.id}/decide`, { approve: true }).then(() => { toast('تمت الموافقة'); router(); }).catch(e => toast(e.message, true));
+      formSheet({
+        title: 'الموافقة وصرف العهدة', intro: `<p class="muted">${esc(r.employeeName)} — ${esc(r.purpose)}</p>`, submit: 'صرف العهدة',
+        fields: [{ type: 'money', name: 'amount', label: 'المبلغ المعتمد', value: r.amount, required: true }, { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: r.costCenterId, empty: '— اختر —' }, { type: 'date', name: 'dueDate', label: 'موعد التسوية', value: r.neededBy || '' }, { type: 'select', name: 'method', label: 'طريقة الصرف', options: PAY_METHODS }, { name: 'note', label: 'ملاحظة', full: true }],
+        onSubmit: async (d, close) => { await api('POST', `/api/requests/${r.id}/decide`, { ...d, approve: true }); close(); toast('تم صرف العهدة'); router(); },
+      });
+    };
+    ACT['req-no'] = el => formSheet({ title: 'رفض الطلب', submit: 'رفض', fields: [{ type: 'textarea', name: 'note', label: 'سبب الرفض' }], onSubmit: async (d, close) => { await api('POST', `/api/requests/${el.dataset.id}/decide`, { approve: false, note: d.note }); close(); toast('تم رفض الطلب'); router(); } });
+  },
+
+  async assets(_, q) {
+    const status = q.status ?? '';
+    const list = await api('GET', '/api/assets?' + qsOf({ status, q: q.q }));
+    view('العهد العينية', `
+      ${tabs([['status=', 'الكل'], ['status=assigned', 'مسلّمة'], ['status=available', 'بالمستودع'], ['status=maintenance', 'صيانة'], ['status=lost', 'مفقودة']], 'status=' + status, '#/assets')}
+      ${searchBox(q.q, 'ابحث بالاسم أو الرقم التسلسلي أو الموظف')}
+      ${list.length ? `<div class="list cards">${list.map(assetItem).join('')}</div>` : empty('لا توجد أصول مسجلة', btn('إضافة أصل', { act: 'q-assetForm', cls: 'primary' }))}
+    `, { toolbar: btn('إضافة أصل', { act: 'q-assetForm', icon: 'plus', cls: 'primary' }) + btn('سجل الأصول', { href: '#/report/assets', icon: 'chart', cls: 'ghost' }) });
+  },
+  asset: assetDetail,
+
+  async users() {
+    const d = await api('GET', '/api/dashboard');
+    await refreshBootstrap();
+    const bal = Object.fromEntries(d.employees.map(e => [e.id, e]));
+    view('الموظفون والمستخدمون', `
+      <div class="list cards">${S.b.users.map(u => `<a class="item" href="#/user/${u.id}" style="${u.active ? '' : 'opacity:.55'}">
+        <div class="avatar sm">${esc(u.name.trim()[0])}</div>
+        <div class="item-main"><div class="item-title">${esc(u.name)} ${tag(u.roleName, u.role === 'admin' ? 'info' : u.role === 'accountant' ? 'info' : '')} ${u.active ? '' : tag('موقوف', 'bad')}</div><div class="item-sub">${esc(u.jobTitle || '')}${u.department ? ' · ' + esc(u.department) : ''}</div><div class="item-meta" dir="ltr">${esc(u.username)}</div></div>
+        <div class="item-end">${bal[u.id] ? signed(bal[u.id].balance) + `<div class="item-endsub">${bal[u.id].openCount} عهدة</div>` : ''}</div></a>`).join('')}</div>
+    `, { toolbar: isAdmin() ? btn('إضافة موظف / مستخدم', { act: 'q-userForm', icon: 'plus', cls: 'primary' }) : '' });
+  },
+  user: userDetail,
+
+  async 'cost-centers'() {
+    await refreshBootstrap();
+    const rep = await api('GET', '/api/reports/cost-centers');
+    const spent = Object.fromEntries(rep.rows.map((r, i) => [i, r]));
+    const tree = S.b.costCenters;
+    view('مراكز التكلفة', `
+      <p class="muted">مراكز التكلفة تنظم المصروفات حسب المشروع أو الإدارة أو المركبة. يمكنك إنشاء مراكز فرعية تحت أي مركز، ويُجمع صرف الفروع تلقائياً في المركز الرئيسي.</p>
+      ${tree.length ? `<div class="list cards tree">${tree.map((c, i) => `<a class="item depth-${Math.min(c.depth, 3)}" href="#/cost-center/${c.id}" style="${c.active === false ? 'opacity:.55' : ''}">
+        <div class="item-ic">${ic('layers')}</div>
+        <div class="item-main"><div class="item-title">${c.code ? `<span class="code">${esc(c.code)}</span> ` : ''}${esc(c.name)} ${c.active === false ? tag('مغلق') : ''}</div><div class="item-sub">${esc(S.b.ccTypes[c.type] || '')}${c.budget ? ' · الميزانية ' + fmt(c.budget) : ''}</div>${c.budget ? progress(spent[i]?.spent || 0, c.budget) : ''}</div>
+        <div class="item-end">${money(spent[i]?.spent || 0)}<div class="item-endsub">${c.budget ? spent[i]?.used : 'مصروف'}</div></div></a>`).join('')}</div>` : empty('لم تضف أي مركز تكلفة بعد — أضف مشاريعك وأقسامك', btn('إضافة مركز تكلفة', { act: 'q-ccForm', cls: 'primary' }))}
+    `, { toolbar: btn('مركز تكلفة جديد', { act: 'q-ccForm', icon: 'plus', cls: 'primary' }) + btn('تقرير مراكز التكلفة', { href: '#/report/cost-centers', icon: 'chart', cls: 'ghost' }) });
+  },
+  'cost-center': ccDetail,
+
+  async categories() {
+    await refreshBootstrap();
+    view('بنود المصروفات', `
+      <p class="muted">البنود هي أنواع المصروفات مربوطة برقم الحساب في دليل الحسابات، وتظهر للموظف عند تسجيل المصروف.</p>
+      <div class="list cards">${S.b.categories.map(c => `<div class="item" style="${c.active === false ? 'opacity:.55' : ''}">
+        <div class="item-ic">${ic('tag')}</div>
+        <div class="item-main"><div class="item-title">${c.code ? `<span class="code">${esc(c.code)}</span> ` : ''}${esc(c.name)}</div><div class="item-sub">${c.vatApplicable !== false ? 'خاضع لضريبة القيمة المضافة' : 'غير خاضع للضريبة'}${c.active === false ? ' · موقوف' : ''}</div></div>
+        <div class="item-end"><button class="btn sm ghost" data-act="cat-edit" data-id="${c.id}">${ic('edit', 16)} تعديل</button></div></div>`).join('')}</div>
+    `, { toolbar: btn('بند جديد', { act: 'cat-edit', icon: 'plus', cls: 'primary' }) });
+    ACT['cat-edit'] = el => {
+      const c = S.b.categories.find(x => x.id === el.dataset.id);
+      formSheet({
+        title: c ? 'تعديل بند' : 'بند مصروف جديد',
+        fields: [{ name: 'code', label: 'رقم الحساب', value: c?.code }, { name: 'name', label: 'اسم البند', value: c?.name, required: true }, { type: 'toggle', name: 'vatApplicable', label: 'خاضع لضريبة القيمة المضافة', value: c ? c.vatApplicable !== false : true }, ...(c ? [{ type: 'toggle', name: 'active', label: 'نشط (يظهر للموظفين)', value: c.active !== false }] : [])],
+        onSubmit: async (d, close) => { await api(c ? 'PUT' : 'POST', '/api/categories' + (c ? '/' + c.id : ''), d); close(); toast('تم الحفظ'); router(); },
+      });
+    };
+  },
+
+  reports: reportsHub,
+  report: reportView,
+  settlement: settlementView,
+  notifications: notificationsView,
+  settings: settingsView,
+
+  async audit(_, q) {
+    const list = await api('GET', '/api/audit?' + qsOf({ q: q.q }));
+    view('سجل العمليات', `${searchBox(q.q, 'ابحث في العمليات')}
+      <div class="timeline">${list.map(a => `<div class="tl"><div class="tl-dot"></div><div><div class="tl-title">${esc(a.action)} <span class="muted">— ${esc(a.userName)}</span></div><div class="tl-sub">${esc(a.summary)}</div><div class="tl-meta num">${esc(a.at.slice(0, 16).replace('T', ' '))}</div></div></div>`).join('') || empty('لا توجد عمليات')}</div>`);
+  },
+
+  more: moreView,
+};
+
+function searchBox(value, placeholder) {
+  setTimeout(() => {
+    const f = $('#search');
+    if (f) f.onsubmit = e => { e.preventDefault(); const { page, q } = parseHash(); go(`#/${page}?` + qsOf({ ...q, q: $('input', f).value })); };
+  });
+  return `<form id="search" class="search">${ic('search', 18)}<input type="search" value="${esc(value || '')}" placeholder="${esc(placeholder)}"></form>`;
+}
+function moreView() {
+  const groups = isStaff() ? NAV_STAFF : NAV_EMP;
+  view('المزيد', `${groups.map(([g, items]) => `${g ? `<div class="nav-group dark">${g}</div>` : ''}<div class="tiles">${items.map(([k, i, l]) => `<a class="tile" href="#/${k}">${ic(i, 26)}<span>${l}</span></a>`).join('')}</div>`).join('')}
+    <div class="tiles"><a class="tile" href="#/notifications">${ic('bell', 26)}<span>الإشعارات</span></a><button class="tile" data-act="logout">${ic('logout', 26)}<span>تسجيل الخروج</span></button></div>
+    <p class="muted center mt">${esc(S.user.name)} — ${esc(S.user.roleName)}${MODE !== 'server' ? ' · ' + MODE_NOTE[MODE] : ''}</p>`);
+}
+
+// ----- تفاصيل العهدة -----
+async function custodyDetail(id) {
+  const d = await api('GET', '/api/custodies/' + id);
+  const c = d.custody;
+  const open = c.status === 'open';
+  const staff = isStaff();
+  const actions = [
+    open && btn('تسجيل مصروف', { act: 'c-exp', icon: 'receipt', cls: 'primary' }),
+    open && staff && btn('تعزيز', { act: 'c-topup', icon: 'plus' }),
+    open && btn(staff ? 'استرداد نقدي' : 'رد مبلغ', { act: 'c-return', icon: 'undo' }),
+    open && staff && btn('تحويل لموظف', { act: 'c-transfer', icon: 'swap' }),
+    open && staff && btn('تسوية', { act: 'c-settle', icon: 'check' }),
+    open && staff && btn('تسوية وإغلاق', { act: 'c-close', icon: 'lock', cls: 'danger-o' }),
+    !open && isAdmin() && btn('إعادة فتح', { act: 'c-reopen', icon: 'undo' }),
+    staff && open && btn('تعديل', { act: 'c-edit', icon: 'edit', cls: 'ghost' }),
+    btn('طباعة سند الصرف', { act: 'c-print', icon: 'print', cls: 'ghost' }),
+    btn('كشف الحساب', { href: `#/report/statement?employeeId=${c.employeeId}&custodyId=${c.id}`, icon: 'chart', cls: 'ghost' }),
+  ].filter(Boolean).join('');
+  const pendingTx = d.tx.filter(t => t.status === 'pending');
+  view(`العهدة ${c.no}`, `
+    <div class="hero-card ${c.balance < 0 ? 'neg' : ''}">
+      <div class="hero-top"><div><div class="hero-label">الرصيد المتبقي</div><div class="hero-value">${money(c.balance)}</div></div><div class="hero-tags">${tag(c.kindName, 'light')} ${tag(open ? 'مفتوحة' : 'مغلقة', 'light')} ${c.overdue ? tag('متأخرة', 'bad') : ''}</div></div>
+      ${progress(c.spent, c.received, 'light')}
+      <div class="hero-stats"><div><small>المستلم</small>${money(c.received)}</div><div><small>المصروف</small>${money(c.spent)}</div><div><small>المردود</small>${money(c.returned)}</div></div>
+    </div>
+    <div class="actions wrap mb">${actions}</div>
+    ${pendingTx.length ? card('بانتظار التأكيد', pendingTx.map(t => `<div class="item"><div class="item-main"><div class="item-title">${esc(t.typeName)} ${money(t.amount)}</div><div class="item-sub">${fmtDate(t.date)} · ${esc(t.method)} ${esc(t.note)}</div></div><div class="item-end">${staff ? `<div class="actions"><button class="btn sm ok-btn" data-act="tx-ok" data-id="${t.id}">تأكيد الاستلام</button><button class="btn sm danger-o" data-act="tx-no" data-id="${t.id}">رفض</button></div>` : tag('بانتظار تأكيد الإدارة', 'warn')}</div></div>`).join('')) : ''}
+    ${c.unsettledCount && staff && open ? `<div class="notice">${ic('check', 18)} يوجد ${c.unsettledCount} مصروف معتمد غير مسوّى بقيمة ${fmt(c.unsettledAmount)} — يمكنك عمل تسوية لها.</div>` : ''}
+    ${card('بيانات العهدة', rows([['الموظف', staff ? `<a href="#/user/${c.employeeId}">${esc(c.employeeName)}</a>` : esc(c.employeeName)], ['الغرض', esc(c.purpose)], ['مركز التكلفة الافتراضي', esc(c.costCenterName)], ['تاريخ الصرف', fmtDate(c.issueDate)], c.dueDate && ['موعد التسوية', fmtDate(c.dueDate)], c.closedAt && ['تاريخ الإغلاق', fmtDate(c.closedAt)], c.notes && ['ملاحظات', esc(c.notes)]]))}
+    ${card(`المصروفات (${d.expenses.length})`, d.expenses.length ? `<div class="list">${d.expenses.map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات على هذه العهدة'), staff && c.pendingCount ? btn('اعتماد الكل', { act: 'c-approve-all', cls: 'sm ok-btn' }) : '')}
+    ${card('حركة العهدة', `<div class="timeline">${d.tx.map(t => `<div class="tl ${t.status !== 'confirmed' ? 'dim' : ''}"><div class="tl-dot ${t.sign > 0 ? 'in' : 'out'}"></div><div class="tl-body"><div class="tl-title">${esc(t.typeName)} <b class="${t.sign > 0 ? 'pos' : 'neg'}">${t.sign > 0 ? '+' : '−'}${fmt(t.amount)}</b> ${t.status !== 'confirmed' ? tag(t.status === 'pending' ? 'بانتظار التأكيد' : 'مرفوض', STATUS_TONE[t.status]) : ''}</div><div class="tl-sub">${esc(t.note || '')}${t.ref ? ' · مرجع ' + esc(t.ref) : ''} · ${esc(t.method)}</div><div class="tl-meta">${fmtDate(t.date)} · ${esc(t.createdByName)}</div></div></div>`).join('')}</div>`)}
+    ${d.settlements.length ? card('التسويات', `<div class="list">${d.settlements.map(s => `<a class="item" href="#/settlement/${s.id}"><div class="item-ic">${ic('check')}</div><div class="item-main"><div class="item-title">${esc(s.no)} ${s.closed ? tag('إغلاق', '') : ''}</div><div class="item-sub">${s.expenseIds.length} مصروف${s.replenished ? ' · تعويض ' + fmt(s.replenished) : ''}${s.returned ? ' · رد ' + fmt(s.returned) : ''}${s.reimbursed ? ' · صرف فرق ' + fmt(s.reimbursed) : ''}</div><div class="item-meta">${fmtDate(s.date)}</div></div><div class="item-end">${money(s.total)}</div></a>`).join('')}</div>`) : ''}
+  `, { back: '#/custodies' });
+
+  const txForm = (type, title, extra = []) => formSheet({
+    title, submit: 'حفظ',
+    fields: [{ type: 'money', name: 'amount', label: 'المبلغ', required: true, value: type === 'return' && c.balance > 0 ? c.balance : '' }, ...extra, { type: 'date', name: 'date', label: 'التاريخ', value: today() }, { type: 'select', name: 'method', label: 'الطريقة', options: PAY_METHODS }, { name: 'ref', label: 'رقم المرجع / الإيصال' }, { name: 'note', label: 'ملاحظة', full: true }],
+    onSubmit: async (b, close) => { await api('POST', `/api/custodies/${c.id}/tx`, { ...b, type }); close(); toast('تم التسجيل'); router(); },
+  });
+  ACT['c-exp'] = () => expenseForm({ custodyId: c.id });
+  ACT['c-topup'] = () => txForm('topup', 'تعزيز العهدة (إضافة مبلغ)');
+  ACT['c-return'] = () => txForm('return', staff ? 'استرداد مبلغ نقدي من الموظف' : 'رد مبلغ نقدي للإدارة');
+  ACT['c-transfer'] = () => txForm('transfer', 'تحويل جزء من العهدة لموظف آخر', [{ type: 'select', name: 'toEmployeeId', label: 'الموظف المستلم', options: userOptions(u => u.id !== c.employeeId), empty: '— اختر —', required: true }]);
+  ACT['c-settle'] = () => settleForm(c, false);
+  ACT['c-close'] = () => settleForm(c, true);
+  ACT['c-edit'] = () => formSheet({
+    title: 'تعديل بيانات العهدة',
+    fields: [{ name: 'purpose', label: 'الغرض', value: c.purpose, required: true, full: true }, { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: c.costCenterId, empty: '— بدون —' }, { type: 'date', name: 'dueDate', label: 'موعد التسوية', value: c.dueDate || '' }, { type: 'textarea', name: 'notes', label: 'ملاحظات', value: c.notes }],
+    onSubmit: async (b, close) => { await api('PUT', '/api/custodies/' + c.id, b); close(); toast('تم الحفظ'); router(); },
+  });
+  ACT['c-reopen'] = async () => { if (await confirmBox('إعادة فتح العهدة؟')) { await api('POST', `/api/custodies/${c.id}/reopen`); router(); } };
+  ACT['c-approve-all'] = async () => { await api('POST', '/api/expenses/review', { ids: d.expenses.filter(e => e.status === 'pending').map(e => e.id), status: 'approved' }); toast('تم الاعتماد'); router(); };
+  ACT['tx-ok'] = async el => { await api('POST', `/api/tx/${el.dataset.id}/decide`, { approve: true }); toast('تم تأكيد الاستلام'); router(); };
+  ACT['tx-no'] = async el => { await api('POST', `/api/tx/${el.dataset.id}/decide`, { approve: false }); router(); };
+  ACT['c-print'] = () => {
+    const issue = d.tx.find(t => t.type === 'issue') || { amount: c.received, date: c.issueDate, method: '' };
+    printDoc(`<h2 class="doc-title">سند صرف عهدة ${esc(c.kindName)}</h2>
+      ${rows([['رقم العهدة', esc(c.no)], ['التاريخ', fmtDate(issue.date)], ['اسم المستلم', esc(c.employeeName)], ['المبلغ', `<b>${money(issue.amount)}</b>`], ['طريقة الصرف', esc(issue.method)], ['الغرض', esc(c.purpose)], ['مركز التكلفة', esc(c.costCenterName)], c.dueDate && ['موعد التسوية', fmtDate(c.dueDate)]])}
+      <p class="doc-text">أقر أنا الموقع أدناه باستلامي المبلغ المذكور أعلاه كعهدة، وأتعهد بصرفه في الغرض المحدد وتقديم المستندات المؤيدة للصرف وتسوية العهدة في موعدها، ورد المتبقي منها.</p>
+      ${signatures(['المستلم', 'المحاسب', 'المدير المعتمد'])}`);
+  };
+}
+const PAY_METHODS = [{ value: 'نقداً', label: 'نقداً' }, { value: 'تحويل بنكي', label: 'تحويل بنكي' }, { value: 'شيك', label: 'شيك' }, { value: 'بطاقة', label: 'بطاقة' }];
+
+function settleForm(c, close) {
+  const after = close ? c.balance : null;
+  formSheet({
+    title: close ? 'تسوية وإغلاق العهدة' : 'تسوية المصروفات المعتمدة',
+    intro: `<div class="settle-box">
+      <div><span>مصروفات معتمدة غير مسواة</span>${money(c.unsettledAmount)} <small>(${c.unsettledCount})</small></div>
+      ${c.pendingCount ? `<div class="warn-t"><span>بانتظار الاعتماد</span>${c.pendingCount} مصروف — ${close ? 'يجب اعتمادها أو رفضها قبل الإغلاق' : 'لن تدخل في التسوية'}</div>` : ''}
+      ${close ? `<div><span>${after >= 0 ? 'يُرد من الموظف عند الإغلاق' : 'يُصرف للموظف (فرق)'}</span><b class="${after >= 0 ? 'pos' : 'neg'}">${money(Math.abs(after))}</b></div>` : ''}
+    </div>`,
+    submit: close ? 'تسوية وإغلاق' : 'تنفيذ التسوية',
+    fields: [
+      { type: 'date', name: 'date', label: 'تاريخ التسوية', value: today() },
+      { type: 'select', name: 'method', label: close ? 'طريقة الرد / الصرف' : 'طريقة التعويض', options: PAY_METHODS },
+      ...(!close && c.kind === 'permanent' ? [{ type: 'toggle', name: 'replenish', label: `تعويض العهدة المستديمة بمبلغ المصروفات (${fmt(c.unsettledAmount)}) لإعادتها لرصيدها`, value: true }] : []),
+      { name: 'note', label: 'ملاحظة', full: true },
+    ],
+    onSubmit: async (b, closeM) => {
+      const r = await api('POST', `/api/custodies/${c.id}/settle`, { ...b, close });
+      closeM(); toast(`تمت التسوية ${r.settlement.no}`); go('#/settlement/' + r.settlement.id);
+    },
+  });
+}
+async function settlementView(id) {
+  const d = await api('GET', '/api/settlements/' + id);
+  const s = d.settlement, c = d.custody;
+  const body = `${rows([['رقم التسوية', esc(s.no)], ['التاريخ', fmtDate(s.date)], ['العهدة', `<a href="#/custody/${c.id}">${esc(c.no)}</a> — ${esc(c.kindName)}`], ['الموظف', esc(c.employeeName)], ['الغرض', esc(c.purpose)], ['إجمالي المصروفات', money(s.total)], s.replenished && ['تعويض العهدة', money(s.replenished)], s.returned && ['رد نقدي من الموظف', money(s.returned)], s.reimbursed && ['صرف فرق للموظف', money(s.reimbursed)], ['إغلاق العهدة', s.closed ? 'نعم' : 'لا'], s.note && ['ملاحظة', esc(s.note)]])}`;
+  const table = `<div class="table-wrap"><table><thead><tr><th>#</th><th>التاريخ</th><th>البند</th><th>مركز التكلفة</th><th>البيان</th><th>الضريبة</th><th>المبلغ</th></tr></thead><tbody>${d.expenses.map((e, i) => `<tr><td>${i + 1}</td><td>${fmtDate(e.date)}</td><td>${esc(e.categoryName)}</td><td>${esc(e.costCenterName)}</td><td>${esc(e.description)}</td><td class="num">${fmt(e.vat)}</td><td class="num"><b>${fmt(e.amount)}</b></td></tr>`).join('')}</tbody><tfoot><tr><td colspan="5">الإجمالي</td><td class="num">${fmt(d.expenses.reduce((a, e) => a + (e.vat || 0), 0))}</td><td class="num">${fmt(s.total)}</td></tr></tfoot></table></div>`;
+  view(`سند التسوية ${s.no}`, card('', body) + card('المصروفات المسواة', table), { back: '#/custody/' + c.id, toolbar: btn('طباعة سند التسوية', { act: 'st-print', icon: 'print', cls: 'primary' }) });
+  ACT['st-print'] = () => printDoc(`<h2 class="doc-title">سند تسوية عهدة</h2>${body}${table}${signatures(['الموظف', 'المحاسب', 'المدير المعتمد'])}`);
+}
+
+// ----- تفاصيل المصروف -----
+async function expenseDetail(id) {
+  const e = await api('GET', '/api/expenses/' + id);
+  const staff = isStaff();
+  const editable = !e.settlementId && (staff || e.status !== 'approved');
+  view(`مصروف ${e.no}`, `
+    <div class="hero-card slim"><div class="hero-top"><div><div class="hero-label">${esc(e.categoryName)}</div><div class="hero-value">${money(e.amount)}</div><div class="hero-sub">${esc(e.description)}</div></div><div>${expTag(e)}</div></div></div>
+    ${e.status === 'rejected' && e.reviewNote ? `<div class="notice bad">${ic('alert', 18)} سبب الرفض: ${esc(e.reviewNote)}</div>` : ''}
+    <div class="actions wrap mb">
+      ${staff && !e.settlementId && e.status !== 'approved' ? btn('اعتماد', { act: 'e-ok', icon: 'ok', cls: 'ok-btn' }) : ''}
+      ${staff && !e.settlementId && e.status !== 'rejected' ? btn('رفض', { act: 'e-no', icon: 'x', cls: 'danger-o' }) : ''}
+      ${editable ? btn(e.status === 'rejected' && !staff ? 'تعديل وإعادة الإرسال' : 'تعديل', { act: 'e-edit', icon: 'edit' }) : ''}
+      ${editable ? btn('حذف', { act: 'e-del', icon: 'trash', cls: 'ghost' }) : ''}
+    </div>
+    ${card('التفاصيل', rows([['رقم المصروف', esc(e.no)], ['التاريخ والوقت', `${fmtDate(e.date)} <span class="num">${esc(e.time || '')}</span>`], ['الموظف', esc(e.employeeName)], ['العهدة', `<a href="#/custody/${e.custodyId}">${esc(e.custodyNo)}</a>`], ['مركز التكلفة', esc(e.costCenterName)], ['البند', esc(e.categoryName)], ['المورد', esc(e.vendor || '—')], e.vendorVat && ['الرقم الضريبي للمورد', `<span class="num">${esc(e.vendorVat)}</span>`], ['رقم الفاتورة', esc(e.invoiceNo || '—')], ['طريقة الدفع', esc(e.paymentMethod || '')], ['المبلغ قبل الضريبة', money(e.amount - (e.vat || 0))], ['ضريبة القيمة المضافة', money(e.vat || 0)], e.settlementNo && ['التسوية', `<a href="#/settlement/${e.settlementId}">${esc(e.settlementNo)}</a>`], e.viaReminder && ['المصدر', '🔔 سُجل من تنبيه المتابعة']]))}
+    ${card(`المرفقات (${e.attachments.length})`, e.attachments.length ? `<div class="gallery">${e.attachments.map(f => `<a href="#" data-open-file="${esc(f)}" class="g-item"><img data-file="${esc(f)}" alt="مرفق"></a>`).join('')}</div>` : empty('لا توجد مرفقات'))}
+  `, { back: true });
+  ACT['e-ok'] = async () => { await api('POST', '/api/expenses/review', { ids: [e.id], status: 'approved' }); toast('تم الاعتماد'); router(); };
+  ACT['e-no'] = () => formSheet({ title: 'رفض المصروف', submit: 'رفض', fields: [{ type: 'textarea', name: 'note', label: 'سبب الرفض (يظهر للموظف)' }], onSubmit: async (b, close) => { await api('POST', '/api/expenses/review', { ids: [e.id], status: 'rejected', note: b.note }); close(); toast('تم الرفض'); router(); } });
+  ACT['e-edit'] = () => expenseForm({ expense: e });
+  ACT['e-del'] = async () => { if (await confirmBox('حذف هذا المصروف نهائياً؟', { ok: 'حذف', danger: true })) { await api('DELETE', '/api/expenses/' + e.id); toast('تم الحذف'); history.back(); } };
+}
+ACT.bulk = async el => {
+  const ids = $$('[data-sel]:checked').map(c => c.dataset.sel);
+  if (!ids.length) return toast('حدد مصروفاً واحداً على الأقل', true);
+  if (el.dataset.s === 'rejected') {
+    return formSheet({ title: `رفض ${ids.length} مصروف`, submit: 'رفض', fields: [{ type: 'textarea', name: 'note', label: 'سبب الرفض' }], onSubmit: async (b, close) => { await api('POST', '/api/expenses/review', { ids, status: 'rejected', note: b.note }); close(); toast('تم الرفض'); router(); } });
+  }
+  await api('POST', '/api/expenses/review', { ids, status: 'approved' });
+  toast(`تم اعتماد ${ids.length} مصروف`);
+  router();
+};
+
+// ----- نموذج المصروف (الأهم: بسيط وسريع) -----
+async function expenseForm({ custodyId, expense, viaReminder } = {}) {
+  let custodies = [];
+  if (!expense) {
+    custodies = await api('GET', '/api/custodies?status=open');
+    if (!custodies.length) {
+      return modal(`<h3>لا توجد عهدة مفتوحة</h3><p class="muted">${isStaff() ? 'اصرف عهدة للموظف أولاً ثم سجل المصروفات عليها.' : 'لا توجد عهدة مفتوحة باسمك. اطلب عهدة من الإدارة.'}</p><div class="sheet-foot"><button class="btn ghost" data-close>إغلاق</button><button class="btn primary" id="nx">${isStaff() ? 'صرف عهدة' : 'طلب عهدة'}</button></div>`, { onMount: (el, close) => { $('#nx', el).onclick = () => { close(); isStaff() ? custodyForm() : requestForm(); }; } });
     }
-    submitWith(b, async () => {
-      await api('PUT', '/api/expenses/' + b.dataset.id, { status: b.dataset.st, ...(note !== undefined ? { managerNote: note } : {}) });
-      toast(b.dataset.st === 'approved' ? 'تم اعتماد المصروف' : 'تم رفض المصروف');
+  }
+  const selCustody = expense ? null : (custodies.find(c => c.id === custodyId) || custodies[0]);
+  const cats = S.b.categories.filter(c => c.active !== false || c.id === expense?.categoryId);
+  const e = expense || {};
+  formSheet({
+    title: expense ? `تعديل المصروف ${e.no}` : viaReminder ? '🔔 سجّل ما صرفته' : 'تسجيل مصروف',
+    submit: expense ? 'حفظ التعديل' : 'حفظ المصروف',
+    files: { attachments: e.attachments || [] },
+    fields: [
+      expense ? { type: 'html', html: `<div class="fixed-field">العهدة: <b>${esc(e.custodyNo)}</b> — ${esc(e.employeeName)}</div>` }
+        : custodies.length === 1 && !isStaff() ? { type: 'html', html: `<input type="hidden" name="custodyId" value="${selCustody.id}"><div class="fixed-field">من عهدة: <b>${esc(selCustody.no)}</b> — ${esc(selCustody.purpose)} <span class="muted">(الرصيد ${fmt(selCustody.balance)})</span></div>` }
+          : { type: 'select', name: 'custodyId', label: 'من أي عهدة؟', full: true, required: true, value: selCustody.id, options: custodies.map(c => ({ value: c.id, label: `${c.no} — ${isStaff() ? c.employeeName + ' — ' : ''}${c.purpose} (رصيد ${fmt(c.balance)})` })) },
+      { type: 'money', name: 'amount', label: 'المبلغ المصروف', required: true, value: e.amount },
+      { type: 'select', name: 'costCenterId', label: 'مركز التكلفة (المشروع / القسم)', full: true, required: true, options: ccOptions(), value: e.costCenterId || selCustody?.costCenterId || '', empty: '— اختر مركز التكلفة —' },
+      { type: 'chips', name: 'categoryId', label: 'بند المصروف', required: true, value: e.categoryId || '', options: cats.map(c => ({ value: c.id, label: c.name })) },
+      { name: 'description', label: 'البيان (ماذا اشتريت / لماذا)', required: true, full: true, value: e.description, placeholder: 'مثال: أسمنت 10 أكياس' },
+      { type: 'date', name: 'date', label: 'التاريخ', value: e.date || today() },
+      ...(expense ? [] : [{ type: 'time', name: 'time', label: 'الوقت', value: new Date().toTimeString().slice(0, 5) }]),
+      { type: 'files', name: 'attachments', label: 'صور الفاتورة / الإيصال', hint: 'من الكاميرا أو المعرض أو ملف PDF — حتى 6 مرفقات' },
+      { type: 'section', label: 'بيانات الفاتورة (اختياري)' },
+      { name: 'vendor', label: 'المورد / المحل', value: e.vendor },
+      { name: 'invoiceNo', label: 'رقم الفاتورة', value: e.invoiceNo },
+      { name: 'vendorVat', label: 'الرقم الضريبي للمورد', value: e.vendorVat, attrs: 'inputmode="numeric" dir="ltr"' },
+      { type: 'select', name: 'paymentMethod', label: 'طريقة الدفع', options: PAY_METHODS, value: e.paymentMethod },
+      { type: 'toggle', name: 'vatIncluded', label: `المبلغ شامل ضريبة القيمة المضافة ${S.b.settings.vatRate}%`, value: e.vatIncluded },
+      { type: 'html', html: '<div class="vat-calc muted" id="vat-calc"></div>' },
+      ...(isStaff() && !expense ? [{ type: 'toggle', name: 'autoApprove', label: 'اعتماد المصروف مباشرة', value: true }] : []),
+    ],
+    onMount: (el, _close, form) => {
+      const calc = () => {
+        const a = Number(form.amount.value) || 0, r = Number(S.b.settings.vatRate) || 0;
+        $('#vat-calc', el).innerHTML = form.vatIncluded.checked && a ? `الضريبة: <b class="num">${fmt(a * r / (100 + r))}</b> · الصافي: <b class="num">${fmt(a - a * r / (100 + r))}</b>` : '';
+      };
+      form.addEventListener('input', calc); form.addEventListener('change', calc); calc();
+      const cSel = form.querySelector('select[name=custodyId]');
+      if (cSel) cSel.addEventListener('change', () => { const c = custodies.find(x => x.id === cSel.value); if (c?.costCenterId) form.costCenterId.value = c.costCenterId; });
+      if (!expense) setTimeout(() => form.amount.focus(), 250);
+    },
+    onSubmit: async (d, close) => {
+      if (!d.categoryId) throw new Error('اختر بند المصروف');
+      if (expense) await api('PUT', '/api/expenses/' + e.id, d);
+      else await api('POST', '/api/expenses', { ...d, viaReminder: !!viaReminder });
+      resetReminderClock();
+      close();
+      toast(expense ? 'تم حفظ التعديل' : 'تم حفظ المصروف ✓');
       router();
-    });
-  });
-  $$('[data-del]').forEach(b => b.onclick = async () => {
-    if (!await confirmBox('حذف هذا المصروف؟')) return;
-    submitWith(b, async () => { await api('DELETE', '/api/expenses/' + b.dataset.del); toast('تم الحذف'); router(); });
-  });
-  $$('[data-edit]').forEach(b => b.onclick = () => expenseModal({ expense: list.find(e => e.id === b.dataset.edit) }));
-}
-
-function custodyTable(list, manager) {
-  if (!list.length) return '<div class="empty">لا توجد عهد مسجلة</div>';
-  return `<div class="table-wrap"><table><thead><tr><th>التاريخ</th>${manager ? '<th>الموظف</th>' : ''}<th>المبلغ</th><th>طريقة الاستلام</th><th>ملاحظات</th><th>الحالة</th><th class="no-print"></th></tr></thead><tbody>
-  ${list.map(c => `<tr><td class="num">${c.date}</td>${manager ? `<td>${esc(c.employeeName)}</td>` : ''}<td class="amt pos">${money(c.amount)}</td><td>${esc(c.method)}</td><td>${esc(c.note || '—')}</td>
-    <td>${c.status === 'pending' ? '<span class="tag pending">بانتظار تأكيد المدير</span>' : statusTag(c.status)}</td>
-    <td class="no-print"><div class="actions">
-      ${manager && c.status !== 'approved' ? `<button class="btn sm ok" data-cst="approved" data-id="${c.id}">تأكيد</button>` : ''}
-      ${manager && c.status !== 'rejected' ? `<button class="btn sm bad" data-cst="rejected" data-id="${c.id}">إلغاء</button>` : ''}
-      ${!manager && c.status === 'pending' ? `<button class="btn sm bad" data-cdel="${c.id}">حذف</button>` : ''}
-    </div></td></tr>`).join('')}</tbody></table></div>`;
-}
-function bindCustodyActions() {
-  $$('[data-cst]').forEach(b => b.onclick = () => submitWith(b, async () => {
-    await api('PUT', '/api/custodies/' + b.dataset.id, { status: b.dataset.cst });
-    toast('تم التحديث'); router();
-  }));
-  $$('[data-cdel]').forEach(b => b.onclick = async () => {
-    if (!await confirmBox('حذف هذا السجل؟')) return;
-    submitWith(b, async () => { await api('DELETE', '/api/custodies/' + b.dataset.cdel); toast('تم الحذف'); router(); });
+    },
   });
 }
 
-function giveCustodyModal(employeeId = '') {
-  const emps = S.employees.filter(e => e.active);
+function custodyForm(employeeId) {
+  const emps = userOptions();
   if (!emps.length) return toast('أضف موظفاً أولاً', true);
-  modal(`<h3>صرف عهدة لموظف</h3>
-    <form class="form" id="gc">
-      <div class="field full"><label>الموظف</label><select name="employeeId" required><option value="">اختر الموظف</option>${emps.map(e => `<option value="${e.id}" ${e.id === employeeId ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></div>
-      <div class="field full"><label>مبلغ العهدة (${esc(S.settings.currency)})</label><input class="amount-input" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required></div>
-      <div class="field"><label>التاريخ</label><input type="date" name="date" value="${today()}"></div>
-      <div class="field"><label>طريقة التسليم</label><select name="method"><option>نقداً</option><option>تحويل بنكي</option><option>شيك</option></select></div>
-      <div class="field full"><label>ملاحظات</label><input name="note" placeholder="مثال: عهدة مشتريات الأسبوع"></div>
-    </form>
-    <div class="foot"><button class="btn" data-close>إلغاء</button><button class="btn primary" id="gc-ok">صرف العهدة</button></div>`, {
-    onMount: (el, close) => $('#gc-ok', el).onclick = e => {
-      const f = $('#gc', el); if (!f.reportValidity()) return;
-      submitWith(e.target, async () => { await api('POST', '/api/custodies', formData(f)); close(); toast('تم تسجيل العهدة'); router(); });
+  formSheet({
+    title: 'صرف عهدة نقدية', submit: 'صرف العهدة',
+    fields: [
+      { type: 'select', name: 'employeeId', label: 'الموظف المستلم', options: emps, value: employeeId, empty: '— اختر الموظف —', required: true, full: true },
+      { type: 'chips', name: 'kind', label: 'نوع العهدة', value: 'temporary', options: [{ value: 'temporary', label: 'مؤقتة (لمهمة وتُسوّى وتُغلق)' }, { value: 'permanent', label: 'مستديمة (نثرية تُعوَّض دورياً)' }] },
+      { type: 'money', name: 'amount', label: 'مبلغ العهدة', required: true },
+      { name: 'purpose', label: 'الغرض من العهدة', required: true, full: true, placeholder: 'مثال: مشتريات موقع برج الريان' },
+      { type: 'select', name: 'costCenterId', label: 'مركز التكلفة الافتراضي', options: ccOptions(), empty: '— اختر —', full: true, hint: 'يُقترح تلقائياً عند تسجيل المصروفات ويمكن تغييره لكل مصروف' },
+      { type: 'date', name: 'issueDate', label: 'تاريخ الصرف', value: today() },
+      { type: 'date', name: 'dueDate', label: 'موعد التسوية (للمؤقتة)' },
+      { type: 'select', name: 'method', label: 'طريقة الصرف', options: PAY_METHODS },
+      { name: 'ref', label: 'رقم المرجع / الشيك / التحويل' },
+      { type: 'textarea', name: 'notes', label: 'ملاحظات' },
+    ],
+    onSubmit: async (d, close) => {
+      let r;
+      try { r = await api('POST', '/api/custodies', d); } catch (e) {
+        if (!/يتجاوز الحد/.test(e.message) || !(await confirmBox(e.message + ' — صرفها على أي حال؟'))) throw e;
+        r = await api('POST', '/api/custodies', { ...d, force: true });
+      }
+      close(); toast(`تم صرف العهدة ${r.no}`); go('#/custody/' + r.id);
     },
   });
 }
 
-function employeeModal(emp) {
-  modal(`<h3>${emp ? 'تعديل موظف' : 'إضافة موظف'}</h3>
-    <form class="form" id="ef">
-      <div class="field"><label>الاسم الكامل</label><input name="name" required value="${esc(emp?.name || '')}"></div>
-      <div class="field"><label>المسمى الوظيفي</label><input name="jobTitle" value="${esc(emp?.jobTitle || '')}"></div>
-      <div class="field"><label>الجوال</label><input name="phone" inputmode="tel" value="${esc(emp?.phone || '')}"></div>
-      <div class="field"><label>اسم المستخدم للدخول</label><input name="username" ${emp ? 'disabled' : 'required'} value="${esc(emp?.username || '')}" dir="ltr"></div>
-      <div class="field"><label>${emp ? 'كلمة مرور جديدة (اتركها فارغة)' : 'كلمة المرور'}</label><input name="password" ${emp ? '' : 'required minlength="4"'} dir="ltr"></div>
-      ${emp ? `<div class="field"><label>الحالة</label><select name="active"><option value="1" ${emp.active ? 'selected' : ''}>نشط</option><option value="0" ${emp.active ? '' : 'selected'}>موقوف</option></select></div>` : ''}
-    </form>
-    <div class="foot"><button class="btn" data-close>إلغاء</button><button class="btn primary" id="ef-ok">حفظ</button></div>`, {
-    onMount: (el, close) => $('#ef-ok', el).onclick = e => {
-      const f = $('#ef', el); if (!f.reportValidity()) return;
-      submitWith(e.target, async () => {
-        const d = formData(f);
-        if (emp) { d.active = d.active === '1'; await api('PUT', '/api/users/' + emp.id, d); } else await api('POST', '/api/users', d);
-        S.employees = (await api('GET', '/api/bootstrap')).employees;
-        close(); toast('تم الحفظ'); router();
-      });
-    },
+// ----- العهد العينية -----
+function assetItem(a) {
+  return `<a class="item" href="#/asset/${a.id}"><div class="item-ic">${ic('box')}</div>
+    <div class="item-main"><div class="item-title">${esc(a.name)} ${tag(a.statusName, { assigned: 'info', available: 'ok', maintenance: 'warn', lost: 'bad', retired: '' }[a.status])} ${a.status === 'assigned' && !a.acknowledged ? tag('لم يُقر بالاستلام', 'warn') : ''}</div>
+    <div class="item-sub">${esc(a.category)}${a.serial ? ' · <span class="num">' + esc(a.serial) + '</span>' : ''}</div><div class="item-meta">${esc(a.no)}${a.holderName ? ' · بعهدة ' + esc(a.holderName) : ''}</div></div>
+    <div class="item-end">${a.value ? money(a.value) : ''}</div></a>`;
+}
+async function assetDetail(id) {
+  const { asset: a, moves } = await api('GET', '/api/assets/' + id);
+  const staff = isStaff();
+  const mine = a.holderId === S.user.id;
+  const acts = staff ? [
+    a.status !== 'assigned' && btn('تسليم لموظف', { act: 'a-move', data: 'data-t="assign"', icon: 'user', cls: 'primary' }),
+    a.status === 'assigned' && btn('نقل لموظف آخر', { act: 'a-move', data: 'data-t="transfer"', icon: 'swap' }),
+    a.status === 'assigned' && btn('استلام من الموظف', { act: 'a-move', data: 'data-t="return"', icon: 'undo' }),
+    a.status !== 'maintenance' && btn('إرسال للصيانة', { act: 'a-move', data: 'data-t="maintenance"', icon: 'settings', cls: 'ghost' }),
+    a.status === 'maintenance' && btn('إرجاع للمستودع', { act: 'a-move', data: 'data-t="available"', icon: 'box', cls: 'ghost' }),
+    a.status !== 'lost' && btn('فقد / تلف', { act: 'a-move', data: 'data-t="lost"', icon: 'alert', cls: 'ghost' }),
+    btn('تعديل', { act: 'a-edit', icon: 'edit', cls: 'ghost' }),
+  ] : [mine && !a.acknowledged && btn('أقر باستلام هذه العهدة', { act: 'a-ack', icon: 'ok', cls: 'primary' })];
+  view(a.name, `
+    <div class="hero-card slim"><div class="hero-top"><div><div class="hero-label">${esc(a.no)} · ${esc(a.category)}</div><div class="hero-value sm">${esc(a.name)}</div><div class="hero-sub">${a.holderName ? 'بعهدة: ' + esc(a.holderName) : esc(a.statusName)}</div></div><div>${a.status === 'assigned' ? tag(a.acknowledged ? 'أقر بالاستلام ✓' : 'لم يُقر بعد', a.acknowledged ? 'light' : 'warn') : ''}</div></div></div>
+    <div class="actions wrap mb">${acts.filter(Boolean).join('')}${a.status === 'assigned' ? btn('طباعة نموذج التسليم', { act: 'a-print', icon: 'print', cls: 'ghost' }) : ''}</div>
+    ${card('بيانات الأصل', rows([['الرقم التسلسلي / اللوحة', `<span class="num">${esc(a.serial || '—')}</span>`], a.model && ['الموديل', esc(a.model)], ['القيمة', money(a.value)], a.purchaseDate && ['تاريخ الشراء', fmtDate(a.purchaseDate)], ['مركز التكلفة', esc(a.costCenterName)], ['الحالة الفنية', esc(a.condition || '—')], a.notes && ['ملاحظات', esc(a.notes)]]))}
+    ${a.photos?.length ? card('الصور', `<div class="gallery">${a.photos.map(f => `<a href="#" data-open-file="${esc(f)}" class="g-item"><img data-file="${esc(f)}" alt=""></a>`).join('')}</div>`) : ''}
+    ${card('سجل الحركة', moves.length ? `<div class="timeline">${moves.map(m => `<div class="tl"><div class="tl-dot"></div><div class="tl-body"><div class="tl-title">${esc(m.typeName)}${m.toName ? ' ← ' + esc(m.toName) : ''}${m.fromName && !m.toName ? ' (من ' + esc(m.fromName) + ')' : ''}</div><div class="tl-sub">الحالة: ${esc(m.condition || '—')}${m.note ? ' · ' + esc(m.note) : ''}</div><div class="tl-meta">${fmtDate(m.date)} · ${esc(m.byName)}</div></div></div>`).join('')}</div>` : empty('لا توجد حركات'))}
+  `, { back: staff ? '#/assets' : '#/assets' });
+  ACT['a-move'] = el => {
+    const t = el.dataset.t;
+    const needsTo = t === 'assign' || t === 'transfer';
+    formSheet({
+      title: S.b.assetMoves[t], submit: 'حفظ',
+      fields: [...(needsTo ? [{ type: 'select', name: 'toId', label: 'الموظف المستلم', options: userOptions(u => u.id !== a.holderId), empty: '— اختر —', required: true, full: true }] : []), { type: 'date', name: 'date', label: 'التاريخ', value: today() }, { name: 'condition', label: 'الحالة الفنية', value: a.condition, placeholder: 'جديد / جيد / يحتاج صيانة' }, { type: 'textarea', name: 'note', label: 'ملاحظة' }],
+      onSubmit: async (b, close) => { await api('POST', `/api/assets/${a.id}/move`, { ...b, type: t }); close(); toast('تم'); router(); },
+    });
+  };
+  ACT['a-edit'] = () => assetForm(a);
+  ACT['a-ack'] = async () => { await api('POST', `/api/assets/${a.id}/ack`); toast('تم تسجيل إقرارك بالاستلام'); router(); };
+  ACT['a-print'] = () => printDoc(`<h2 class="doc-title">نموذج تسليم عهدة عينية</h2>${rows([['رقم الأصل', esc(a.no)], ['الأصل', esc(a.name)], ['الفئة', esc(a.category)], ['الرقم التسلسلي', esc(a.serial || '—')], ['القيمة', money(a.value)], ['الحالة عند التسليم', esc(a.condition || '')], ['اسم المستلم', esc(a.holderName)], ['تاريخ التسليم', fmtDate((moves.find(m => m.toId === a.holderId) || {}).date)]])}
+    <p class="doc-text">أقر أنا الموقع أدناه باستلامي الأصل المذكور أعلاه بحالة سليمة كعهدة شخصية، وأتعهد بالمحافظة عليه واستخدامه في أغراض العمل فقط، وإعادته عند الطلب أو عند انتهاء علاقتي بالعمل، وأتحمل مسؤولية فقده أو تلفه الناتج عن سوء الاستخدام.</p>${signatures(['المستلم', 'أمين العهد', 'المدير المعتمد'])}`);
+}
+function assetForm(a) {
+  formSheet({
+    title: a ? 'تعديل أصل' : 'إضافة عهدة عينية (أصل)', submit: 'حفظ',
+    files: { photos: a?.photos || [] },
+    fields: [
+      { name: 'name', label: 'اسم الأصل', required: true, full: true, value: a?.name, placeholder: 'مثال: لابتوب HP / جهاز مساحة / شاحنة' },
+      { type: 'select', name: 'category', label: 'الفئة', options: S.b.assetCategories.map(c => ({ value: c, label: c })), value: a?.category },
+      { name: 'serial', label: 'الرقم التسلسلي / رقم اللوحة', value: a?.serial },
+      { name: 'model', label: 'الماركة / الموديل', value: a?.model },
+      { type: 'number', name: 'value', label: 'القيمة', value: a?.value, attrs: 'step="0.01" min="0"' },
+      { type: 'date', name: 'purchaseDate', label: 'تاريخ الشراء', value: a?.purchaseDate || '' },
+      { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: a?.costCenterId, empty: '— بدون —' },
+      { name: 'condition', label: 'الحالة الفنية', value: a?.condition || 'جديد' },
+      ...(a ? [] : [{ type: 'select', name: 'assignTo', label: 'تسليمه مباشرة إلى', options: userOptions(), empty: '— يبقى بالمستودع —', full: true }]),
+      { type: 'files', name: 'photos', label: 'صور الأصل', button: 'إضافة صورة' },
+      { type: 'textarea', name: 'notes', label: 'ملاحظات', value: a?.notes },
+    ],
+    onSubmit: async (d, close) => { const r = await api(a ? 'PUT' : 'POST', '/api/assets' + (a ? '/' + a.id : ''), d); close(); toast('تم الحفظ'); a ? router() : go('#/asset/' + r.id); },
   });
 }
 
-function projectModal(p) {
-  modal(`<h3>${p ? 'تعديل مشروع' : 'مشروع جديد'}</h3>
-    <form class="form" id="pf">
-      <div class="field full"><label>اسم المشروع</label><input name="name" required value="${esc(p?.name || '')}"></div>
-      <div class="field"><label>رمز المشروع</label><input name="code" value="${esc(p?.code || '')}"></div>
-      <div class="field"><label>ميزانية المصروفات النثرية (اختياري)</label><input name="budget" type="number" min="0" value="${p?.budget || ''}"></div>
-      ${p ? `<div class="field"><label>الحالة</label><select name="active"><option value="1" ${p.active ? 'selected' : ''}>جارٍ</option><option value="0" ${p.active ? '' : 'selected'}>مغلق</option></select></div>` : ''}
-    </form>
-    <div class="foot"><button class="btn" data-close>إلغاء</button><button class="btn primary" id="pf-ok">حفظ</button></div>`, {
-    onMount: (el, close) => $('#pf-ok', el).onclick = e => {
-      const f = $('#pf', el); if (!f.reportValidity()) return;
-      submitWith(e.target, async () => {
-        const d = formData(f);
-        if (p) { d.active = d.active === '1'; await api('PUT', '/api/projects/' + p.id, d); } else await api('POST', '/api/projects', d);
-        S.projects = (await api('GET', '/api/bootstrap')).projects;
-        close(); toast('تم الحفظ'); router();
-      });
-    },
+// ----- الموظفون -----
+async function userDetail(id) {
+  await refreshBootstrap();
+  const u = S.b.users.find(x => x.id === id);
+  if (!u) return go('#/users');
+  const [cs, assets, exps] = await Promise.all([api('GET', '/api/custodies?' + qsOf({ employeeId: id, status: 'open' })), api('GET', '/api/assets?holderId=' + id), api('GET', '/api/expenses?' + qsOf({ employeeId: id }))]);
+  const bal = cs.reduce((s, c) => s + c.balance, 0);
+  view(u.name, `
+    <div class="hero-card"><div class="hero-top"><div><div class="hero-label">إجمالي الرصيد لدى ${esc(u.name)}</div><div class="hero-value">${money(bal)}</div><div class="hero-sub">${esc(u.roleName)}${u.jobTitle ? ' · ' + esc(u.jobTitle) : ''}${u.custodyLimit ? ' · الحد الأعلى ' + fmt(u.custodyLimit) : ''}</div></div></div></div>
+    <div class="actions wrap mb">${btn('صرف عهدة', { act: 'u-give', icon: 'wallet', cls: 'primary' })}${btn('تسليم أصل', { act: 'u-asset', icon: 'box' })}${btn('كشف الحساب', { href: '#/report/statement?employeeId=' + id, icon: 'chart' })}${isAdmin() ? btn('تعديل الحساب', { act: 'u-edit', icon: 'edit', cls: 'ghost' }) : ''}</div>
+    ${card(`العهد النقدية المفتوحة (${cs.length})`, cs.length ? `<div class="list">${cs.map(custodyItem).join('')}</div>` : empty('لا توجد عهد مفتوحة'))}
+    ${card(`العهد العينية (${assets.filter(a => a.status === 'assigned').length})`, assets.length ? `<div class="list">${assets.map(assetItem).join('')}</div>` : empty('لا توجد أصول بعهدته'))}
+    ${card('آخر المصروفات', exps.length ? `<div class="list">${exps.slice(0, 10).map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات'), btn('الكل', { href: '#/expenses?status=&employeeId=' + id, cls: 'sm ghost' }))}
+    ${card('بيانات الحساب', rows([['اسم المستخدم', `<span dir="ltr">${esc(u.username)}</span>`], ['الصلاحية', esc(u.roleName)], ['الجوال', `<span class="num">${esc(u.phone || '—')}</span>`], ['القسم', esc(u.department || '—')], ['الحالة', u.active ? 'نشط' : 'موقوف']]))}
+  `, { back: '#/users' });
+  ACT['u-give'] = () => custodyForm(id);
+  ACT['u-asset'] = async () => {
+    const avail = await api('GET', '/api/assets?status=available');
+    if (!avail.length) return assetForm();
+    formSheet({ title: 'تسليم أصل لـ ' + u.name, submit: 'تسليم', fields: [{ type: 'select', name: 'assetId', label: 'الأصل (من المستودع)', options: avail.map(a => ({ value: a.id, label: `${a.no} — ${a.name}` })), required: true, full: true }, { type: 'date', name: 'date', label: 'التاريخ', value: today() }, { name: 'condition', label: 'الحالة الفنية', value: 'جيد' }], onSubmit: async (b, close) => { await api('POST', `/api/assets/${b.assetId}/move`, { ...b, type: 'assign', toId: id }); close(); toast('تم التسليم'); router(); } });
+  };
+  ACT['u-edit'] = () => userForm(u);
+}
+function userForm(u) {
+  if (!isAdmin()) return toast('لمدير النظام فقط', true);
+  formSheet({
+    title: u ? 'تعديل حساب' : 'إضافة موظف / مستخدم', submit: 'حفظ',
+    fields: [
+      { name: 'name', label: 'الاسم الكامل', required: true, value: u?.name },
+      { name: 'jobTitle', label: 'المسمى الوظيفي', value: u?.jobTitle },
+      { name: 'department', label: 'القسم / الإدارة', value: u?.department },
+      { name: 'phone', label: 'الجوال', value: u?.phone, attrs: 'inputmode="tel" dir="ltr"' },
+      { type: 'select', name: 'role', label: 'الصلاحية', value: u?.role || 'employee', options: [{ value: 'employee', label: 'موظف — يسجل مصروفاته فقط' }, { value: 'accountant', label: 'محاسب — يعتمد ويصرف ويسوي' }, { value: 'admin', label: 'مدير النظام — كل الصلاحيات' }] },
+      { type: 'number', name: 'custodyLimit', label: 'الحد الأعلى للعهدة (اختياري)', value: u?.custodyLimit || '', attrs: 'min="0"' },
+      { name: 'username', label: 'اسم المستخدم للدخول', required: !u, value: u?.username, attrs: `dir="ltr" autocapitalize="off" ${u ? 'disabled' : ''}` },
+      { name: 'password', label: u ? 'كلمة مرور جديدة (اتركها فارغة)' : 'كلمة المرور', required: !u, attrs: 'dir="ltr" minlength="4"' },
+      ...(u ? [{ type: 'toggle', name: 'active', label: 'الحساب نشط', value: u.active }] : []),
+    ],
+    onSubmit: async (d, close) => { const r = await api(u ? 'PUT' : 'POST', '/api/users' + (u ? '/' + u.id : ''), d); await refreshBootstrap(); close(); toast('تم الحفظ'); u ? router() : go('#/user/' + r.id); },
   });
 }
 
-function passwordCard() {
-  const demo = window.DEMO ? `<div class="card"><h2>الوضع التجريبي <button class="btn sm bad" onclick="DEMO.reset()">مسح وإعادة البيانات التجريبية</button></h2><p class="muted">البيانات الحالية وهمية ومحفوظة على هذا الجهاز فقط. للاستخدام الفعلي اربط التطبيق بخادم الشركة.</p></div>` : '';
-  const server = NATIVE ? `<div class="card"><h2>عنوان الخادم <button class="btn sm" onclick="AndroidBridge.changeServer()">${window.DEMO ? 'الربط بخادم الشركة' : 'تغيير'}</button></h2><div class="num muted">${window.DEMO ? 'وضع تجريبي (بدون خادم)' : esc(NATIVE.getServer())}</div></div>` : '';
-  const account = `<div class="card"><h2><span>${esc(S.user.name)} <span class="muted">(${S.user.role === 'manager' ? 'مدير' : 'موظف'})</span></span><button class="btn sm bad" onclick="logout()">تسجيل الخروج</button></h2></div>`;
-  return account + demo + server + `<div class="card"><h2>تغيير كلمة المرور</h2><form id="pw" class="form">
-    <div class="field"><label>كلمة المرور الحالية</label><input type="password" name="oldPassword" required></div>
-    <div class="field"><label>كلمة المرور الجديدة</label><input type="password" name="newPassword" required minlength="4"></div>
-    <div class="full"><button class="btn primary">تغيير</button></div></form></div>`;
+// ----- مراكز التكلفة -----
+async function ccDetail(id, q) {
+  const d = await api('GET', `/api/cost-centers/${id}?` + qsOf({ from: q.from, to: q.to }));
+  const c = d.costCenter;
+  const maxCat = Math.max(1, ...d.byCategory.map(x => x[1]));
+  view(c.name, `
+    <div class="hero-card"><div class="hero-top"><div><div class="hero-label">${c.code ? esc(c.code) + ' · ' : ''}${esc(S.b.ccTypes[c.type] || '')}${c.parentName ? ' · تابع لـ ' + esc(c.parentName) : ''}</div><div class="hero-value">${money(d.spent)}</div><div class="hero-sub">إجمالي المصروف (يشمل الفروع)</div></div>${c.active === false ? tag('مغلق', 'light') : ''}</div>
+      ${c.budget ? progress(d.spent, c.budget, 'light') + `<div class="hero-stats"><div><small>الميزانية</small>${money(c.budget)}</div><div><small>المتبقي</small>${money(c.budget - d.spent)}</div><div><small>نسبة الصرف</small><span class="num">${Math.round(d.spent / c.budget * 100)}%</span></div></div>` : ''}</div>
+    <div class="actions wrap mb">${btn('تعديل', { act: 'cc-edit', icon: 'edit' })}${btn('مركز فرعي', { act: 'cc-child', icon: 'plus' })}${btn('كل المصروفات', { href: '#/expenses?status=&costCenterId=' + id, icon: 'receipt', cls: 'ghost' })}${btn('تقرير البنود', { href: '#/report/categories?costCenterId=' + id, icon: 'chart', cls: 'ghost' })}</div>
+    <form class="period" id="per">${fieldHtml({ type: 'date', name: 'from', label: 'من', value: q.from })}${fieldHtml({ type: 'date', name: 'to', label: 'إلى', value: q.to })}<button class="btn sm">عرض</button></form>
+    ${d.children.length ? card('المراكز الفرعية', `<div class="list">${d.children.map(x => `<a class="item" href="#/cost-center/${x.id}"><div class="item-ic">${ic('layers')}</div><div class="item-main"><div class="item-title">${esc(x.name)}</div><div class="item-sub">${x.budget ? 'الميزانية ' + fmt(x.budget) : ''}</div></div>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
+    <div class="grid2">
+      ${card('الصرف حسب البند', d.byCategory.length ? `<div class="bars">${d.byCategory.map(([n, v]) => `<div class="bar-row"><div class="bar-name">${esc(n)}</div>${progress(v, maxCat)}<div class="bar-val">${money(v)}</div></div>`).join('')}</div>` : empty('لا يوجد صرف'))}
+      ${card('الصرف حسب الموظف', d.byEmployee.length ? `<div class="bars">${d.byEmployee.map(([n, v]) => `<div class="bar-row"><div class="bar-name">${esc(n)}</div>${progress(v, d.byEmployee[0][1])}<div class="bar-val">${money(v)}</div></div>`).join('')}</div>` : empty('لا يوجد صرف'))}
+    </div>
+    ${d.custodies.length ? card('عهد مفتوحة على هذا المركز', `<div class="list">${d.custodies.map(custodyItem).join('')}</div>`) : ''}
+    ${card('آخر المصروفات', d.expenses.length ? `<div class="list">${d.expenses.slice(0, 15).map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات'))}
+    ${d.assets.length ? card('الأصول المرتبطة', `<div class="list">${d.assets.map(assetItem).join('')}</div>`) : ''}
+  `, { back: '#/cost-centers' });
+  $('#per').onsubmit = e => { e.preventDefault(); go(`#/cost-center/${id}?` + qsOf(readForm(e.target))); };
+  ACT['cc-edit'] = () => ccForm(c);
+  ACT['cc-child'] = () => ccForm(null, c.id);
 }
-function bindPasswordForm() {
-  $('#pw').onsubmit = e => {
-    e.preventDefault();
-    submitWith(e.submitter, async () => { await api('POST', '/api/password', formData(e.target)); e.target.reset(); toast('تم تغيير كلمة المرور'); });
+function ccForm(c, parentId) {
+  formSheet({
+    title: c ? 'تعديل مركز تكلفة' : 'مركز تكلفة جديد', submit: 'حفظ',
+    fields: [
+      { name: 'name', label: 'اسم المركز', required: true, value: c?.name, full: true, placeholder: 'مثال: مشروع برج الريان / الإدارة / شاحنة 4521' },
+      { name: 'code', label: 'الرمز', value: c?.code, placeholder: '100' },
+      { type: 'select', name: 'type', label: 'النوع', value: c?.type || 'project', options: Object.entries(S.b.ccTypes).map(([value, label]) => ({ value, label })) },
+      { type: 'select', name: 'parentId', label: 'تابع لمركز رئيسي', options: ccOptions({ activeOnly: false }).filter(o => o.value !== c?.id), value: c ? c.parentId : parentId, empty: '— مركز رئيسي —', full: true },
+      { type: 'number', name: 'budget', label: 'الميزانية (اختياري)', value: c?.budget || '', attrs: 'min="0" step="0.01"' },
+      { type: 'select', name: 'managerId', label: 'المسؤول', options: userOptions(), value: c?.managerId, empty: '— بدون —' },
+      ...(c ? [{ type: 'toggle', name: 'active', label: 'المركز نشط (يقبل مصروفات جديدة)', value: c.active !== false }] : []),
+      { type: 'textarea', name: 'notes', label: 'ملاحظات', value: c?.notes },
+    ],
+    onSubmit: async (d, close) => { const r = await api(c ? 'PUT' : 'POST', '/api/cost-centers' + (c ? '/' + c.id : ''), d); await refreshBootstrap(); close(); toast('تم الحفظ'); c ? router() : go('#/cost-center/' + r.id); },
+  });
+}
+
+// ----- التقارير -----
+const REPORTS = [
+  ['balances', 'wallet', 'أرصدة العهد حسب الموظف', 'كم استلم كل موظف وكم صرف وكم بقي معه', true],
+  ['statement', 'list', 'كشف حساب موظف', 'كل الحركات بالرصيد الجاري لموظف أو عهدة', false],
+  ['cost-centers', 'layers', 'المصروفات حسب مراكز التكلفة', 'مقارنة بالميزانية مع تجميع الفروع', true],
+  ['categories', 'tag', 'المصروفات حسب البنود', 'لكل حساب: الصافي والضريبة والإجمالي', true],
+  ['expenses', 'receipt', 'سجل المصروفات التفصيلي', 'كل مصروف ببياناته الكاملة مع التصفية', true],
+  ['aging', 'clock', 'أعمار العهد المفتوحة', 'العهد المتأخرة عن التسوية', true],
+  ['settlements', 'check', 'سجل التسويات', 'كل التسويات وما رُد أو عُوّض', true],
+  ['vat', 'file', 'تقرير ضريبة المدخلات', 'فواتير المصروفات المعتمدة الخاضعة للضريبة', true],
+  ['assets', 'box', 'سجل العهد العينية', 'الأصول وحالتها وبعهدة من', true],
+  ['checkins', 'bell', 'تفاعل الموظفين مع التنبيهات', 'ردود الموظفين على تنبيه نصف الساعة', true],
+];
+function reportsHub() {
+  view('التقارير', `<div class="report-grid">${REPORTS.map(([k, i, t, s]) => `<a class="report-card" href="#/report/${k}"><div class="item-ic">${ic(i)}</div><div><div class="item-title">${t}</div><div class="item-sub">${s}</div></div></a>`).join('')}</div>`);
+}
+async function reportView(name, q) {
+  const needsEmp = name === 'statement' && isStaff() && !q.employeeId;
+  const meta = REPORTS.find(r => r[0] === name) || [];
+  const filterFields = [
+    !['balances', 'aging', 'assets'].includes(name) && { type: 'date', name: 'from', label: 'من تاريخ', value: q.from },
+    !['balances', 'aging', 'assets'].includes(name) && { type: 'date', name: 'to', label: 'إلى تاريخ', value: q.to },
+    name === 'statement' && isStaff() && { type: 'select', name: 'employeeId', label: 'الموظف', options: userOptions(), value: q.employeeId, empty: '— اختر —' },
+    (name === 'categories' || name === 'expenses') && { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions({ activeOnly: false }), value: q.costCenterId, empty: 'الكل' },
+    name === 'expenses' && { type: 'select', name: 'employeeId', label: 'الموظف', options: userOptions(), value: q.employeeId, empty: 'الكل' },
+    name === 'expenses' && { type: 'select', name: 'status', label: 'الحالة', options: Object.entries(S.b.expenseStatus).map(([value, label]) => ({ value, label })), value: q.status, empty: 'الكل' },
+    name === 'assets' && { type: 'select', name: 'holderId', label: 'بعهدة', options: userOptions(), value: q.holderId, empty: 'الكل' },
+  ].filter(Boolean);
+  const r = needsEmp ? null : await api('GET', `/api/reports/${name}?` + qsOf(q));
+  const cell = (c, v) => c.type === 'money' ? (v === '' ? '' : `<span class="num ${v < 0 ? 'neg' : ''}">${fmt(v)}</span>`) : c.type === 'num' ? `<span class="num">${v}</span>` : c.type === 'date' ? fmtDate(v) : esc(v);
+  const table = r ? (r.rows.length ? `<div class="table-wrap"><table class="report"><thead><tr>${r.columns.map(c => `<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${r.rows.map(row => `<tr class="${row._depth === 0 && name === 'cost-centers' ? 'strong' : ''}">${r.columns.map(c => `<td>${cell(c, row[c.key])}</td>`).join('')}</tr>`).join('')}</tbody>${r.totals ? `<tfoot><tr>${r.columns.map((c, i) => `<td>${i === 0 ? 'الإجمالي' : r.totals[c.key] !== undefined ? cell(c, r.totals[c.key]) : ''}</td>`).join('')}</tr></tfoot>` : ''}</table></div>` : empty('لا توجد بيانات في هذه الفترة')) : empty('اختر الموظف لعرض كشف الحساب');
+  view(r ? r.title : meta[2] || 'تقرير', `
+    ${filterFields.length ? `<form class="period" id="rf">${filterFields.map(fieldHtml).join('')}<button class="btn sm primary">عرض</button></form>` : ''}
+    ${r ? `<div class="summary-line"><span>${esc(r.subtitle)}</span><span>${r.rows.length} سطر</span></div>` : ''}
+    ${card('', table)}
+  `, { back: isStaff() ? '#/reports' : '#/home', toolbar: r ? btn('تصدير Excel', { act: 'r-xls', icon: 'download', cls: 'primary' }) + btn('طباعة', { act: 'r-print', icon: 'print', cls: 'ghost' }) : '' });
+  $('#rf') && ($('#rf').onsubmit = e => { e.preventDefault(); go(`#/report/${name}?` + qsOf(readForm(e.target))); });
+  ACT['r-xls'] = () => exportCsv(r.title, r.columns, r.rows, r.totals);
+  ACT['r-print'] = () => printDoc(`<h2 class="doc-title">${esc(r.title)}</h2><p class="center">${esc(r.subtitle)}</p>${table}`);
+}
+
+// ----- الإشعارات والإعدادات -----
+async function notificationsView() {
+  const list = await api('GET', '/api/notifications');
+  view('الإشعارات', list.length ? `<div class="list cards">${list.map(n => `<a class="item ${n.read ? '' : 'unread'}" href="${esc(n.link || '#/')}"><div class="item-ic">${ic('bell')}</div><div class="item-main"><div class="item-title">${esc(n.text)}</div><div class="item-meta">${ago(n.at)}</div></div></a>`).join('')}</div>` : empty('لا توجد إشعارات'));
+  if (list.some(n => !n.read)) { await api('POST', '/api/notifications/read'); S.unread = 0; updateBadges(); }
+}
+function settingsView() {
+  const s = S.b.settings;
+  const admin = isAdmin();
+  view('الإعدادات', `
+    ${card('حسابي', `<div class="me-row"><div class="avatar">${esc(S.user.name.trim()[0])}</div><div><b>${esc(S.user.name)}</b><div class="muted">${esc(S.user.roleName)} · <span dir="ltr">${esc(S.user.username)}</span></div></div></div>
+      <div class="actions mt">${btn('تغيير كلمة المرور', { act: 's-pw', icon: 'lock' })}${btn('تسجيل الخروج', { act: 'logout', icon: 'logout', cls: 'danger-o' })}</div>`)}
+    ${!isStaff() ? card('التنبيهات', `<p>يصلك تنبيه كل <b>${s.reminderMinutes}</b> دقيقة خلال الدوام (<span class="num">${s.workStart} – ${s.workEnd}</span>) يسألك: هل صرفت شيئاً؟</p>${notifStatus()}<div class="actions mt">${btn('تجربة التنبيه الآن', { act: 's-test', icon: 'bell' })}</div>`) : ''}
+    ${admin ? card('بيانات الشركة', `<form class="form" id="s-co">
+      ${fieldHtml({ name: 'companyName', label: 'اسم الشركة', value: s.companyName, full: true })}
+      ${fieldHtml({ name: 'vatNumber', label: 'الرقم الضريبي', value: s.vatNumber, attrs: 'dir="ltr"' })}
+      ${fieldHtml({ name: 'address', label: 'العنوان', value: s.address })}
+      ${fieldHtml({ name: 'currency', label: 'العملة', value: s.currency })}
+      ${fieldHtml({ type: 'number', name: 'vatRate', label: 'نسبة ضريبة القيمة المضافة %', value: s.vatRate })}
+      <div class="full"><button class="btn primary">حفظ</button></div></form>`) : ''}
+    ${admin ? card('الدوام وتنبيهات الموظفين', `<form class="form" id="s-work">
+      ${fieldHtml({ type: 'toggle', name: 'remindersEnabled', label: 'تفعيل تنبيه «هل صرفت شيئاً؟» للموظفين', value: s.remindersEnabled })}
+      ${fieldHtml({ type: 'time', name: 'workStart', label: 'بداية الدوام', value: s.workStart })}
+      ${fieldHtml({ type: 'time', name: 'workEnd', label: 'نهاية الدوام', value: s.workEnd })}
+      ${fieldHtml({ type: 'number', name: 'reminderMinutes', label: 'التنبيه كل (دقيقة)', value: s.reminderMinutes, attrs: 'min="5" max="240"' })}
+      ${fieldHtml({ type: 'days', name: 'workDays', label: 'أيام العمل', value: s.workDays })}
+      <div class="full"><button class="btn primary">حفظ</button></div></form>`) : ''}
+    ${admin ? card('ضوابط العهد', `<form class="form" id="s-ctl">
+      ${fieldHtml({ type: 'number', name: 'agingDays', label: 'العهدة المؤقتة تعتبر متأخرة بعد (يوم)', value: s.agingDays })}
+      ${fieldHtml({ type: 'number', name: 'lowBalance', label: 'تنبيه انخفاض الرصيد عند أقل من', value: s.lowBalance })}
+      ${fieldHtml({ type: 'number', name: 'receiptRequiredAbove', label: 'إلزام إرفاق الفاتورة للمصروف الأكبر من (0 = غير إلزامي)', value: s.receiptRequiredAbove, full: true })}
+      <div class="full"><button class="btn primary">حفظ</button></div></form>`) : ''}
+    ${admin ? card('البيانات والنسخ الاحتياطي', `<p class="muted">${MODE === 'server' ? 'البيانات محفوظة على خادم الشركة.' : MODE_NOTE[MODE] + '. احرص على أخذ نسخة احتياطية بانتظام.'}</p>
+      <div class="actions wrap">${btn('تنزيل نسخة احتياطية', { act: 's-backup', icon: 'download', cls: 'primary' })}<label class="btn">${ic('upload', 18)}<span>استعادة نسخة</span><input type="file" accept="application/json,.json" id="s-restore" hidden></label>${MODE === 'demo' ? btn('مسح البيانات التجريبية', { act: 's-wipe', icon: 'trash', cls: 'danger-o' }) : ''}</div>`) : ''}
+    ${NATIVE ? card('طريقة التشغيل', `<p class="muted">${MODE === 'server' ? 'مرتبط بخادم: ' + esc(NATIVE.getServer()) : MODE_NOTE[MODE]}</p>${btn('تغيير طريقة التشغيل', { act: 's-mode', icon: 'swap' })}`) : ''}
+    <p class="muted center">نظام إدارة العهد — الإصدار 2.0</p>
+  `);
+  const save = form => form && (form.onsubmit = async e => { e.preventDefault(); try { S.b.settings = await api('PUT', '/api/settings', readForm(e.target)); toast('تم الحفظ'); if (form.id === 's-co') renderShell(), settingsView(); } catch (err) { toast(err.message, true); } });
+  ['#s-co', '#s-work', '#s-ctl'].forEach(sel => save($(sel)));
+  ACT['s-pw'] = () => formSheet({ title: 'تغيير كلمة المرور', fields: [{ type: 'password', name: 'oldPassword', label: 'كلمة المرور الحالية', required: true, full: true }, { type: 'password', name: 'newPassword', label: 'كلمة المرور الجديدة', required: true, full: true, attrs: 'minlength="4"' }], onSubmit: async (d, close) => { await api('POST', '/api/password', d); close(); toast('تم تغيير كلمة المرور'); } });
+  ACT['s-test'] = () => NATIVE ? NATIVE.testReminder() : showReminder(true);
+  ACT['s-backup'] = async () => { const data = await api('GET', '/api/backup'); downloadFile(`custody-backup-${today()}.json`, JSON.stringify(data), 'application/json'); toast('تم تنزيل النسخة الاحتياطية'); };
+  ACT['s-wipe'] = async () => { if (await confirmBox('مسح كل البيانات التجريبية والبدء من جديد؟', { danger: true, ok: 'مسح' })) { await S.backend.wipe(); store.del(TOKEN_KEY); location.reload(); } };
+  ACT['s-mode'] = () => NATIVE.changeServer();
+  const rf = $('#s-restore');
+  if (rf) rf.onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!(await confirmBox('ستُستبدل كل البيانات الحالية بالنسخة الاحتياطية. متابعة؟', { danger: true, ok: 'استعادة' }))) return;
+    try { await api('POST', '/api/restore', JSON.parse(await f.text())); toast('تمت الاستعادة'); setTimeout(() => location.reload(), 600); } catch (err) { toast(err.message || 'ملف غير صالح', true); }
   };
 }
 
 // ================= واجهة الموظف =================
-const employeeViews = {
+const EMP_VIEWS = {
   async home() {
-    const my = await api('GET', '/api/my');
-    const b = my.balance;
-    const low = b.remaining <= (S.settings.lowBalanceThreshold || 0);
-    const next = nextReminderAt();
-    const content = `
+    const d = await api('GET', '/api/home');
+    const t = d.totals;
+    const unack = d.assets.filter(a => !a.acknowledged);
+    view('الرئيسية', `
+      <div class="hello"><div><div class="hello-t">أهلاً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="muted">${nextReminderText()}</div></div></div>
       ${notifNotice()}
-      ${low ? `<div class="notice">⚠ رصيد عهدتك ${b.remaining < 0 ? 'بالسالب — صرفت أكثر من العهدة المستلمة' : 'منخفض'}، تواصل مع المدير.</div>` : ''}
-      <div class="kpis">
-        <div class="kpi hero"><div class="label">المتبقي معك من العهدة</div><div class="value">${money(b.remaining)}</div><div class="sub">${next ? `التنبيه القادم: ${next}` : 'خارج أوقات الدوام — لا توجد تنبيهات'}</div></div>
-        <div class="kpi"><div class="label">إجمالي العهد المستلمة</div><div class="value">${money(b.received)}</div></div>
-        <div class="kpi"><div class="label">إجمالي ما صرفته</div><div class="value">${money(b.spent)}</div><div class="sub">${b.pendingCount ? `${b.pendingCount} بانتظار مراجعة المدير` : 'كل المصروفات تمت مراجعتها'}</div></div>
+      ${unack.map(a => `<a class="notice" href="#/asset/${a.id}">${ic('box', 18)} تم تسليمك «${esc(a.name)}» — اضغط للإقرار بالاستلام</a>`).join('')}
+      <div class="hero-card ${t.balance < 0 ? 'neg' : ''}"><div class="hero-label">المتبقي معك من العهد</div><div class="hero-value">${money(t.balance)}</div>
+        <div class="hero-stats"><div><small>استلمت</small>${money(t.received)}</div><div><small>صرفت</small>${money(t.spent)}</div><div><small>بانتظار الاعتماد</small>${money(t.pendingAmount)}</div></div></div>
+      <button class="btn primary xl" data-act="q-expenseForm">${ic('plus', 24)} تسجيل مصروف جديد</button>
+      <div class="quick three">
+        <button class="q" data-act="q-returnForm">${ic('undo', 22)}<span>رد مبلغ</span></button>
+        <button class="q" data-act="q-requestForm">${ic('inbox', 22)}<span>طلب عهدة</span></button>
+        <a class="q" href="#/report/statement">${ic('chart', 22)}<span>كشف حسابي</span></a>
       </div>
-      <div class="actions" style="margin-bottom:16px"><a class="btn primary lg" href="#/add">➕ تسجيل مصروف جديد</a></div>
-      <div class="card"><h2>آخر المصروفات <a class="btn sm" href="#/history">عرض الكل</a></h2>
-        ${my.expenses.length ? my.expenses.slice(0, 6).map(e => `<div class="list-item"><div><div class="title">${esc(e.category)} — ${esc(e.description)}</div><div class="muted">${esc(e.projectName)} · <span class="num">${e.date} ${esc(e.time || '')}</span></div></div><div style="text-align:end"><div class="amt">${money(e.amount)}</div>${statusTag(e.status)}</div></div>`).join('') : '<div class="empty">لم تسجل أي مصروف بعد</div>'}
-      </div>`;
-    shell(`أهلاً ${esc(S.user.name.split(' ')[0])}`, content, `<button class="btn" id="test-rem">🔔 تجربة التنبيه</button>`);
-    bindNotifNotice();
-    $('#test-rem').onclick = () => NATIVE ? NATIVE.testReminder() : showReminder(true);
+      ${card(`عهدي المفتوحة (${d.custodies.length})`, d.custodies.length ? `<div class="list">${d.custodies.map(custodyItem).join('')}</div>` : empty('لا توجد عهدة مفتوحة باسمك', btn('طلب عهدة', { act: 'q-requestForm', cls: 'primary sm' })))}
+      ${card('آخر مصروفاتي', d.recent.length ? `<div class="list">${d.recent.map(e => expenseItem(e)).join('')}</div>` : empty('لم تسجل مصروفات بعد'), btn('الكل', { href: '#/expenses', cls: 'sm ghost' }))}
+      ${d.assets.length ? card(`عهدي العينية (${d.assets.length})`, `<div class="list">${d.assets.map(a => assetItem({ ...a, statusName: 'بعهدتك' })).join('')}</div>`) : ''}
+    `);
   },
-
-  async add() {
-    shell('تسجيل مصروف جديد', `<div class="card">${expenseFormHtml()}</div>`);
-    bindExpenseForm($('.card'), null, () => { location.hash = '#/home'; });
+  async expenses(_, q) {
+    const status = q.status ?? '';
+    const list = await api('GET', '/api/expenses?' + qsOf({ status }));
+    view('مصروفاتي', `${tabs([['status=', 'الكل'], ['status=pending', 'بانتظار الاعتماد'], ['status=approved', 'المعتمدة'], ['status=rejected', 'المرفوضة']], 'status=' + status, '#/expenses')}
+      <div class="summary-line"><span>${list.length} مصروف</span><span>${money(list.filter(e => e.status !== 'rejected').reduce((s, e) => s + e.amount, 0))}</span></div>
+      ${list.length ? `<div class="list cards">${list.map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات', btn('تسجيل مصروف', { act: 'q-expenseForm', cls: 'primary' }))}`,
+    { toolbar: btn('تسجيل مصروف', { act: 'q-expenseForm', icon: 'plus', cls: 'primary' }) });
   },
-
-  async history() {
-    const list = await api('GET', '/api/expenses');
-    const total = list.filter(e => e.status !== 'rejected').reduce((s, e) => s + e.amount, 0);
-    shell('مصروفاتي', `<div class="card"><h2>${list.length} مصروف — الإجمالي ${money(total)}</h2>${expenseTable(list, false)}</div>`, `<a class="btn" href="${fileUrl('/api/export/expenses.csv')}">⬇ تصدير</a>`);
-    bindExpenseActions(list);
+  expense: expenseDetail,
+  async custodies(_, q) {
+    const status = q.status ?? 'open';
+    const list = await api('GET', '/api/custodies?' + qsOf({ status }));
+    view('عهدي النقدية', `${tabs([['status=open', 'المفتوحة'], ['status=closed', 'المغلقة']], 'status=' + status, '#/custodies')}
+      ${list.length ? `<div class="list cards">${list.map(custodyItem).join('')}</div>` : empty('لا توجد عهد', btn('طلب عهدة', { act: 'q-requestForm', cls: 'primary' }))}`);
   },
-
-  async received() {
-    const my = await api('GET', '/api/my');
-    shell('العهد المستلمة', `
-      <div class="card"><h2>العهد التي استلمتها <span class="muted">الإجمالي ${money(my.balance.received)}</span></h2>${custodyTable(my.custodies, false)}</div>
-      <p class="muted">العهد التي يصرفها المدير تظهر هنا تلقائياً. إذا استلمت مبلغاً لم يُسجل، سجّله وسيظهر للمدير لتأكيده.</p>`,
-      `<button class="btn primary" id="add-c">+ تسجيل عهدة استلمتها</button>`);
-    bindCustodyActions();
-    $('#add-c').onclick = () => modal(`<h3>تسجيل عهدة مستلمة</h3><form class="form" id="rc">
-        <div class="field full"><label>المبلغ المستلم (${esc(S.settings.currency)})</label><input class="amount-input" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required></div>
-        <div class="field"><label>التاريخ</label><input type="date" name="date" value="${today()}"></div>
-        <div class="field"><label>طريقة الاستلام</label><select name="method"><option>نقداً</option><option>تحويل بنكي</option><option>شيك</option></select></div>
-        <div class="field full"><label>ملاحظات</label><input name="note"></div></form>
-        <div class="foot"><button class="btn" data-close>إلغاء</button><button class="btn primary" id="rc-ok">حفظ</button></div>`, {
-      onMount: (el, close) => $('#rc-ok', el).onclick = e => {
-        const f = $('#rc', el); if (!f.reportValidity()) return;
-        submitWith(e.target, async () => { await api('POST', '/api/custodies', formData(f)); close(); toast('تم التسجيل وبانتظار تأكيد المدير'); router(); });
-      },
-    });
+  custody: custodyDetail,
+  settlement: settlementView,
+  async assets() {
+    const list = await api('GET', '/api/assets');
+    view('عهدي العينية', list.length ? `<div class="list cards">${list.map(assetItem).join('')}</div>` : empty('لا توجد أصول بعهدتك'));
   },
-
-  async settings() {
-    shell('الإعدادات', `${notifNotice(true)}
-      <div class="card"><h2>التنبيهات</h2><p>يصلك تنبيه كل <b>${S.settings.reminderMinutes}</b> دقيقة خلال الدوام (<span class="num">${S.settings.workStart} – ${S.settings.workEnd}</span>) أيام: ${S.settings.workDays.map(d => DAYS[d]).join('، ')}.</p>
-      <p class="muted">${NATIVE ? 'التنبيهات تصلك كإشعار على الجوال حتى لو كان التطبيق مغلقاً، ويمكنك الرد بـ «لا، لم أصرف» من الإشعار مباشرة.' : 'لضمان وصول التنبيهات: اسمح بالإشعارات، وأضف التطبيق إلى الشاشة الرئيسية، واتركه مفتوحاً في الخلفية أثناء الدوام.'}</p></div>
-      ${passwordCard()}`);
-    bindNotifNotice();
-    bindPasswordForm();
+  asset: assetDetail,
+  async requests() {
+    const list = await api('GET', '/api/requests');
+    view('طلباتي', list.length ? `<div class="list cards">${list.map(r => `<div class="item"><div class="item-ic">${ic(r.type === 'cash' ? 'wallet' : 'box')}</div><div class="item-main"><div class="item-title">${esc(r.purpose)} ${tag({ pending: 'قيد الدراسة', approved: 'تمت الموافقة', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}</div><div class="item-meta">${esc(r.no)} · ${ago(r.createdAt)}${r.decisionNote ? ' · ' + esc(r.decisionNote) : ''}</div>${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة ←</a>` : ''}</div><div class="item-end">${r.type === 'cash' ? money(r.amount) : ''}</div></div>`).join('')}</div>` : empty('لم تقدم طلبات'),
+    { toolbar: btn('طلب عهدة جديد', { act: 'q-requestForm', icon: 'plus', cls: 'primary' }) });
   },
+  report: reportView,
+  notifications: notificationsView,
+  settings: settingsView,
+  more: moreView,
 };
-
-function expenseFormHtml(e = {}) {
-  const projects = S.projects.filter(p => p.active);
-  const lastProject = e.projectId || store.get('last_project_' + S.user.id) || '';
-  return `<form class="form" id="xf">
-    <div class="field full"><label>المبلغ المصروف (${esc(S.settings.currency)})</label><input class="amount-input" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required value="${e.amount || ''}" placeholder="0"></div>
-    <div class="field full"><label>هذا المصروف تابع لأي مشروع؟</label>
-      ${projects.length ? `<div class="chips" id="proj">${projects.map(p => `<button type="button" class="chip ${p.id === lastProject ? 'on' : ''}" data-id="${p.id}">${esc(p.name)}</button>`).join('')}</div>` : '<div class="notice">لا توجد مشاريع — اطلب من المدير إضافتها</div>'}
-    </div>
-    <div class="field full"><label>نوع المصروف</label><div class="chips" id="cat">${S.settings.categories.map(c => `<button type="button" class="chip ${c === e.category ? 'on' : ''}">${esc(c)}</button>`).join('')}</div></div>
-    <div class="field full"><label>البيان (ماذا اشتريت / لماذا)</label><input name="description" required value="${esc(e.description || '')}" placeholder="مثال: أسمنت 10 أكياس"></div>
-    <div class="field"><label>المورد / المحل (اختياري)</label><input name="vendor" value="${esc(e.vendor || '')}"></div>
-    <div class="field"><label>التاريخ</label><input type="date" name="date" value="${e.date || today()}"></div>
-    ${e.id ? '' : `<div class="field"><label>الوقت</label><input type="time" name="time" value="${nowTime()}"></div>
-    <div class="field full"><label>صورة الإيصال / الفاتورة (اختياري)</label><input type="file" name="receiptFile" accept="image/*" capture="environment"></div>`}
-    <div class="full"><button class="btn primary lg">${e.id ? 'حفظ التعديل' : 'حفظ المصروف'}</button></div>
-  </form>`;
+async function returnForm() {
+  const cs = await api('GET', '/api/custodies?status=open');
+  if (!cs.length) return toast('لا توجد عهدة مفتوحة', true);
+  formSheet({
+    title: 'رد مبلغ نقدي للإدارة', intro: '<p class="muted">يُسجل الرد بانتظار تأكيد الإدارة لاستلام المبلغ.</p>', submit: 'تسجيل الرد',
+    fields: [{ type: 'select', name: 'custodyId', label: 'من عهدة', options: cs.map(c => ({ value: c.id, label: `${c.no} — ${c.purpose} (رصيد ${fmt(c.balance)})` })), full: true }, { type: 'money', name: 'amount', label: 'المبلغ المردود', required: true }, { type: 'select', name: 'method', label: 'الطريقة', options: PAY_METHODS }, { name: 'note', label: 'ملاحظة' }],
+    onSubmit: async (d, close) => { await api('POST', `/api/custodies/${d.custodyId}/tx`, { ...d, type: 'return' }); close(); toast('تم التسجيل — بانتظار التأكيد'); router(); },
+  });
 }
-function bindExpenseForm(root, expense, done, viaReminder = false) {
-  const f = $('#xf', root);
-  $$('#proj .chip, #cat .chip', root).forEach(c => c.onclick = () => { $$('.chip', c.parentNode).forEach(x => x.classList.remove('on')); c.classList.add('on'); });
-  f.onsubmit = ev => {
-    ev.preventDefault();
-    const projectId = $('#proj .chip.on', root)?.dataset.id;
-    const category = $('#cat .chip.on', root)?.textContent;
-    if (!projectId) return toast('اختر المشروع التابع له المصروف', true);
-    if (!category) return toast('اختر نوع المصروف', true);
-    submitWith(ev.submitter || $('button.primary', f), async () => {
-      const d = formData(f);
-      delete d.receiptFile;
-      const file = f.receiptFile?.files[0];
-      if (file) d.receipt = await compressImage(file);
-      Object.assign(d, { projectId, category, viaReminder });
-      if (expense) await api('PUT', '/api/expenses/' + expense.id, d); else await api('POST', '/api/expenses', d);
-      store.set('last_project_' + S.user.id, projectId);
-      resetReminderClock();
-      toast('تم حفظ المصروف ✓');
-      done();
-    });
-  };
-}
-function expenseModal({ expense, viaReminder } = {}) {
-  modal(`<h3>${expense ? 'تعديل مصروف' : 'تسجيل مصروف'}</h3>${expenseFormHtml(expense)}<div class="foot"><button class="btn" data-close>إلغاء</button></div>`, {
-    onMount: (el, close) => bindExpenseForm(el, expense, () => { close(); router(); }, viaReminder),
+function requestForm() {
+  formSheet({
+    title: 'طلب عهدة', submit: 'إرسال الطلب',
+    fields: [
+      { type: 'chips', name: 'type', label: 'نوع الطلب', value: 'cash', options: [{ value: 'cash', label: 'عهدة نقدية' }, { value: 'asset', label: 'عهدة عينية (جهاز / معدة)' }] },
+      { type: 'money', name: 'amount', label: 'المبلغ المطلوب (للنقدية)' },
+      { name: 'purpose', label: 'الغرض / الوصف', required: true, full: true },
+      { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), empty: '— اختر —', full: true },
+      { type: 'date', name: 'neededBy', label: 'مطلوب قبل تاريخ' },
+    ],
+    onSubmit: async (d, close) => { await api('POST', '/api/requests', d); close(); toast('تم إرسال الطلب للإدارة'); go('#/requests'); },
   });
 }
 
-// ================= التنبيهات كل نصف ساعة =================
+// اختصارات النماذج من الأزرار
+ACT['q-custodyForm'] = () => custodyForm();
+ACT['q-expenseForm'] = () => expenseForm();
+ACT['q-assetForm'] = () => assetForm();
+ACT['q-userForm'] = () => userForm();
+ACT['q-ccForm'] = () => ccForm();
+ACT['q-returnForm'] = () => returnForm();
+ACT['q-requestForm'] = () => requestForm();
+
+// ================= تنبيه «هل صرفت شيئاً؟» =================
 let timers = [];
 function stopTimers() { timers.forEach(clearInterval); timers = []; NATIVE?.stopReminders(); }
+const remindersOn = () => S.user && S.user.role === 'employee' && S.b.settings.remindersEnabled !== false;
 function startTimers() {
   stopTimers();
-  if (S.user.role === 'employee' && NATIVE) {
-    const s = S.settings;
-    NATIVE.startReminders(JSON.stringify({ token: S.token, workStart: s.workStart, workEnd: s.workEnd, workDays: s.workDays, minutes: s.reminderMinutes }));
-  } else if (S.user.role === 'employee') {
-    if (!store.get(remKey())) resetReminderClock();
-    timers.push(setInterval(reminderTick, 20000));
-    reminderTick();
-    navigator.serviceWorker?.addEventListener('message', e => { if (e.data?.type === 'reminder-action') handleReminderAction(e.data.answer); });
-  } else {
-    // تحديث لوحة المدير تلقائياً
-    timers.push(setInterval(() => {
-      const page = location.hash.split('?')[0].split('/')[1] || 'dashboard';
-      if (page === 'dashboard' && !$('.modal-back')) router();
-    }, 60000));
+  if (remindersOn()) {
+    const s = S.b.settings;
+    if (NATIVE) NATIVE.startReminders(JSON.stringify({ token: S.token, workStart: s.workStart, workEnd: s.workEnd, workDays: s.workDays, minutes: s.reminderMinutes, local: MODE !== 'server' }));
+    else {
+      if (!store.get(remKey())) resetReminderClock();
+      timers.push(setInterval(reminderTick, 20000));
+      navigator.serviceWorker?.addEventListener('message', e => { if (e.data?.type === 'reminder-action') handleReminderAction(e.data.answer); });
+    }
   }
+  // تحديث العدادات دورياً
+  timers.push(setInterval(async () => {
+    if (!S.user || $('.modal-back')) return;
+    try {
+      const b = await api('GET', '/api/bootstrap');
+      S.unread = b.unread; updateBadges();
+      if (isStaff() && ['dashboard', ''].includes(parseHash().page)) router();
+    } catch { }
+  }, 60000));
 }
 const remKey = () => 'last_reminder_' + S.user.id;
-const resetReminderClock = () => { store.set(remKey(), String(Date.now())); NATIVE?.snooze(); };
+const resetReminderClock = () => { if (!S.user) return; store.set(remKey(), String(Date.now())); NATIVE?.snooze(); };
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 function inWorkHours(d = new Date()) {
-  const s = S.settings, m = d.getHours() * 60 + d.getMinutes();
+  const s = S.b.settings, m = d.getHours() * 60 + d.getMinutes();
   return s.workDays.includes(d.getDay()) && m >= toMin(s.workStart) && m <= toMin(s.workEnd);
 }
-function nextReminderAt() {
-  if (NATIVE) return inWorkHours() ? `كل ${S.settings.reminderMinutes} دقيقة` : null;
+function nextReminderText() {
+  if (!remindersOn()) return '';
+  if (!inWorkHours()) return 'خارج أوقات الدوام — لا توجد تنبيهات الآن';
+  if (NATIVE) return `🔔 يصلك تنبيه كل ${S.b.settings.reminderMinutes} دقيقة خلال الدوام`;
   const last = Number(store.get(remKey())) || Date.now();
-  const t = new Date(Math.max(Date.now(), last + S.settings.reminderMinutes * 6e4));
-  return inWorkHours(t) ? t.toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : null;
+  const t = new Date(Math.max(Date.now(), last + S.b.settings.reminderMinutes * 6e4));
+  return `🔔 التنبيه القادم: ${t.toLocaleTimeString('ar-SA-u-nu-latn', { hour: '2-digit', minute: '2-digit' })}`;
 }
 function reminderTick() {
   if (!S.user || !inWorkHours()) return;
-  const last = Number(store.get(remKey())) || 0;
-  if (Date.now() - last >= S.settings.reminderMinutes * 6e4) showReminder();
+  if (Date.now() - (Number(store.get(remKey())) || 0) >= S.b.settings.reminderMinutes * 6e4) showReminder();
 }
 async function showReminder(test = false) {
   resetReminderClock();
   if ($('#reminder')) return;
   beep();
-  if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-  // إشعار النظام (يظهر حتى لو كان التطبيق في الخلفية)
+  navigator.vibrate?.([300, 150, 300]);
   if (!NATIVE && 'Notification' in window && Notification.permission === 'granted') {
     try {
       const reg = await navigator.serviceWorker?.getRegistration();
-      const opts = { body: 'هل صرفت شيئاً خلال آخر نصف ساعة؟ ولأي مشروع؟', icon: '/icon.svg', badge: '/icon.svg', tag: 'custody-reminder', renotify: true, requireInteraction: true, dir: 'rtl', lang: 'ar',
-        actions: [{ action: 'yes', title: 'نعم، سأسجل' }, { action: 'no', title: 'لا، لم أصرف' }] };
-      if (reg) reg.showNotification('🔔 تذكير العهدة', opts); else new Notification('🔔 تذكير العهدة', opts);
-    } catch {}
+      const o = { body: 'هل صرفت شيئاً من العهدة؟ ولأي مشروع؟', icon: '/icon.svg', tag: 'custody-reminder', renotify: true, requireInteraction: true, dir: 'rtl', lang: 'ar', actions: [{ action: 'yes', title: 'نعم، سأسجل' }, { action: 'no', title: 'لا، لم أصرف' }] };
+      if (reg) reg.showNotification('🔔 تذكير العهدة', o); else new Notification('🔔 تذكير العهدة', o);
+    } catch { }
   }
-  modal(`<div class="reminder-box" id="reminder">
-      <div class="bell">🔔</div>
-      <div class="q">هل صرفت شيئاً من العهدة؟</div>
-      <div class="muted">خلال آخر ${S.settings.reminderMinutes} دقيقة${test ? ' (تنبيه تجريبي)' : ''}</div>
-      <div class="yesno"><button class="btn primary lg" id="r-yes">نعم، صرفت</button><button class="btn lg" id="r-no">لا، لم أصرف</button></div>
-    </div>`, {
+  modal(`<div class="reminder-box" id="reminder"><div class="bell-big">🔔</div><div class="q-big">هل صرفت شيئاً من العهدة؟</div><div class="muted">خلال آخر ${S.b.settings.reminderMinutes} دقيقة${test ? ' (تنبيه تجريبي)' : ''}</div>
+    <div class="yesno"><button class="btn primary lg" id="r-yes">نعم، صرفت</button><button class="btn ghost lg" id="r-no">لا، لم أصرف</button></div></div>`, {
     onMount: (el, close) => {
-      $('#r-yes', el).onclick = () => { close(); expenseModal({ viaReminder: true }); };
-      $('#r-no', el).onclick = async () => { close(); await api('POST', '/api/checkins', { answer: 'no' }).catch(() => {}); toast('شكراً، سنذكرك لاحقاً'); };
+      $('#r-yes', el).onclick = () => { close(); expenseForm({ viaReminder: true }); };
+      $('#r-no', el).onclick = async () => { close(); await api('POST', '/api/checkins', { answer: 'no' }).catch(() => { }); toast('شكراً، سنذكرك لاحقاً'); };
     },
   });
 }
 function handleReminderAction(answer) {
   $('#reminder')?.closest('.modal-back')?.remove();
-  if (answer === 'no') { api('POST', '/api/checkins', { answer: 'no' }).catch(() => {}); toast('شكراً، سنذكرك لاحقاً'); }
-  else if (answer === 'yes') expenseModal({ viaReminder: true });
-  else showReminder();
+  if (answer === 'no') { api('POST', '/api/checkins', { answer: 'no' }).catch(() => { }); toast('شكراً، سنذكرك لاحقاً'); } else if (answer === 'yes') expenseForm({ viaReminder: true }); else showReminder();
 }
 function beep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    [0, 0.25].forEach(t => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.2, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
-      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
-    });
-  } catch {}
+    [0, 0.25].forEach(t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.2, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2); o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2); });
+  } catch { }
 }
-function notifNotice(always) {
-  if (NATIVE) {
-    if (NATIVE.notificationsEnabled()) return always ? '<div class="notice" style="background:var(--ok-bg);color:var(--ok)">✓ الإشعارات مفعّلة وتصلك حتى والتطبيق مغلق</div>' : '';
-    return `<div class="notice">🔔 اسمح بالإشعارات ليصلك تذكير كل نصف ساعة <button class="btn sm primary" id="enable-notif">السماح بالإشعارات</button></div>`;
-  }
-  if (!('Notification' in window)) return always ? '<div class="notice">متصفحك لا يدعم الإشعارات — ستظهر التنبيهات داخل التطبيق فقط</div>' : '';
-  if (Notification.permission === 'granted') return always ? '<div class="notice" style="background:var(--ok-bg);color:var(--ok)">✓ الإشعارات مفعّلة</div>' : '';
-  return `<div class="notice">🔔 فعّل الإشعارات ليصلك تذكير كل نصف ساعة حتى لو كان التطبيق في الخلفية <button class="btn sm primary" id="enable-notif">تفعيل الإشعارات</button></div>`;
+function notifStatus() {
+  if (NATIVE) return NATIVE.notificationsEnabled() ? '<div class="notice ok">✓ الإشعارات مفعّلة وتصلك حتى والتطبيق مغلق</div>' : notifNotice();
+  if (!('Notification' in window)) return '<div class="notice">التنبيهات تظهر داخل التطبيق فقط</div>';
+  return Notification.permission === 'granted' ? '<div class="notice ok">✓ الإشعارات مفعّلة</div>' : notifNotice();
 }
-function bindNotifNotice() {
-  const b = $('#enable-notif');
-  if (b && NATIVE) b.onclick = () => { NATIVE.requestNotifications(); setTimeout(router, 4000); };
-  else if (b) b.onclick = async () => {
-    const p = await Notification.requestPermission();
-    toast(p === 'granted' ? 'تم تفعيل الإشعارات' : 'لم يتم السماح بالإشعارات', p !== 'granted');
-    router();
-  };
+function notifNotice() {
+  if (!remindersOn()) return '';
+  const granted = NATIVE ? NATIVE.notificationsEnabled() : !('Notification' in window) || Notification.permission === 'granted';
+  return granted ? '' : `<div class="notice">${ic('bell', 18)} اسمح بالإشعارات ليصلك تذكير كل نصف ساعة <button class="btn sm primary" data-act="enable-notif">السماح</button></div>`;
 }
-
-// ---------- البدء ----------
-if (S.token) boot(); else renderLogin();
+ACT['enable-notif'] = async () => {
+  if (NATIVE) { NATIVE.requestNotifications(); setTimeout(router, 4000); return; }
+  const p = await Notification.requestPermission();
+  toast(p === 'granted' ? 'تم تفعيل الإشعارات' : 'لم يتم السماح بالإشعارات', p !== 'granted');
+  router();
+};
