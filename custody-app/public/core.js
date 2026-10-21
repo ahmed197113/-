@@ -5,7 +5,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const ROLES = { admin: 'مدير النظام', accountant: 'محاسب', employee: 'موظف' };
+  const ROLES = { admin: 'مدير النظام', owner: 'المالك', accountant: 'محاسب', employee: 'موظف' };
   const KINDS = { permanent: 'عهدة مستديمة', temporary: 'عهدة مؤقتة' };
   const CUSTODY_STATUS = { open: 'مفتوحة', closed: 'مغلقة' };
   const EXPENSE_STATUS = { pending: 'بانتظار الاعتماد', approved: 'معتمد', rejected: 'مرفوض' };
@@ -60,7 +60,7 @@
     const D = () => env.db;
     const S = () => env.db.settings;
     const today = () => env.today ? env.today() : new Date().toISOString().slice(0, 10);
-    const isStaff = u => u.role === 'admin' || u.role === 'accountant';
+    const isStaff = u => u.role === 'admin' || u.role === 'accountant' || u.role === 'owner';
     const staffOnly = u => { if (!isStaff(u)) fail(403, 'هذه العملية للإدارة فقط'); };
     const adminOnly = u => { if (u.role !== 'admin') fail(403, 'هذه العملية لمدير النظام فقط'); };
     const text = (v, label) => { const s = String(v ?? '').trim(); if (!s) fail(400, `حقل «${label}» مطلوب`); return s; };
@@ -301,6 +301,36 @@
         });
         return { title: 'تفاعل الموظفين مع تنبيهات المصروفات', subtitle: `من ${from} إلى ${to}`, columns: [col('name', 'الموظف'), col('yes', 'أجاب: صرفت', 'num'), col('no', 'أجاب: لم أصرف', 'num'), col('total', 'إجمالي الردود', 'num'), col('last', 'آخر رد')], rows, totals: sumCols(rows, ['yes', 'no', 'total']) };
       }
+      if (name === 'monthly') {
+        const ym = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
+        const to = /^\d{4}-\d{2}-\d{2}$/.test(q.to || '') ? q.to : today();
+        let [y, m] = to.slice(0, 7).split('-').map(Number);
+        m -= 5; while (m < 1) { m += 12; y--; }
+        const from = /^\d{4}-\d{2}-\d{2}$/.test(q.from || '') ? q.from : ym(y, m) + '-01';
+        const months = [];
+        [y, m] = from.slice(0, 7).split('-').map(Number);
+        for (;;) { const mo = ym(y, m); months.push(mo); if (mo >= to.slice(0, 7) || months.length >= 24) break; if (++m > 12) { m = 1; y++; } }
+        const exps = D().expenses.filter(e => e.status !== 'rejected' && e.date >= from && e.date <= to);
+        const rows = D().categories.map(c => {
+          const r = { code: c.code, name: c.name };
+          let t = 0;
+          for (const mo of months) { const v = num(exps.filter(e => e.categoryId === c.id && e.date.slice(0, 7) === mo).reduce((s, e) => s + e.amount, 0)); r['m' + mo] = v; t += v; }
+          r.total = num(t);
+          return r;
+        }).filter(r => r.total);
+        return { title: 'المصروفات الشهرية حسب البنود', subtitle: `من ${from} إلى ${to}`, columns: [col('code', 'رقم الحساب'), col('name', 'البند'), ...months.map(mo => col('m' + mo, mo, 'money')), col('total', 'الإجمالي', 'money')], rows, totals: sumCols(rows, [...months.map(mo => 'm' + mo), 'total']) };
+      }
+      if (name === 'employee-activity') {
+        const exps = D().expenses.filter(e => inRange(e.date));
+        const rows = D().users.filter(u => exps.some(e => e.employeeId === u.id)).map(u => {
+          const xs = exps.filter(e => e.employeeId === u.id);
+          const by = st => num(xs.filter(e => e.status === st).reduce((a, e) => a + e.amount, 0));
+          const valid = xs.filter(e => e.status !== 'rejected');
+          const spent = num(valid.reduce((a, e) => a + e.amount, 0));
+          return { name: u.name, count: xs.length, spent, approved: by('approved'), pending: by('pending'), rejected: by('rejected'), avg: valid.length ? num(spent / valid.length) : 0, receipts: Math.round(xs.filter(e => e.attachments.length).length / xs.length * 100) + '%', last: xs.map(e => e.date).sort().pop() };
+        }).sort((a, b) => b.spent - a.spent);
+        return { title: 'نشاط الموظفين في المصروفات', subtitle: period, columns: [col('name', 'الموظف'), col('count', 'عدد المصروفات', 'num'), col('spent', 'المصروف', 'money'), col('approved', 'المعتمد', 'money'), col('pending', 'بانتظار الاعتماد', 'money'), col('rejected', 'المرفوض', 'money'), col('avg', 'متوسط المصروف', 'money'), col('receipts', 'نسبة الفواتير المرفقة'), col('last', 'آخر مصروف', 'date')], rows, totals: sumCols(rows, ['count', 'spent', 'approved', 'pending', 'rejected']) };
+      }
       fail(404, 'التقرير غير موجود');
     }
     const sumCols = (rows, keys) => Object.fromEntries(keys.map(k => [k, num(rows.reduce((s, r) => s + (Number(r[k]) || 0), 0))]));
@@ -344,6 +374,39 @@
         employees, costCenters: ccRows,
         recent: D().expenses.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 8).map(expenseView),
         setup: { costCenters: D().costCenters.length, employees: D().users.filter(u => u.role === 'employee').length, custodies: D().custodies.length },
+      };
+    });
+
+    on('GET', '/api/analytics', ({ user, q }) => {
+      staffOnly(user);
+      const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+      const from = isDate(q.from) ? q.from : '', to = isDate(q.to) ? q.to : '';
+      const inRange = d => (!from || d >= from) && (!to || d <= to);
+      const all = D().expenses.filter(e => e.status !== 'rejected');
+      const end = to || today();
+      let [y, m] = end.slice(0, 7).split('-').map(Number);
+      const months = [];
+      for (let i = 0; i < 12; i++) { months.unshift(`${y}-${String(m).padStart(2, '0')}`); if (--m < 1) { m = 12; y--; } }
+      const monthly = months.map(mo => { const xs = all.filter(e => e.date.slice(0, 7) === mo); return { month: mo, spent: num(xs.reduce((s, e) => s + e.amount, 0)), count: xs.length }; });
+      const exps = all.filter(e => inRange(e.date));
+      const group = (keyOf, nameOf) => {
+        const out = [];
+        for (const e of exps) { const k = keyOf(e) || ''; let r = out.find(x => x.key === k); if (!r) out.push(r = { key: k, total: 0, count: 0 }); r.total = num(r.total + e.amount); r.count++; }
+        return out.sort((a, b) => b.total - a.total).map(r => ({ name: nameOf(r.key), total: r.total, count: r.count }));
+      };
+      const range = { from, to };
+      const status = {};
+      for (const st of ['approved', 'pending', 'rejected']) status[st] = num(D().expenses.filter(e => e.status === st && inRange(e.date)).reduce((s, e) => s + e.amount, 0));
+      const spent = num(exps.reduce((s, e) => s + e.amount, 0));
+      const issued = num(D().tx.filter(t => t.status === 'confirmed' && inRange(t.date) && ['issue', 'topup', 'reimburse'].includes(t.type)).reduce((s, t) => s + t.amount, 0));
+      return {
+        from, to, monthly,
+        totals: { spent, count: exps.length, avg: exps.length ? num(spent / exps.length) : 0, vat: num(exps.reduce((s, e) => s + (e.vat || 0), 0)), issued, outstanding: num(D().custodies.filter(c => c.status === 'open').reduce((s, c) => s + custodyBalance(c).balance, 0)) },
+        status,
+        byCategory: group(e => e.categoryId, catName),
+        byEmployee: group(e => e.employeeId, userName),
+        byCostCenter: reportData('cost-centers', range, user).rows.filter(r => r._depth === 0 && r.spent).map(r => ({ name: r.name.trim(), total: r.spent, budget: r.budget })).sort((a, b) => b.total - a.total),
+        bySource: reportData('sources', range, user).rows.filter(r => r.count).map(r => ({ name: r.name, out: r.out, back: r.back, net: r.net })),
       };
     });
 
@@ -743,10 +806,15 @@
       log(user, 'تعديل مصدر أموال', x.name, 'source', x.id);
       return x;
     });
+    // الموظف في الموقع يضيف نوع مصروف جديد بنفسه، والإدارة تُبلَّغ لتعطيه رقم حساب
     on('POST', '/api/categories', ({ user, b }) => {
-      staffOnly(user);
-      const c = { id: env.uid(), code: opt(b.code), name: text(b.name, 'اسم البند'), vatApplicable: b.vatApplicable !== false, active: true };
+      const staff = isStaff(user);
+      const name = text(b.name, 'اسم البند');
+      const same = D().categories.find(x => String(x.name).trim().toLowerCase() === name.toLowerCase());
+      if (same) { if (!staff && same.active === false) fail(400, 'هذا البند موقوف من الإدارة'); return same; }
+      const c = { id: env.uid(), code: staff ? opt(b.code) : '', name, vatApplicable: b.vatApplicable !== false, active: true, ...(staff ? {} : { addedBy: user.id }) };
       D().categories.push(c);
+      if (!staff) notify(staffIds(), `${user.name} أضاف نوع مصروف جديد: ${c.name}`, '#/categories');
       log(user, 'إضافة بند', c.name, 'category', c.id);
       return c;
     });

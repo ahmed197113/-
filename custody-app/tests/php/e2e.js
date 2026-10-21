@@ -7,7 +7,7 @@ const OUT = process.argv[3] || __dirname;
 const results = [];
 const step = async (name, fn) => {
   try { await fn(); results.push(['✓', name]); console.log('✓', name); }
-  catch (e) { results.push(['✗', name, e.message]); console.log('✗', name, '\n   ', e.message.split('\n')[0]); throw e; }
+  catch (e) { results.push(['✗', name, e.message]); console.log('✗', name, '\n   ', e.message.split('\n').slice(0, 3).join(' | ')); if (global.PAGE) await global.PAGE.screenshot({ path: path.join(OUT, 'fail.png'), fullPage: true }).catch(() => {}); throw e; }
 };
 const assert = (c, m) => { if (!c) throw new Error(m); };
 // صورة PNG صغيرة حقيقية للفاتورة
@@ -18,6 +18,7 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 420, height: 900 }, acceptDownloads: true });
   const page = await ctx.newPage();
+  global.PAGE = page;
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('dialog', d => d.accept());
@@ -107,13 +108,17 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     await fill('amount', 230); await chip('categoryId', 'مواد وخامات'); await fill('description', 'حديد تسليح');
     await modal().locator('[data-files="attachments"] input[type=file]').setInputFiles(PNG);
     await modal().locator('[data-files="attachments"] .thumb').first().waitFor();
-    await modal().locator('label.toggle').filter({ has: page.locator('[name=vatIncluded]') }).click();
     await submit(); await toast('تم حفظ المصروف');
+    assert(await page.locator('.s-btn.main').isVisible() && !(await page.locator('.sidebar').isVisible()), 'واجهة الموظف ليست مبسطة');
     await act('q-expenseForm'); await modal().locator('[name=amount]').waitFor();
-    await fill('amount', 120); await chip('categoryId', 'نقل ومواصلات'); await fill('description', 'نقل عمال'); await submit(); await toast('تم حفظ المصروف');
+    assert(!(await modal().locator('[name=costCenterId]').isVisible()), 'المشروع ظاهر رغم أن العهدة لها مشروع');
+    await modal().locator('#new-cat').fill('أسلاك كهرباء'); await modal().locator('#add-cat').click(); await toast('تمت إضافة النوع');
+    assert(await modal().locator('[data-chips="categoryId"] .chip.on').textContent() === 'أسلاك كهرباء', 'النوع الجديد لم يُختر');
+    await fill('amount', 120); await fill('description', 'نقل عمال'); await submit(); await toast('تم حفظ المصروف');
     const exps = (await api('GET', '/api/expenses', null, T.emp1)).data;
     assert(exps.length === 2 && exps.every(e => e.status === 'pending'), 'مصروفات الموظف');
-    const withImg = exps.find(e => e.attachments.length); assert(withImg && withImg.vat === 30, 'المرفق أو الضريبة: ' + JSON.stringify(withImg && withImg.vat));
+    const withImg = exps.find(e => e.attachments.length); assert(withImg, 'المرفق');
+    assert(exps.find(e => !e.attachments.length).categoryName === 'أسلاك كهرباء', 'النوع الجديد لم يُحفظ على المصروف');
     id.file = withImg.attachments[0]; id.exp = withImg.id;
     const f = await api('GET', '/api/files/' + id.file, null, T.emp1);
     assert(f.status === 200 && f.type === 'image/jpeg' && f.data.byteLength > 50, 'تنزيل المرفق ' + f.status + ' ' + f.type);
@@ -141,6 +146,12 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
   });
   await step('اعتماد جماعي', async () => {
     await login('admin', 'secret1'); T.admin = await token();
+    const cats = (await api('GET', '/api/bootstrap', null, T.admin)).data.categories;
+    assert(cats.find(c => c.name === 'أسلاك كهرباء' && c.addedBy === id.emp1 && !c.code), 'البند الذي أضافه الموظف');
+    const n = (await api('GET', '/api/notifications', null, T.admin)).data; assert(n.some(x => x.text.includes('أضاف نوع مصروف جديد: أسلاك كهرباء')), 'إشعار البند الجديد');
+    const dup = await api('POST', '/api/categories', { name: ' أسلاك كهرباء ' }, T.emp1); assert(dup.data.id === cats.find(c => c.name === 'أسلاك كهرباء').id, 'تكرار البند');
+    // المحاسب يكمل بيانات الضريبة التي لا يراها الموظف
+    assert((await api('PUT', '/api/expenses/' + id.exp, { vatIncluded: true }, T.admin)).data.vat === 30, 'تعديل الضريبة');
     await go('#/expenses?status=pending'); await page.locator('#sel-all').check(); await act('bulk'); await toast(/تم اعتماد 2/);
     const exps = (await api('GET', '/api/expenses?employeeId=' + id.emp1, null, T.admin)).data; assert(exps.every(e => e.status === 'approved'), 'لم تعتمد');
   });
@@ -209,12 +220,36 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     const mine = (await api('GET', '/api/requests', null, T.emp2)).data; assert(mine.find(r => r.purpose === 'طلب عادي').status === 'pending', 'الطلب العادي');
     await login('emp1', '1234'); T.emp1 = await token();
   });
+  await step('المالك: واجهة مبسطة وتقارير', async () => {
+    await login('admin', 'secret1'); T.admin = await token();
+    await go('#/users'); await act('q-userForm');
+    await fill('name', 'المالك أبو محمد'); await fill('username', 'owner'); await fill('password', '9999'); await select('role', 'المالك — واجهة مبسطة: يتابع ويعتمد ويصرف'); await submit(); await toast('تم الحفظ');
+    await login('owner', '9999');
+    await page.locator('.s-bal').waitFor(); assert(!(await page.locator('.sidebar').isVisible()), 'المالك يرى القائمة الكاملة');
+    const out = (await api('GET', '/api/dashboard', null, await token())).data.kpis.outstanding;
+    assert(out > 0 && (await page.locator('.s-value').textContent()).replace(/\s/g, '').includes(out.toLocaleString('en-US')), 'المبالغ عند الموظفين ' + out + ' / ' + await page.locator('.s-value').textContent());
+    await page.locator('.vchart').first().waitFor();
+    await act('q-custodyForm'); await modal().locator('[name=amount]').waitFor();
+    assert(await modal().locator('[data-chips="sourceId"] .chip.on').textContent() === 'المالك', 'مصدر المالك ليس الافتراضي');
+    await modal().locator('[data-close]').first().click();
+    await page.locator('a.s-btn[href="#/insights"]').click(); await page.locator('.facts').waitFor();
+    assert((await page.locator('.facts').textContent()).includes('أكثر نوع صرفاً'), 'الخلاصة');
+    for (const p of ['3m', 'year', 'all']) { await go('#/insights?p=' + p); await page.locator('.facts').waitFor(); await noErrToast(); }
+    await page.locator('.hc-row').first().scrollIntoViewIfNeeded(); await page.waitForTimeout(200); await page.locator('.hc-row').first().hover({ position: { x: 20, y: 5 } }); await page.locator('#chart-tip').waitFor({ state: 'visible' });
+    const u = await api('POST', '/api/users', { name: 'x', username: 'x1', password: '1234' }, await token()); assert(u.status === 403, 'المالك أضاف مستخدماً');
+    await page.screenshot({ path: path.join(OUT, 'owner-insights.png'), fullPage: true });
+    await go('#/dashboard'); await page.locator('.s-bal').waitFor(); await page.screenshot({ path: path.join(OUT, 'owner-home.png'), fullPage: true });
+    await login('emp1', '1234'); T.emp1 = await token();
+    await page.screenshot({ path: path.join(OUT, 'employee-home.png'), fullPage: true });
+  });
   await step('كشف حسابي للموظف', async () => {
     await go('#/report/statement'); await page.locator('table.report').waitFor(); await noErrToast();
   });
   await step('كل التقارير', async () => {
     await login('admin', 'secret1'); T.admin = await token();
-    for (const name of ['balances', 'statement', 'sources', 'source-ledger', 'cost-centers', 'categories', 'expenses', 'aging', 'settlements', 'vat', 'assets', 'checkins']) {
+    await go('#/analytics'); await page.locator('.facts').waitFor(); await page.locator('#af').waitFor(); await noErrToast();
+    await page.screenshot({ path: path.join(OUT, 'admin-analytics.png'), fullPage: true });
+    for (const name of ['balances', 'statement', 'sources', 'source-ledger', 'cost-centers', 'categories', 'expenses', 'aging', 'settlements', 'vat', 'assets', 'checkins', 'monthly', 'employee-activity']) {
       await go('#/report/' + name + (name === 'statement' ? '?employeeId=' + id.emp1 : ''));
       await page.locator('#view .summary-line').waitFor({ timeout: 8000 }); await noErrToast();
     }
@@ -231,7 +266,7 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     const [dl] = await Promise.all([page.waitForEvent('download'), act('s-backup')]);
     backupFile = path.join(OUT, 'backup.json'); await dl.saveAs(backupFile);
     const b = JSON.parse(fs.readFileSync(backupFile, 'utf8'));
-    assert(b.users.length === 3 && !b.sessions && b.expenses.length === 2 && b.custodies.some(c => c.direct), 'محتوى النسخة');
+    assert(b.users.length === 4 && !b.sessions && b.expenses.length === 2 && b.custodies.some(c => c.direct), 'محتوى النسخة');
     assert(JSON.stringify(b.settings.counters).startsWith('{'), 'counters ليست كائناً');
   });
   await step('استعادة النسخة الاحتياطية', async () => {

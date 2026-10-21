@@ -422,3 +422,71 @@ tr.strong td { font-weight: 700; }
   .auth-card { padding: 20px 16px; } .auth h1 { font-size: 17px; } .auth-logo img { width: 78px; }
 }
 @media (min-width: 901px) { .appbar-logo { display: none; } }
+
+/* ===== الواجهة المبسطة (الموظف والمالك) ===== */
+.layout.simple { grid-template-columns: 1fr; }
+.layout.simple .sidebar, .layout.simple .bottom-nav, .layout.simple .fab { display: none !important; }
+.layout.simple #view { max-width: 640px; width: 100%; margin: 0 auto; padding: 14px 14px 40px; }
+.ok-t { color: var(--ok); }
+.s-bal { background: linear-gradient(140deg, var(--primary) 0%, var(--navy-2) 75%); color: #fff; border-radius: 22px; padding: 20px; margin-bottom: 14px; box-shadow: 0 12px 30px rgba(30, 23, 87, .22); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .s-bal { background: linear-gradient(140deg, #2a2178, #120c3a); } }
+.s-bal.neg { background: linear-gradient(140deg, #8d2c24, #4a1410); }
+.s-hi { font-weight: 700; opacity: .9; }
+.s-label { margin-top: 10px; font-size: 14px; opacity: .8; }
+.s-value { font-size: 34px; font-weight: 800; line-height: 1.2; }
+.s-value .money small { font-size: .45em; }
+.s-sub { margin-top: 6px; font-size: 13.5px; opacity: .85; }
+.s-btn { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 18px; margin-bottom: 10px; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px; font-weight: 800; text-align: start; cursor: pointer; box-shadow: var(--shadow); }
+.s-btn > svg { width: 30px; height: 30px; color: var(--primary); }
+.s-btn > span { display: flex; flex-direction: column; flex: 1; }
+.s-btn small { font-size: 13px; font-weight: 500; color: var(--muted); }
+.s-btn.main { background: var(--accent); border-color: var(--accent); color: #fff; min-height: 84px; }
+.s-btn.main > svg, .s-btn.main small { color: #fff; }
+.s-btn.main small { opacity: .9; }
+.s-btn:active { transform: scale(.985); }
+.s-count { background: #fff; color: var(--accent); border-radius: 99px; min-width: 34px; height: 34px; display: grid; place-items: center; font-size: 16px; }
+.s-h { margin: 20px 4px 8px; font-size: 16px; }
+.s-list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.card .s-list { border: 0; border-radius: 0; margin: -6px -4px; }
+.s-list a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 14px; color: var(--text); border-bottom: 1px solid var(--border); }
+.s-list a:last-child { border-bottom: 0; }
+.s-list a > div { display: flex; flex-direction: column; min-width: 0; }
+.s-list b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-list small { font-size: 12.5px; }
+.s-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 18px; }
+.s-links a { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 8px; border-radius: 14px; background: var(--surface-2); color: var(--text); font-weight: 700; font-size: 14px; }
+.add-cat { display: flex; gap: 8px; margin-top: -4px; }
+.add-cat input { flex: 1; min-width: 0; border: 1px dashed var(--border); border-radius: 10px; padding: 8px 12px; background: var(--surface); }
+
+/* ===== الرسوم البيانية ===== */
+.vchart { --h: 150px; }
+.vc-plot { display: flex; align-items: flex-end; gap: 2px; height: var(--h); border-bottom: 1px solid var(--border); }
+.vc-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; cursor: default; min-width: 0; }
+.vc-col:hover .vc-bar { background: var(--primary-2); }
+.vc-bar { width: min(70%, 34px); background: var(--primary); border-radius: 4px 4px 0 0; }
+.vc-val { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.vc-x { display: flex; gap: 2px; margin-top: 6px; }
+.vc-x span { flex: 1; text-align: center; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; min-width: 0; }
+@media (max-width: 520px) { .vc-x span:nth-child(even) { visibility: hidden; } }
+.hchart { display: flex; flex-direction: column; gap: 12px; }
+.hc-row { display: grid; grid-template-columns: minmax(80px, 34%) 1fr auto; gap: 10px; align-items: center; }
+.hc-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hc-track { position: relative; height: 12px; background: var(--surface-2); border-radius: 6px; }
+.hc-bar { height: 100%; background: var(--primary); border-radius: 0 4px 4px 0; }
+[dir="rtl"] .hc-bar { border-radius: 4px 0 0 4px; }
+.hc-bar.over { background: var(--bad); }
+.hc-budget { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); opacity: .5; border-radius: 1px; }
+.hc-val { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; min-width: 64px; }
+.hc-val small { font-size: 11.5px; color: var(--muted); }
+.stack { display: flex; gap: 2px; height: 16px; border-radius: 6px; overflow: hidden; }
+.stack span { min-width: 4px; }
+.st-ok { background: var(--ok); } .st-warn { background: var(--warn); } .st-bad { background: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13.5px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-inline-end: 6px; }
+.legend small { color: var(--muted); }
+#chart-tip { position: fixed; z-index: 100; display: none; pointer-events: none; background: var(--text); color: var(--bg); padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; max-width: 260px; box-shadow: 0 6px 18px rgba(0, 0, 0, .2); }
+.facts { display: flex; flex-direction: column; gap: 10px; }
+.facts > div { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+.facts svg { color: var(--accent); margin-top: 3px; }
+.report-card.feature { margin-bottom: 14px; background: var(--primary-soft); border-color: transparent; }
+.period-tabs a { flex: 1 1 0; }

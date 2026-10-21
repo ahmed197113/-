@@ -31,7 +31,7 @@ function diff(a, b, path, out) {
     const get = async (key, p, who = 'admin') => { res[key] = await c.call('GET', p, null, t[who]); };
     await get('bootstrap', '/api/bootstrap'); await get('bootstrap-emp', '/api/bootstrap', 'mohamed');
     await get('dashboard', '/api/dashboard');
-    for (const r of ['balances', 'cost-centers', 'categories', 'expenses', 'vat', 'aging', 'assets', 'settlements', 'sources', 'source-ledger', 'checkins']) await get('report-' + r, '/api/reports/' + r);
+    for (const r of ['balances', 'cost-centers', 'categories', 'expenses', 'vat', 'aging', 'assets', 'settlements', 'sources', 'source-ledger', 'checkins', 'monthly', 'employee-activity']) await get('report-' + r, '/api/reports/' + r);
     for (const u of ['mohamed', 'khaled', 'omar']) { await get('statement-' + u, '/api/reports/statement?employeeId=' + uid(u)); await get('statement-self-' + u, '/api/reports/statement', u); }
     const d = new Date(Date.now() - 8 * 864e5).toISOString().slice(0, 10);
     await get('statement-from', `/api/reports/statement?employeeId=${uid('mohamed')}&from=${d}`);
@@ -39,6 +39,8 @@ function diff(a, b, path, out) {
     await get('cost-centers-approved', '/api/reports/cost-centers?status=approved&from=' + d);
     await get('source-ledger-bank', '/api/reports/source-ledger?sourceId=' + src(1));
     await get('expenses-filter', `/api/reports/expenses?costCenterId=${cc('P-101')}&q=%D8%AF%D9%87`);
+    await get('analytics', '/api/analytics'); await get('analytics-range', `/api/analytics?from=${d}`);
+    await get('monthly-range', `/api/reports/monthly?from=2026-01-15&to=${d}`); await get('activity-range', `/api/reports/employee-activity?from=${d}`);
     await get('cc-detail', '/api/cost-centers/' + cc('P-101'));
     await get('cc-detail2', '/api/cost-centers/' + cc('G-900'));
     await get('custodies', '/api/custodies'); await get('custodies-overdue', '/api/custodies?status=open&flag=overdue');

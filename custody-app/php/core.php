@@ -3,7 +3,7 @@
 // البيانات كائنات stdClass حتى تبقى التعديلات بالمرجع كما في JavaScript
 namespace Custody;
 
-const ROLES = ['admin' => 'مدير النظام', 'accountant' => 'محاسب', 'employee' => 'موظف'];
+const ROLES = ['admin' => 'مدير النظام', 'owner' => 'المالك', 'accountant' => 'محاسب', 'employee' => 'موظف'];
 const KINDS = ['permanent' => 'عهدة مستديمة', 'temporary' => 'عهدة مؤقتة'];
 const CUSTODY_STATUS = ['open' => 'مفتوحة', 'closed' => 'مغلقة'];
 const EXPENSE_STATUS = ['pending' => 'بانتظار الاعتماد', 'approved' => 'معتمد', 'rejected' => 'مرفوض'];
@@ -142,7 +142,7 @@ class Core {
   private function S() { return $this->env->db->settings; }
   private function today() { return $this->env->today(); }
   private function localeCompare($a, $b) { return $this->coll ? $this->coll->compare($a, $b) : strcmp($a, $b); }
-  public function isStaff($u) { return $u->role === 'admin' || $u->role === 'accountant'; }
+  public function isStaff($u) { return $u->role === 'admin' || $u->role === 'accountant' || $u->role === 'owner'; }
   private function staffOnly($u) { if (!$this->isStaff($u)) fail(403, 'هذه العملية للإدارة فقط'); }
   private function adminOnly($u) { if ($u->role !== 'admin') fail(403, 'هذه العملية لمدير النظام فقط'); }
   private function text($v, $label) { $s = jstrim(jsstr($v ?? '')); if ($s === '') fail(400, "حقل «{$label}» مطلوب"); return $s; }
@@ -413,6 +413,38 @@ class Core {
       });
       return obj(['title' => 'تفاعل الموظفين مع تنبيهات المصروفات', 'subtitle' => "من {$f} إلى {$t2}", 'columns' => [$col('name', 'الموظف'), $col('yes', 'أجاب: صرفت', 'num'), $col('no', 'أجاب: لم أصرف', 'num'), $col('total', 'إجمالي الردود', 'num'), $col('last', 'آخر رد')], 'rows' => $rows, 'totals' => self::sumCols($rows, ['yes', 'no', 'total'])]);
     }
+    if ($name === 'monthly') {
+      $ym = fn($y, $m) => sprintf('%d-%02d', $y, $m);
+      $to = isDate(g($q, 'to')) ? g($q, 'to') : $this->today();
+      [$y, $m] = array_map('intval', explode('-', substr($to, 0, 7)));
+      $m -= 5; while ($m < 1) { $m += 12; $y--; }
+      $from = isDate(g($q, 'from')) ? g($q, 'from') : $ym($y, $m) . '-01';
+      $months = [];
+      [$y, $m] = array_map('intval', explode('-', substr($from, 0, 7)));
+      for (;;) { $mo = $ym($y, $m); $months[] = $mo; if (strcmp($mo, substr($to, 0, 7)) >= 0 || count($months) >= 24) break; if (++$m > 12) { $m = 1; $y++; } }
+      $exps = filt($D->expenses, fn($e) => $e->status !== 'rejected' && strcmp($e->date, $from) >= 0 && strcmp($e->date, $to) <= 0);
+      $rows = filt(map($D->categories, function ($c) use ($exps, $months) {
+        $r = ['code' => $c->code ?? null, 'name' => $c->name];
+        $t = 0;
+        foreach ($months as $mo) { $v = num(sum(filt($exps, fn($e) => ($e->categoryId ?? null) === $c->id && substr($e->date, 0, 7) === $mo), fn($e) => $e->amount)); $r['m' . $mo] = $v; $t += $v; }
+        $r['total'] = num($t);
+        return obj($r);
+      }), fn($r) => truthy($r->total));
+      $mcols = map($months, fn($mo) => $col('m' . $mo, $mo, 'money'));
+      return obj(['title' => 'المصروفات الشهرية حسب البنود', 'subtitle' => "من {$from} إلى {$to}", 'columns' => array_merge([$col('code', 'رقم الحساب'), $col('name', 'البند')], $mcols, [$col('total', 'الإجمالي', 'money')]), 'rows' => $rows, 'totals' => self::sumCols($rows, array_merge(map($months, fn($mo) => 'm' . $mo), ['total']))]);
+    }
+    if ($name === 'employee-activity') {
+      $exps = filt($D->expenses, fn($e) => $inRange($e->date));
+      $rows = sortBy(map(filt($D->users, fn($u) => some($exps, fn($e) => $e->employeeId === $u->id)), function ($u) use ($exps) {
+        $xs = filt($exps, fn($e) => $e->employeeId === $u->id);
+        $by = fn($st) => num(sum(filt($xs, fn($e) => $e->status === $st), fn($e) => $e->amount));
+        $valid = filt($xs, fn($e) => $e->status !== 'rejected');
+        $spent = num(sum($valid, fn($e) => $e->amount));
+        $dates = map($xs, fn($e) => $e->date); sort($dates, SORT_STRING);
+        return obj(['name' => $u->name, 'count' => count($xs), 'spent' => $spent, 'approved' => $by('approved'), 'pending' => $by('pending'), 'rejected' => $by('rejected'), 'avg' => $valid ? num($spent / count($valid)) : 0, 'receipts' => numstr(jsround(count(filt($xs, fn($e) => !empty($e->attachments))) / count($xs) * 100)) . '%', 'last' => end($dates)]);
+      }), fn($a, $b) => $b->spent <=> $a->spent);
+      return obj(['title' => 'نشاط الموظفين في المصروفات', 'subtitle' => $period, 'columns' => [$col('name', 'الموظف'), $col('count', 'عدد المصروفات', 'num'), $col('spent', 'المصروف', 'money'), $col('approved', 'المعتمد', 'money'), $col('pending', 'بانتظار الاعتماد', 'money'), $col('rejected', 'المرفوض', 'money'), $col('avg', 'متوسط المصروف', 'money'), $col('receipts', 'نسبة الفواتير المرفقة'), $col('last', 'آخر مصروف', 'date')], 'rows' => $rows, 'totals' => self::sumCols($rows, ['count', 'spent', 'approved', 'pending', 'rejected'])]);
+    }
     fail(404, 'التقرير غير موجود');
   }
 
@@ -465,6 +497,38 @@ class Core {
         'employees' => $employees, 'costCenters' => $ccRows,
         'recent' => map(array_slice(sortBy($D()->expenses, fn($a, $b) => strcmp($b->createdAt, $a->createdAt)), 0, 8), fn($e) => $this->expenseView($e)),
         'setup' => obj(['costCenters' => count($D()->costCenters), 'employees' => count(filt($D()->users, fn($u) => $u->role === 'employee')), 'custodies' => count($D()->custodies)]),
+      ]);
+    });
+
+    $this->on('GET', '/api/analytics', function ($user, $p, $q) use ($D) {
+      $this->staffOnly($user);
+      $from = isDate(g($q, 'from')) ? g($q, 'from') : ''; $to = isDate(g($q, 'to')) ? g($q, 'to') : '';
+      $inRange = fn($d) => ($from === '' || strcmp($d, $from) >= 0) && ($to === '' || strcmp($d, $to) <= 0);
+      $all = filt($D()->expenses, fn($e) => $e->status !== 'rejected');
+      $end = $to !== '' ? $to : $this->today();
+      [$y, $m] = array_map('intval', explode('-', substr($end, 0, 7)));
+      $months = [];
+      for ($i = 0; $i < 12; $i++) { array_unshift($months, sprintf('%d-%02d', $y, $m)); if (--$m < 1) { $m = 12; $y--; } }
+      $monthly = map($months, function ($mo) use ($all) { $xs = filt($all, fn($e) => substr($e->date, 0, 7) === $mo); return obj(['month' => $mo, 'spent' => num(sum($xs, fn($e) => $e->amount)), 'count' => count($xs)]); });
+      $exps = filt($all, fn($e) => $inRange($e->date));
+      $group = function ($keyOf, $nameOf) use ($exps) {
+        $out = [];
+        foreach ($exps as $e) { $k = orv($keyOf($e), ''); $r = first($out, fn($x) => $x->key === $k); if (!$r) { $r = obj(['key' => $k, 'total' => 0, 'count' => 0]); $out[] = $r; } $r->total = num($r->total + $e->amount); $r->count++; }
+        return map(sortBy($out, fn($a, $b) => $b->total <=> $a->total), fn($r) => obj(['name' => $nameOf($r->key), 'total' => $r->total, 'count' => $r->count]));
+      };
+      $range = obj(['from' => $from, 'to' => $to]);
+      $status = [];
+      foreach (['approved', 'pending', 'rejected'] as $st) $status[$st] = num(sum(filt($D()->expenses, fn($e) => $e->status === $st && $inRange($e->date)), fn($e) => $e->amount));
+      $spent = num(sum($exps, fn($e) => $e->amount));
+      $issued = num(sum(filt($D()->tx, fn($t) => $t->status === 'confirmed' && $inRange($t->date) && in_array($t->type, ['issue', 'topup', 'reimburse'], true)), fn($t) => $t->amount));
+      return obj([
+        'from' => $from, 'to' => $to, 'monthly' => $monthly,
+        'totals' => obj(['spent' => $spent, 'count' => count($exps), 'avg' => $exps ? num($spent / count($exps)) : 0, 'vat' => num(sum($exps, fn($e) => orv($e->vat ?? null, 0))), 'issued' => $issued, 'outstanding' => num(sum(filt($D()->custodies, fn($c) => $c->status === 'open'), fn($c) => $this->custodyBalance($c)['balance']))]),
+        'status' => obj($status),
+        'byCategory' => $group(fn($e) => $e->categoryId ?? null, fn($k) => $this->catName($k)),
+        'byEmployee' => $group(fn($e) => $e->employeeId, fn($k) => $this->userName($k)),
+        'byCostCenter' => sortBy(map(filt($this->reportData('cost-centers', $range, $user)->rows, fn($r) => $r->_depth === 0 && truthy($r->spent)), fn($r) => obj(['name' => jstrim($r->name), 'total' => $r->spent, 'budget' => $r->budget])), fn($a, $b) => $b->total <=> $a->total),
+        'bySource' => map(filt($this->reportData('sources', $range, $user)->rows, fn($r) => truthy($r->count)), fn($r) => obj(['name' => $r->name, 'out' => $r->out, 'back' => $r->back, 'net' => $r->net])),
       ]);
     });
 
@@ -852,10 +916,16 @@ class Core {
       $this->log($user, 'تعديل مصدر أموال', $x->name, 'source', $x->id);
       return $x;
     });
+    // الموظف في الموقع يضيف نوع مصروف جديد بنفسه، والإدارة تُبلَّغ لتعطيه رقم حساب
     $this->on('POST', '/api/categories', function ($user, $p, $q, $b) use ($D) {
-      $this->staffOnly($user);
-      $c = obj(['id' => $this->env->uid(), 'code' => $this->opt(g($b, 'code')), 'name' => $this->text(g($b, 'name'), 'اسم البند'), 'vatApplicable' => g($b, 'vatApplicable') !== false, 'active' => true]);
+      $staff = $this->isStaff($user);
+      $name = $this->text(g($b, 'name'), 'اسم البند');
+      $same = first($D()->categories, fn($x) => lower(jstrim(jsstr($x->name))) === lower($name));
+      if ($same) { if (!$staff && ($same->active ?? null) === false) fail(400, 'هذا البند موقوف من الإدارة'); return $same; }
+      $c = obj(['id' => $this->env->uid(), 'code' => $staff ? $this->opt(g($b, 'code')) : '', 'name' => $name, 'vatApplicable' => g($b, 'vatApplicable') !== false, 'active' => true]);
+      if (!$staff) $c->addedBy = $user->id;
       $D()->categories[] = $c;
+      if (!$staff) $this->notify($this->staffIds(), "{$user->name} أضاف نوع مصروف جديد: {$c->name}", '#/categories');
       $this->log($user, 'إضافة بند', $c->name, 'category', $c->id);
       return $c;
     });

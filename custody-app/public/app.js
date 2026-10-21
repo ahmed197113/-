@@ -43,6 +43,9 @@ const signed = n => money(n, n < 0 ? 'neg' : '');
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const isStaff = () => S.user && S.user.role !== 'employee';
 const isAdmin = () => S.user && S.user.role === 'admin';
+const isOwner = () => S.user && S.user.role === 'owner';
+// الموظف والمالك: واجهة مبسطة بلا قوائم جانبية
+const isSimple = () => S.user && (S.user.role === 'employee' || S.user.role === 'owner');
 const DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const fmtDate = d => d ? `<span class="num">${esc(String(d).slice(0, 10))}</span>` : '—';
 function ago(iso) {
@@ -366,7 +369,7 @@ function renderShell() {
   const bottom = isStaff() ? BOTTOM_STAFF : BOTTOM_EMP;
   const link = ([k, icon, label, badge]) => `<a href="#/${k}" data-nav="${k}">${ic(icon)}<span>${label}</span>${badge ? `<b class="badge" data-badge="${badge}" hidden></b>` : ''}</a>`;
   $('#app').innerHTML = `
-  <div class="layout">
+  <div class="layout ${isSimple() ? 'simple' : ''}">
     <aside class="sidebar">
       <div class="brand"><img src="${BRAND.logo}" alt=""><div><div class="brand-name">${BRAND.name}</div><div class="brand-sub">للمقاولات العامة · نظام العهد</div></div></div>
       ${MODE !== 'server' ? `<div class="side-mode">${MODE === 'demo' ? '🧪 وضع تجريبي' : '📱 على هذا الجهاز'}</div>` : ''}
@@ -392,6 +395,8 @@ function updateBadges() {
   $$('[data-badge]').forEach(b => { const v = vals[b.dataset.badge]; b.hidden = !v; b.textContent = v > 99 ? '99+' : v; });
 }
 function view(title, html, { back, toolbar } = {}) {
+  // واجهة الموظف المبسطة: بلا قوائم، وكل صفحة غير الرئيسية ترجع للرئيسية
+  if (isSimple() && !back && !['home', 'dashboard', ''].includes(parseHash().page)) back = isStaff() ? '#/dashboard' : '#/home';
   $('#page-title').textContent = title;
   document.title = title + ' — ' + BRAND.name;
   const bb = $('.back-btn');
@@ -413,7 +418,7 @@ async function router() {
   if (!S.user) return;
   const { page, arg, q } = parseHash();
   if (page === 'reminder') { history.replaceState(null, '', location.pathname + location.search + '#/' + (isStaff() ? 'dashboard' : 'home')); router(); return handleReminderAction(arg); }
-  const views = isStaff() ? STAFF_VIEWS : EMP_VIEWS;
+  const views = isOwner() ? OWNER_VIEWS : isStaff() ? STAFF_VIEWS : EMP_VIEWS;
   const fn = views[page] || views[isStaff() ? 'dashboard' : 'home'];
   $('#view') && ($('#view').innerHTML = '<div class="loading"><span></span></div>');
   try { await fn(arg, q); } catch (e) { toast(e.message, true); }
@@ -491,7 +496,7 @@ const STAFF_VIEWS = {
     const st = d.setup;
     const setupSteps = [[st.costCenters, 'أضف مراكز التكلفة (المشاريع / الأقسام)', '#/cost-centers'], [st.employees, 'أضف الموظفين وحساباتهم', '#/users'], [st.custodies, 'اصرف أول عهدة لموظف', '#/custodies']];
     const showSetup = setupSteps.some(s => !s[0]);
-    const src = await api('GET', '/api/reports/sources');
+    const [src, an] = await Promise.all([api('GET', '/api/reports/sources'), api('GET', '/api/analytics')]);
     view('الرئيسية', `
       <div class="home-head">
         <div class="hh-top"><div><div class="hh-hi">مرحباً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="hh-date">${new Date().toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' })}</div></div><img src="${BRAND.logo}" alt=""></div>
@@ -509,6 +514,7 @@ const STAFF_VIEWS = {
         ${kpi('عهد متأخرة', `<span class="num">${al.overdue.length}</span>`, { sub: 'عن موعد التسوية', tone: al.overdue.length ? 'bad' : '', go: '#/custodies?status=overdue' })}
         ${kpi('العهد العينية', `<span class="num">${d.kpis.assetsAssigned}</span>`, { sub: money(d.kpis.assetsValue), go: '#/assets' })}
       </div>
+      ${card('الصرف آخر 12 شهراً', monthChart(an.monthly), btn('التحليلات', { href: '#/analytics', cls: 'sm ghost' }))}
       ${alerts.length ? card('تحتاج متابعة', `<div class="alerts">${alerts.slice(0, 8).map(([i, t, text, h]) => `<a class="alert ${t}" href="${h}">${ic(i, 16)}<span>${esc(text)}</span>${ic('chev', 14)}</a>`).join('')}</div>`) : ''}
       <div class="grid2">
         ${card('أرصدة الموظفين', d.employees.length ? `<div class="list">${d.employees.map(u => `<a class="item" href="#/user/${u.id}">
@@ -636,7 +642,7 @@ const STAFF_VIEWS = {
       <p class="muted">البنود هي أنواع المصروفات مربوطة برقم الحساب في دليل الحسابات، وتظهر للموظف عند تسجيل المصروف.</p>
       <div class="list cards">${S.b.categories.map(c => `<div class="item" style="${c.active === false ? 'opacity:.55' : ''}">
         <div class="item-ic">${ic('tag')}</div>
-        <div class="item-main"><div class="item-title">${c.code ? `<span class="code">${esc(c.code)}</span> ` : ''}${esc(c.name)}</div><div class="item-sub">${c.vatApplicable !== false ? 'خاضع لضريبة القيمة المضافة' : 'غير خاضع للضريبة'}${c.active === false ? ' · موقوف' : ''}</div></div>
+        <div class="item-main"><div class="item-title">${c.code ? `<span class="code">${esc(c.code)}</span> ` : ''}${esc(c.name)}${c.addedBy && !c.code ? ' ' + tag('أضافه موظف — أعطه رقم حساب', 'warn') : ''}</div><div class="item-sub">${c.vatApplicable !== false ? 'خاضع لضريبة القيمة المضافة' : 'غير خاضع للضريبة'}${c.active === false ? ' · موقوف' : ''}</div></div>
         <div class="item-end"><button class="btn sm ghost" data-act="cat-edit" data-id="${c.id}">${ic('edit', 16)} تعديل</button></div></div>`).join('')}</div>
     `, { toolbar: btn('بند جديد', { act: 'cat-edit', icon: 'plus', cls: 'primary' }) });
     ACT['cat-edit'] = el => {
@@ -841,17 +847,31 @@ async function expenseForm({ custodyId, expense, viaReminder } = {}) {
   const selCustody = expense ? null : (custodies.find(c => c.id === custodyId) || custodies[0]);
   const cats = S.b.categories.filter(c => c.active !== false || c.id === expense?.categoryId);
   const e = expense || {};
+  // الموظف: نموذج قصير (صورة، مبلغ، بند، بيان) — باقي البيانات تكملها الإدارة عند الاعتماد
+  const simple = !expense && !isStaff();
+  const simpleFields = simple && [
+    custodies.length === 1 ? { type: 'html', html: `<input type="hidden" name="custodyId" value="${selCustody.id}">` }
+      : { type: 'select', name: 'custodyId', label: 'من أي عهدة؟', full: true, required: true, value: selCustody.id, options: custodies.map(c => ({ value: c.id, label: `${c.no} — ${c.purpose} (الباقي ${fmt(c.balance)})` })) },
+    { type: 'files', name: 'attachments', label: 'صورة الفاتورة', button: 'صوّر الفاتورة' },
+    { type: 'money', name: 'amount', label: 'المبلغ', required: true },
+    { type: 'chips', name: 'categoryId', label: 'نوع المصروف', required: true, value: '', options: cats.map(c => ({ value: c.id, label: c.name })) },
+    { type: 'html', html: '<div class="add-cat"><input id="new-cat" placeholder="نوع غير موجود؟ اكتبه هنا" maxlength="60"><button type="button" class="btn sm" id="add-cat">＋ إضافة</button></div>' },
+    { name: 'description', label: 'ماذا اشتريت؟', required: true, full: true, placeholder: 'مثال: أسمنت 10 أكياس' },
+    { type: 'select', name: 'costCenterId', label: 'المشروع', full: true, options: ccOptions(), value: selCustody?.costCenterId || '', empty: '— اختر المشروع —' },
+    { type: 'date', name: 'date', label: 'التاريخ', value: today() },
+  ];
   formSheet({
     title: expense ? `تعديل المصروف ${e.no}` : viaReminder ? '🔔 سجّل ما صرفته' : 'تسجيل مصروف',
     submit: expense ? 'حفظ التعديل' : 'حفظ المصروف',
     files: { attachments: e.attachments || [] },
-    fields: [
+    fields: simple ? simpleFields : [
       expense ? { type: 'html', html: `<div class="fixed-field">العهدة: <b>${esc(e.custodyNo)}</b> — ${esc(e.employeeName)}</div>` }
         : custodies.length === 1 && !isStaff() ? { type: 'html', html: `<input type="hidden" name="custodyId" value="${selCustody.id}"><div class="fixed-field">من عهدة: <b>${esc(selCustody.no)}</b> — ${esc(selCustody.purpose)} <span class="muted">(الرصيد ${fmt(selCustody.balance)})</span></div>` }
           : { type: 'select', name: 'custodyId', label: 'من أي عهدة؟', full: true, required: true, value: selCustody.id, options: custodies.map(c => ({ value: c.id, label: `${c.no} — ${isStaff() ? c.employeeName + ' — ' : ''}${c.purpose} (رصيد ${fmt(c.balance)})` })) },
       { type: 'money', name: 'amount', label: 'المبلغ المصروف', required: true, value: e.amount },
       { type: 'select', name: 'costCenterId', label: 'مركز التكلفة (المشروع / القسم)', full: true, required: true, options: ccOptions(), value: e.costCenterId || selCustody?.costCenterId || '', empty: '— اختر مركز التكلفة —' },
       { type: 'chips', name: 'categoryId', label: 'بند المصروف', required: true, value: e.categoryId || '', options: cats.map(c => ({ value: c.id, label: c.name })) },
+      { type: 'html', html: '<div class="add-cat"><input id="new-cat" placeholder="نوع غير موجود؟ اكتبه هنا" maxlength="60"><button type="button" class="btn sm" id="add-cat">＋ إضافة</button></div>' },
       { name: 'description', label: 'البيان (ماذا اشتريت / لماذا)', required: true, full: true, value: e.description, placeholder: 'مثال: أسمنت 10 أكياس' },
       { type: 'date', name: 'date', label: 'التاريخ', value: e.date || today() },
       ...(expense ? [] : [{ type: 'time', name: 'time', label: 'الوقت', value: new Date().toTimeString().slice(0, 5) }]),
@@ -866,17 +886,35 @@ async function expenseForm({ custodyId, expense, viaReminder } = {}) {
       ...(isStaff() && !expense ? [{ type: 'toggle', name: 'autoApprove', label: 'اعتماد المصروف مباشرة', value: true }] : []),
     ],
     onMount: (el, _close, form) => {
+      const addBtn = $('#add-cat', el);
+      if (addBtn) addBtn.onclick = async () => {
+        const input = $('#new-cat', el), name = input.value.trim();
+        if (!name) return input.focus();
+        try {
+          const c = await api('POST', '/api/categories', { name });
+          if (!S.b.categories.some(x => x.id === c.id)) S.b.categories.push(c);
+          const chips = $('[data-chips="categoryId"]', el);
+          let chip = $(`.chip[data-v="${c.id}"]`, chips);
+          if (!chip) { chips.insertAdjacentHTML('beforeend', `<button type="button" class="chip" data-v="${esc(c.id)}">${esc(c.name)}</button>`); chip = chips.lastElementChild; }
+          chip.click(); input.value = ''; toast('تمت إضافة النوع');
+        } catch (err) { toast(err.message, true); }
+      };
+      const ccBox = form.costCenterId.closest('.field');
+      const syncCc = () => { if (simple) ccBox.hidden = !!form.costCenterId.value && !!(custodies.find(x => x.id === form.custodyId.value) || {}).costCenterId; };
+      syncCc();
       const calc = () => {
+        if (!form.vatIncluded) return;
         const a = Number(form.amount.value) || 0, r = Number(S.b.settings.vatRate) || 0;
         $('#vat-calc', el).innerHTML = form.vatIncluded.checked && a ? `الضريبة: <b class="num">${fmt(a * r / (100 + r))}</b> · الصافي: <b class="num">${fmt(a - a * r / (100 + r))}</b>` : '';
       };
       form.addEventListener('input', calc); form.addEventListener('change', calc); calc();
       const cSel = form.querySelector('select[name=custodyId]');
-      if (cSel) cSel.addEventListener('change', () => { const c = custodies.find(x => x.id === cSel.value); if (c?.costCenterId) form.costCenterId.value = c.costCenterId; });
+      if (cSel) cSel.addEventListener('change', () => { const c = custodies.find(x => x.id === cSel.value); if (c?.costCenterId) form.costCenterId.value = c.costCenterId; syncCc(); });
       if (!expense) setTimeout(() => form.amount.focus(), 250);
     },
-    onSubmit: async (d, close) => {
-      if (!d.categoryId) throw new Error('اختر بند المصروف');
+    onSubmit: async (d, close, modalEl) => {
+      if (!d.categoryId) throw new Error(simple ? 'اختر نوع المصروف' : 'اختر بند المصروف');
+      if (!d.costCenterId) { modalEl.querySelector('[name=costCenterId]').closest('.field').hidden = false; throw new Error('اختر المشروع'); }
       if (expense) await api('PUT', '/api/expenses/' + e.id, d);
       else await api('POST', '/api/expenses', { ...d, viaReminder: !!viaReminder });
       resetReminderClock();
@@ -896,7 +934,7 @@ function custodyForm(employeeId) {
       { type: 'select', name: 'employeeId', label: 'الموظف المستلم', options: emps, value: employeeId, empty: '— اختر الموظف —', required: true, full: true },
       { type: 'chips', name: 'kind', label: 'نوع العهدة', value: 'temporary', options: [{ value: 'temporary', label: 'مؤقتة (لمهمة وتُسوّى وتُغلق)' }, { value: 'permanent', label: 'مستديمة (نثرية تُعوَّض دورياً)' }] },
       { type: 'money', name: 'amount', label: 'مبلغ العهدة', required: true },
-      srcField('مصدر المبلغ — صُرف من أين؟'),
+      srcField('مصدر المبلغ — صُرف من أين؟', isOwner() ? S.b.fundSources.find(x => x.active !== false && x.type === 'owner')?.id : undefined),
       { name: 'purpose', label: 'الغرض من العهدة', required: true, full: true, placeholder: 'مثال: مشتريات موقع برج الريان' },
       { type: 'select', name: 'costCenterId', label: 'مركز التكلفة الافتراضي', options: ccOptions(), empty: '— اختر —', full: true, hint: 'يُقترح تلقائياً عند تسجيل المصروفات ويمكن تغييره لكل مصروف' },
       { type: 'date', name: 'issueDate', label: 'تاريخ الصرف', value: today() },
@@ -1010,7 +1048,7 @@ function userForm(u) {
       { name: 'jobTitle', label: 'المسمى الوظيفي', value: u?.jobTitle },
       { name: 'department', label: 'القسم / الإدارة', value: u?.department },
       { name: 'phone', label: 'الجوال', value: u?.phone, attrs: 'inputmode="tel" dir="ltr"' },
-      { type: 'select', name: 'role', label: 'الصلاحية', value: u?.role || 'employee', options: [{ value: 'employee', label: 'موظف — يسجل مصروفاته فقط' }, { value: 'accountant', label: 'محاسب — يعتمد ويصرف ويسوي' }, { value: 'admin', label: 'مدير النظام — كل الصلاحيات' }] },
+      { type: 'select', name: 'role', label: 'الصلاحية', value: u?.role || 'employee', options: [{ value: 'employee', label: 'موظف — يسجل مصروفاته فقط' }, { value: 'accountant', label: 'محاسب — يعتمد ويصرف ويسوي' }, { value: 'owner', label: 'المالك — واجهة مبسطة: يتابع ويعتمد ويصرف' }, { value: 'admin', label: 'مدير النظام — كل الصلاحيات' }] },
       { type: 'number', name: 'custodyLimit', label: 'الحد الأعلى للعهدة (اختياري)', value: u?.custodyLimit || '', attrs: 'min="0"' },
       { type: 'toggle', name: 'directCustody', label: 'تعميد مباشر: يستلم عهدته من المالك مباشرة ويسجلها بنفسه بدون طلب', value: u?.directCustody },
       { name: 'username', label: 'اسم المستخدم للدخول', required: !u, value: u?.username, attrs: `dir="ltr" autocapitalize="off" ${u ? 'disabled' : ''}` },
@@ -1075,9 +1113,11 @@ const REPORTS = [
   ['vat', 'file', 'تقرير ضريبة المدخلات', 'فواتير المصروفات المعتمدة الخاضعة للضريبة', true],
   ['assets', 'box', 'سجل العهد العينية', 'الأصول وحالتها وبعهدة من', true],
   ['checkins', 'bell', 'تفاعل الموظفين مع التنبيهات', 'ردود الموظفين على تنبيه نصف الساعة', true],
+  ['monthly', 'chart', 'المصروفات الشهرية حسب البنود', 'كل بند شهراً بشهر لاكتشاف الزيادة', true],
+  ['employee-activity', 'users', 'نشاط الموظفين', 'عدد المصروفات والمعتمد والمرفوض ونسبة الفواتير المرفقة', true],
 ];
 function reportsHub() {
-  view('التقارير', `<div class="report-grid">${REPORTS.map(([k, i, t, s]) => `<a class="report-card" href="#/report/${k}"><div class="item-ic">${ic(i)}</div><div><div class="item-title">${t}</div><div class="item-sub">${s}</div></div></a>`).join('')}</div>`);
+  view('التقارير', `<a class="report-card feature" href="#/analytics"><div class="item-ic">${ic('chart')}</div><div><div class="item-title">التحليلات والرسوم البيانية</div><div class="item-sub">الصرف شهرياً، وحسب البنود والمشاريع والموظفين والمصادر</div></div></a><div class="report-grid">${REPORTS.map(([k, i, t, s]) => `<a class="report-card" href="#/report/${k}"><div class="item-ic">${ic(i)}</div><div><div class="item-title">${t}</div><div class="item-sub">${s}</div></div></a>`).join('')}</div>`);
 }
 async function reportView(name, q) {
   const needsEmp = name === 'statement' && isStaff() && !q.employeeId;
@@ -1164,24 +1204,26 @@ const EMP_VIEWS = {
     const d = await api('GET', '/api/home');
     const t = d.totals;
     const unack = d.assets.filter(a => !a.acknowledged);
+    const rejected = d.recent.filter(e => e.status === 'rejected');
+    const STATUS = { pending: ['بانتظار الاعتماد', 'warn-t'], approved: ['معتمد ✓', 'ok-t'], rejected: ['مرفوض ✗', 'neg'] };
     view('الرئيسية', `
-      <div class="home-head ${t.balance < 0 ? 'neg' : ''}">
-        <div class="hh-top"><div><div class="hh-hi">أهلاً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="hh-date">${nextReminderText() || esc(S.user.jobTitle || '')}</div></div><img src="${BRAND.logo}" alt=""></div>
-        <div class="hh-label">المتبقي معك من العهد</div>
-        <div class="hh-value">${money(t.balance)}</div>
-        <div class="hh-stats"><div><small>استلمت</small><span class="num">${fmt(t.received)}</span></div><div><small>صرفت</small><span class="num">${fmt(t.spent)}</span></div><div><small>بانتظار الاعتماد</small><span class="num">${fmt(t.pendingAmount)}</span></div></div>
-      </div>
-      <div class="qa">
-        <button class="qa-i main" data-act="q-expenseForm"><span>${ic('plus', 24)}</span>مصروف جديد</button>
-        <button class="qa-i" data-act="q-returnForm"><span>${ic('undo', 22)}</span>رد مبلغ</button>
-        ${S.user.directCustody ? `<button class="qa-i" data-act="q-directForm"><span>${ic('wallet', 22)}</span>استلمت عهدة</button>` : `<button class="qa-i" data-act="q-requestForm"><span>${ic('inbox', 22)}</span>طلب عهدة</button>`}
-        <a class="qa-i" href="#/report/statement"><span>${ic('chart', 22)}</span>كشف حسابي</a>
+      <div class="s-bal ${t.balance < 0 ? 'neg' : ''}">
+        <div class="s-hi">أهلاً ${esc(S.user.name.split(' ')[0])} 👋</div>
+        <div class="s-label">المتبقي معك</div>
+        <div class="s-value">${money(t.balance)}</div>
+        ${t.pendingAmount ? `<div class="s-sub">بانتظار الاعتماد: <span class="num">${fmt(t.pendingAmount)}</span></div>` : ''}
       </div>
       ${notifNotice()}
       ${unack.map(a => `<a class="notice" href="#/asset/${a.id}">${ic('box', 18)} تم تسليمك «${esc(a.name)}» — اضغط للإقرار بالاستلام</a>`).join('')}
-      ${card(`عهدي المفتوحة (${d.custodies.length})`, d.custodies.length ? `<div class="list">${d.custodies.map(custodyItem).join('')}</div>` : empty('لا توجد عهدة مفتوحة باسمك', btn('طلب عهدة', { act: 'q-requestForm', cls: 'primary sm' })))}
-      ${card('آخر مصروفاتي', d.recent.length ? `<div class="list">${d.recent.map(e => expenseItem(e)).join('')}</div>` : empty('لم تسجل مصروفات بعد'), btn('الكل', { href: '#/expenses', cls: 'sm ghost' }))}
-      ${d.assets.length ? card(`عهدي العينية (${d.assets.length})`, `<div class="list">${d.assets.map(a => assetItem({ ...a, statusName: 'بعهدتك' })).join('')}</div>`) : ''}
+      ${rejected.map(e => `<a class="notice bad" href="#/expense/${e.id}">${ic('alert', 18)} رُفض مصروف «${esc(e.description)}»${e.reviewNote ? ' — ' + esc(e.reviewNote) : ''} — اضغط للتعديل</a>`).join('')}
+      <button class="s-btn main" data-act="q-expenseForm">${ic('camera', 30)}<span>سجّل مصروف<small>صوّر الفاتورة واكتب المبلغ</small></span></button>
+      ${S.user.directCustody
+        ? `<button class="s-btn" data-act="q-directForm">${ic('wallet', 26)}<span>استلمت عهدة<small>سجّل مبلغاً استلمته من المالك</small></span></button>`
+        : `<button class="s-btn" data-act="q-requestForm">${ic('inbox', 26)}<span>اطلب عهدة<small>أرسل طلباً للإدارة</small></span></button>`}
+      <button class="s-btn" data-act="q-returnForm">${ic('undo', 26)}<span>رجّعت مبلغاً<small>رد الباقي معك للإدارة</small></span></button>
+      <h3 class="s-h">آخر مصروفاتي</h3>
+      ${d.recent.length ? `<div class="s-list">${d.recent.slice(0, 6).map(e => `<a href="#/expense/${e.id}"><div><b>${esc(e.description)}</b><small class="${STATUS[e.status][1]}">${STATUS[e.status][0]} · ${fmtDate(e.date)}</small></div>${money(e.amount)}</a>`).join('')}</div>` : '<p class="muted center">لم تسجل مصروفات بعد</p>'}
+      <div class="s-links"><a href="#/custodies">${ic('wallet', 18)}عهدي</a><a href="#/report/statement">${ic('chart', 18)}كشف حسابي</a>${d.assets.length ? `<a href="#/assets">${ic('box', 18)}أجهزتي</a>` : ''}<a href="#/settings">${ic('settings', 18)}الإعدادات</a></div>
     `);
   },
   async expenses(_, q) {
@@ -1362,3 +1404,136 @@ ACT['enable-notif'] = async () => {
   toast(p === 'granted' ? 'تم تفعيل الإشعارات' : 'لم يتم السماح بالإشعارات', p !== 'granted');
   router();
 };
+
+// ================= الرسوم البيانية =================
+const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const monthName = ym => MONTHS_AR[+ym.slice(5, 7) - 1] + ' ' + ym.slice(0, 4);
+const pct = (v, t) => t ? Math.round(v / t * 100) : 0;
+// أعمدة رأسية لسلسلة واحدة (الصرف الشهري): قيمة على أعلى عمود وآخر عمود فقط، والباقي في التلميح
+function monthChart(monthly) {
+  const max = Math.max(...monthly.map(m => m.spent), 0);
+  if (!max) return empty('لا توجد مصروفات بعد');
+  const top = monthly.findIndex(m => m.spent === max), last = monthly.length - 1;
+  return `<div class="vchart" role="img" aria-label="الصرف الشهري">
+    <div class="vc-plot">${monthly.map((m, i) => `<div class="vc-col" data-tip="${esc(monthName(m.month))}: ${fmt(m.spent)} ${cur()} — ${m.count} مصروف">
+      <span class="vc-val">${i === top || i === last ? fmt(m.spent) : ''}</span><div class="vc-bar" style="height:${m.spent ? Math.max(2, m.spent / max * 100) : 0}%"></div></div>`).join('')}</div>
+    <div class="vc-x">${monthly.map(m => `<span>${MONTHS_AR[+m.month.slice(5, 7) - 1]}</span>`).join('')}</div>
+  </div>`;
+}
+// أشرطة أفقية مرتبة تنازلياً، اختيارياً مع الميزانية؛ ما زاد عن limit يُجمع في «أخرى»
+function hbarChart(list, { limit, budget } = {}) {
+  if (!list.length) return empty('لا توجد بيانات في هذه الفترة');
+  let rows = list;
+  if (limit && list.length > limit) rows = [...list.slice(0, limit - 1), { name: 'أخرى', total: list.slice(limit - 1).reduce((s, r) => s + r.total, 0), other: list.length - limit + 1 }];
+  const max = Math.max(...rows.map(r => Math.max(r.total, budget ? r.budget || 0 : 0)), 1);
+  const sum = list.reduce((s, r) => s + r.total, 0);
+  return `<div class="hchart">${rows.map(r => {
+    const over = budget && r.budget && r.total > r.budget;
+    return `<div class="hc-row" data-tip="${esc(r.name)}: ${fmt(r.total)} ${cur()}${budget && r.budget ? ` من ميزانية ${fmt(r.budget)} (${pct(r.total, r.budget)}%)` : ` — ${pct(r.total, sum)}% من الإجمالي`}${r.other ? ` — ${r.other} بنود` : ''}">
+      <div class="hc-name">${esc(r.name)}</div>
+      <div class="hc-track">${budget && r.budget ? `<i class="hc-budget" style="inset-inline-start:${r.budget / max * 100}%"></i>` : ''}<div class="hc-bar ${over ? 'over' : ''}" style="width:${Math.max(1, r.total / max * 100)}%"></div></div>
+      <div class="hc-val"><b class="num">${fmt(r.total)}</b><small>${budget && r.budget ? pct(r.total, r.budget) + '% من الميزانية' : pct(r.total, sum) + '%'}</small></div></div>`;
+  }).join('')}</div>`;
+}
+// حالة المصروفات: شريط مكدس بألوان الحالة مع وسيلة إيضاح مكتوبة
+function statusChart(st) {
+  const parts = [['approved', 'معتمد', 'ok'], ['pending', 'بانتظار الاعتماد', 'warn'], ['rejected', 'مرفوض', 'bad']];
+  const total = parts.reduce((s, [k]) => s + st[k], 0);
+  if (!total) return empty('لا توجد مصروفات في هذه الفترة');
+  return `<div class="stack">${parts.filter(([k]) => st[k]).map(([k, l, t]) => `<span class="st-${t}" style="flex:${st[k]}" data-tip="${l}: ${fmt(st[k])} ${cur()} (${pct(st[k], total)}%)"></span>`).join('')}</div>
+    <div class="legend">${parts.map(([k, l, t]) => `<span><i class="st-${t}"></i>${l} <b class="num">${fmt(st[k])}</b> <small>${pct(st[k], total)}%</small></span>`).join('')}</div>`;
+}
+// تلميح الرسوم: يظهر عند المرور بالفأرة أو اللمس
+(function () {
+  const tip = document.createElement('div');
+  tip.id = 'chart-tip';
+  document.body.appendChild(tip);
+  const show = (el, x, y) => {
+    tip.textContent = el.dataset.tip; tip.style.display = 'block';
+    const r = tip.getBoundingClientRect();
+    tip.style.left = Math.min(innerWidth - r.width - 8, Math.max(8, x - r.width / 2)) + 'px';
+    tip.style.top = Math.max(8, y - r.height - 14) + 'px';
+  };
+  document.addEventListener('pointermove', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) show(el, e.clientX, e.clientY); else tip.style.display = 'none'; });
+  document.addEventListener('pointerdown', e => { const el = e.target.closest && e.target.closest('[data-tip]'); if (el) show(el, e.clientX, e.clientY); else tip.style.display = 'none'; });
+  addEventListener('scroll', () => { tip.style.display = 'none'; }, { passive: true });
+})();
+
+// ================= التحليلات =================
+const PERIODS = [['month', 'هذا الشهر'], ['3m', 'آخر 3 أشهر'], ['year', 'هذه السنة'], ['all', 'كل الفترات']];
+function periodRange(p) {
+  const t = today(), [y, m] = t.split('-').map(Number);
+  if (p === 'month') return { from: t.slice(0, 8) + '01' };
+  if (p === '3m') { const d = new Date(Date.UTC(y, m - 3, 1)); return { from: d.toISOString().slice(0, 10) }; }
+  if (p === 'year') return { from: y + '-01-01' };
+  return {};
+}
+// المالك: خلاصة بجمل واضحة ورسوم قليلة؛ المدير: كل التفاصيل مع روابط التقارير العميقة
+async function analyticsView(_, q) {
+  const simple = isOwner();
+  const p = q.p || (q.from || q.to ? '' : simple ? 'month' : 'all');
+  const range = p ? periodRange(p) : { from: q.from, to: q.to };
+  const a = await api('GET', '/api/analytics?' + qsOf(range));
+  const t = a.totals;
+  const chips = `<div class="tabs period-tabs">${PERIODS.map(([k, l]) => `<a href="#/${simple ? 'insights' : 'analytics'}?p=${k}" class="${p === k ? 'on' : ''}">${l}</a>`).join('')}</div>`;
+  const label = (PERIODS.find(x => x[0] === p) || [, `${range.from || 'البداية'} — ${range.to || 'اليوم'}`])[1];
+  const cat1 = a.byCategory[0], cc1 = a.byCostCenter[0], emp1 = a.byEmployee[0];
+  const facts = [
+    [ic('receipt', 18), `صُرف <b>${money(t.spent)}</b> على <b class="num">${t.count}</b> مصروف${t.count ? ` — متوسط المصروف ${money(t.avg)}` : ''}`],
+    cat1 && [ic('tag', 18), `أكثر نوع صرفاً: <b>${esc(cat1.name)}</b> بنسبة <b class="num">${pct(cat1.total, t.spent)}%</b>`],
+    cc1 && [ic('layers', 18), `أكثر مشروع صرفاً: <b>${esc(cc1.name)}</b> ${money(cc1.total)}${cc1.budget ? ` (<span class="num">${pct(cc1.total, cc1.budget)}%</span> من ميزانيته)` : ''}`],
+    emp1 && [ic('user', 18), `أكثر موظف صرفاً: <b>${esc(emp1.name)}</b> ${money(emp1.total)}`],
+    [ic('wallet', 18), `المبالغ عند الموظفين الآن: <b>${money(t.outstanding)}</b>`],
+    a.status.pending && [ic('clock', 18), `<a href="#/expenses?status=pending">بانتظار الاعتماد: <b>${money(a.status.pending)}</b> — اضغط للاعتماد</a>`],
+  ].filter(Boolean);
+  view(simple ? 'التقارير' : 'التحليلات', `
+    ${chips}
+    ${simple ? '' : `<form class="period" id="af">${fieldHtml({ type: 'date', name: 'from', label: 'من تاريخ', value: range.from })}${fieldHtml({ type: 'date', name: 'to', label: 'إلى تاريخ', value: range.to })}<button class="btn sm primary">عرض</button></form>`}
+    ${card(`الخلاصة — ${esc(label)}`, `<div class="facts">${facts.map(([i, h]) => `<div>${i}<span>${h}</span></div>`).join('')}</div>`)}
+    <div class="mini-kpis">
+      ${kpi('المصروفات', money(t.spent), { sub: `<span class="num">${t.count}</span> مصروف` })}
+      ${kpi('صُرف كعهد', money(t.issued), { sub: 'صرف وتعزيز وفروقات' })}
+      ${kpi('عند الموظفين', money(t.outstanding), { sub: 'العهد المفتوحة الآن' })}
+      ${simple ? '' : kpi('ضريبة المدخلات', money(t.vat), { sub: 'في المصروفات', go: '#/report/vat' })}
+    </div>
+    ${card('الصرف آخر 12 شهراً', monthChart(a.monthly))}
+    ${card('حالة المصروفات', statusChart(a.status))}
+    <div class="grid2">
+      ${card('أين ذهبت الأموال (حسب النوع)', hbarChart(a.byCategory, { limit: simple ? 6 : 0 }), simple ? '' : btn('تقرير البنود', { href: '#/report/categories', cls: 'sm ghost' }))}
+      ${card('المشاريع مقابل الميزانية', hbarChart(a.byCostCenter, { budget: true, limit: simple ? 6 : 0 }), simple ? '' : btn('تقرير المشاريع', { href: '#/report/cost-centers', cls: 'sm ghost' }))}
+    </div>
+    <div class="grid2">
+      ${card('الصرف حسب الموظف', hbarChart(a.byEmployee, { limit: simple ? 6 : 0 }), simple ? '' : btn('نشاط الموظفين', { href: '#/report/employee-activity', cls: 'sm ghost' }))}
+      ${card('مصادر الأموال', a.bySource.length ? `<div class="list">${a.bySource.map(r => `<div class="item"><div class="item-ic">${ic('bank', 18)}</div><div class="item-main"><div class="item-title">${esc(r.name)}</div><div class="item-sub">صُرف ${fmt(r.out)} · رُدّ ${fmt(r.back)}</div></div><div class="item-end">${money(r.net)}<div class="item-endsub">لدى الموظفين</div></div></div>`).join('')}</div>` : empty('لا توجد حركات'), simple ? '' : btn('حركة الأموال', { href: '#/report/source-ledger', cls: 'sm ghost' }))}
+    </div>
+    ${simple ? `<div class="s-links"><a href="#/reports">${ic('list', 18)}كل التقارير التفصيلية</a></div>` : card('تقارير عميقة', `<div class="report-grid">${['monthly', 'employee-activity', 'balances', 'aging', 'statement', 'settlements'].map(k => REPORTS.find(r => r[0] === k)).map(([k, i, tt, ss]) => `<a class="report-card" href="#/report/${k}"><div class="item-ic">${ic(i)}</div><div><div class="item-title">${tt}</div><div class="item-sub">${ss}</div></div></a>`).join('')}</div>`)}
+  `);
+  const f = $('#af');
+  if (f) f.onsubmit = e => { e.preventDefault(); const d = readForm(f); go('#/analytics?' + qsOf({ from: d.from, to: d.to })); };
+}
+STAFF_VIEWS.analytics = analyticsView;
+
+// ================= واجهة المالك =================
+async function ownerHome() {
+  const [d, a] = await Promise.all([api('GET', '/api/dashboard'), api('GET', '/api/analytics?' + qsOf(periodRange('month')))]);
+  S.pendingCount = d.kpis.pendingCount; S.requestsCount = d.alerts.requests; updateBadges();
+  const pend = d.kpis.pendingCount;
+  view('الرئيسية', `
+    <div class="s-bal">
+      <div class="s-hi">مرحباً ${esc(S.user.name.split(' ')[0])} 👋</div>
+      <div class="s-label">المبالغ عند الموظفين الآن</div>
+      <div class="s-value">${money(d.kpis.outstanding)}</div>
+      <div class="s-sub">صُرف هذا الشهر <span class="num">${fmt(a.totals.spent)}</span> على <span class="num">${a.totals.count}</span> مصروف</div>
+    </div>
+    ${pend ? `<a class="s-btn main" href="#/expenses?status=pending">${ic('check', 28)}<span>اعتمد المصروفات<small>${pend} مصروف بانتظارك بقيمة ${fmt(d.kpis.pendingAmount)}</small></span><b class="s-count num">${pend}</b></a>` : ''}
+    <button class="s-btn ${pend ? '' : 'main'}" data-act="q-custodyForm">${ic('wallet', 26)}<span>اصرف عهدة لموظف<small>من حسابك أو من الصندوق</small></span></button>
+    <a class="s-btn" href="#/insights">${ic('chart', 26)}<span>التقارير<small>أين ذهبت الأموال ومن صرف كم</small></span></a>
+    ${d.alerts.requests ? `<a class="notice" href="#/requests">${ic('inbox', 18)} ${d.alerts.requests} طلب عهدة جديد من الموظفين</a>` : ''}
+    ${d.alerts.overdue.length ? `<a class="notice bad" href="#/custodies?status=overdue">${ic('clock', 18)} ${d.alerts.overdue.length} عهدة متأخرة عن التسوية</a>` : ''}
+    ${card('الصرف آخر 12 شهراً', monthChart(a.monthly))}
+    ${card('الموظفون', d.employees.length ? `<div class="s-list">${d.employees.map(u => `<a href="#/user/${u.id}"><div><b>${esc(u.name)}</b><small class="${u.pendingCount ? 'warn-t' : 'muted'}">${u.pendingCount ? u.pendingCount + ' مصروف بانتظار الاعتماد' : u.openCount + ' عهدة مفتوحة'}</small></div>${signed(u.balance)}</a>`).join('')}</div>` : '<p class="muted center">لا يوجد موظفون بعد</p>')}
+    ${card('أين ذهبت أموال هذا الشهر', hbarChart(a.byCategory, { limit: 5 }))}
+    <div class="s-links"><a href="#/custodies">${ic('wallet', 18)}العهد</a><a href="#/expenses?status=">${ic('receipt', 18)}المصروفات</a><a href="#/users">${ic('users', 18)}الموظفون</a><a href="#/settings">${ic('settings', 18)}الإعدادات</a></div>
+  `);
+}
+const OWNER_VIEWS = { ...STAFF_VIEWS, dashboard: ownerHome, insights: analyticsView };
