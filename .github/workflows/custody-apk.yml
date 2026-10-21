@@ -1,10 +1,10 @@
-name: Build Android APK
+name: Custody App APK
 
 on:
   push:
     paths:
       - 'custody-app/android/**'
-      - '.github/workflows/android-apk.yml'
+      - '.github/workflows/custody-apk.yml'
   workflow_dispatch:
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-v${{ github.run_number }}
+          tag_name: custody-apk-v${{ github.run_number }}
           name: تطبيق إدارة العهد — نسخة ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           body: ملف التثبيت على أندرويد. حمّل CustodyApp.apk وافتحه على الجوال (اسمح بالتثبيت من مصادر غير معروفة).
