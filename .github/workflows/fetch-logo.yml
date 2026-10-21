@@ -1,0 +1,24 @@
+name: Fetch company logo
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fetch-logo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download logo
+        run: curl -sSL --fail -A "Mozilla/5.0" -o metal-lines-logo.png "https://metal-lines.com/wp-content/uploads/2026/09/metal-lines-logo.png" && file metal-lines-logo.png
+      - name: Publish as release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: company-logo-${{ github.run_number }}
+          name: Company logo
+          target_commitish: ${{ github.sha }}
+          files: metal-lines-logo.png
