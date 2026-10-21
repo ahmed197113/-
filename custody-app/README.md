@@ -31,3 +31,14 @@
 - `public/local.js` التخزين على الجهاز (IndexedDB).
 - `public/app.js` الواجهة. `server.js` خادم HTTP.
 - `android/` تطبيق أندرويد يُبنى تلقائياً عبر GitHub Actions وينشر APK في Releases.
+
+## تشغيل خادم الشركة
+1. استأجر خادماً سحابياً صغيراً بنظام Ubuntu 22.04 أو أحدث.
+2. أضف في إعدادات نطاق الشركة سجل `A` باسم `custody` يشير إلى عنوان IP الخادم (فيصبح `custody.metal-lines.com`).
+3. ادخل للخادم ونفّذ:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/ahmed197113/-/ccr-60d78cf9-33quzo/custody-app/deploy/install.sh | sudo bash -s custody.metal-lines.com
+   ```
+4. افتح `https://custody.metal-lines.com` وأنشئ حساب المدير، وفي التطبيق اختر «الربط بخادم الشركة».
+
+التحديث لاحقاً: أعد تشغيل نفس الأمر. النسخ الاحتياطية اليومية في `/var/backups/custody`.
