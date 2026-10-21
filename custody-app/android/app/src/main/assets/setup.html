@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>إعداد التطبيق</title>
+<style>
+  :root { --p: #0f5c4d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; font-family: system-ui, sans-serif; background: linear-gradient(160deg, var(--p), #0a3a31); color: #17201d; }
+  .card { background: #fff; border-radius: 18px; padding: 26px; width: 100%; max-width: 380px; text-align: center; }
+  h1 { font-size: 21px; margin: 10px 0 4px; } p { color: #5f6b67; font-size: 14px; margin: 0 0 18px; line-height: 1.6; }
+  input { width: 100%; padding: 12px; border: 1px solid #dde3e0; border-radius: 10px; font-size: 16px; direction: ltr; text-align: left; }
+  button { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 10px; background: var(--p); color: #fff; font-size: 17px; font-weight: 700; }
+  .err { color: #c0392b; font-size: 13px; min-height: 18px; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <svg width="64" height="64" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#0f5c4d"/><rect x="96" y="150" width="320" height="220" rx="36" fill="#fff"/><rect x="96" y="196" width="320" height="44" fill="#d9a441"/><circle cx="350" cy="310" r="26" fill="#0f5c4d"/></svg>
+    <h1>نظام إدارة العهد</h1>
+    <p>أدخل عنوان خادم الشركة (يعطيك إياه المدير)</p>
+    <input id="url" placeholder="https://custody.example.com" inputmode="url" autocomplete="url">
+    <div class="err" id="err"></div>
+    <button id="go">متابعة</button>
+  </div>
+<script>
+  const input = document.getElementById('url');
+  document.getElementById('go').onclick = async () => {
+    let url = input.value.trim().replace(/\/+$/, '');
+    if (!url) return (document.getElementById('err').textContent = 'أدخل عنوان الخادم');
+    if (!/^https?:\/\//.test(url)) url = 'http://' + url;
+    window.AndroidBridge.setServer(url);
+  };
+</script>
+</body>
+</html>

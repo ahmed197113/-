@@ -1,6 +1,10 @@
 // نظام إدارة العهد — واجهة المستخدم (صفحة واحدة بدون مكتبات)
 'use strict';
 
+// داخل تطبيق أندرويد (APK) يتوفر جسر للتنبيهات الأصلية التي تعمل حتى والتطبيق مغلق
+const NATIVE = window.AndroidBridge || null;
+if (NATIVE) window.print = () => NATIVE.print();
+
 const S = { token: null, user: null, settings: {}, projects: [], employees: [], pendingBadge: 0 };
 try { S.token = localStorage.getItem('custody_token'); } catch {}
 
@@ -490,7 +494,7 @@ function projectModal(p) {
 }
 
 function passwordCard() {
-  return `<div class="card"><h2>تغيير كلمة المرور</h2><form id="pw" class="form">
+  return (NATIVE ? `<div class="card"><h2>عنوان الخادم <button class="btn sm" onclick="AndroidBridge.changeServer()">تغيير</button></h2><div class="num muted">${esc(NATIVE.getServer())}</div></div>` : '') + `<div class="card"><h2>تغيير كلمة المرور</h2><form id="pw" class="form">
     <div class="field"><label>كلمة المرور الحالية</label><input type="password" name="oldPassword" required></div>
     <div class="field"><label>كلمة المرور الجديدة</label><input type="password" name="newPassword" required minlength="4"></div>
     <div class="full"><button class="btn primary">تغيير</button></div></form></div>`;
@@ -523,7 +527,7 @@ const employeeViews = {
       </div>`;
     shell(`أهلاً ${esc(S.user.name.split(' ')[0])}`, content, `<button class="btn" id="test-rem">🔔 تجربة التنبيه</button>`);
     bindNotifNotice();
-    $('#test-rem').onclick = () => showReminder(true);
+    $('#test-rem').onclick = () => NATIVE ? NATIVE.testReminder() : showReminder(true);
   },
 
   async add() {
@@ -561,7 +565,7 @@ const employeeViews = {
   async settings() {
     shell('الإعدادات', `${notifNotice(true)}
       <div class="card"><h2>التنبيهات</h2><p>يصلك تنبيه كل <b>${S.settings.reminderMinutes}</b> دقيقة خلال الدوام (<span class="num">${S.settings.workStart} – ${S.settings.workEnd}</span>) أيام: ${S.settings.workDays.map(d => DAYS[d]).join('، ')}.</p>
-      <p class="muted">لضمان وصول التنبيهات: اسمح بالإشعارات، وأضف التطبيق إلى الشاشة الرئيسية، واتركه مفتوحاً في الخلفية أثناء الدوام.</p></div>
+      <p class="muted">${NATIVE ? 'التنبيهات تصلك كإشعار على الجوال حتى لو كان التطبيق مغلقاً، ويمكنك الرد بـ «لا، لم أصرف» من الإشعار مباشرة.' : 'لضمان وصول التنبيهات: اسمح بالإشعارات، وأضف التطبيق إلى الشاشة الرئيسية، واتركه مفتوحاً في الخلفية أثناء الدوام.'}</p></div>
       ${passwordCard()}`);
     bindNotifNotice();
     bindPasswordForm();
@@ -616,10 +620,13 @@ function expenseModal({ expense, viaReminder } = {}) {
 
 // ================= التنبيهات كل نصف ساعة =================
 let timers = [];
-function stopTimers() { timers.forEach(clearInterval); timers = []; }
+function stopTimers() { timers.forEach(clearInterval); timers = []; NATIVE?.stopReminders(); }
 function startTimers() {
   stopTimers();
-  if (S.user.role === 'employee') {
+  if (S.user.role === 'employee' && NATIVE) {
+    const s = S.settings;
+    NATIVE.startReminders(JSON.stringify({ token: S.token, workStart: s.workStart, workEnd: s.workEnd, workDays: s.workDays, minutes: s.reminderMinutes }));
+  } else if (S.user.role === 'employee') {
     if (!store.get(remKey())) resetReminderClock();
     timers.push(setInterval(reminderTick, 20000));
     reminderTick();
@@ -633,13 +640,14 @@ function startTimers() {
   }
 }
 const remKey = () => 'last_reminder_' + S.user.id;
-const resetReminderClock = () => store.set(remKey(), String(Date.now()));
+const resetReminderClock = () => { store.set(remKey(), String(Date.now())); NATIVE?.snooze(); };
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
 function inWorkHours(d = new Date()) {
   const s = S.settings, m = d.getHours() * 60 + d.getMinutes();
   return s.workDays.includes(d.getDay()) && m >= toMin(s.workStart) && m <= toMin(s.workEnd);
 }
 function nextReminderAt() {
+  if (NATIVE) return inWorkHours() ? `كل ${S.settings.reminderMinutes} دقيقة` : null;
   const last = Number(store.get(remKey())) || Date.now();
   const t = new Date(Math.max(Date.now(), last + S.settings.reminderMinutes * 6e4));
   return inWorkHours(t) ? t.toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : null;
@@ -655,7 +663,7 @@ async function showReminder(test = false) {
   beep();
   if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
   // إشعار النظام (يظهر حتى لو كان التطبيق في الخلفية)
-  if ('Notification' in window && Notification.permission === 'granted') {
+  if (!NATIVE && 'Notification' in window && Notification.permission === 'granted') {
     try {
       const reg = await navigator.serviceWorker?.getRegistration();
       const opts = { body: 'هل صرفت شيئاً خلال آخر نصف ساعة؟ ولأي مشروع؟', icon: '/icon.svg', badge: '/icon.svg', tag: 'custody-reminder', renotify: true, requireInteraction: true, dir: 'rtl', lang: 'ar',
@@ -678,7 +686,8 @@ async function showReminder(test = false) {
 function handleReminderAction(answer) {
   $('#reminder')?.closest('.modal-back')?.remove();
   if (answer === 'no') { api('POST', '/api/checkins', { answer: 'no' }).catch(() => {}); toast('شكراً، سنذكرك لاحقاً'); }
-  else expenseModal({ viaReminder: true });
+  else if (answer === 'yes') expenseModal({ viaReminder: true });
+  else showReminder();
 }
 function beep() {
   try {
@@ -692,13 +701,18 @@ function beep() {
   } catch {}
 }
 function notifNotice(always) {
+  if (NATIVE) {
+    if (NATIVE.notificationsEnabled()) return always ? '<div class="notice" style="background:var(--ok-bg);color:var(--ok)">✓ الإشعارات مفعّلة وتصلك حتى والتطبيق مغلق</div>' : '';
+    return `<div class="notice">🔔 اسمح بالإشعارات ليصلك تذكير كل نصف ساعة <button class="btn sm primary" id="enable-notif">السماح بالإشعارات</button></div>`;
+  }
   if (!('Notification' in window)) return always ? '<div class="notice">متصفحك لا يدعم الإشعارات — ستظهر التنبيهات داخل التطبيق فقط</div>' : '';
   if (Notification.permission === 'granted') return always ? '<div class="notice" style="background:var(--ok-bg);color:var(--ok)">✓ الإشعارات مفعّلة</div>' : '';
   return `<div class="notice">🔔 فعّل الإشعارات ليصلك تذكير كل نصف ساعة حتى لو كان التطبيق في الخلفية <button class="btn sm primary" id="enable-notif">تفعيل الإشعارات</button></div>`;
 }
 function bindNotifNotice() {
   const b = $('#enable-notif');
-  if (b) b.onclick = async () => {
+  if (b && NATIVE) b.onclick = () => { NATIVE.requestNotifications(); setTimeout(router, 4000); };
+  else if (b) b.onclick = async () => {
     const p = await Notification.requestPermission();
     toast(p === 'granted' ? 'تم تفعيل الإشعارات' : 'لم يتم السماح بالإشعارات', p !== 'granted');
     router();

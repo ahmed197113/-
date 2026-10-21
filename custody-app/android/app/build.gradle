@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.custody.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.custody.app'
+        minSdk 26
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
+        versionName "1.0.${System.getenv('VERSION_CODE') ?: '0'}"
+        // عنوان الخادم الافتراضي (اختياري) — إن تُرك فارغاً يطلبه التطبيق عند أول تشغيل
+        buildConfigField 'String', 'SERVER_URL', "\"${System.getenv('SERVER_URL') ?: ''}\""
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('custody-release.jks')
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: 'custody123'
+            keyAlias 'custody'
+            keyPassword System.getenv('KEYSTORE_PASSWORD') ?: 'custody123'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures { buildConfig true }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
