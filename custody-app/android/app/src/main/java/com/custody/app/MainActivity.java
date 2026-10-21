@@ -20,6 +20,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -29,6 +30,8 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     static final String PREFS = "custody";
     static final String EXTRA_REMINDER = "reminder";
+    /** عنوان وهمي يُخدَم من ملفات التطبيق نفسه (الوضع التجريبي بدون خادم) */
+    static final String DEMO_ORIGIN = "https://app.local";
     private static final int REQ_FILE = 1;
 
     private WebView web;
@@ -56,6 +59,21 @@ public class MainActivity extends Activity {
                 if ("file".equals(u.getScheme()) || (!server.isEmpty() && u.toString().startsWith(server))) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (ActivityNotFoundException ignored) { }
                 return true;
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
+                Uri u = req.getUrl();
+                if (!"app.local".equals(u.getHost())) return null;
+                String path = u.getPath() == null || u.getPath().equals("/") ? "index.html" : u.getPath().substring(1);
+                String ext = path.substring(path.lastIndexOf('.') + 1);
+                String mime = ext.equals("html") ? "text/html" : ext.equals("js") ? "text/javascript" : ext.equals("css") ? "text/css"
+                        : ext.equals("svg") ? "image/svg+xml" : ext.equals("webmanifest") ? "application/manifest+json" : "application/octet-stream";
+                try {
+                    return new WebResourceResponse(mime, "utf-8", getAssets().open(path));
+                } catch (Exception e) {
+                    return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", null, null);
+                }
             }
 
             @Override
@@ -175,6 +193,9 @@ public class MainActivity extends Activity {
             getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("server", clean).apply();
             runOnUiThread(() -> loadStart(null));
         }
+
+        @JavascriptInterface
+        public void startDemo() { setServer(DEMO_ORIGIN); }
 
         @JavascriptInterface
         public void changeServer() {

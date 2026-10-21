@@ -43,6 +43,9 @@ function toast(msg, err = false) {
 }
 
 async function api(method, url, body) {
+  if (window.DEMO) {
+    try { return await DEMO.api(method, url, body, S.token); } catch (e) { if (e.status === 401) logout(true); throw e; }
+  }
   const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', ...(S.token ? { Authorization: 'Bearer ' + S.token } : {}) },
@@ -53,7 +56,7 @@ async function api(method, url, body) {
   if (!res.ok) throw new Error(data.error || 'حدث خطأ');
   return data;
 }
-const fileUrl = url => url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(S.token);
+const fileUrl = url => window.DEMO ? (url.startsWith('/api/receipts/') ? url.slice(14) : '#demo-export') : url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(S.token);
 
 // ---------- النوافذ ----------
 function modal(html, { onMount, wide } = {}) {
@@ -108,12 +111,23 @@ function renderLogin() {
         <div class="field"><label>كلمة المرور</label><input name="password" type="password" autocomplete="current-password" required></div>
         <button class="btn primary lg">دخول</button>
       </form>
+      ${window.DEMO ? `<div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+        <p class="muted" style="text-align:center;margin:0 0 10px">🧪 وضع تجريبي ببيانات وهمية — اختر حساباً للتجربة</p>
+        <div style="display:grid;gap:8px">${DEMO.accounts.map(([u, p, label]) => `<button class="btn" data-demo="${u}|${p}">${label}</button>`).join('')}</div>
+        ${NATIVE ? '<button class="btn sm" style="margin-top:12px;width:100%" onclick="AndroidBridge.changeServer()">الربط بخادم الشركة</button>' : ''}
+      </div>` : ''}
     </div></div>`;
+  $$('[data-demo]').forEach(b => b.onclick = () => {
+    const [u, p] = b.dataset.demo.split('|');
+    $('[name=username]').value = u; $('[name=password]').value = p;
+    $('#login-form').requestSubmit();
+  });
   $('#login-form').onsubmit = e => {
     e.preventDefault();
     submitWith(e.submitter || $('button', e.target), async () => {
       const r = await api('POST', '/api/login', formData(e.target));
       S.token = r.token; store.set('custody_token', r.token);
+      history.replaceState(null, '', location.pathname + location.search);
       await boot();
     });
   };
@@ -143,6 +157,7 @@ function shell(title, content, actions = '') {
     <div class="layout">
       <aside class="sidebar">
         <div class="brand"><img src="/icon.svg" alt="">${esc(S.settings.companyName || 'إدارة العهد')}</div>
+        ${window.DEMO ? '<div class="tag pending" style="margin:0 10px 10px;text-align:center">🧪 وضع تجريبي</div>' : ''}
         <nav class="nav">${items.map(link).join('')}</nav>
         <div class="me">${esc(S.user.name)}<br><span style="opacity:.75">${S.user.role === 'manager' ? 'مدير' : 'موظف'}</span><br><button id="logout">تسجيل الخروج</button></div>
       </aside>
@@ -165,6 +180,9 @@ async function router() {
   try { await view(arg); } catch (e) { toast(e.message, true); }
 }
 window.addEventListener('hashchange', router);
+document.addEventListener('click', e => {
+  if (e.target.closest('a[href="#demo-export"]')) { e.preventDefault(); toast('التصدير إلى Excel يعمل بعد ربط التطبيق بخادم الشركة'); }
+});
 
 async function boot() {
   try {
@@ -494,7 +512,10 @@ function projectModal(p) {
 }
 
 function passwordCard() {
-  return (NATIVE ? `<div class="card"><h2>عنوان الخادم <button class="btn sm" onclick="AndroidBridge.changeServer()">تغيير</button></h2><div class="num muted">${esc(NATIVE.getServer())}</div></div>` : '') + `<div class="card"><h2>تغيير كلمة المرور</h2><form id="pw" class="form">
+  const demo = window.DEMO ? `<div class="card"><h2>الوضع التجريبي <button class="btn sm bad" onclick="DEMO.reset()">مسح وإعادة البيانات التجريبية</button></h2><p class="muted">البيانات الحالية وهمية ومحفوظة على هذا الجهاز فقط. للاستخدام الفعلي اربط التطبيق بخادم الشركة.</p></div>` : '';
+  const server = NATIVE ? `<div class="card"><h2>عنوان الخادم <button class="btn sm" onclick="AndroidBridge.changeServer()">${window.DEMO ? 'الربط بخادم الشركة' : 'تغيير'}</button></h2><div class="num muted">${window.DEMO ? 'وضع تجريبي (بدون خادم)' : esc(NATIVE.getServer())}</div></div>` : '';
+  const account = `<div class="card"><h2><span>${esc(S.user.name)} <span class="muted">(${S.user.role === 'manager' ? 'مدير' : 'موظف'})</span></span><button class="btn sm bad" onclick="logout()">تسجيل الخروج</button></h2></div>`;
+  return account + demo + server + `<div class="card"><h2>تغيير كلمة المرور</h2><form id="pw" class="form">
     <div class="field"><label>كلمة المرور الحالية</label><input type="password" name="oldPassword" required></div>
     <div class="field"><label>كلمة المرور الجديدة</label><input type="password" name="newPassword" required minlength="4"></div>
     <div class="full"><button class="btn primary">تغيير</button></div></form></div>`;

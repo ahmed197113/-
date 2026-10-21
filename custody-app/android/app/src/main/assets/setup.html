@@ -11,6 +11,9 @@
   h1 { font-size: 21px; margin: 10px 0 4px; } p { color: #5f6b67; font-size: 14px; margin: 0 0 18px; line-height: 1.6; }
   input { width: 100%; padding: 12px; border: 1px solid #dde3e0; border-radius: 10px; font-size: 16px; direction: ltr; text-align: left; }
   button { width: 100%; margin-top: 12px; padding: 14px; border: 0; border-radius: 10px; background: var(--p); color: #fff; font-size: 17px; font-weight: 700; }
+  button.alt { background: #fff; color: var(--p); border: 2px solid var(--p); margin-top: 0; }
+  .or { color: #5f6b67; font-size: 13px; margin: 14px 0 10px; }
+  .hint { font-size: 12px; margin: 8px 0 0; }
   .err { color: #c0392b; font-size: 13px; min-height: 18px; margin-top: 8px; }
 </style>
 </head>
@@ -22,9 +25,13 @@
     <input id="url" placeholder="https://custody.example.com" inputmode="url" autocomplete="url">
     <div class="err" id="err"></div>
     <button id="go">متابعة</button>
+    <div class="or">أو</div>
+    <button id="demo" class="alt">🧪 تجربة التطبيق بدون خادم</button>
+    <p class="hint">يفتح التطبيق ببيانات تجريبية لتتعرف على شاشات المدير والموظف</p>
   </div>
 <script>
   const input = document.getElementById('url');
+  document.getElementById('demo').onclick = () => window.AndroidBridge.startDemo();
   document.getElementById('go').onclick = async () => {
     let url = input.value.trim().replace(/\/+$/, '');
     if (!url) return (document.getElementById('err').textContent = 'أدخل عنوان الخادم');

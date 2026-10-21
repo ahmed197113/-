@@ -34,6 +34,11 @@ android {
 
     buildFeatures { buildConfig true }
 
+    // نسخة من واجهة الويب داخل التطبيق لتشغيل الوضع التجريبي بدون خادم
+    sourceSets {
+        main { assets.srcDirs += ['../../public'] }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
