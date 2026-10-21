@@ -275,6 +275,7 @@ class Core {
       'method' => orv($x('method'), 'نقداً'), 'ref' => $this->opt($x('ref')), 'note' => $this->opt($x('note')), 'status' => orv($x('status'), 'confirmed'), 'sourceId' => orv($x('sourceId'), null),
       'createdBy' => $user ? $user->id : null, 'createdAt' => $this->env->now(), 'relatedId' => orv($x('relatedId'), null),
     ]);
+    if (truthy($x('settlementId'))) $t->settlementId = $x('settlementId');
     $this->D()->tx[] = $t;
     return $t;
   }
@@ -449,6 +450,39 @@ class Core {
   }
 
   // ---------- المسارات ----------
+  // ----- تصحيح الأخطاء: دوال مساعدة -----
+  private function refreshSettlement($id) {
+    $D = $this->D();
+    $s = first($D->settlements, fn($x) => $x->id === $id);
+    if (!$s) return;
+    $s->expenseIds = array_values(array_filter($s->expenseIds, fn($eid) => some($D->expenses, fn($e) => $e->id === $eid)));
+    $s->total = num(sum(filt($D->expenses, fn($e) => in_array($e->id, $s->expenseIds, true)), fn($e) => $e->amount));
+  }
+  private function settlementTx($s) {
+    return filt($this->D()->tx, fn($t) => $t->custodyId === $s->custodyId && ((($t->settlementId ?? null) === $s->id) || (!truthy($t->settlementId ?? null) && str_contains(jsstr($t->note ?? ''), $s->no) && preg_match('/التسوية|تسوية/u', jsstr($t->note ?? '')))));
+  }
+  private function settlementOfTx($t) { return first($this->D()->settlements, fn($s) => some($this->settlementTx($s), fn($y) => $y->id === $t->id)); }
+  private function removeTx($ids) {
+    $D = $this->D();
+    $all = array_fill_keys($ids, true);
+    foreach ($D->tx as $t) if (isset($all[$t->id]) && truthy($t->relatedId ?? null)) $all[$t->relatedId] = true;
+    $D->tx = filt($D->tx, fn($t) => !isset($all[$t->id]));
+    return count($all);
+  }
+  private function removeCustody($user, $c) {
+    $D = $this->D();
+    $txIds = map(filt($D->tx, fn($t) => $t->custodyId === $c->id), fn($t) => $t->id);
+    $received = $this->custodyBalance($c)['received'];
+    $nExp = count(filt($D->expenses, fn($e) => $e->custodyId === $c->id));
+    $this->removeTx($txIds);
+    $D->expenses = filt($D->expenses, fn($e) => $e->custodyId !== $c->id);
+    $D->settlements = filt($D->settlements, fn($s) => $s->custodyId !== $c->id);
+    $D->requests = filt($D->requests, fn($r) => !(($r->custodyId ?? null) === $c->id && truthy($r->direct ?? null)));
+    foreach ($D->requests as $r) if (($r->custodyId ?? null) === $c->id) $r->custodyId = null;
+    $D->custodies = filt($D->custodies, fn($x) => $x->id !== $c->id);
+    $this->log($user, 'حذف عهدة', "{$c->no} لـ " . $this->userName($c->employeeId) . ' — مستلم ' . jsstr($received) . "، {$nExp} مصروف", 'custody', $c->id);
+  }
+
   private function on($method, $pattern, $fn) {
     $this->routes[] = ['method' => $method, 're' => '#^' . preg_replace('/:(\w+)/', '(?P<$1>[^/]+)', $pattern) . '$#D', 'fn' => $fn];
   }
@@ -563,14 +597,44 @@ class Core {
       ]);
     });
     $this->on('POST', '/api/custodies', function ($user, $p, $q, $b) { $this->staffOnly($user); return $this->custodyView($this->createCustody($user, $b)); });
-    $this->on('PUT', '/api/custodies/:id', function ($user, $p, $q, $b) {
+    $this->on('PUT', '/api/custodies/:id', function ($user, $p, $q, $b) use ($D) {
       $this->staffOnly($user);
       $c = $this->find('custodies', $p['id'], 'العهدة');
       if (has($b, 'purpose')) $c->purpose = $this->text($b->purpose, 'الغرض');
       if (has($b, 'costCenterId')) $c->costCenterId = orv($b->costCenterId, null);
       if (has($b, 'dueDate')) $c->dueDate = orv($b->dueDate, null);
       if (has($b, 'notes')) $c->notes = $this->opt($b->notes);
-      $this->log($user, 'تعديل عهدة', $c->no, 'custody', $c->id);
+      // تصحيحات مدير النظام: المبلغ والموظف والتاريخ والنوع
+      $changes = [];
+      if ($user->role === 'admin') {
+        $issue = fn() => first($D()->tx, fn($x) => $x->custodyId === $c->id && $x->type === 'issue');
+        if (has($b, 'amount') && $b->amount !== '') {
+          $t = $issue();
+          $amount = $this->money($b->amount, 'مبلغ العهدة');
+          if ($t && $t->amount != $amount) { $changes[] = 'المبلغ ' . jsstr($t->amount) . ' ← ' . jsstr($amount); $t->amount = $amount; }
+          else if (!$t) { $this->addTx($user, $c, 'issue', $amount, ['date' => $c->issueDate, 'note' => 'صرف العهدة']); $changes[] = 'المبلغ ' . jsstr($amount); }
+        }
+        if (truthy(g($b, 'employeeId')) && $b->employeeId !== $c->employeeId) {
+          $emp = first($D()->users, fn($u) => $u->id === $b->employeeId) ?? fail(400, 'الموظف غير موجود');
+          $changes[] = 'الموظف ' . $this->userName($c->employeeId) . ' ← ' . $emp->name;
+          $c->employeeId = $emp->id;
+          foreach (array_merge($D()->tx, $D()->expenses, $D()->settlements) as $x) if (($x->custodyId ?? null) === $c->id) $x->employeeId = $emp->id;
+        }
+        if (isDate(g($b, 'issueDate')) && $b->issueDate !== $c->issueDate) {
+          $changes[] = "تاريخ الصرف {$c->issueDate} ← {$b->issueDate}";
+          $t = $issue();
+          if ($t && $t->date === $c->issueDate) $t->date = $b->issueDate;
+          $c->issueDate = $b->issueDate;
+        }
+        $kind = g($b, 'kind');
+        if (truthy($kind) && isset(KINDS[$kind]) && $kind !== $c->kind) { $changes[] = 'النوع ' . KINDS[$c->kind] . ' ← ' . KINDS[$kind]; $c->kind = $kind; if ($kind === 'permanent') $c->dueDate = null; }
+        if (has($b, 'sourceId')) {
+          $t = $issue();
+          $src = truthy($b->sourceId) ? $this->find('fundSources', $b->sourceId, 'مصدر المبلغ')->id : null;
+          if ($t && orv($t->sourceId ?? null, null) !== $src) { $changes[] = 'المصدر ' . orv($this->srcName($t->sourceId ?? null), 'غير محدد') . ' ← ' . orv($this->srcName($src), 'غير محدد'); $t->sourceId = $src; }
+        }
+      }
+      $this->log($user, $changes ? 'تصحيح عهدة' : 'تعديل عهدة', $c->no . ($changes ? ' — ' . implode('، ', $changes) : ''), 'custody', $c->id);
       return $this->custodyView($c);
     });
     $this->on('POST', '/api/custodies/:id/tx', function ($user, $p, $q, $b) use ($D) {
@@ -644,11 +708,11 @@ class Core {
       foreach ($exps as $e) $e->settlementId = $s->id;
       if ($close) {
         $bal = $this->custodyBalance($c)['balance'];
-        if ($bal > 0) { $this->addTx($user, $c, 'return', $bal, ['date' => $s->date, 'method' => g($b, 'method'), 'note' => "رد المتبقي عند التسوية {$s->no}", 'sourceId' => $settleSource]); $s->returned = $bal; }
-        if ($bal < 0) { $this->addTx($user, $c, 'reimburse', -$bal, ['date' => $s->date, 'method' => g($b, 'method'), 'note' => "صرف الفرق للموظف عند التسوية {$s->no}", 'sourceId' => $settleSource]); $s->reimbursed = num(-$bal); }
+        if ($bal > 0) { $this->addTx($user, $c, 'return', $bal, ['date' => $s->date, 'method' => g($b, 'method'), 'note' => "رد المتبقي عند التسوية {$s->no}", 'sourceId' => $settleSource, 'settlementId' => $s->id]); $s->returned = $bal; }
+        if ($bal < 0) { $this->addTx($user, $c, 'reimburse', -$bal, ['date' => $s->date, 'method' => g($b, 'method'), 'note' => "صرف الفرق للموظف عند التسوية {$s->no}", 'sourceId' => $settleSource, 'settlementId' => $s->id]); $s->reimbursed = num(-$bal); }
         $c->status = 'closed'; $c->closedAt = $this->env->now();
       } else if (truthy(g($b, 'replenish')) && $total > 0) {
-        $this->addTx($user, $c, 'topup', $total, ['date' => $s->date, 'method' => g($b, 'method'), 'note' => "تعويض العهدة المستديمة — تسوية {$s->no}", 'sourceId' => $settleSource]);
+        $this->addTx($user, $c, 'topup', $total, ['date' => $s->date, 'method' => g($b, 'method'), 'note' => "تعويض العهدة المستديمة — تسوية {$s->no}", 'sourceId' => $settleSource, 'settlementId' => $s->id]);
         $s->replenished = $total;
       }
       $D()->settlements[] = $s;
@@ -710,7 +774,8 @@ class Core {
     $this->on('PUT', '/api/expenses/:id', function ($user, $p, $q, $b) use ($D) {
       $e = $this->find('expenses', $p['id'], 'المصروف');
       $staff = $this->isStaff($user);
-      if (truthy($e->settlementId ?? null)) fail(400, 'المصروف داخل تسوية — لا يمكن تعديله');
+      if (truthy($e->settlementId ?? null) && $user->role !== 'admin') fail(400, 'المصروف داخل تسوية — لا يمكن تعديله');
+      $before = ['amount' => $e->amount, 'date' => $e->date, 'categoryId' => $e->categoryId, 'costCenterId' => $e->costCenterId];
       if (!$staff && ($e->employeeId !== $user->id || $e->status === 'approved')) fail(403, 'لا يمكن تعديل مصروف معتمد');
       if (truthy(g($b, 'categoryId'))) $e->categoryId = (first($D()->categories, fn($x) => $x->id === g($b, 'categoryId')) ?? fail(400, 'بند غير صالح'))->id;
       if (truthy(g($b, 'costCenterId'))) $e->costCenterId = $this->find('costCenters', g($b, 'costCenterId'), 'مركز التكلفة')->id;
@@ -722,7 +787,13 @@ class Core {
       $e->vat = $this->computeVat($e->amount, $e->vatIncluded ?? null);
       if (is_array(g($b, 'attachments'))) $e->attachments = $this->saveAttachments($b->attachments);
       if (!$staff && $e->status === 'rejected') { $e->status = 'pending'; $this->notify($this->staffIds(), "{$user->name} عدّل المصروف المرفوض {$e->no} وأعاد إرساله", '#/expense/' . $e->id); }
-      $this->log($user, 'تعديل مصروف', $e->no, 'expense', $e->id);
+      if (truthy($e->settlementId ?? null)) $this->refreshSettlement($e->settlementId);
+      $diff = [];
+      if ($before['amount'] != $e->amount) $diff[] = 'المبلغ ' . jsstr($before['amount']) . ' ← ' . jsstr($e->amount);
+      if ($before['date'] !== $e->date) $diff[] = "التاريخ {$before['date']} ← {$e->date}";
+      if ($before['categoryId'] !== $e->categoryId) $diff[] = 'البند ' . $this->catName($before['categoryId']) . ' ← ' . $this->catName($e->categoryId);
+      if ($before['costCenterId'] !== $e->costCenterId) $diff[] = 'المركز ' . $this->ccName($before['costCenterId']) . ' ← ' . $this->ccName($e->costCenterId);
+      $this->log($user, 'تعديل مصروف', $e->no . ($diff ? ' — ' . implode('، ', $diff) : ''), 'expense', $e->id);
       return $this->expenseView($e);
     });
     $this->on('POST', '/api/expenses/review', function ($user, $p, $q, $b) use ($D) {
@@ -745,9 +816,10 @@ class Core {
     });
     $this->on('DELETE', '/api/expenses/:id', function ($user, $p) use ($D) {
       $e = $this->find('expenses', $p['id'], 'المصروف');
-      if (truthy($e->settlementId ?? null)) fail(400, 'المصروف داخل تسوية — لا يمكن حذفه');
+      if (truthy($e->settlementId ?? null) && $user->role !== 'admin') fail(400, 'المصروف داخل تسوية — لا يمكن حذفه');
       if (!$this->isStaff($user) && ($e->employeeId !== $user->id || $e->status === 'approved')) fail(403, 'لا يمكن حذف هذا المصروف');
       $D()->expenses = filt($D()->expenses, fn($x) => $x->id !== $e->id);
+      if (truthy($e->settlementId ?? null)) $this->refreshSettlement($e->settlementId);
       $this->log($user, 'حذف مصروف', "{$e->no} بمبلغ " . jsstr($e->amount), 'expense', $e->id);
       return obj(['ok' => true]);
     });
@@ -1002,6 +1074,117 @@ class Core {
       return array_slice($list, 0, 300);
     });
     $this->on('GET', '/api/backup', function ($user) use ($D) { $this->adminOnly($user); $rest = clone $D(); unset($rest->sessions); return $rest; });
+
+    // ----- تصحيح الأخطاء: تعديل وحذف لمدير النظام فقط -----
+    $this->on('PUT', '/api/tx/:id', function ($user, $p, $q, $b) use ($D) {
+      $this->adminOnly($user);
+      $t = $this->find('tx', $p['id'], 'الحركة');
+      $c = $this->find('custodies', $t->custodyId, 'العهدة');
+      $diff = [];
+      $pair = truthy($t->relatedId ?? null) ? first($D()->tx, fn($x) => $x->id === $t->relatedId) : null;
+      if (has($b, 'amount') && $b->amount !== '') {
+        $amount = $this->money($b->amount);
+        if ($amount != $t->amount) { $diff[] = 'المبلغ ' . jsstr($t->amount) . ' ← ' . jsstr($amount); $t->amount = $amount; if ($pair) $pair->amount = $amount; }
+      }
+      if (isDate(g($b, 'date')) && $b->date !== $t->date) { $diff[] = "التاريخ {$t->date} ← {$b->date}"; $t->date = $b->date; if ($pair) $pair->date = $b->date; if ($t->type === 'issue' && truthy($c->issueDate ?? null)) $c->issueDate = $b->date; }
+      if (has($b, 'sourceId')) { $src = truthy($b->sourceId) ? $this->find('fundSources', $b->sourceId, 'مصدر المبلغ')->id : null; if (orv($t->sourceId ?? null, null) !== $src) { $diff[] = 'المصدر ' . orv($this->srcName($t->sourceId ?? null), 'غير محدد') . ' ← ' . orv($this->srcName($src), 'غير محدد'); $t->sourceId = $src; } }
+      foreach (['method', 'ref', 'note'] as $k) if (has($b, $k)) $t->$k = $this->opt($b->$k);
+      $s = $this->settlementOfTx($t);
+      if ($s) { if ($t->type === 'return') $s->returned = $t->amount; if ($t->type === 'reimburse') $s->reimbursed = $t->amount; if ($t->type === 'topup') $s->replenished = $t->amount; }
+      $this->log($user, 'تصحيح حركة عهدة', TX_TYPES[$t->type]['label'] . " على {$c->no}" . ($diff ? ' — ' . implode('، ', $diff) : ''), 'custody', $c->id);
+      return $this->custodyView($c);
+    });
+    $this->on('DELETE', '/api/tx/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $t = $this->find('tx', $p['id'], 'الحركة');
+      $c = $this->find('custodies', $t->custodyId, 'العهدة');
+      if ($t->type === 'issue' && count(filt($D()->tx, fn($x) => $x->custodyId === $c->id && $x->type === 'issue')) === 1) fail(400, 'هذه حركة صرف العهدة الأساسية — عدّل مبلغها، أو احذف العهدة كاملة');
+      $s = $this->settlementOfTx($t);
+      if ($s) { if ($t->type === 'return') $s->returned = 0; if ($t->type === 'reimburse') $s->reimbursed = 0; if ($t->type === 'topup') $s->replenished = 0; }
+      $this->removeTx([$t->id]);
+      $this->log($user, 'حذف حركة عهدة', TX_TYPES[$t->type]['label'] . ' بمبلغ ' . jsstr($t->amount) . " على {$c->no}" . (truthy($t->relatedId ?? null) ? ' (مع الحركة المقابلة)' : ''), 'custody', $c->id);
+      return $this->custodyView($c);
+    });
+    $this->on('DELETE', '/api/custodies/:id', function ($user, $p) {
+      $this->adminOnly($user);
+      $c = $this->find('custodies', $p['id'], 'العهدة');
+      $this->removeCustody($user, $c);
+      return obj(['ok' => true]);
+    });
+    // التراجع عن تسوية: تعود المصروفات غير مسواة، وتحذف حركات الرد/الفرق/التعويض، وتفتح العهدة إن كانت أغلقت بها
+    $this->on('DELETE', '/api/settlements/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $s = $this->find('settlements', $p['id'], 'التسوية');
+      $c = first($D()->custodies, fn($x) => $x->id === $s->custodyId);
+      foreach ($D()->expenses as $e) if (($e->settlementId ?? null) === $s->id) $e->settlementId = null;
+      $this->removeTx(map($this->settlementTx($s), fn($t) => $t->id));
+      $D()->settlements = filt($D()->settlements, fn($x) => $x->id !== $s->id);
+      if ($c && truthy($s->closed ?? null)) { $c->status = 'open'; $c->closedAt = null; }
+      $this->log($user, 'التراجع عن تسوية', $s->no . ($c ? " على {$c->no}" : '') . ' بإجمالي ' . jsstr($s->total), 'settlement', $s->id);
+      return $c ? $this->custodyView($c) : obj(['ok' => true]);
+    });
+    $this->on('DELETE', '/api/requests/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $r = $this->find('requests', $p['id'], 'الطلب');
+      $D()->requests = filt($D()->requests, fn($x) => $x->id !== $r->id);
+      $this->log($user, 'حذف طلب', "{$r->no} — {$r->purpose}" . (truthy($r->custodyId ?? null) ? ' (العهدة المرتبطة باقية)' : ''), 'request', $r->id);
+      return obj(['ok' => true]);
+    });
+    $this->on('DELETE', '/api/assets/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $a = $this->find('assets', $p['id'], 'الأصل');
+      $D()->assets = filt($D()->assets, fn($x) => $x->id !== $a->id);
+      $D()->assetMoves = filt($D()->assetMoves, fn($m) => $m->assetId !== $a->id);
+      $this->log($user, 'حذف أصل', "{$a->no} {$a->name}", 'asset', $a->id);
+      return obj(['ok' => true]);
+    });
+    // حذف مستخدم: مسموح إن لم تكن عليه عهد؛ ومع purge تُحذف عهده وكل حركاته (لحسابات التجربة)
+    $this->on('DELETE', '/api/users/:id', function ($user, $p, $q, $b) use ($D) {
+      $this->adminOnly($user);
+      $u = $this->find('users', $p['id'], 'المستخدم');
+      if ($u->id === $user->id) fail(400, 'لا يمكنك حذف حسابك — ادخل بحساب مدير آخر');
+      if ($u->role === 'admin' && !some($D()->users, fn($x) => $x->role === 'admin' && ($x->active ?? null) !== false && $x->id !== $u->id)) fail(400, 'لا يمكن حذف آخر مدير للنظام');
+      $purge = g($q, 'purge') === '1' || g($q, 'purge') === 'true' || g($b, 'purge') === true;
+      $cs = filt($D()->custodies, fn($c) => $c->employeeId === $u->id);
+      if ($cs && !$purge) fail(400, "على {$u->name} عدد " . count($cs) . ' عهدة — احذفها أولاً، أو استخدم «حذف مع كل حركاته»، أو أوقف الحساب بدل الحذف');
+      foreach ($cs as $c) $this->removeCustody($user, $c);
+      $D()->requests = filt($D()->requests, fn($r) => $r->employeeId !== $u->id);
+      foreach ($D()->assets as $a) if (($a->holderId ?? null) === $u->id) { $a->holderId = null; $a->status = 'available'; $a->acknowledged = false; }
+      $D()->checkins = filt($D()->checkins, fn($x) => $x->employeeId !== $u->id);
+      $D()->notifications = filt($D()->notifications, fn($n) => $n->userId !== $u->id);
+      foreach (get_object_vars($D()->sessions) as $tk => $sv) if ((is_object($sv) ? ($sv->userId ?? null) : $sv) === $u->id) unset($D()->sessions->$tk);
+      $D()->users = filt($D()->users, fn($x) => $x->id !== $u->id);
+      $this->log($user, 'حذف مستخدم', "{$u->name} ({$u->username})" . ($cs ? ' مع ' . count($cs) . ' عهدة' : ''), 'user', $u->id);
+      return obj(['ok' => true]);
+    });
+    $this->on('DELETE', '/api/cost-centers/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $c = $this->find('costCenters', $p['id'], 'مركز التكلفة');
+      $used = count(filt($D()->expenses, fn($e) => ($e->costCenterId ?? null) === $c->id)) + count(filt($D()->custodies, fn($x) => ($x->costCenterId ?? null) === $c->id)) + count(filt($D()->assets, fn($a) => ($a->costCenterId ?? null) === $c->id));
+      if ($used) fail(400, "مركز التكلفة مستخدم في {$used} سجل — انقل السجلات أو أغلقه بدل الحذف");
+      if (some($D()->costCenters, fn($x) => ($x->parentId ?? null) === $c->id)) fail(400, 'لهذا المركز مراكز فرعية — احذفها أو انقلها أولاً');
+      $D()->costCenters = filt($D()->costCenters, fn($x) => $x->id !== $c->id);
+      $this->log($user, 'حذف مركز تكلفة', jstrim(orv($c->code ?? null, '') . ' ' . $c->name), 'costCenter', $c->id);
+      return obj(['ok' => true]);
+    });
+    $this->on('DELETE', '/api/categories/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $c = $this->find('categories', $p['id'], 'البند');
+      $used = count(filt($D()->expenses, fn($e) => $e->categoryId === $c->id));
+      if ($used) fail(400, "البند مستخدم في {$used} مصروف — غيّر بند هذه المصروفات أو أوقفه بدل الحذف");
+      $D()->categories = filt($D()->categories, fn($x) => $x->id !== $c->id);
+      $this->log($user, 'حذف بند', $c->name, 'category', $c->id);
+      return obj(['ok' => true]);
+    });
+    $this->on('DELETE', '/api/sources/:id', function ($user, $p) use ($D) {
+      $this->adminOnly($user);
+      $x = $this->find('fundSources', $p['id'], 'المصدر');
+      $used = count(filt($D()->tx, fn($t) => ($t->sourceId ?? null) === $x->id));
+      if ($used) fail(400, "المصدر مستخدم في {$used} حركة — أوقفه بدل الحذف");
+      $D()->fundSources = filt($D()->fundSources, fn($s) => $s->id !== $x->id);
+      $this->log($user, 'حذف مصدر أموال', $x->name, 'source', $x->id);
+      return obj(['ok' => true]);
+    });
   }
 
   private function createCustodyShell($user, $to, $from, $amount, $b) {

@@ -179,6 +179,7 @@
         id: env.uid(), custodyId: custody.id, employeeId: custody.employeeId, type, amount: num(amount), date: dateOr(extra.date),
         method: extra.method || 'نقداً', ref: opt(extra.ref), note: opt(extra.note), status: extra.status || 'confirmed', sourceId: extra.sourceId || null,
         createdBy: user ? user.id : null, createdAt: env.now(), relatedId: extra.relatedId || null,
+        ...(extra.settlementId ? { settlementId: extra.settlementId } : {}),
       };
       D().tx.push(t);
       return t;
@@ -448,7 +449,35 @@
       if (b.costCenterId !== undefined) c.costCenterId = b.costCenterId || null;
       if (b.dueDate !== undefined) c.dueDate = b.dueDate || null;
       if (b.notes !== undefined) c.notes = opt(b.notes);
-      log(user, 'تعديل عهدة', c.no, 'custody', c.id);
+      // تصحيحات مدير النظام: المبلغ والموظف والتاريخ والنوع
+      const changes = [];
+      if (user.role === 'admin') {
+        if (b.amount !== undefined && b.amount !== '') {
+          const t = D().tx.find(x => x.custodyId === c.id && x.type === 'issue');
+          const amount = money(b.amount, 'مبلغ العهدة');
+          if (t && t.amount !== amount) { changes.push(`المبلغ ${t.amount} ← ${amount}`); t.amount = amount; }
+          else if (!t) { addTx(user, c, 'issue', amount, { date: c.issueDate, note: 'صرف العهدة' }); changes.push(`المبلغ ${amount}`); }
+        }
+        if (b.employeeId && b.employeeId !== c.employeeId) {
+          const emp = D().users.find(u => u.id === b.employeeId) || fail(400, 'الموظف غير موجود');
+          changes.push(`الموظف ${userName(c.employeeId)} ← ${emp.name}`);
+          c.employeeId = emp.id;
+          for (const x of [...D().tx, ...D().expenses, ...D().settlements]) if (x.custodyId === c.id) x.employeeId = emp.id;
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(b.issueDate || '') && b.issueDate !== c.issueDate) {
+          changes.push(`تاريخ الصرف ${c.issueDate} ← ${b.issueDate}`);
+          const t = D().tx.find(x => x.custodyId === c.id && x.type === 'issue');
+          if (t && t.date === c.issueDate) t.date = b.issueDate;
+          c.issueDate = b.issueDate;
+        }
+        if (b.kind && KINDS[b.kind] && b.kind !== c.kind) { changes.push(`النوع ${KINDS[c.kind]} ← ${KINDS[b.kind]}`); c.kind = b.kind; if (b.kind === 'permanent') c.dueDate = null; }
+        if (b.sourceId !== undefined) {
+          const t = D().tx.find(x => x.custodyId === c.id && x.type === 'issue');
+          const src = b.sourceId ? find('fundSources', b.sourceId, 'مصدر المبلغ').id : null;
+          if (t && (t.sourceId || null) !== src) { changes.push(`المصدر ${srcName(t.sourceId) || 'غير محدد'} ← ${srcName(src) || 'غير محدد'}`); t.sourceId = src; }
+        }
+      }
+      log(user, changes.length ? 'تصحيح عهدة' : 'تعديل عهدة', c.no + (changes.length ? ' — ' + changes.join('، ') : ''), 'custody', c.id);
       return custodyView(c);
     });
     on('POST', '/api/custodies/:id/tx', ({ user, p, b }) => {
@@ -521,11 +550,11 @@
       exps.forEach(e => { e.settlementId = s.id; });
       if (b.close) {
         const bal = custodyBalance(c).balance;
-        if (bal > 0) { addTx(user, c, 'return', bal, { date: s.date, method: b.method, note: `رد المتبقي عند التسوية ${s.no}`, sourceId: settleSource }); s.returned = bal; }
-        if (bal < 0) { addTx(user, c, 'reimburse', -bal, { date: s.date, method: b.method, note: `صرف الفرق للموظف عند التسوية ${s.no}`, sourceId: settleSource }); s.reimbursed = num(-bal); }
+        if (bal > 0) { addTx(user, c, 'return', bal, { date: s.date, method: b.method, note: `رد المتبقي عند التسوية ${s.no}`, sourceId: settleSource, settlementId: s.id }); s.returned = bal; }
+        if (bal < 0) { addTx(user, c, 'reimburse', -bal, { date: s.date, method: b.method, note: `صرف الفرق للموظف عند التسوية ${s.no}`, sourceId: settleSource, settlementId: s.id }); s.reimbursed = num(-bal); }
         c.status = 'closed'; c.closedAt = env.now();
       } else if (b.replenish && total > 0) {
-        addTx(user, c, 'topup', total, { date: s.date, method: b.method, note: `تعويض العهدة المستديمة — تسوية ${s.no}`, sourceId: settleSource });
+        addTx(user, c, 'topup', total, { date: s.date, method: b.method, note: `تعويض العهدة المستديمة — تسوية ${s.no}`, sourceId: settleSource, settlementId: s.id });
         s.replenished = total;
       }
       D().settlements.push(s);
@@ -585,7 +614,8 @@
     on('PUT', '/api/expenses/:id', async ({ user, p, b }) => {
       const e = find('expenses', p.id, 'المصروف');
       const staff = isStaff(user);
-      if (e.settlementId) fail(400, 'المصروف داخل تسوية — لا يمكن تعديله');
+      if (e.settlementId && user.role !== 'admin') fail(400, 'المصروف داخل تسوية — لا يمكن تعديله');
+      const before = { amount: e.amount, date: e.date, categoryId: e.categoryId, costCenterId: e.costCenterId };
       if (!staff && (e.employeeId !== user.id || e.status === 'approved')) fail(403, 'لا يمكن تعديل مصروف معتمد');
       if (b.categoryId) e.categoryId = (D().categories.find(x => x.id === b.categoryId) || fail(400, 'بند غير صالح')).id;
       if (b.costCenterId) e.costCenterId = find('costCenters', b.costCenterId, 'مركز التكلفة').id;
@@ -597,7 +627,13 @@
       e.vat = computeVat(e.amount, e.vatIncluded);
       if (Array.isArray(b.attachments)) e.attachments = await saveAttachments(b.attachments);
       if (!staff && e.status === 'rejected') { e.status = 'pending'; notify(staffIds(), `${user.name} عدّل المصروف المرفوض ${e.no} وأعاد إرساله`, '#/expense/' + e.id); }
-      log(user, 'تعديل مصروف', e.no, 'expense', e.id);
+      if (e.settlementId) refreshSettlement(e.settlementId);
+      const diff = [];
+      if (before.amount !== e.amount) diff.push(`المبلغ ${before.amount} ← ${e.amount}`);
+      if (before.date !== e.date) diff.push(`التاريخ ${before.date} ← ${e.date}`);
+      if (before.categoryId !== e.categoryId) diff.push(`البند ${catName(before.categoryId)} ← ${catName(e.categoryId)}`);
+      if (before.costCenterId !== e.costCenterId) diff.push(`المركز ${ccName(before.costCenterId)} ← ${ccName(e.costCenterId)}`);
+      log(user, 'تعديل مصروف', e.no + (diff.length ? ' — ' + diff.join('، ') : ''), 'expense', e.id);
       return expenseView(e);
     });
     on('POST', '/api/expenses/review', ({ user, b }) => {
@@ -618,9 +654,10 @@
     });
     on('DELETE', '/api/expenses/:id', ({ user, p }) => {
       const e = find('expenses', p.id, 'المصروف');
-      if (e.settlementId) fail(400, 'المصروف داخل تسوية — لا يمكن حذفه');
+      if (e.settlementId && user.role !== 'admin') fail(400, 'المصروف داخل تسوية — لا يمكن حذفه');
       if (!isStaff(user) && (e.employeeId !== user.id || e.status === 'approved')) fail(403, 'لا يمكن حذف هذا المصروف');
       D().expenses = D().expenses.filter(x => x.id !== e.id);
+      if (e.settlementId) refreshSettlement(e.settlementId);
       log(user, 'حذف مصروف', `${e.no} بمبلغ ${e.amount}`, 'expense', e.id);
       return { ok: true };
     });
@@ -889,6 +926,145 @@
       return list.slice(0, 300);
     });
     on('GET', '/api/backup', ({ user }) => { adminOnly(user); const { sessions, ...rest } = D(); return rest; });
+
+    // ----- تصحيح الأخطاء: تعديل وحذف لمدير النظام فقط -----
+    // يعيد حساب إجمالي التسوية بعد تعديل أو حذف أحد مصروفاتها
+    function refreshSettlement(id) {
+      const s = D().settlements.find(x => x.id === id);
+      if (!s) return;
+      s.expenseIds = s.expenseIds.filter(eid => D().expenses.some(e => e.id === eid));
+      s.total = num(D().expenses.filter(e => s.expenseIds.includes(e.id)).reduce((a, e) => a + e.amount, 0));
+    }
+    // حركات أنشأتها التسوية (الحقل settlementId في الإصدار 5، أو رقم التسوية في الملاحظة للبيانات الأقدم)
+    const settlementTx = s => D().tx.filter(t => t.custodyId === s.custodyId && (t.settlementId === s.id || (!t.settlementId && String(t.note || '').includes(s.no) && /التسوية|تسوية/.test(t.note || ''))));
+    // يحذف حركات ومعها الحركة المقابلة في التحويلات
+    function removeTx(ids) {
+      const all = new Set(ids);
+      for (const t of D().tx) if (all.has(t.id) && t.relatedId) all.add(t.relatedId);
+      D().tx = D().tx.filter(t => !all.has(t.id));
+      return all.size;
+    }
+    function removeCustody(user, c) {
+      const txIds = D().tx.filter(t => t.custodyId === c.id).map(t => t.id);
+      const received = custodyBalance(c).received;
+      const nExp = D().expenses.filter(e => e.custodyId === c.id).length;
+      removeTx(txIds);
+      D().expenses = D().expenses.filter(e => e.custodyId !== c.id);
+      D().settlements = D().settlements.filter(s => s.custodyId !== c.id);
+      D().requests = D().requests.filter(r => !(r.custodyId === c.id && r.direct));
+      for (const r of D().requests) if (r.custodyId === c.id) r.custodyId = null;
+      D().custodies = D().custodies.filter(x => x.id !== c.id);
+      log(user, 'حذف عهدة', `${c.no} لـ ${userName(c.employeeId)} — مستلم ${received}، ${nExp} مصروف`, 'custody', c.id);
+    }
+    on('PUT', '/api/tx/:id', ({ user, p, b }) => {
+      adminOnly(user);
+      const t = find('tx', p.id, 'الحركة');
+      const c = find('custodies', t.custodyId, 'العهدة');
+      const diff = [];
+      const pair = t.relatedId ? D().tx.find(x => x.id === t.relatedId) : null;
+      if (b.amount !== undefined && b.amount !== '') {
+        const amount = money(b.amount);
+        if (amount !== t.amount) { diff.push(`المبلغ ${t.amount} ← ${amount}`); t.amount = amount; if (pair) pair.amount = amount; }
+      }
+      if (/^\d{4}-\d{2}-\d{2}$/.test(b.date || '') && b.date !== t.date) { diff.push(`التاريخ ${t.date} ← ${b.date}`); t.date = b.date; if (pair) pair.date = b.date; if (t.type === 'issue' && c.issueDate) c.issueDate = b.date; }
+      if (b.sourceId !== undefined) { const src = b.sourceId ? find('fundSources', b.sourceId, 'مصدر المبلغ').id : null; if ((t.sourceId || null) !== src) { diff.push(`المصدر ${srcName(t.sourceId) || 'غير محدد'} ← ${srcName(src) || 'غير محدد'}`); t.sourceId = src; } }
+      for (const k of ['method', 'ref', 'note']) if (b[k] !== undefined) t[k] = opt(b[k]);
+      const s = D().settlements.find(x => settlementTx(x).some(y => y.id === t.id));
+      if (s) { if (t.type === 'return') s.returned = t.amount; if (t.type === 'reimburse') s.reimbursed = t.amount; if (t.type === 'topup') s.replenished = t.amount; }
+      log(user, 'تصحيح حركة عهدة', `${TX_TYPES[t.type].label} على ${c.no}${diff.length ? ' — ' + diff.join('، ') : ''}`, 'custody', c.id);
+      return custodyView(c);
+    });
+    on('DELETE', '/api/tx/:id', ({ user, p }) => {
+      adminOnly(user);
+      const t = find('tx', p.id, 'الحركة');
+      const c = find('custodies', t.custodyId, 'العهدة');
+      if (t.type === 'issue' && D().tx.filter(x => x.custodyId === c.id && x.type === 'issue').length === 1) fail(400, 'هذه حركة صرف العهدة الأساسية — عدّل مبلغها، أو احذف العهدة كاملة');
+      const s = D().settlements.find(x => settlementTx(x).some(y => y.id === t.id));
+      if (s) { if (t.type === 'return') s.returned = 0; if (t.type === 'reimburse') s.reimbursed = 0; if (t.type === 'topup') s.replenished = 0; }
+      removeTx([t.id]);
+      log(user, 'حذف حركة عهدة', `${TX_TYPES[t.type].label} بمبلغ ${t.amount} على ${c.no}${t.relatedId ? ' (مع الحركة المقابلة)' : ''}`, 'custody', c.id);
+      return custodyView(c);
+    });
+    on('DELETE', '/api/custodies/:id', ({ user, p }) => {
+      adminOnly(user);
+      const c = find('custodies', p.id, 'العهدة');
+      removeCustody(user, c);
+      return { ok: true };
+    });
+    // التراجع عن تسوية: تعود المصروفات غير مسواة، وتحذف حركات الرد/الفرق/التعويض، وتفتح العهدة إن كانت أغلقت بها
+    on('DELETE', '/api/settlements/:id', ({ user, p }) => {
+      adminOnly(user);
+      const s = find('settlements', p.id, 'التسوية');
+      const c = D().custodies.find(x => x.id === s.custodyId);
+      for (const e of D().expenses) if (e.settlementId === s.id) e.settlementId = null;
+      removeTx(settlementTx(s).map(t => t.id));
+      D().settlements = D().settlements.filter(x => x.id !== s.id);
+      if (c && s.closed) { c.status = 'open'; c.closedAt = null; }
+      log(user, 'التراجع عن تسوية', `${s.no}${c ? ' على ' + c.no : ''} بإجمالي ${s.total}`, 'settlement', s.id);
+      return c ? custodyView(c) : { ok: true };
+    });
+    on('DELETE', '/api/requests/:id', ({ user, p }) => {
+      adminOnly(user);
+      const r = find('requests', p.id, 'الطلب');
+      D().requests = D().requests.filter(x => x.id !== r.id);
+      log(user, 'حذف طلب', `${r.no} — ${r.purpose}${r.custodyId ? ' (العهدة المرتبطة باقية)' : ''}`, 'request', r.id);
+      return { ok: true };
+    });
+    on('DELETE', '/api/assets/:id', ({ user, p }) => {
+      adminOnly(user);
+      const a = find('assets', p.id, 'الأصل');
+      D().assets = D().assets.filter(x => x.id !== a.id);
+      D().assetMoves = D().assetMoves.filter(m => m.assetId !== a.id);
+      log(user, 'حذف أصل', `${a.no} ${a.name}`, 'asset', a.id);
+      return { ok: true };
+    });
+    // حذف مستخدم: مسموح إن لم تكن عليه عهد؛ ومع purge تُحذف عهده وكل حركاته (لحسابات التجربة)
+    on('DELETE', '/api/users/:id', ({ user, p, q, b }) => {
+      adminOnly(user);
+      const u = find('users', p.id, 'المستخدم');
+      if (u.id === user.id) fail(400, 'لا يمكنك حذف حسابك — ادخل بحساب مدير آخر');
+      if (u.role === 'admin' && D().users.filter(x => x.role === 'admin' && x.active !== false && x.id !== u.id).length === 0) fail(400, 'لا يمكن حذف آخر مدير للنظام');
+      const purge = q.purge === '1' || q.purge === 'true' || b.purge === true;
+      const cs = D().custodies.filter(c => c.employeeId === u.id);
+      if (cs.length && !purge) fail(400, `على ${u.name} عدد ${cs.length} عهدة — احذفها أولاً، أو استخدم «حذف مع كل حركاته»، أو أوقف الحساب بدل الحذف`);
+      for (const c of cs) removeCustody(user, c);
+      D().requests = D().requests.filter(r => r.employeeId !== u.id);
+      for (const a of D().assets) if (a.holderId === u.id) { a.holderId = null; a.status = 'available'; a.acknowledged = false; }
+      D().checkins = D().checkins.filter(x => x.employeeId !== u.id);
+      D().notifications = D().notifications.filter(n => n.userId !== u.id);
+      for (const [t, sv] of Object.entries(D().sessions)) if ((sv && typeof sv === 'object' ? sv.userId : sv) === u.id) delete D().sessions[t];
+      D().users = D().users.filter(x => x.id !== u.id);
+      log(user, 'حذف مستخدم', `${u.name} (${u.username})${cs.length ? ` مع ${cs.length} عهدة` : ''}`, 'user', u.id);
+      return { ok: true };
+    });
+    on('DELETE', '/api/cost-centers/:id', ({ user, p }) => {
+      adminOnly(user);
+      const c = find('costCenters', p.id, 'مركز التكلفة');
+      const used = D().expenses.filter(e => e.costCenterId === c.id).length + D().custodies.filter(x => x.costCenterId === c.id).length + D().assets.filter(a => a.costCenterId === c.id).length;
+      if (used) fail(400, `مركز التكلفة مستخدم في ${used} سجل — انقل السجلات أو أغلقه بدل الحذف`);
+      if (D().costCenters.some(x => x.parentId === c.id)) fail(400, 'لهذا المركز مراكز فرعية — احذفها أو انقلها أولاً');
+      D().costCenters = D().costCenters.filter(x => x.id !== c.id);
+      log(user, 'حذف مركز تكلفة', `${c.code || ''} ${c.name}`.trim(), 'costCenter', c.id);
+      return { ok: true };
+    });
+    on('DELETE', '/api/categories/:id', ({ user, p }) => {
+      adminOnly(user);
+      const c = find('categories', p.id, 'البند');
+      const used = D().expenses.filter(e => e.categoryId === c.id).length;
+      if (used) fail(400, `البند مستخدم في ${used} مصروف — غيّر بند هذه المصروفات أو أوقفه بدل الحذف`);
+      D().categories = D().categories.filter(x => x.id !== c.id);
+      log(user, 'حذف بند', c.name, 'category', c.id);
+      return { ok: true };
+    });
+    on('DELETE', '/api/sources/:id', ({ user, p }) => {
+      adminOnly(user);
+      const x = find('fundSources', p.id, 'المصدر');
+      const used = D().tx.filter(t => t.sourceId === x.id).length;
+      if (used) fail(400, `المصدر مستخدم في ${used} حركة — أوقفه بدل الحذف`);
+      D().fundSources = D().fundSources.filter(s => s.id !== x.id);
+      log(user, 'حذف مصدر أموال', x.name, 'source', x.id);
+      return { ok: true };
+    });
 
     async function handle(method, path, query, body, user) {
       for (const r of routes) {

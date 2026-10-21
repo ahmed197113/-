@@ -3,3 +3,5 @@
   `node compare.js http://localhost:3000 http://localhost:8080` — مع `STRICT=1` عند تشغيل الخادمين على نفس ملف `db.json`.
 - `e2e.js`: سيناريوهات Playwright على وضع الخادم: الإعداد، العهد والمصادر، المصروف بصورة، الاعتماد والتسوية، الطلبات، الأصول، التقارير، النسخ والاستعادة، والصلاحيات.
   `node e2e.js http://localhost:8080` على بيانات فارغة.
+- `admin-fix.js`: تصحيح وحذف لمدير النظام (مبلغ العهدة، الحركات، التسويات، حذف العهد والمستخدمين والبيانات الأساسية). شغّله على خادم Node وخادم PHP بالبيانات التجريبية (`DEMO=1`) وقارن الناتج:
+  `node admin-fix.js http://localhost:3000 > n.txt && node admin-fix.js http://localhost:8080 > p.txt && diff n.txt p.txt`

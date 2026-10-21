@@ -434,6 +434,13 @@ document.addEventListener('click', e => {
   const f = e.target.closest('[data-open-file]');
   if (f) { e.preventDefault(); openFile(f.dataset.openFile); }
 });
+// أي خطأ في زر لم يُعالَج يظهر للمستخدم بدل أن يفشل بصمت
+window.addEventListener('unhandledrejection', e => { if (e.reason && e.reason.message) toast(e.reason.message, true); });
+// حذف لمدير النظام بعد التأكيد
+async function adminDelete(msg, url, done) {
+  if (!(await confirmBox(msg, { ok: 'حذف نهائي', danger: true }))) return;
+  try { await api('DELETE', url); toast('تم الحذف'); await refreshBootstrap(); done ? done() : router(); } catch (e) { toast(e.message, true); }
+}
 ACT.logout = async () => { if (await confirmBox('تسجيل الخروج من النظام؟', { ok: 'خروج' })) logout(); };
 ACT.back = el => { if (el.dataset.to) go(el.dataset.to); else history.back(); };
 ACT.fab = () => {
@@ -583,7 +590,8 @@ const STAFF_VIEWS = {
         <div class="item-main"><div class="item-title">${esc(r.employeeName)} — ${r.type === 'cash' ? 'عهدة نقدية' : 'عهدة عينية'} ${tag({ pending: 'جديد', approved: 'موافق عليه', rejected: 'مرفوض' }[r.status], STATUS_TONE[r.status])}${r.direct ? ' ' + tag('تعميد مباشر', 'info') : ''}</div>
           <div class="item-sub">${esc(r.purpose)}</div><div class="item-meta">${esc(r.no)} · ${ago(r.createdAt)}${r.costCenterId ? ' · ' + esc(r.costCenterName) : ''}${r.neededBy ? ' · مطلوب قبل ' + fmtDate(r.neededBy) : ''}${r.decisionNote ? ' · ' + esc(r.decisionNote) : ''}</div>
           ${r.status === 'pending' ? `<div class="actions mt"><button class="btn sm primary" data-act="req-ok" data-id="${r.id}">موافقة${r.type === 'cash' ? ' وصرف العهدة' : ''}</button><button class="btn sm danger-o" data-act="req-no" data-id="${r.id}">رفض</button></div>` : ''}
-          ${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة المصروفة ←</a>` : ''}</div>
+          ${r.custodyId ? `<a class="link-sm" href="#/custody/${r.custodyId}">عرض العهدة المصروفة ←</a>` : ''}
+          ${isAdmin() ? `<div class="actions mt"><button class="btn sm danger-o" data-act="req-del" data-id="${r.id}">${ic('trash', 14)} حذف الطلب</button></div>` : ''}</div>
         <div class="item-end">${r.type === 'cash' ? money(r.amount) : ''}</div></div>`).join('')}</div>` : empty('لا توجد طلبات')}`);
     ACT['req-ok'] = el => {
       const r = list.find(x => x.id === el.dataset.id);
@@ -594,6 +602,7 @@ const STAFF_VIEWS = {
         onSubmit: async (d, close) => { await api('POST', `/api/requests/${r.id}/decide`, { ...d, approve: true }); close(); toast('تم صرف العهدة'); router(); },
       });
     };
+    ACT['req-del'] = el => { const r = list.find(x => x.id === el.dataset.id); adminDelete(`حذف الطلب ${r.no}؟${r.custodyId ? ' العهدة المصروفة له تبقى كما هي (احذفها من صفحتها إن كانت خطأ).' : ''}`, '/api/requests/' + r.id); };
     ACT['req-no'] = el => formSheet({ title: 'رفض الطلب', submit: 'رفض', fields: [{ type: 'textarea', name: 'note', label: 'سبب الرفض' }], onSubmit: async (d, close) => { await api('POST', `/api/requests/${el.dataset.id}/decide`, { approve: false, note: d.note }); close(); toast('تم رفض الطلب'); router(); } });
   },
 
@@ -643,8 +652,9 @@ const STAFF_VIEWS = {
       <div class="list cards">${S.b.categories.map(c => `<div class="item" style="${c.active === false ? 'opacity:.55' : ''}">
         <div class="item-ic">${ic('tag')}</div>
         <div class="item-main"><div class="item-title">${c.code ? `<span class="code">${esc(c.code)}</span> ` : ''}${esc(c.name)}${c.addedBy && !c.code ? ' ' + tag('أضافه موظف — أعطه رقم حساب', 'warn') : ''}</div><div class="item-sub">${c.vatApplicable !== false ? 'خاضع لضريبة القيمة المضافة' : 'غير خاضع للضريبة'}${c.active === false ? ' · موقوف' : ''}</div></div>
-        <div class="item-end"><button class="btn sm ghost" data-act="cat-edit" data-id="${c.id}">${ic('edit', 16)} تعديل</button></div></div>`).join('')}</div>
+        <div class="item-end"><button class="btn sm ghost" data-act="cat-edit" data-id="${c.id}">${ic('edit', 16)} تعديل</button>${isAdmin() ? `<button class="btn sm danger-o" data-act="cat-del" data-id="${c.id}" aria-label="حذف">${ic('trash', 16)}</button>` : ''}</div></div>`).join('')}</div>
     `, { toolbar: btn('بند جديد', { act: 'cat-edit', icon: 'plus', cls: 'primary' }) });
+    ACT['cat-del'] = el => { const c = S.b.categories.find(x => x.id === el.dataset.id); adminDelete(`حذف البند «${c.name}»؟ (يُرفض إن كان مستخدماً في مصروفات)`, '/api/categories/' + c.id); };
     ACT['cat-edit'] = el => {
       const c = S.b.categories.find(x => x.id === el.dataset.id);
       formSheet({
@@ -664,9 +674,10 @@ const STAFF_VIEWS = {
       <div class="list cards">${S.b.fundSources.map(x => { const r = byName[x.name] || { out: 0, back: 0, net: 0 }; return `<div class="item" style="${x.active === false ? 'opacity:.55' : ''}">
         <div class="item-ic">${ic('bank')}</div>
         <div class="item-main"><div class="item-title">${esc(x.name)} ${tag(S.b.sourceTypes[x.type] || '', 'info')}</div><div class="item-sub">صُرف ${fmt(r.out)} · رُدّ ${fmt(r.back)}${x.accountNo ? ' · <span class="num">' + esc(x.accountNo) + '</span>' : ''}</div>
-          <div class="actions mt"><a class="btn sm ghost" href="#/report/source-ledger?sourceId=${x.id}">${ic('list', 14)} الحركات</a><button class="btn sm ghost" data-act="src-edit" data-id="${x.id}">${ic('edit', 14)} تعديل</button></div></div>
+          <div class="actions mt"><a class="btn sm ghost" href="#/report/source-ledger?sourceId=${x.id}">${ic('list', 14)} الحركات</a><button class="btn sm ghost" data-act="src-edit" data-id="${x.id}">${ic('edit', 14)} تعديل</button>${isAdmin() ? `<button class="btn sm danger-o" data-act="src-del" data-id="${x.id}">${ic('trash', 14)} حذف</button>` : ''}</div></div>
         <div class="item-end">${money(r.net)}<div class="item-endsub">لدى الموظفين</div></div></div>`; }).join('')}</div>
     `, { toolbar: btn('مصدر جديد', { act: 'src-edit', icon: 'plus', cls: 'primary' }) + btn('تقرير المصادر', { href: '#/report/sources', icon: 'chart', cls: 'ghost' }) });
+    ACT['src-del'] = el => { const x = S.b.fundSources.find(v => v.id === el.dataset.id); adminDelete(`حذف المصدر «${x.name}»؟ (يُرفض إن كانت عليه حركات)`, '/api/sources/' + x.id); };
     ACT['src-edit'] = el => {
       const x = S.b.fundSources.find(v => v.id === el.dataset.id);
       formSheet({
@@ -719,7 +730,8 @@ async function custodyDetail(id) {
     open && staff && btn('تسوية', { act: 'c-settle', icon: 'check' }),
     open && staff && btn('تسوية وإغلاق', { act: 'c-close', icon: 'lock', cls: 'danger-o' }),
     !open && isAdmin() && btn('إعادة فتح', { act: 'c-reopen', icon: 'undo' }),
-    staff && open && btn('تعديل', { act: 'c-edit', icon: 'edit', cls: 'ghost' }),
+    staff && (open || isAdmin()) && btn(isAdmin() ? 'تعديل / تصحيح' : 'تعديل', { act: 'c-edit', icon: 'edit', cls: 'ghost' }),
+    isAdmin() && btn('حذف العهدة', { act: 'c-del', icon: 'trash', cls: 'danger-o' }),
     btn('طباعة سند الصرف', { act: 'c-print', icon: 'print', cls: 'ghost' }),
     btn('كشف الحساب', { href: `#/report/statement?employeeId=${c.employeeId}&custodyId=${c.id}`, icon: 'chart', cls: 'ghost' }),
   ].filter(Boolean).join('');
@@ -735,7 +747,7 @@ async function custodyDetail(id) {
     ${c.unsettledCount && staff && open ? `<div class="notice">${ic('check', 18)} يوجد ${c.unsettledCount} مصروف معتمد غير مسوّى بقيمة ${fmt(c.unsettledAmount)} — يمكنك عمل تسوية لها.</div>` : ''}
     ${card('بيانات العهدة', rows([['الموظف', staff ? `<a href="#/user/${c.employeeId}">${esc(c.employeeName)}</a>` : esc(c.employeeName)], ['الغرض', esc(c.purpose)], ['مركز التكلفة الافتراضي', esc(c.costCenterName)], ['تاريخ الصرف', fmtDate(c.issueDate)], c.dueDate && ['موعد التسوية', fmtDate(c.dueDate)], c.closedAt && ['تاريخ الإغلاق', fmtDate(c.closedAt)], c.notes && ['ملاحظات', esc(c.notes)]]))}
     ${card(`المصروفات (${d.expenses.length})`, d.expenses.length ? `<div class="list">${d.expenses.map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات على هذه العهدة'), staff && c.pendingCount ? btn('اعتماد الكل', { act: 'c-approve-all', cls: 'sm ok-btn' }) : '')}
-    ${card('حركة العهدة', `<div class="timeline">${d.tx.map(t => `<div class="tl ${t.status !== 'confirmed' ? 'dim' : ''}"><div class="tl-dot ${t.sign > 0 ? 'in' : 'out'}"></div><div class="tl-body"><div class="tl-title">${esc(t.typeName)} <b class="${t.sign > 0 ? 'pos' : 'neg'}">${t.sign > 0 ? '+' : '−'}${fmt(t.amount)}</b> ${t.status !== 'confirmed' ? tag(t.status === 'pending' ? 'بانتظار التأكيد' : 'مرفوض', STATUS_TONE[t.status]) : ''}</div><div class="tl-sub">${t.sourceName ? `<b class="src">${t.sign > 0 ? 'من' : 'إلى'}: ${esc(t.sourceName)}</b> · ` : ''}${esc(t.note || '')}${t.ref ? ' · مرجع ' + esc(t.ref) : ''} · ${esc(t.method)}</div><div class="tl-meta">${fmtDate(t.date)} · ${esc(t.createdByName)}</div></div></div>`).join('')}</div>`)}
+    ${card('حركة العهدة', `<div class="timeline">${d.tx.map(t => `<div class="tl ${t.status !== 'confirmed' ? 'dim' : ''}"><div class="tl-dot ${t.sign > 0 ? 'in' : 'out'}"></div><div class="tl-body"><div class="tl-title">${esc(t.typeName)} <b class="${t.sign > 0 ? 'pos' : 'neg'}">${t.sign > 0 ? '+' : '−'}${fmt(t.amount)}</b> ${t.status !== 'confirmed' ? tag(t.status === 'pending' ? 'بانتظار التأكيد' : 'مرفوض', STATUS_TONE[t.status]) : ''}</div><div class="tl-sub">${t.sourceName ? `<b class="src">${t.sign > 0 ? 'من' : 'إلى'}: ${esc(t.sourceName)}</b> · ` : ''}${esc(t.note || '')}${t.ref ? ' · مرجع ' + esc(t.ref) : ''} · ${esc(t.method)}</div><div class="tl-meta">${fmtDate(t.date)} · ${esc(t.createdByName)}</div>${isAdmin() && t.status === 'confirmed' ? `<div class="actions mt"><button class="btn sm ghost" data-act="tx-edit" data-id="${t.id}">${ic('edit', 14)} تصحيح</button>${t.type !== 'issue' ? `<button class="btn sm danger-o" data-act="tx-del" data-id="${t.id}">${ic('trash', 14)} حذف</button>` : ''}</div>` : ''}</div></div>`).join('')}</div>`)}
     ${d.settlements.length ? card('التسويات', `<div class="list">${d.settlements.map(s => `<a class="item" href="#/settlement/${s.id}"><div class="item-ic">${ic('check')}</div><div class="item-main"><div class="item-title">${esc(s.no)} ${s.closed ? tag('إغلاق', '') : ''}</div><div class="item-sub">${s.expenseIds.length} مصروف${s.replenished ? ' · تعويض ' + fmt(s.replenished) : ''}${s.returned ? ' · رد ' + fmt(s.returned) : ''}${s.reimbursed ? ' · صرف فرق ' + fmt(s.reimbursed) : ''}</div><div class="item-meta">${fmtDate(s.date)}</div></div><div class="item-end">${money(s.total)}</div></a>`).join('')}</div>`) : ''}
   `, { back: '#/custodies' });
 
@@ -751,11 +763,34 @@ async function custodyDetail(id) {
   ACT['c-transfer'] = () => txForm('transfer', 'تحويل جزء من العهدة لموظف آخر', [{ type: 'select', name: 'toEmployeeId', label: 'الموظف المستلم', options: userOptions(u => u.id !== c.employeeId), empty: '— اختر —', required: true }]);
   ACT['c-settle'] = () => settleForm(c, false);
   ACT['c-close'] = () => settleForm(c, true);
+  const issueTx = d.tx.find(t => t.type === 'issue');
   ACT['c-edit'] = () => formSheet({
-    title: 'تعديل بيانات العهدة',
-    fields: [{ name: 'purpose', label: 'الغرض', value: c.purpose, required: true, full: true }, { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: c.costCenterId, empty: '— بدون —' }, { type: 'date', name: 'dueDate', label: 'موعد التسوية', value: c.dueDate || '' }, { type: 'textarea', name: 'notes', label: 'ملاحظات', value: c.notes }],
+    title: isAdmin() ? 'تعديل وتصحيح العهدة' : 'تعديل بيانات العهدة',
+    intro: isAdmin() ? '<p class="muted">مدير النظام يستطيع تصحيح مبلغ الصرف والموظف والتاريخ والمصدر إذا سُجلت بالخطأ. يُعاد حساب الرصيد تلقائياً، ويُسجل التعديل في «سجل العمليات».</p>' : '',
+    fields: [
+      ...(isAdmin() ? [
+        { type: 'money', name: 'amount', label: 'مبلغ صرف العهدة', value: issueTx ? issueTx.amount : '', required: true },
+        { type: 'select', name: 'employeeId', label: 'الموظف', options: S.b.users.map(u => ({ value: u.id, label: u.name + (u.active ? '' : ' (موقوف)') })), value: c.employeeId },
+        { type: 'date', name: 'issueDate', label: 'تاريخ الصرف', value: c.issueDate },
+        { type: 'select', name: 'kind', label: 'نوع العهدة', options: Object.entries(S.b.kinds).map(([value, label]) => ({ value, label })), value: c.kind },
+        { type: 'select', name: 'sourceId', label: 'صُرفت من', options: S.b.fundSources.map(x => ({ value: x.id, label: x.name })), value: issueTx?.sourceId || '', empty: '— غير محدد —' },
+      ] : []),
+      { name: 'purpose', label: 'الغرض', value: c.purpose, required: true, full: true }, { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: c.costCenterId, empty: '— بدون —' }, { type: 'date', name: 'dueDate', label: 'موعد التسوية', value: c.dueDate || '' }, { type: 'textarea', name: 'notes', label: 'ملاحظات', value: c.notes }],
     onSubmit: async (b, close) => { await api('PUT', '/api/custodies/' + c.id, b); close(); toast('تم الحفظ'); router(); },
   });
+  ACT['c-del'] = () => adminDelete(`حذف العهدة ${c.no} نهائياً مع كل حركاتها (${d.tx.length} حركة) ومصروفاتها (${d.expenses.length}) وتسوياتها؟ لا يمكن التراجع.`, '/api/custodies/' + c.id, () => go('#/custodies'));
+  ACT['tx-edit'] = el => {
+    const t = d.tx.find(x => x.id === el.dataset.id);
+    formSheet({
+      title: 'تصحيح حركة: ' + t.typeName,
+      intro: t.relatedId ? '<p class="muted">هذه حركة تحويل؛ يُصحَّح المبلغ والتاريخ في العهدة الأخرى أيضاً.</p>' : '',
+      fields: [{ type: 'money', name: 'amount', label: 'المبلغ', value: t.amount, required: true }, { type: 'date', name: 'date', label: 'التاريخ', value: t.date },
+        ...(t.type !== 'transfer_in' && t.type !== 'transfer_out' ? [{ type: 'select', name: 'sourceId', label: t.sign > 0 ? 'من' : 'إلى', options: S.b.fundSources.map(x => ({ value: x.id, label: x.name })), value: t.sourceId || '', empty: '— غير محدد —' }] : []),
+        { type: 'select', name: 'method', label: 'الطريقة', options: PAY_METHODS, value: t.method }, { name: 'ref', label: 'المرجع', value: t.ref }, { name: 'note', label: 'ملاحظة', value: t.note, full: true }],
+      onSubmit: async (b, close) => { await api('PUT', '/api/tx/' + t.id, b); close(); toast('تم التصحيح'); router(); },
+    });
+  };
+  ACT['tx-del'] = el => { const t = d.tx.find(x => x.id === el.dataset.id); adminDelete(`حذف حركة «${t.typeName}» بمبلغ ${fmt(t.amount)}${t.relatedId ? ' مع الحركة المقابلة في العهدة الأخرى' : ''}؟`, '/api/tx/' + t.id); };
   ACT['c-reopen'] = async () => { if (await confirmBox('إعادة فتح العهدة؟')) { await api('POST', `/api/custodies/${c.id}/reopen`); router(); } };
   ACT['c-approve-all'] = async () => { await api('POST', '/api/expenses/review', { ids: d.expenses.filter(e => e.status === 'pending').map(e => e.id), status: 'approved' }); toast('تم الاعتماد'); router(); };
   ACT['tx-ok'] = el => formSheet({ title: 'تأكيد استلام المبلغ المردود', submit: 'تأكيد الاستلام', fields: [srcField('أين أُودع المبلغ؟')], onSubmit: async (b, close) => { await api('POST', `/api/tx/${el.dataset.id}/decide`, { ...b, approve: true }); close(); toast('تم تأكيد الاستلام'); router(); } });
@@ -798,7 +833,8 @@ async function settlementView(id) {
   const s = d.settlement, c = d.custody;
   const body = `${rows([['رقم التسوية', esc(s.no)], ['التاريخ', fmtDate(s.date)], ['العهدة', `<a href="#/custody/${c.id}">${esc(c.no)}</a> — ${esc(c.kindName)}`], ['الموظف', esc(c.employeeName)], ['الغرض', esc(c.purpose)], ['إجمالي المصروفات', money(s.total)], s.replenished && ['تعويض العهدة', money(s.replenished)], s.returned && ['رد نقدي من الموظف', money(s.returned)], s.reimbursed && ['صرف فرق للموظف', money(s.reimbursed)], ['إغلاق العهدة', s.closed ? 'نعم' : 'لا'], s.note && ['ملاحظة', esc(s.note)]])}`;
   const table = `<div class="table-wrap"><table><thead><tr><th>#</th><th>التاريخ</th><th>البند</th><th>مركز التكلفة</th><th>البيان</th><th>الضريبة</th><th>المبلغ</th></tr></thead><tbody>${d.expenses.map((e, i) => `<tr><td>${i + 1}</td><td>${fmtDate(e.date)}</td><td>${esc(e.categoryName)}</td><td>${esc(e.costCenterName)}</td><td>${esc(e.description)}</td><td class="num">${fmt(e.vat)}</td><td class="num"><b>${fmt(e.amount)}</b></td></tr>`).join('')}</tbody><tfoot><tr><td colspan="5">الإجمالي</td><td class="num">${fmt(d.expenses.reduce((a, e) => a + (e.vat || 0), 0))}</td><td class="num">${fmt(s.total)}</td></tr></tfoot></table></div>`;
-  view(`سند التسوية ${s.no}`, card('', body) + card('المصروفات المسواة', table), { back: '#/custody/' + c.id, toolbar: btn('طباعة سند التسوية', { act: 'st-print', icon: 'print', cls: 'primary' }) });
+  view(`سند التسوية ${s.no}`, card('', body) + card('المصروفات المسواة', table), { back: '#/custody/' + c.id, toolbar: btn('طباعة سند التسوية', { act: 'st-print', icon: 'print', cls: 'primary' }) + (isAdmin() ? btn('التراجع عن التسوية', { act: 'st-undo', icon: 'undo', cls: 'danger-o' }) : '') });
+  ACT['st-undo'] = () => adminDelete(`التراجع عن التسوية ${s.no}؟ تعود مصروفاتها غير مسواة، وتُحذف حركات الرد/الفرق/التعويض الناتجة عنها${s.closed ? '، وتُفتح العهدة من جديد' : ''}.`, '/api/settlements/' + s.id, () => go('#/custody/' + c.id));
   ACT['st-print'] = () => printDoc(`<h2 class="doc-title">سند تسوية عهدة</h2>${body}${table}${signatures(['الموظف', 'المحاسب', 'المدير المعتمد'])}`);
 }
 
@@ -806,7 +842,7 @@ async function settlementView(id) {
 async function expenseDetail(id) {
   const e = await api('GET', '/api/expenses/' + id);
   const staff = isStaff();
-  const editable = !e.settlementId && (staff || e.status !== 'approved');
+  const editable = (!e.settlementId || isAdmin()) && (staff || e.status !== 'approved');
   view(`مصروف ${e.no}`, `
     <div class="hero-card slim"><div class="hero-top"><div><div class="hero-label">${esc(e.categoryName)}</div><div class="hero-value">${money(e.amount)}</div><div class="hero-sub">${esc(e.description)}</div></div><div>${expTag(e)}</div></div></div>
     ${e.status === 'rejected' && e.reviewNote ? `<div class="notice bad">${ic('alert', 18)} سبب الرفض: ${esc(e.reviewNote)}</div>` : ''}
@@ -822,7 +858,7 @@ async function expenseDetail(id) {
   ACT['e-ok'] = async () => { await api('POST', '/api/expenses/review', { ids: [e.id], status: 'approved' }); toast('تم الاعتماد'); router(); };
   ACT['e-no'] = () => formSheet({ title: 'رفض المصروف', submit: 'رفض', fields: [{ type: 'textarea', name: 'note', label: 'سبب الرفض (يظهر للموظف)' }], onSubmit: async (b, close) => { await api('POST', '/api/expenses/review', { ids: [e.id], status: 'rejected', note: b.note }); close(); toast('تم الرفض'); router(); } });
   ACT['e-edit'] = () => expenseForm({ expense: e });
-  ACT['e-del'] = async () => { if (await confirmBox('حذف هذا المصروف نهائياً؟', { ok: 'حذف', danger: true })) { await api('DELETE', '/api/expenses/' + e.id); toast('تم الحذف'); history.back(); } };
+  ACT['e-del'] = async () => { if (await confirmBox(e.settlementId ? `حذف هذا المصروف نهائياً؟ هو داخل التسوية ${e.settlementNo}، وسيُعاد حساب إجماليها.` : 'حذف هذا المصروف نهائياً؟', { ok: 'حذف', danger: true })) { await api('DELETE', '/api/expenses/' + e.id); toast('تم الحذف'); history.back(); } };
 }
 ACT.bulk = async el => {
   const ids = $$('[data-sel]:checked').map(c => c.dataset.sel);
@@ -973,6 +1009,7 @@ async function assetDetail(id) {
     a.status === 'maintenance' && btn('إرجاع للمستودع', { act: 'a-move', data: 'data-t="available"', icon: 'box', cls: 'ghost' }),
     a.status !== 'lost' && btn('فقد / تلف', { act: 'a-move', data: 'data-t="lost"', icon: 'alert', cls: 'ghost' }),
     btn('تعديل', { act: 'a-edit', icon: 'edit', cls: 'ghost' }),
+    isAdmin() && btn('حذف', { act: 'a-del', icon: 'trash', cls: 'danger-o' }),
   ] : [mine && !a.acknowledged && btn('أقر باستلام هذه العهدة', { act: 'a-ack', icon: 'ok', cls: 'primary' })];
   view(a.name, `
     <div class="hero-card slim"><div class="hero-top"><div><div class="hero-label">${esc(a.no)} · ${esc(a.category)}</div><div class="hero-value sm">${esc(a.name)}</div><div class="hero-sub">${a.holderName ? 'بعهدة: ' + esc(a.holderName) : esc(a.statusName)}</div></div><div>${a.status === 'assigned' ? tag(a.acknowledged ? 'أقر بالاستلام ✓' : 'لم يُقر بعد', a.acknowledged ? 'light' : 'warn') : ''}</div></div></div>
@@ -991,6 +1028,7 @@ async function assetDetail(id) {
     });
   };
   ACT['a-edit'] = () => assetForm(a);
+  ACT['a-del'] = () => adminDelete(`حذف الأصل ${a.no} «${a.name}» وسجل حركته نهائياً؟`, '/api/assets/' + a.id, () => go('#/assets'));
   ACT['a-ack'] = async () => { await api('POST', `/api/assets/${a.id}/ack`); toast('تم تسجيل إقرارك بالاستلام'); router(); };
   ACT['a-print'] = () => printDoc(`<h2 class="doc-title">نموذج تسليم عهدة عينية</h2>${rows([['رقم الأصل', esc(a.no)], ['الأصل', esc(a.name)], ['الفئة', esc(a.category)], ['الرقم التسلسلي', esc(a.serial || '—')], ['القيمة', money(a.value)], ['الحالة عند التسليم', esc(a.condition || '')], ['اسم المستلم', esc(a.holderName)], ['تاريخ التسليم', fmtDate((moves.find(m => m.toId === a.holderId) || {}).date)]])}
     <p class="doc-text">أقر أنا الموقع أدناه باستلامي الأصل المذكور أعلاه بحالة سليمة كعهدة شخصية، وأتعهد بالمحافظة عليه واستخدامه في أغراض العمل فقط، وإعادته عند الطلب أو عند انتهاء علاقتي بالعمل، وأتحمل مسؤولية فقده أو تلفه الناتج عن سوء الاستخدام.</p>${signatures(['المستلم', 'أمين العهد', 'المدير المعتمد'])}`);
@@ -1025,7 +1063,7 @@ async function userDetail(id) {
   const bal = cs.reduce((s, c) => s + c.balance, 0);
   view(u.name, `
     <div class="hero-card"><div class="hero-top"><div><div class="hero-label">إجمالي الرصيد لدى ${esc(u.name)}</div><div class="hero-value">${money(bal)}</div><div class="hero-sub">${esc(u.roleName)}${u.jobTitle ? ' · ' + esc(u.jobTitle) : ''}${u.custodyLimit ? ' · الحد الأعلى ' + fmt(u.custodyLimit) : ''}</div></div></div></div>
-    <div class="astrip mb">${btn('صرف عهدة', { act: 'u-give', icon: 'wallet', cls: 'primary' })}${btn('تسليم أصل', { act: 'u-asset', icon: 'box' })}${btn('كشف الحساب', { href: '#/report/statement?employeeId=' + id, icon: 'chart' })}${isAdmin() ? btn('تعديل الحساب', { act: 'u-edit', icon: 'edit', cls: 'ghost' }) : ''}</div>
+    <div class="astrip mb">${btn('صرف عهدة', { act: 'u-give', icon: 'wallet', cls: 'primary' })}${btn('تسليم أصل', { act: 'u-asset', icon: 'box' })}${btn('كشف الحساب', { href: '#/report/statement?employeeId=' + id, icon: 'chart' })}${isAdmin() ? btn('تعديل الحساب', { act: 'u-edit', icon: 'edit', cls: 'ghost' }) : ''}${isAdmin() && u.id !== S.user.id ? btn('حذف المستخدم', { act: 'u-del', icon: 'trash', cls: 'danger-o' }) : ''}</div>
     ${card(`العهد النقدية المفتوحة (${cs.length})`, cs.length ? `<div class="list">${cs.map(custodyItem).join('')}</div>` : empty('لا توجد عهد مفتوحة'))}
     ${card(`العهد العينية (${assets.filter(a => a.status === 'assigned').length})`, assets.length ? `<div class="list">${assets.map(assetItem).join('')}</div>` : empty('لا توجد أصول بعهدته'))}
     ${card('آخر المصروفات', exps.length ? `<div class="list">${exps.slice(0, 10).map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات'), btn('الكل', { href: '#/expenses?status=&employeeId=' + id, cls: 'sm ghost' }))}
@@ -1038,6 +1076,20 @@ async function userDetail(id) {
     formSheet({ title: 'تسليم أصل لـ ' + u.name, submit: 'تسليم', fields: [{ type: 'select', name: 'assetId', label: 'الأصل (من المستودع)', options: avail.map(a => ({ value: a.id, label: `${a.no} — ${a.name}` })), required: true, full: true }, { type: 'date', name: 'date', label: 'التاريخ', value: today() }, { name: 'condition', label: 'الحالة الفنية', value: 'جيد' }], onSubmit: async (b, close) => { await api('POST', `/api/assets/${b.assetId}/move`, { ...b, type: 'assign', toId: id }); close(); toast('تم التسليم'); router(); } });
   };
   ACT['u-edit'] = () => userForm(u);
+  ACT['u-del'] = async () => {
+    const all = await api('GET', '/api/custodies?' + qsOf({ employeeId: id }));
+    if (!all.length) return adminDelete(`حذف المستخدم «${u.name}» نهائياً؟`, '/api/users/' + id, () => go('#/users'));
+    // عليه عهد: يُطلب كتابة اسمه للتأكيد قبل حذفه مع كل حركاته
+    formSheet({
+      title: 'حذف المستخدم مع كل حركاته', submit: 'حذف نهائي',
+      intro: `<div class="notice bad">${ic('alert', 18)} على «${esc(u.name)}» ${all.length} عهدة (مستلم ${fmt(all.reduce((s, c) => s + c.received, 0))}). سيُحذف الحساب مع كل عهده ومصروفاته وتسوياته وطلباته نهائياً، وتعود أصوله للمستودع. هذا مناسب لحسابات التجربة فقط — للموظف الحقيقي أوقف الحساب بدل حذفه.</div>`,
+      fields: [{ name: 'confirm', label: `اكتب الاسم «${u.name}» للتأكيد`, required: true, full: true }],
+      onSubmit: async (b, close) => {
+        if (b.confirm.trim() !== u.name.trim()) return toast('الاسم غير مطابق', true);
+        await api('DELETE', '/api/users/' + id + '?purge=1'); await refreshBootstrap(); close(); toast('تم حذف المستخدم'); go('#/users');
+      },
+    });
+  };
 }
 function userForm(u) {
   if (!isAdmin()) return toast('لمدير النظام فقط', true);
@@ -1067,7 +1119,7 @@ async function ccDetail(id, q) {
   view(c.name, `
     <div class="hero-card"><div class="hero-top"><div><div class="hero-label">${c.code ? esc(c.code) + ' · ' : ''}${esc(S.b.ccTypes[c.type] || '')}${c.parentName ? ' · تابع لـ ' + esc(c.parentName) : ''}</div><div class="hero-value">${money(d.spent)}</div><div class="hero-sub">إجمالي المصروف (يشمل الفروع)</div></div>${c.active === false ? tag('مغلق', 'light') : ''}</div>
       ${c.budget ? progress(d.spent, c.budget, 'light') + `<div class="hero-stats"><div><small>الميزانية</small>${money(c.budget)}</div><div><small>المتبقي</small>${money(c.budget - d.spent)}</div><div><small>نسبة الصرف</small><span class="num">${Math.round(d.spent / c.budget * 100)}%</span></div></div>` : ''}</div>
-    <div class="astrip mb">${btn('تعديل', { act: 'cc-edit', icon: 'edit' })}${btn('مركز فرعي', { act: 'cc-child', icon: 'plus' })}${btn('كل المصروفات', { href: '#/expenses?status=&costCenterId=' + id, icon: 'receipt', cls: 'ghost' })}${btn('تقرير البنود', { href: '#/report/categories?costCenterId=' + id, icon: 'chart', cls: 'ghost' })}</div>
+    <div class="astrip mb">${btn('تعديل', { act: 'cc-edit', icon: 'edit' })}${btn('مركز فرعي', { act: 'cc-child', icon: 'plus' })}${isAdmin() ? btn('حذف', { act: 'cc-del', icon: 'trash', cls: 'danger-o' }) : ''}${btn('كل المصروفات', { href: '#/expenses?status=&costCenterId=' + id, icon: 'receipt', cls: 'ghost' })}${btn('تقرير البنود', { href: '#/report/categories?costCenterId=' + id, icon: 'chart', cls: 'ghost' })}</div>
     <form class="period" id="per">${fieldHtml({ type: 'date', name: 'from', label: 'من', value: q.from })}${fieldHtml({ type: 'date', name: 'to', label: 'إلى', value: q.to })}<button class="btn sm">عرض</button></form>
     ${d.children.length ? card('المراكز الفرعية', `<div class="list">${d.children.map(x => `<a class="item" href="#/cost-center/${x.id}"><div class="item-ic">${ic('layers')}</div><div class="item-main"><div class="item-title">${esc(x.name)}</div><div class="item-sub">${x.budget ? 'الميزانية ' + fmt(x.budget) : ''}</div></div>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
     <div class="grid2">
@@ -1081,6 +1133,7 @@ async function ccDetail(id, q) {
   $('#per').onsubmit = e => { e.preventDefault(); go(`#/cost-center/${id}?` + qsOf(readForm(e.target))); };
   ACT['cc-edit'] = () => ccForm(c);
   ACT['cc-child'] = () => ccForm(null, c.id);
+  ACT['cc-del'] = () => adminDelete(`حذف «${c.name}»؟ (يُرفض إن كانت عليه مصروفات أو عهد أو أصول أو مراكز فرعية — أغلقه بدل ذلك)`, '/api/cost-centers/' + c.id, () => go('#/cost-centers'));
 }
 function ccForm(c, parentId) {
   formSheet({
