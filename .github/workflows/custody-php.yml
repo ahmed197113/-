@@ -1,0 +1,51 @@
+name: Custody App PHP (SiteGround)
+
+on:
+  push:
+    paths:
+      - 'custody-app/php/**'
+      - 'custody-app/public/**'
+      - '.github/workflows/custody-php.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PHP syntax
+        run: for f in custody-app/php/*.php; do php -l "$f"; done
+
+      - name: Build zip
+        run: |
+          mkdir -p build/data
+          cp -r custody-app/public/. build/
+          cp -r custody-app/php/. build/
+          rm -f build/router.php build/README.md
+          rm -rf build/data && mkdir build/data
+          cp custody-app/php/data/.htaccess build/data/.htaccess
+          cd build && zip -r ../custody-siteground.zip . && cd ..
+          unzip -l custody-siteground.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: custody-siteground
+          path: custody-siteground.zip
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: custody-php-v${{ github.run_number }}
+          name: نظام العهد لاستضافة SiteGround — نسخة ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          body: |
+            نسخة PHP من خادم نظام إدارة العهد للاستضافة المشتركة (PHP 8 بدون Node.js).
+            1. Site Tools ← Domain ← Subdomains: أنشئ custody.metal-lines.com
+            2. Site Tools ← File Manager: ارفع custody-siteground.zip في مجلد النطاق الفرعي واختر Extract
+            3. Site Tools ← Security ← SSL Manager: فعّل SSL ثم HTTPS Enforce
+            4. افتح https://custody.metal-lines.com وأنشئ حساب المدير
+          files: custody-siteground.zip

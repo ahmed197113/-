@@ -1,0 +1,40 @@
+# نظام إدارة العهد — توجيه Apache (SiteGround)
+Options -Indexes
+DirectoryIndex index.html
+AddType application/manifest+json .webmanifest
+AddDefaultCharset utf-8
+
+# تمرير ترويسة Authorization إلى PHP (بعض الاستضافات تحذفها)
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
+# ملفات داخلية لا تُفتح من المتصفح
+<FilesMatch "^(core\.php|router\.php|README\.md|db\.json|db\.lock|\.user\.ini)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  # منع الوصول المباشر لمجلد البيانات
+  RewriteRule ^data(/|$) - [F,L]
+  # كل مسارات /api/* إلى api.php
+  RewriteRule ^api/ api.php [L,QSA]
+  # الملفات الثابتة كما هي، وأي مسار آخر إلى الواجهة
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css|webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

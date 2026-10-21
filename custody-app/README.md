@@ -42,3 +42,6 @@
 4. افتح `https://custody.metal-lines.com` وأنشئ حساب المدير، وفي التطبيق اختر «الربط بخادم الشركة».
 
 التحديث لاحقاً: أعد تشغيل نفس الأمر. النسخ الاحتياطية اليومية في `/var/backups/custody`.
+
+## التشغيل على استضافة مشتركة (SiteGround)
+نسخة PHP في `php/` بنفس واجهة API — حمّل `custody-siteground.zip` من Releases (`custody-php-v…`) واتبع الخطوات في [`php/README.md`](php/README.md).
