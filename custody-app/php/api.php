@@ -1,6 +1,7 @@
 <?php
 // نظام إدارة العهد — نقطة دخول واجهة /api/* بلغة PHP (مكافئ server.js) لاستضافة مشتركة بدون Node.js
-// التخزين: ملف JSON واحد data/db.json بقفل flock، والمرفقات في data/files/
+// التخزين: ملف JSON واحد db.json بقفل flock، والمرفقات في files/، داخل مجلد custody-data
+// المجاور لجذر الموقع (خارج public_html)، ويُستخدم data/ داخل الجذر فقط إن تعذّر ذلك
 namespace Custody;
 
 use stdClass;
@@ -15,7 +16,24 @@ const MAX_BODY = 25 * 1024 * 1024;
 const MAX_RESTORE = 100 * 1024 * 1024;
 const FILE_TYPES = ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'pdf' => 'application/pdf'];
 
-$DATA_DIR = rtrim(getenv('DATA_DIR') ?: __DIR__ . '/data', '/');
+// مجلد البيانات خارج جذر الموقع: بعض الاستضافات (مثل SiteGround) تقدّم الملفات الثابتة
+// مثل db.json وصور المرفقات عبر NGINX مباشرة دون المرور على .htaccess، فلا تكفي حماية data/.htaccess
+function resolveDataDir() {
+  $env = getenv('DATA_DIR');
+  if ($env) return rtrim($env, '/');
+  $inside = __DIR__ . '/data';
+  $outside = dirname(__DIR__) . '/custody-data';
+  if (!is_dir($outside) && !(@is_writable(dirname(__DIR__)) && @mkdir($outside, 0750, true)) && !is_dir($outside)) return $inside;
+  if (!is_writable($outside)) return $inside;
+  // نقل البيانات القديمة من داخل جذر الموقع مرة واحدة
+  if (!is_file($outside . '/db.json') && is_file($inside . '/db.json')) {
+    if (!@rename($inside . '/db.json', $outside . '/db.json') && !is_file($outside . '/db.json')) return $inside;
+    if (is_dir($inside . '/files') && !is_dir($outside . '/files')) @rename($inside . '/files', $outside . '/files');
+    @unlink($inside . '/db.lock');
+  }
+  return $outside;
+}
+$DATA_DIR = resolveDataDir();
 $DB_FILE = $DATA_DIR . '/db.json';
 $FILES_DIR = $DATA_DIR . '/files';
 
