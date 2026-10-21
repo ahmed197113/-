@@ -16,6 +16,9 @@
   const ASSET_STATUS = { available: 'متاح بالمستودع', assigned: 'مسلَّم لموظف', maintenance: 'في الصيانة', lost: 'مفقود / تالف', retired: 'مستبعد' };
   const ASSET_MOVES = { assign: 'تسليم لموظف', return: 'استلام من الموظف', transfer: 'نقل لموظف آخر', maintenance: 'إرسال للصيانة', available: 'إرجاع للمستودع', lost: 'تسجيل فقد / تلف', retire: 'استبعاد' };
   const CC_TYPES = { project: 'مشروع', department: 'إدارة / قسم', branch: 'فرع', vehicle: 'مركبة / معدة', other: 'أخرى' };
+  // مصادر الأموال: من أين تُصرف العهدة وإلى أين تُرد
+  const SOURCE_TYPES = { cash: 'صندوق نقدي', bank: 'حساب بنكي', owner: 'المالك', partner: 'شريك', client: 'عميل / مالك مشروع', other: 'أخرى' };
+  const DEFAULT_SOURCES = [['الصندوق الرئيسي', 'cash'], ['البنك', 'bank'], ['المالك', 'owner']];
   const ASSET_CATEGORIES = ['أجهزة حاسب', 'جوالات وأجهزة اتصال', 'معدات وعدد', 'مركبات', 'أثاث', 'أخرى'];
   const DEFAULT_CATEGORIES = [
     ['5101', 'مواد وخامات'], ['5102', 'نقل ومواصلات'], ['5103', 'وقود ومحروقات'], ['5104', 'إعاشة وضيافة'], ['5105', 'عمالة يومية'],
@@ -23,11 +26,11 @@
     ['5110', 'اتصالات وإنترنت'], ['5111', 'سكن وإقامة'], ['5112', 'سفر وانتقالات'], ['5199', 'مصروفات متنوعة'],
   ];
   const DEFAULT_SETTINGS = {
-    companyName: '', vatNumber: '', address: '', currency: 'ر.س', vatRate: 15,
+    companyName: 'شركة الخطوط المعدنية للمقاولات العامة', vatNumber: '', address: '', currency: 'ر.س', vatRate: 15,
     workStart: '08:00', workEnd: '17:00', workDays: [0, 1, 2, 3, 4], reminderMinutes: 30, remindersEnabled: true,
     agingDays: 30, lowBalance: 200, receiptRequiredAbove: 0, counters: {},
   };
-  const COLLECTIONS = ['users', 'costCenters', 'categories', 'custodies', 'tx', 'expenses', 'settlements', 'assets', 'assetMoves', 'requests', 'checkins', 'notifications', 'audit'];
+  const COLLECTIONS = ['users', 'fundSources', 'costCenters', 'categories', 'custodies', 'tx', 'expenses', 'settlements', 'assets', 'assetMoves', 'requests', 'checkins', 'notifications', 'audit'];
 
   class ApiError extends Error { constructor(status, message) { super(message); this.status = status; } }
   const fail = (status, msg) => { throw new ApiError(status, msg); };
@@ -40,6 +43,7 @@
     db.sessions = db.sessions || {};
     db.settings = { ...DEFAULT_SETTINGS, ...(db.settings || {}) };
     db.settings.counters = db.settings.counters || {};
+    if (!db.fundSources.length) db.fundSources = DEFAULT_SOURCES.map(([name, type], i) => ({ id: 'src' + (i + 1), name, type, accountNo: '', active: true, notes: '' }));
     if (!db.categories.length) db.categories = DEFAULT_CATEGORIES.map(([code, name], i) => ({ id: 'cat' + (i + 1), code, name, active: true, vatApplicable: true }));
     // ترقية بيانات النسخة الأولى
     for (const u of db.users) if (u.role === 'manager') u.role = 'admin';
@@ -68,6 +72,12 @@
     const userName = id => (D().users.find(u => u.id === id) || {}).name || '—';
     const ccName = id => { const c = D().costCenters.find(x => x.id === id); return c ? (c.code ? c.code + ' · ' : '') + c.name : '—'; };
     const catName = id => (D().categories.find(x => x.id === id) || {}).name || '—';
+    const srcName = id => (D().fundSources.find(x => x.id === id) || {}).name || '';
+    // يتحقق من مصدر المبلغ؛ مطلوب ما دام هناك مصادر معرفة
+    const sourceOf = (id, required = true) => {
+      if (!id) { if (required && D().fundSources.some(x => x.active !== false)) fail(400, 'اختر مصدر المبلغ (من أين / إلى أين)'); return null; }
+      return find('fundSources', id, 'مصدر المبلغ').id;
+    };
     const publicUser = u => u && ({ id: u.id, name: u.name, username: u.username, role: u.role, roleName: ROLES[u.role], jobTitle: u.jobTitle || '', phone: u.phone || '', department: u.department || '', custodyLimit: u.custodyLimit || 0, active: u.active !== false });
 
     function log(user, action, summary, entity, entityId) {
@@ -167,7 +177,7 @@
     function addTx(user, custody, type, amount, extra = {}) {
       const t = {
         id: env.uid(), custodyId: custody.id, employeeId: custody.employeeId, type, amount: num(amount), date: dateOr(extra.date),
-        method: extra.method || 'نقداً', ref: opt(extra.ref), note: opt(extra.note), status: extra.status || 'confirmed',
+        method: extra.method || 'نقداً', ref: opt(extra.ref), note: opt(extra.note), status: extra.status || 'confirmed', sourceId: extra.sourceId || null,
         createdBy: user ? user.id : null, createdAt: env.now(), relatedId: extra.relatedId || null,
       };
       D().tx.push(t);
@@ -177,6 +187,7 @@
       const emp = D().users.find(u => u.id === b.employeeId && u.active !== false) || fail(400, 'اختر الموظف');
       const kind = KINDS[b.kind] ? b.kind : 'temporary';
       const amount = money(b.amount, 'مبلغ العهدة');
+      const sourceId = sourceOf(b.sourceId);
       if (b.costCenterId) find('costCenters', b.costCenterId, 'مركز التكلفة');
       if (emp.custodyLimit) {
         const bal = employeeTotals(emp.id).balance;
@@ -188,9 +199,9 @@
         status: 'open', createdBy: user.id, createdAt: env.now(), closedAt: null, notes: opt(b.notes),
       };
       D().custodies.push(c);
-      addTx(user, c, 'issue', amount, { date: c.issueDate, method: b.method, ref: b.ref, note: 'صرف العهدة' });
+      addTx(user, c, 'issue', amount, { date: c.issueDate, method: b.method, ref: b.ref, note: 'صرف العهدة', sourceId });
       notify(emp.id, `تم صرف ${KINDS[kind]} رقم ${c.no} بمبلغ ${amount} — ${c.purpose}`, '#/custody/' + c.id);
-      log(user, 'إنشاء عهدة', `${c.no} لـ ${emp.name} بمبلغ ${amount}`, 'custody', c.id);
+      log(user, 'إنشاء عهدة', `${c.no} لـ ${emp.name} بمبلغ ${amount}${sourceId ? ' من ' + srcName(sourceId) : ''}`, 'custody', c.id);
       return c;
     }
 
@@ -205,7 +216,7 @@
         const custIds = new Set(D().custodies.filter(c => c.employeeId === emp.id && (!q.custodyId || c.id === q.custodyId)).map(c => c.id));
         const noOf = id => (D().custodies.find(c => c.id === id) || {}).no;
         const items = [
-          ...D().tx.filter(t => custIds.has(t.custodyId) && t.status === 'confirmed').map(t => ({ date: t.date, at: t.createdAt, no: noOf(t.custodyId), desc: TX_TYPES[t.type].label + (t.note && t.note !== 'صرف العهدة' ? ' — ' + t.note : ''), in: TX_TYPES[t.type].sign > 0 ? t.amount : 0, out: TX_TYPES[t.type].sign < 0 ? t.amount : 0 })),
+          ...D().tx.filter(t => custIds.has(t.custodyId) && t.status === 'confirmed').map(t => ({ date: t.date, at: t.createdAt, no: noOf(t.custodyId), desc: TX_TYPES[t.type].label + (t.sourceId ? (TX_TYPES[t.type].sign > 0 ? ' — من: ' : ' — إلى: ') + srcName(t.sourceId) : '') + (t.note && t.note !== 'صرف العهدة' ? ' — ' + t.note : ''), in: TX_TYPES[t.type].sign > 0 ? t.amount : 0, out: TX_TYPES[t.type].sign < 0 ? t.amount : 0 })),
           ...D().expenses.filter(e => custIds.has(e.custodyId) && e.status !== 'rejected').map(e => ({ date: e.date, at: e.createdAt, no: e.no, desc: `${catName(e.categoryId)}: ${e.description} (${ccName(e.costCenterId)})${e.status === 'pending' ? ' — بانتظار الاعتماد' : ''}`, in: 0, out: e.amount })),
         ].sort((a, b) => (a.date + a.at).localeCompare(b.date + b.at));
         let run = 0;
@@ -262,6 +273,24 @@
         const rows = D().settlements.filter(s => inRange(s.date)).sort((a, b) => b.date.localeCompare(a.date)).map(s => ({ date: s.date, no: s.no, custody: (D().custodies.find(c => c.id === s.custodyId) || {}).no, employee: userName(s.employeeId), count: s.expenseIds.length, total: s.total, returned: s.returned || 0, reimbursed: s.reimbursed || 0, replenished: s.replenished || 0, closed: s.closed ? 'نعم' : 'لا' }));
         return { title: 'سجل تسويات العهد', subtitle: period, columns: [col('date', 'التاريخ', 'date'), col('no', 'رقم التسوية'), col('custody', 'العهدة'), col('employee', 'الموظف'), col('count', 'عدد المصروفات', 'num'), col('total', 'إجمالي المصروفات', 'money'), col('returned', 'رد نقدي', 'money'), col('reimbursed', 'صرف فرق', 'money'), col('replenished', 'تعويض', 'money'), col('closed', 'أغلقت العهدة')], rows, totals: sumCols(rows, ['total', 'returned', 'reimbursed', 'replenished']) };
       }
+      if (name === 'sources') {
+        const txs = D().tx.filter(t => t.status === 'confirmed' && inRange(t.date) && !['transfer_in', 'transfer_out'].includes(t.type));
+        const rows = D().fundSources.map(src => {
+          const mine = txs.filter(t => t.sourceId === src.id);
+          const out = num(mine.filter(t => TX_TYPES[t.type].sign > 0).reduce((a, t) => a + t.amount, 0));
+          const back = num(mine.filter(t => TX_TYPES[t.type].sign < 0).reduce((a, t) => a + t.amount, 0));
+          return { name: src.name, type: SOURCE_TYPES[src.type] || '', count: mine.length, out, back, net: num(out - back) };
+        });
+        const unk = txs.filter(t => !t.sourceId);
+        if (unk.length) { const out = num(unk.filter(t => TX_TYPES[t.type].sign > 0).reduce((a, t) => a + t.amount, 0)), back = num(unk.filter(t => TX_TYPES[t.type].sign < 0).reduce((a, t) => a + t.amount, 0)); rows.push({ name: 'غير محدد', type: '', count: unk.length, out, back, net: num(out - back) }); }
+        return { title: 'مصادر أموال العهد', subtitle: period + ' — من أين صُرفت العهد وإلى أين رُدّت', columns: [col('name', 'المصدر'), col('type', 'النوع'), col('count', 'عدد الحركات', 'num'), col('out', 'صُرف للموظفين', 'money'), col('back', 'رُدّ إليه', 'money'), col('net', 'الصافي لدى الموظفين', 'money')], rows, totals: sumCols(rows, ['count', 'out', 'back', 'net']) };
+      }
+      if (name === 'source-ledger') {
+        const rows = D().tx.filter(t => t.status === 'confirmed' && inRange(t.date) && (!q.sourceId || t.sourceId === q.sourceId) && (!q.employeeId || t.employeeId === q.employeeId) && !['transfer_in', 'transfer_out'].includes(t.type))
+          .sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt))
+          .map(t => ({ date: t.date, source: srcName(t.sourceId) || 'غير محدد', employee: userName(t.employeeId), custody: (D().custodies.find(c => c.id === t.custodyId) || {}).no, type: TX_TYPES[t.type].label, method: t.method, ref: t.ref, out: TX_TYPES[t.type].sign > 0 ? t.amount : 0, back: TX_TYPES[t.type].sign < 0 ? t.amount : 0 }));
+        return { title: 'حركة أموال العهد بالتفصيل', subtitle: period + (q.sourceId ? ' — ' + srcName(q.sourceId) : ''), columns: [col('date', 'التاريخ', 'date'), col('source', 'المصدر'), col('employee', 'الموظف'), col('custody', 'العهدة'), col('type', 'الحركة'), col('method', 'الطريقة'), col('ref', 'المرجع'), col('out', 'صُرف', 'money'), col('back', 'رُدّ', 'money')], rows, totals: sumCols(rows, ['out', 'back']) };
+      }
       if (name === 'checkins') {
         const from = q.from || today(), to = q.to || today();
         const list = D().checkins.filter(c => c.at.slice(0, 10) >= from && c.at.slice(0, 10) <= to);
@@ -282,7 +311,7 @@
 
     on('GET', '/api/bootstrap', ({ user }) => ({
       user: publicUser(user), settings: S(), roles: ROLES, kinds: KINDS, txTypes: TX_TYPES, assetStatus: ASSET_STATUS, assetMoves: ASSET_MOVES, ccTypes: CC_TYPES, assetCategories: ASSET_CATEGORIES, expenseStatus: EXPENSE_STATUS,
-      costCenters: ccTree(), categories: D().categories,
+      costCenters: ccTree(), categories: D().categories, fundSources: D().fundSources, sourceTypes: SOURCE_TYPES,
       users: isStaff(user) ? D().users.map(publicUser) : [publicUser(user)],
       unread: D().notifications.filter(n => n.userId === user.id && !n.read).length,
     }));
@@ -343,7 +372,7 @@
       canAccessCustody(user, c);
       return {
         custody: custodyView(c),
-        tx: D().tx.filter(t => t.custodyId === c.id).sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt)).map(t => ({ ...t, typeName: TX_TYPES[t.type].label, sign: TX_TYPES[t.type].sign, createdByName: userName(t.createdBy) })),
+        tx: D().tx.filter(t => t.custodyId === c.id).sort((a, b) => (a.date + a.createdAt).localeCompare(b.date + b.createdAt)).map(t => ({ ...t, typeName: TX_TYPES[t.type].label, sign: TX_TYPES[t.type].sign, createdByName: userName(t.createdBy), sourceName: srcName(t.sourceId) })),
         expenses: filterExpenses({ custodyId: c.id }, isStaff(user) ? user : { ...user, role: 'employee' }),
         settlements: D().settlements.filter(s => s.custodyId === c.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
       };
@@ -367,15 +396,15 @@
       const staff = isStaff(user);
       if (!staff && b.type !== 'return') fail(403, 'يمكنك فقط تسجيل رد مبلغ نقدي');
       if (b.type === 'topup') {
-        addTx(user, c, 'topup', amount, b);
+        addTx(user, c, 'topup', amount, { ...b, sourceId: sourceOf(b.sourceId) });
         notify(c.employeeId, `تم تعزيز عهدتك ${c.no} بمبلغ ${amount}`, '#/custody/' + c.id);
         log(user, 'تعزيز عهدة', `${c.no} بمبلغ ${amount}`, 'custody', c.id);
       } else if (b.type === 'return') {
-        const t = addTx(user, c, 'return', amount, { ...b, status: staff ? 'confirmed' : 'pending' });
+        const t = addTx(user, c, 'return', amount, { ...b, status: staff ? 'confirmed' : 'pending', sourceId: staff ? sourceOf(b.sourceId) : null });
         if (!staff) notify(staffIds(), `${user.name} سجل رد مبلغ ${amount} من العهدة ${c.no} — بانتظار تأكيد الاستلام`, '#/custody/' + c.id);
         log(user, 'رد نقدي', `${c.no} بمبلغ ${amount}${staff ? '' : ' (بانتظار التأكيد)'}`, 'tx', t.id);
       } else if (b.type === 'reimburse') {
-        addTx(user, c, 'reimburse', amount, b);
+        addTx(user, c, 'reimburse', amount, { ...b, sourceId: sourceOf(b.sourceId) });
         notify(c.employeeId, `تم صرف فرق بمبلغ ${amount} على العهدة ${c.no}`, '#/custody/' + c.id);
         log(user, 'صرف فرق', `${c.no} بمبلغ ${amount}`, 'custody', c.id);
       } else if (b.type === 'transfer') {
@@ -402,6 +431,7 @@
       staffOnly(user);
       const t = find('tx', p.id, 'الحركة');
       if (t.status !== 'pending') fail(400, 'تمت معالجة الحركة مسبقاً');
+      if (b.approve) t.sourceId = sourceOf(b.sourceId);
       t.status = b.approve ? 'confirmed' : 'rejected';
       const c = find('custodies', t.custodyId);
       notify(t.employeeId, `${b.approve ? 'تم تأكيد' : 'تم رفض'} استلام المبلغ المردود ${t.amount} من العهدة ${c.no}`, '#/custody/' + c.id);
@@ -418,17 +448,21 @@
       if (bal0.pendingCount && b.close) fail(400, `يوجد ${bal0.pendingCount} مصروف بانتظار الاعتماد — اعتمدها أو ارفضها قبل إغلاق العهدة`);
       if (bal0.pendingTx && b.close) fail(400, 'يوجد رد نقدي بانتظار التأكيد');
       const exps = D().expenses.filter(e => e.custodyId === c.id && e.status === 'approved' && !e.settlementId);
+      const settleSource = b.sourceId ? sourceOf(b.sourceId) : null;
       const total = num(exps.reduce((s, e) => s + e.amount, 0));
       if (!exps.length && !b.close) fail(400, 'لا توجد مصروفات معتمدة غير مسواة');
+      // التحقق من المصدر قبل أي تعديل على البيانات
+      if (b.close && !settleSource && custodyBalance(c).balance !== 0) sourceOf(null);
+      if (!b.close && b.replenish && !settleSource) sourceOf(null);
       const s = { id: env.uid(), no: nextNo('ST'), custodyId: c.id, employeeId: c.employeeId, date: dateOr(b.date), expenseIds: exps.map(e => e.id), total, returned: 0, reimbursed: 0, replenished: 0, closed: !!b.close, note: opt(b.note), createdBy: user.id, createdAt: env.now() };
       exps.forEach(e => { e.settlementId = s.id; });
       if (b.close) {
         const bal = custodyBalance(c).balance;
-        if (bal > 0) { addTx(user, c, 'return', bal, { date: s.date, method: b.method, note: `رد المتبقي عند التسوية ${s.no}` }); s.returned = bal; }
-        if (bal < 0) { addTx(user, c, 'reimburse', -bal, { date: s.date, method: b.method, note: `صرف الفرق للموظف عند التسوية ${s.no}` }); s.reimbursed = num(-bal); }
+        if (bal > 0) { addTx(user, c, 'return', bal, { date: s.date, method: b.method, note: `رد المتبقي عند التسوية ${s.no}`, sourceId: settleSource }); s.returned = bal; }
+        if (bal < 0) { addTx(user, c, 'reimburse', -bal, { date: s.date, method: b.method, note: `صرف الفرق للموظف عند التسوية ${s.no}`, sourceId: settleSource }); s.reimbursed = num(-bal); }
         c.status = 'closed'; c.closedAt = env.now();
       } else if (b.replenish && total > 0) {
-        addTx(user, c, 'topup', total, { date: s.date, method: b.method, note: `تعويض العهدة المستديمة — تسوية ${s.no}` });
+        addTx(user, c, 'topup', total, { date: s.date, method: b.method, note: `تعويض العهدة المستديمة — تسوية ${s.no}`, sourceId: settleSource });
         s.replenished = total;
       }
       D().settlements.push(s);
@@ -557,7 +591,7 @@
       } else {
         r.status = 'approved';
         if (r.type === 'cash') {
-          const c = createCustody(user, { employeeId: r.employeeId, kind: r.kind, amount: b.amount || r.amount, purpose: r.purpose, costCenterId: b.costCenterId || r.costCenterId, method: b.method, dueDate: b.dueDate || r.neededBy, force: true });
+          const c = createCustody(user, { employeeId: r.employeeId, kind: r.kind, amount: b.amount || r.amount, purpose: r.purpose, costCenterId: b.costCenterId || r.costCenterId, method: b.method, dueDate: b.dueDate || r.neededBy, sourceId: b.sourceId, force: true });
           r.custodyId = c.id;
         } else notify(r.employeeId, `تمت الموافقة على طلبك ${r.no} — سيتم تسليمك العهدة العينية`, '#/requests');
       }
@@ -679,6 +713,23 @@
         assets: D().assets.filter(a => ids.has(a.costCenterId)).map(assetView),
       };
     });
+    on('POST', '/api/sources', ({ user, b }) => {
+      staffOnly(user);
+      const x = { id: env.uid(), name: text(b.name, 'اسم المصدر'), type: SOURCE_TYPES[b.type] ? b.type : 'other', accountNo: opt(b.accountNo), active: true, notes: opt(b.notes) };
+      D().fundSources.push(x);
+      log(user, 'إضافة مصدر أموال', x.name, 'source', x.id);
+      return x;
+    });
+    on('PUT', '/api/sources/:id', ({ user, p, b }) => {
+      staffOnly(user);
+      const x = find('fundSources', p.id, 'المصدر');
+      if (b.name !== undefined) x.name = text(b.name, 'اسم المصدر');
+      if (b.type && SOURCE_TYPES[b.type]) x.type = b.type;
+      for (const k of ['accountNo', 'notes']) if (b[k] !== undefined) x[k] = opt(b[k]);
+      if (b.active !== undefined) x.active = !!b.active;
+      log(user, 'تعديل مصدر أموال', x.name, 'source', x.id);
+      return x;
+    });
     on('POST', '/api/categories', ({ user, b }) => {
       staffOnly(user);
       const c = { id: env.uid(), code: opt(b.code), name: text(b.name, 'اسم البند'), vatApplicable: b.vatApplicable !== false, active: true };
@@ -792,37 +843,46 @@
   async function seedDemo(env) {
     const db = env.db;
     const core = createCore(env);
-    const admin = await core.setup({ name: 'أحمد المدير', username: 'admin', password: 'admin', companyName: 'شركة البناء الحديث (تجريبي)' });
+    const admin = await core.setup({ name: 'أحمد المدير', username: 'admin', password: 'admin', companyName: 'شركة الخطوط المعدنية للمقاولات العامة' });
     const call = (u, m, p, b) => core.handle(m, p, {}, b, u);
+    db.settings.vatNumber = '300000000000003';
+    db.settings.address = 'المملكة العربية السعودية';
     const mk = (name, username, role, jobTitle, custodyLimit) => call(admin, 'POST', '/api/users', { name, username, password: '1234', role, jobTitle, custodyLimit });
     await mk('سارة المحاسبة', 'sara', 'accountant', 'محاسبة');
-    const [m, k, o] = [await mk('محمد أحمد', 'mohamed', 'employee', 'مشرف موقع', 10000), await mk('خالد سعيد', 'khaled', 'employee', 'مندوب مشتريات', 8000), await mk('عمر حسن', 'omar', 'employee', 'سائق', 3000)];
+    const [m, k, o] = [await mk('محمد أحمد', 'mohamed', 'employee', 'مهندس موقع', 15000), await mk('خالد سعيد', 'khaled', 'employee', 'مندوب مشتريات', 10000), await mk('عمر حسن', 'omar', 'employee', 'سائق', 4000)];
     const U = id => db.users.find(u => u.id === id);
+    const [cashBox, bank, owner] = db.fundSources;
+    bank.name = 'مصرف الراجحي — الحساب الجاري'; bank.accountNo = 'SA00 8000 0000 0000 0000 0000';
+    const bank2 = await call(admin, 'POST', '/api/sources', { name: 'البنك الأهلي', type: 'bank' });
+    const client = await call(admin, 'POST', '/api/sources', { name: 'دفعة مقدمة من عميل مشروع الفيلا', type: 'client' });
     const cc = (code, name, type, budget, parentId) => call(admin, 'POST', '/api/cost-centers', { code, name, type, budget, parentId });
-    const p1 = await cc('100', 'مشروع برج الريان', 'project', 60000);
-    const p1a = await cc('101', 'الأعمال الإنشائية', 'project', 35000, p1.id);
-    const p1b = await cc('102', 'التشطيبات', 'project', 20000, p1.id);
-    const p2 = await cc('200', 'مشروع فيلا النخيل', 'project', 25000);
-    const adm = await cc('900', 'الإدارة العامة', 'department', 12000);
-    const veh = await cc('910', 'أسطول النقل', 'vehicle', 8000, adm.id);
+    const p1 = await cc('P-101', 'مشروع مجمع الورود السكني', 'project', 80000);
+    const p1a = await cc('P-101-1', 'الهيكل الخرساني', 'project', 45000, p1.id);
+    const p1b = await cc('P-101-2', 'الأعمال المعدنية والتشطيبات', 'project', 30000, p1.id);
+    const p2 = await cc('P-102', 'مشروع فيلا حي الملقا', 'project', 30000);
+    const p3 = await cc('P-103', 'مستودعات المدينة الصناعية', 'project', 50000);
+    const adm = await cc('G-900', 'الإدارة العامة', 'department', 15000);
+    const veh = await cc('G-910', 'المعدات والنقل', 'vehicle', 12000, adm.id);
     const cat = code => db.categories.find(c => c.code === code).id;
-    const day = n => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
-    const c1 = await call(admin, 'POST', '/api/custodies', { employeeId: m.id, kind: 'permanent', amount: 5000, purpose: 'عهدة مستديمة لمصروفات موقع برج الريان', costCenterId: p1a.id, issueDate: day(12) });
-    const c2 = await call(admin, 'POST', '/api/custodies', { employeeId: k.id, kind: 'temporary', amount: 3000, purpose: 'شراء مواد تشطيب', costCenterId: p1b.id, issueDate: day(20), dueDate: day(5) });
-    const c3 = await call(admin, 'POST', '/api/custodies', { employeeId: o.id, kind: 'permanent', amount: 1500, purpose: 'وقود وصيانة الشاحنات', costCenterId: veh.id, issueDate: day(8) });
+    const day = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+    const c1 = await call(admin, 'POST', '/api/custodies', { employeeId: m.id, kind: 'permanent', amount: 5000, purpose: 'عهدة مستديمة لمصروفات موقع مجمع الورود', costCenterId: p1a.id, issueDate: day(12), sourceId: bank.id, method: 'تحويل بنكي', ref: 'TRX-55120' });
+    const c2 = await call(admin, 'POST', '/api/custodies', { employeeId: k.id, kind: 'temporary', amount: 3000, purpose: 'شراء مواد تشطيب ودهانات', costCenterId: p1b.id, issueDate: day(20), dueDate: day(5), sourceId: cashBox.id });
+    const c3 = await call(admin, 'POST', '/api/custodies', { employeeId: o.id, kind: 'permanent', amount: 1500, purpose: 'وقود وصيانة المعدات', costCenterId: veh.id, issueDate: day(8), sourceId: owner.id });
+    await call(admin, 'POST', '/api/custodies', { employeeId: m.id, kind: 'temporary', amount: 2000, purpose: 'مشتريات عاجلة لفيلا الملقا', costCenterId: p2.id, issueDate: day(3), dueDate: day(-10), sourceId: client.id });
+    await call(admin, 'POST', '/api/custodies/' + c2.id + '/tx', { type: 'topup', amount: 500, sourceId: bank2.id, method: 'تحويل بنكي', date: day(9), note: 'زيادة لشراء دهانات إضافية' });
     const ex = async (u, c, ccId, code, amount, description, vendor, ago, vatIncluded) => call(U(u.id), 'POST', '/api/expenses', { custodyId: c.id, costCenterId: ccId, categoryId: cat(code), amount, description, vendor, date: day(ago), vatIncluded, invoiceNo: vatIncluded ? 'INV-' + (1000 + ago) : '' });
     const e1 = await ex(m, c1, p1a.id, '5101', 1250, 'أسمنت 25 كيس', 'مؤسسة الإعمار', 10, true);
     const e2 = await ex(m, c1, p1a.id, '5105', 600, 'عمال تحميل 4 أشخاص', '', 7, false);
     await ex(m, c1, p1a.id, '5102', 380, 'نقل حديد للموقع', 'نقليات السريع', 1, false);
-    await ex(m, c1, p2.id, '5104', 245, 'وجبات فريق العمل', 'مطعم البيت', 0, true);
+    await ex(m, c1, p3.id, '5104', 245, 'وجبات فريق العمل', 'مطعم البيت', 0, true);
     const e5 = await ex(k, c2, p1b.id, '5101', 1740, 'دهانات ومعجون', 'مركز الألوان', 15, true);
     const e6 = await ex(k, c2, p1b.id, '5106', 940, 'مثقاب وعدد يدوية', 'محل الأدوات', 9, true);
     await ex(k, c2, p1b.id, '5104', 210, 'ضيافة', '', 3, false);
     const e8 = await ex(o, c3, veh.id, '5103', 450, 'تعبئة ديزل', 'محطة الوقود', 6, true);
     await ex(o, c3, veh.id, '5107', 1450, 'صيانة فرامل الشاحنة', 'ورشة الأمل', 2, true);
     await call(admin, 'POST', '/api/expenses/review', { ids: [e1.id, e2.id, e5.id, e6.id, e8.id], status: 'approved' });
-    await call(admin, 'POST', '/api/custodies/' + c1.id + '/settle', { replenish: true, date: day(4) });
-    await call(U(k.id), 'POST', '/api/requests', { type: 'cash', amount: 2000, purpose: 'شراء أدوات سباكة لفيلا النخيل', costCenterId: p2.id, kind: 'temporary' });
+    await call(admin, 'POST', '/api/custodies/' + c1.id + '/settle', { replenish: true, date: day(4), sourceId: bank.id, method: 'تحويل بنكي' });
+    await call(U(k.id), 'POST', '/api/requests', { type: 'cash', amount: 2000, purpose: 'شراء أدوات سباكة لفيلا الملقا', costCenterId: p2.id, kind: 'temporary' });
     const a1 = await call(admin, 'POST', '/api/assets', { name: 'لابتوب Dell Latitude', category: 'أجهزة حاسب', serial: 'DL-77821', value: 4200, costCenterId: adm.id, assignTo: m.id });
     await call(admin, 'POST', '/api/assets', { name: 'شاحنة إيسوزو 2022', category: 'مركبات', serial: 'أ ب ج 4521', value: 145000, costCenterId: veh.id, assignTo: o.id });
     await call(admin, 'POST', '/api/assets', { name: 'جهاز مساحة ليزر', category: 'معدات وعدد', serial: 'LS-3390', value: 2800, costCenterId: p1.id });
@@ -830,5 +890,5 @@
     for (const [u, ans] of [[m, 'yes'], [m, 'no'], [k, 'no'], [o, 'yes']]) await call(U(u.id), 'POST', '/api/checkins', { answer: ans });
   }
 
-  return { createCore, normalize, seedDemo, ApiError, ROLES, KINDS, TX_TYPES };
+  return { createCore, normalize, seedDemo, ApiError, ROLES, KINDS, TX_TYPES, SOURCE_TYPES };
 });

@@ -58,6 +58,8 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
+        // تثبيت حجم الخط: لا يتضخم التطبيق مع إعداد حجم خط النظام في الجوال
+        s.setTextZoom(100);
         s.setUserAgentString(s.getUserAgentString() + " CustodyApp/2");
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");

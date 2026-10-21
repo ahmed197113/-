@@ -12,6 +12,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch { } },
 };
 const TOKEN_KEY = 'custody_token_' + MODE;
+const BRAND = { name: 'الخطوط المعدنية', full: 'شركة الخطوط المعدنية للمقاولات العامة', logo: '/logo.png' };
 const S = { token: store.get(TOKEN_KEY), user: null, b: null, backend: null, unread: 0 };
 
 async function serverApi(method, url, body, token) {
@@ -100,6 +101,7 @@ const ICONS = {
   clip: 'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48',
   user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
   file: 'M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z|M13 2v7h7',
+  bank: 'M3 21h18|M3 10h18|M5 6l7-3 7 3|M4 10v11|M20 10v11|M8 14v3|M12 14v3|M16 14v3',
 };
 const ic = (name, size = 20) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name].split('|').map(d => `<path d="${d}"/>`).join('')}</svg>`;
 
@@ -127,6 +129,8 @@ const opts = (list, selected, empty) => (empty !== undefined ? `<option value=""
 const ccOptions = ({ activeOnly = true } = {}) => S.b.costCenters.filter(c => !activeOnly || c.active !== false).map(c => ({ value: c.id, label: (c.depth ? '   '.repeat(c.depth) + '└ ' : '') + (c.code ? c.code + ' · ' : '') + c.name }));
 const userOptions = (filter = () => true) => S.b.users.filter(u => u.active && filter(u)).map(u => ({ value: u.id, label: `${u.name}${u.jobTitle ? ' — ' + u.jobTitle : ''}` }));
 const ccName = id => { const c = S.b.costCenters.find(x => x.id === id); return c ? (c.code ? c.code + ' · ' : '') + c.name : '—'; };
+const srcOptions = () => S.b.fundSources.filter(x => x.active !== false).map(x => ({ value: x.id, label: x.name }));
+const srcField = (label = 'مصدر المبلغ — صُرف من؟', value) => ({ type: 'chips', name: 'sourceId', label, options: srcOptions(), value: value ?? srcOptions()[0]?.value ?? '', hint: S.b.fundSources.length ? '' : 'أضف مصادر الأموال من «مصادر الأموال»' });
 
 function fieldHtml(f) {
   const full = f.full ? 'full' : '';
@@ -268,7 +272,7 @@ function printDoc(html) {
 }
 function printHeader() {
   const s = S.b.settings;
-  return `<div class="ph"><div><div class="ph-co">${esc(s.companyName || 'الشركة')}</div>${s.address ? `<div>${esc(s.address)}</div>` : ''}${s.vatNumber ? `<div>الرقم الضريبي: <span class="num">${esc(s.vatNumber)}</span></div>` : ''}</div><div class="ph-date">تاريخ الطباعة: <span class="num">${today()}</span></div></div>`;
+  return `<div class="ph"><img class="ph-logo" src="${BRAND.logo}" alt=""><div class="ph-info"><div class="ph-co">${esc(s.companyName || BRAND.full)}</div>${s.address ? `<div>${esc(s.address)}</div>` : ''}${s.vatNumber ? `<div>الرقم الضريبي: <span class="num">${esc(s.vatNumber)}</span></div>` : ''}</div><div class="ph-date">تاريخ الطباعة: <span class="num">${today()}</span></div></div>`;
 }
 const signatures = names => `<div class="sigs">${names.map(n => `<div><div class="sig-line"></div>${esc(n)}</div>`).join('')}</div>`;
 
@@ -283,14 +287,14 @@ const signatures = names => `<div class="sigs">${names.map(n => `<div><div class
 })();
 
 function renderOffline(e) {
-  $('#app').innerHTML = `<div class="auth"><div class="card auth-card"><div class="auth-logo"><img src="/icon.svg" alt=""></div><h1>تعذر الاتصال بالخادم</h1><p class="muted center">${esc(e.message)}</p><button class="btn primary lg" onclick="location.reload()">إعادة المحاولة</button>${NATIVE ? '<button class="btn ghost lg" onclick="AndroidBridge.changeServer()">تغيير طريقة التشغيل</button>' : ''}</div></div>`;
+  $('#app').innerHTML = `<div class="auth"><div class="card auth-card"><div class="auth-logo"><img src="${BRAND.logo}" alt=""></div><h1>تعذر الاتصال بالخادم</h1><p class="muted center">${esc(e.message)}</p><button class="btn primary lg" onclick="location.reload()">إعادة المحاولة</button>${NATIVE ? '<button class="btn ghost lg" onclick="AndroidBridge.changeServer()">تغيير طريقة التشغيل</button>' : ''}</div></div>`;
 }
 const MODE_NOTE = { local: 'البيانات محفوظة على هذا الجهاز — يعمل بدون إنترنت', demo: 'وضع تجريبي ببيانات وهمية', server: '' };
 function authShell(inner) {
   $('#app').innerHTML = `<div class="auth"><div class="card auth-card">
-    <div class="auth-logo"><img src="/icon.svg" alt=""></div>
-    <h1>نظام إدارة العهد</h1>
-    <p class="muted center">العهد النقدية والعينية · مراكز التكلفة · التسويات والتقارير</p>
+    <div class="auth-logo"><img src="${BRAND.logo}" alt="${BRAND.name}"></div>
+    <h1>${BRAND.full}</h1>
+    <p class="muted center">نظام إدارة العهد النقدية والعينية</p>
     ${MODE_NOTE[MODE] ? `<div class="mode-pill">${MODE === 'demo' ? '🧪' : '📱'} ${MODE_NOTE[MODE]}</div>` : ''}
     ${inner}
     ${NATIVE ? `<button class="btn link" onclick="AndroidBridge.changeServer()">تغيير طريقة التشغيل</button>` : ''}
@@ -299,7 +303,7 @@ function authShell(inner) {
 function renderSetup() {
   authShell(`<h2 class="center">إعداد النظام لأول مرة</h2>
     <form id="setup" class="form one">
-      ${fieldHtml({ name: 'companyName', label: 'اسم الشركة / المؤسسة', required: true, full: true })}
+      ${fieldHtml({ name: 'companyName', label: 'اسم الشركة', required: true, full: true, value: BRAND.full })}
       ${fieldHtml({ name: 'name', label: 'اسمك (مدير النظام)', required: true, full: true })}
       ${fieldHtml({ name: 'username', label: 'اسم المستخدم للدخول', required: true, full: true, attrs: 'dir="ltr" autocapitalize="off"' })}
       ${fieldHtml({ name: 'password', label: 'كلمة المرور', type: 'password', required: true, full: true, attrs: 'minlength="4"' })}
@@ -313,8 +317,7 @@ function renderSetup() {
 function renderLogin(st = {}) {
   const demo = MODE === 'demo' ? `<div class="demo-box"><p class="muted center">اختر حساباً تجريبياً:</p><div class="demo-grid">
     ${[['admin', 'admin', 'مدير النظام'], ['sara', '1234', 'محاسبة'], ['mohamed', '1234', 'موظف: محمد'], ['khaled', '1234', 'موظف: خالد']].map(([u, p, l]) => `<button class="btn ghost" data-demo="${u}|${p}">${l}</button>`).join('')}</div></div>` : '';
-  authShell(`${st.companyName ? `<div class="center co-name">${esc(st.companyName)}</div>` : ''}
-    <form id="login" class="form one">
+  authShell(`<form id="login" class="form one">
       ${fieldHtml({ name: 'username', label: 'اسم المستخدم', required: true, full: true, attrs: 'dir="ltr" autocapitalize="off" autocomplete="username"' })}
       ${fieldHtml({ name: 'password', label: 'كلمة المرور', type: 'password', required: true, full: true, attrs: 'autocomplete="current-password"' })}
       <button class="btn primary lg full">دخول</button>
@@ -350,7 +353,7 @@ async function boot() {
 const NAV_STAFF = [
   ['', [['dashboard', 'home', 'الرئيسية']]],
   ['العمليات', [['custodies', 'wallet', 'العهد النقدية'], ['expenses', 'check', 'المصروفات والاعتماد', 'pending'], ['requests', 'inbox', 'طلبات العهد', 'requests'], ['assets', 'box', 'العهد العينية']]],
-  ['البيانات الأساسية', [['users', 'users', 'الموظفون'], ['cost-centers', 'layers', 'مراكز التكلفة'], ['categories', 'tag', 'بنود المصروفات']]],
+  ['البيانات الأساسية', [['cost-centers', 'layers', 'المشاريع ومراكز التكلفة'], ['users', 'users', 'الموظفون'], ['sources', 'bank', 'مصادر الأموال'], ['categories', 'tag', 'بنود المصروفات']]],
   ['التحليل', [['reports', 'chart', 'التقارير'], ['audit', 'list', 'سجل العمليات']]],
   ['', [['settings', 'settings', 'الإعدادات']]],
 ];
@@ -365,7 +368,7 @@ function renderShell() {
   $('#app').innerHTML = `
   <div class="layout">
     <aside class="sidebar">
-      <div class="brand"><img src="/icon.svg" alt=""><div><div class="brand-name">${esc(S.b.settings.companyName || 'إدارة العهد')}</div><div class="brand-sub">نظام إدارة العهد</div></div></div>
+      <div class="brand"><img src="${BRAND.logo}" alt=""><div><div class="brand-name">${BRAND.name}</div><div class="brand-sub">للمقاولات العامة · نظام العهد</div></div></div>
       ${MODE !== 'server' ? `<div class="side-mode">${MODE === 'demo' ? '🧪 وضع تجريبي' : '📱 على هذا الجهاز'}</div>` : ''}
       <nav class="nav">${nav.map(([g, items]) => `${g ? `<div class="nav-group">${g}</div>` : ''}${items.map(link).join('')}`).join('')}</nav>
       <div class="me"><div class="avatar">${esc(S.user.name.trim()[0] || '؟')}</div><div><div class="me-name">${esc(S.user.name)}</div><div class="me-role">${esc(S.user.roleName)}</div></div><button class="icon-btn" data-act="logout" title="تسجيل الخروج">${ic('logout')}</button></div>
@@ -373,6 +376,7 @@ function renderShell() {
     <div class="main-col">
       <header class="appbar">
         <button class="icon-btn back-btn" data-act="back" hidden aria-label="رجوع">${ic('back')}</button>
+        <img class="appbar-logo" src="${BRAND.logo}" alt="">
         <h1 id="page-title"></h1>
         <a class="icon-btn bell" href="#/notifications" aria-label="الإشعارات">${ic('bell')}<b class="badge" data-badge="unread" hidden></b></a>
       </header>
@@ -389,9 +393,10 @@ function updateBadges() {
 }
 function view(title, html, { back, toolbar } = {}) {
   $('#page-title').textContent = title;
-  document.title = title + ' — إدارة العهد';
+  document.title = title + ' — ' + BRAND.name;
   const bb = $('.back-btn');
   bb.hidden = !back;
+  $('.appbar-logo').hidden = !!back;
   bb.dataset.to = back === true ? '' : back || '';
   $('#view').innerHTML = (toolbar ? `<div class="toolbar">${toolbar}</div>` : '') + html;
   const page = (location.hash.split('?')[0].split('/')[1]) || '';
@@ -486,27 +491,34 @@ const STAFF_VIEWS = {
     const st = d.setup;
     const setupSteps = [[st.costCenters, 'أضف مراكز التكلفة (المشاريع / الأقسام)', '#/cost-centers'], [st.employees, 'أضف الموظفين وحساباتهم', '#/users'], [st.custodies, 'اصرف أول عهدة لموظف', '#/custodies']];
     const showSetup = setupSteps.some(s => !s[0]);
+    const src = await api('GET', '/api/reports/sources');
     view('الرئيسية', `
-      <div class="hello"><div><div class="hello-t">مرحباً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="muted">${new Date().toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div></div></div>
-      ${showSetup ? card('ابدأ في ٣ خطوات', `<div class="steps">${setupSteps.map(([done, t, h], i) => `<a class="step ${done ? 'done' : ''}" href="${h}"><span class="step-n">${done ? ic('ok', 16) : i + 1}</span><span>${t}</span>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
-      <div class="quick">
-        ${[['wallet', 'صرف عهدة', 'custodyForm'], ['receipt', 'تسجيل مصروف', 'expenseForm'], ['check', 'اعتماد المصروفات', '#/expenses'], ['box', 'تسليم أصل', 'assetForm'], ['chart', 'التقارير', '#/reports']].map(([i, l, a]) => a.startsWith('#') ? `<a class="q" href="${a}">${ic(i, 24)}<span>${l}</span></a>` : `<button class="q" data-act="q-${a}">${ic(i, 24)}<span>${l}</span></button>`).join('')}
+      <div class="home-head">
+        <div class="hh-top"><div><div class="hh-hi">مرحباً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="hh-date">${new Date().toLocaleDateString('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' })}</div></div><img src="${BRAND.logo}" alt=""></div>
+        <div class="hh-label">المبالغ لدى الموظفين الآن</div>
+        <div class="hh-value">${money(d.kpis.outstanding)}</div>
+        <div class="hh-sub">${d.kpis.openCount} عهدة مفتوحة · صُرف هذا الشهر ${fmt(d.kpis.monthSpent)}</div>
       </div>
-      <div class="kpis">
-        ${kpi('المبالغ لدى الموظفين', money(d.kpis.outstanding), { tone: 'hero', sub: `${d.kpis.openCount} عهدة مفتوحة`, go: '#/custodies' })}
-        ${kpi('مصروفات هذا الشهر', money(d.kpis.monthSpent), { go: '#/reports' })}
+      <div class="qa">
+        ${[['wallet', 'صرف عهدة', 'custodyForm'], ['receipt', 'تسجيل مصروف', 'expenseForm'], ['check', 'الاعتماد', '#/expenses'], ['chart', 'التقارير', '#/reports']].map(([i, l, a]) => a.startsWith('#') ? `<a class="qa-i" href="${a}"><span>${ic(i, 22)}</span>${l}</a>` : `<button class="qa-i" data-act="q-${a}"><span>${ic(i, 22)}</span>${l}</button>`).join('')}
+      </div>
+      ${showSetup ? card('ابدأ في ٣ خطوات', `<div class="steps">${setupSteps.map(([done, t, h], i) => `<a class="step ${done ? 'done' : ''}" href="${h}"><span class="step-n">${done ? ic('ok', 14) : i + 1}</span><span>${t}</span>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
+      <div class="mini-kpis">
         ${kpi('بانتظار الاعتماد', `<span class="num">${d.kpis.pendingCount}</span>`, { sub: money(d.kpis.pendingAmount), tone: d.kpis.pendingCount ? 'warn' : '', go: '#/expenses' })}
-        ${kpi('العهد العينية المسلّمة', `<span class="num">${d.kpis.assetsAssigned}</span>`, { sub: 'بقيمة ' + money(d.kpis.assetsValue), go: '#/assets' })}
+        ${kpi('طلبات عهد', `<span class="num">${al.requests}</span>`, { sub: 'بانتظار القرار', tone: al.requests ? 'warn' : '', go: '#/requests' })}
+        ${kpi('عهد متأخرة', `<span class="num">${al.overdue.length}</span>`, { sub: 'عن موعد التسوية', tone: al.overdue.length ? 'bad' : '', go: '#/custodies?status=overdue' })}
+        ${kpi('العهد العينية', `<span class="num">${d.kpis.assetsAssigned}</span>`, { sub: money(d.kpis.assetsValue), go: '#/assets' })}
       </div>
-      ${alerts.length ? card('تنبيهات تحتاج متابعة', `<div class="alerts">${alerts.slice(0, 12).map(([i, t, text, h]) => `<a class="alert ${t}" href="${h}">${ic(i, 18)}<span>${esc(text)}</span>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
+      ${alerts.length ? card('تحتاج متابعة', `<div class="alerts">${alerts.slice(0, 8).map(([i, t, text, h]) => `<a class="alert ${t}" href="${h}">${ic(i, 16)}<span>${esc(text)}</span>${ic('chev', 14)}</a>`).join('')}</div>`) : ''}
       <div class="grid2">
         ${card('أرصدة الموظفين', d.employees.length ? `<div class="list">${d.employees.map(u => `<a class="item" href="#/user/${u.id}">
             <div class="avatar sm">${esc(u.name.trim()[0])}</div>
-            <div class="item-main"><div class="item-title">${esc(u.name)}</div><div class="item-sub">${u.openCount} عهدة مفتوحة · ${u.assetsCount} أصل${u.overdueCount ? ' · ' + tag('متأخرة', 'bad') : ''}</div><div class="item-meta">آخر رد على التنبيه: ${ago(u.lastCheckin)}</div></div>
-            <div class="item-end">${signed(u.balance)}${u.pendingCount ? `<div class="item-endsub warn-t">${u.pendingCount} بانتظار الاعتماد</div>` : ''}</div></a>`).join('')}</div>` : empty('لا يوجد موظفون بعد', btn('إضافة موظف', { act: 'q-userForm', cls: 'primary sm' })), btn('الكل', { href: '#/users', cls: 'sm ghost' }))}
-        ${card('الصرف حسب مراكز التكلفة', d.costCenters.length ? `<div class="bars">${d.costCenters.map(c => `<div class="bar-row"><div class="bar-name">${esc(c.name.trim())}</div>${progress(c.spent, c.budget || Math.max(...d.costCenters.map(x => x.spent), 1))}<div class="bar-val">${money(c.spent)}${c.budget ? `<small class="muted"> / ${fmt(c.budget)}</small>` : ''}</div></div>`).join('')}</div>` : empty('لم تضف مراكز تكلفة بعد', btn('إضافة مركز تكلفة', { act: 'q-ccForm', cls: 'primary sm' })), btn('التقرير', { href: '#/report/cost-centers', cls: 'sm ghost' }))}
+            <div class="item-main"><div class="item-title">${esc(u.name)}${u.overdueCount ? ' ' + tag('متأخرة', 'bad') : ''}</div><div class="item-sub">${u.openCount} عهدة · ${u.assetsCount} أصل · آخر رد ${ago(u.lastCheckin)}</div></div>
+            <div class="item-end">${signed(u.balance)}${u.pendingCount ? `<div class="item-endsub warn-t">${u.pendingCount} معلّق</div>` : ''}</div></a>`).join('')}</div>` : empty('لا يوجد موظفون بعد', btn('إضافة موظف', { act: 'q-userForm', cls: 'primary sm' })), btn('الكل', { href: '#/users', cls: 'sm ghost' }))}
+        ${card('الصرف حسب المشاريع', d.costCenters.length ? `<div class="bars">${d.costCenters.map(c => `<div class="bar-row"><div class="bar-name">${esc(c.name.trim())}</div>${progress(c.spent, c.budget || Math.max(...d.costCenters.map(x => x.spent), 1))}<div class="bar-val">${money(c.spent)}</div></div>`).join('')}</div>` : empty('أضف مشاريعك ومراكز التكلفة', btn('إضافة مشروع', { act: 'q-ccForm', cls: 'primary sm' })), btn('التقرير', { href: '#/report/cost-centers', cls: 'sm ghost' }))}
       </div>
-      ${card('آخر المصروفات', d.recent.length ? `<div class="list">${d.recent.map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات بعد'), btn('عرض الكل', { href: '#/expenses?status=', cls: 'sm ghost' }))}
+      ${card('مصادر أموال العهد', src.rows.length ? `<div class="list">${src.rows.filter(r => r.count).map(r => `<div class="item"><div class="item-ic">${ic('bank', 18)}</div><div class="item-main"><div class="item-title">${esc(r.name)}</div><div class="item-sub">${esc(r.type)} · صُرف ${fmt(r.out)} · رُدّ ${fmt(r.back)}</div></div><div class="item-end">${money(r.net)}<div class="item-endsub">لدى الموظفين</div></div></div>`).join('') || empty('لا توجد حركات')}</div>` : '', btn('التفاصيل', { href: '#/report/sources', cls: 'sm ghost' }))}
+      ${card('آخر المصروفات', d.recent.length ? `<div class="list">${d.recent.slice(0, 6).map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات بعد'), btn('الكل', { href: '#/expenses?status=', cls: 'sm ghost' }))}
     `);
   },
 
@@ -572,7 +584,7 @@ const STAFF_VIEWS = {
       if (r.type !== 'cash') return api('POST', `/api/requests/${r.id}/decide`, { approve: true }).then(() => { toast('تمت الموافقة'); router(); }).catch(e => toast(e.message, true));
       formSheet({
         title: 'الموافقة وصرف العهدة', intro: `<p class="muted">${esc(r.employeeName)} — ${esc(r.purpose)}</p>`, submit: 'صرف العهدة',
-        fields: [{ type: 'money', name: 'amount', label: 'المبلغ المعتمد', value: r.amount, required: true }, { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: r.costCenterId, empty: '— اختر —' }, { type: 'date', name: 'dueDate', label: 'موعد التسوية', value: r.neededBy || '' }, { type: 'select', name: 'method', label: 'طريقة الصرف', options: PAY_METHODS }, { name: 'note', label: 'ملاحظة', full: true }],
+        fields: [{ type: 'money', name: 'amount', label: 'المبلغ المعتمد', value: r.amount, required: true }, srcField('صُرف من'), { type: 'select', name: 'costCenterId', label: 'مركز التكلفة', options: ccOptions(), value: r.costCenterId, empty: '— اختر —' }, { type: 'date', name: 'dueDate', label: 'موعد التسوية', value: r.neededBy || '' }, { type: 'select', name: 'method', label: 'طريقة الصرف', options: PAY_METHODS }, { name: 'note', label: 'ملاحظة', full: true }],
         onSubmit: async (d, close) => { await api('POST', `/api/requests/${r.id}/decide`, { ...d, approve: true }); close(); toast('تم صرف العهدة'); router(); },
       });
     };
@@ -608,13 +620,13 @@ const STAFF_VIEWS = {
     const rep = await api('GET', '/api/reports/cost-centers');
     const spent = Object.fromEntries(rep.rows.map((r, i) => [i, r]));
     const tree = S.b.costCenters;
-    view('مراكز التكلفة', `
-      <p class="muted">مراكز التكلفة تنظم المصروفات حسب المشروع أو الإدارة أو المركبة. يمكنك إنشاء مراكز فرعية تحت أي مركز، ويُجمع صرف الفروع تلقائياً في المركز الرئيسي.</p>
+    view('المشاريع ومراكز التكلفة', `
+      <p class="muted">كل مصروف يُحمَّل على مشروع أو مركز تكلفة. يمكنك تقسيم المشروع لمراحل أو بنود فرعية، ويُجمع صرفها تلقائياً في المشروع الرئيسي.</p>
       ${tree.length ? `<div class="list cards tree">${tree.map((c, i) => `<a class="item depth-${Math.min(c.depth, 3)}" href="#/cost-center/${c.id}" style="${c.active === false ? 'opacity:.55' : ''}">
         <div class="item-ic">${ic('layers')}</div>
         <div class="item-main"><div class="item-title">${c.code ? `<span class="code">${esc(c.code)}</span> ` : ''}${esc(c.name)} ${c.active === false ? tag('مغلق') : ''}</div><div class="item-sub">${esc(S.b.ccTypes[c.type] || '')}${c.budget ? ' · الميزانية ' + fmt(c.budget) : ''}</div>${c.budget ? progress(spent[i]?.spent || 0, c.budget) : ''}</div>
         <div class="item-end">${money(spent[i]?.spent || 0)}<div class="item-endsub">${c.budget ? spent[i]?.used : 'مصروف'}</div></div></a>`).join('')}</div>` : empty('لم تضف أي مركز تكلفة بعد — أضف مشاريعك وأقسامك', btn('إضافة مركز تكلفة', { act: 'q-ccForm', cls: 'primary' }))}
-    `, { toolbar: btn('مركز تكلفة جديد', { act: 'q-ccForm', icon: 'plus', cls: 'primary' }) + btn('تقرير مراكز التكلفة', { href: '#/report/cost-centers', icon: 'chart', cls: 'ghost' }) });
+    `, { toolbar: btn('مشروع / مركز جديد', { act: 'q-ccForm', icon: 'plus', cls: 'primary' }) + btn('تقرير المشاريع', { href: '#/report/cost-centers', icon: 'chart', cls: 'ghost' }) });
   },
   'cost-center': ccDetail,
 
@@ -637,6 +649,27 @@ const STAFF_VIEWS = {
     };
   },
 
+  async sources() {
+    await refreshBootstrap();
+    const rep = await api('GET', '/api/reports/sources');
+    const byName = Object.fromEntries(rep.rows.map(r => [r.name, r]));
+    view('مصادر الأموال', `
+      <p class="muted">من أين تُصرف العهد للموظفين وإلى أين تُرد: الصندوق، الحسابات البنكية، المالك، الشركاء، دفعات العملاء… يُطلب المصدر في كل عملية صرف أو تعزيز أو رد، ويظهر في كشوف الحساب والتقارير.</p>
+      <div class="list cards">${S.b.fundSources.map(x => { const r = byName[x.name] || { out: 0, back: 0, net: 0 }; return `<div class="item" style="${x.active === false ? 'opacity:.55' : ''}">
+        <div class="item-ic">${ic('bank')}</div>
+        <div class="item-main"><div class="item-title">${esc(x.name)} ${tag(S.b.sourceTypes[x.type] || '', 'info')}</div><div class="item-sub">صُرف ${fmt(r.out)} · رُدّ ${fmt(r.back)}${x.accountNo ? ' · <span class="num">' + esc(x.accountNo) + '</span>' : ''}</div>
+          <div class="actions mt"><a class="btn sm ghost" href="#/report/source-ledger?sourceId=${x.id}">${ic('list', 14)} الحركات</a><button class="btn sm ghost" data-act="src-edit" data-id="${x.id}">${ic('edit', 14)} تعديل</button></div></div>
+        <div class="item-end">${money(r.net)}<div class="item-endsub">لدى الموظفين</div></div></div>`; }).join('')}</div>
+    `, { toolbar: btn('مصدر جديد', { act: 'src-edit', icon: 'plus', cls: 'primary' }) + btn('تقرير المصادر', { href: '#/report/sources', icon: 'chart', cls: 'ghost' }) });
+    ACT['src-edit'] = el => {
+      const x = S.b.fundSources.find(v => v.id === el.dataset.id);
+      formSheet({
+        title: x ? 'تعديل مصدر' : 'مصدر أموال جديد',
+        fields: [{ name: 'name', label: 'الاسم', value: x?.name, required: true, full: true, placeholder: 'مثال: مصرف الراجحي / صندوق الموقع / المالك' }, { type: 'select', name: 'type', label: 'النوع', value: x?.type || 'bank', options: Object.entries(S.b.sourceTypes).map(([value, label]) => ({ value, label })) }, { name: 'accountNo', label: 'رقم الحساب / الآيبان (اختياري)', value: x?.accountNo, attrs: 'dir="ltr"' }, ...(x ? [{ type: 'toggle', name: 'active', label: 'نشط', value: x.active !== false }] : []), { name: 'notes', label: 'ملاحظات', value: x?.notes, full: true }],
+        onSubmit: async (d, close) => { await api(x ? 'PUT' : 'POST', '/api/sources' + (x ? '/' + x.id : ''), d); await refreshBootstrap(); close(); toast('تم الحفظ'); router(); },
+      });
+    };
+  },
   reports: reportsHub,
   report: reportView,
   settlement: settlementView,
@@ -691,18 +724,19 @@ async function custodyDetail(id) {
       ${progress(c.spent, c.received, 'light')}
       <div class="hero-stats"><div><small>المستلم</small>${money(c.received)}</div><div><small>المصروف</small>${money(c.spent)}</div><div><small>المردود</small>${money(c.returned)}</div></div>
     </div>
-    <div class="actions wrap mb">${actions}</div>
+    <div class="astrip mb">${actions}</div>
     ${pendingTx.length ? card('بانتظار التأكيد', pendingTx.map(t => `<div class="item"><div class="item-main"><div class="item-title">${esc(t.typeName)} ${money(t.amount)}</div><div class="item-sub">${fmtDate(t.date)} · ${esc(t.method)} ${esc(t.note)}</div></div><div class="item-end">${staff ? `<div class="actions"><button class="btn sm ok-btn" data-act="tx-ok" data-id="${t.id}">تأكيد الاستلام</button><button class="btn sm danger-o" data-act="tx-no" data-id="${t.id}">رفض</button></div>` : tag('بانتظار تأكيد الإدارة', 'warn')}</div></div>`).join('')) : ''}
     ${c.unsettledCount && staff && open ? `<div class="notice">${ic('check', 18)} يوجد ${c.unsettledCount} مصروف معتمد غير مسوّى بقيمة ${fmt(c.unsettledAmount)} — يمكنك عمل تسوية لها.</div>` : ''}
     ${card('بيانات العهدة', rows([['الموظف', staff ? `<a href="#/user/${c.employeeId}">${esc(c.employeeName)}</a>` : esc(c.employeeName)], ['الغرض', esc(c.purpose)], ['مركز التكلفة الافتراضي', esc(c.costCenterName)], ['تاريخ الصرف', fmtDate(c.issueDate)], c.dueDate && ['موعد التسوية', fmtDate(c.dueDate)], c.closedAt && ['تاريخ الإغلاق', fmtDate(c.closedAt)], c.notes && ['ملاحظات', esc(c.notes)]]))}
     ${card(`المصروفات (${d.expenses.length})`, d.expenses.length ? `<div class="list">${d.expenses.map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات على هذه العهدة'), staff && c.pendingCount ? btn('اعتماد الكل', { act: 'c-approve-all', cls: 'sm ok-btn' }) : '')}
-    ${card('حركة العهدة', `<div class="timeline">${d.tx.map(t => `<div class="tl ${t.status !== 'confirmed' ? 'dim' : ''}"><div class="tl-dot ${t.sign > 0 ? 'in' : 'out'}"></div><div class="tl-body"><div class="tl-title">${esc(t.typeName)} <b class="${t.sign > 0 ? 'pos' : 'neg'}">${t.sign > 0 ? '+' : '−'}${fmt(t.amount)}</b> ${t.status !== 'confirmed' ? tag(t.status === 'pending' ? 'بانتظار التأكيد' : 'مرفوض', STATUS_TONE[t.status]) : ''}</div><div class="tl-sub">${esc(t.note || '')}${t.ref ? ' · مرجع ' + esc(t.ref) : ''} · ${esc(t.method)}</div><div class="tl-meta">${fmtDate(t.date)} · ${esc(t.createdByName)}</div></div></div>`).join('')}</div>`)}
+    ${card('حركة العهدة', `<div class="timeline">${d.tx.map(t => `<div class="tl ${t.status !== 'confirmed' ? 'dim' : ''}"><div class="tl-dot ${t.sign > 0 ? 'in' : 'out'}"></div><div class="tl-body"><div class="tl-title">${esc(t.typeName)} <b class="${t.sign > 0 ? 'pos' : 'neg'}">${t.sign > 0 ? '+' : '−'}${fmt(t.amount)}</b> ${t.status !== 'confirmed' ? tag(t.status === 'pending' ? 'بانتظار التأكيد' : 'مرفوض', STATUS_TONE[t.status]) : ''}</div><div class="tl-sub">${t.sourceName ? `<b class="src">${t.sign > 0 ? 'من' : 'إلى'}: ${esc(t.sourceName)}</b> · ` : ''}${esc(t.note || '')}${t.ref ? ' · مرجع ' + esc(t.ref) : ''} · ${esc(t.method)}</div><div class="tl-meta">${fmtDate(t.date)} · ${esc(t.createdByName)}</div></div></div>`).join('')}</div>`)}
     ${d.settlements.length ? card('التسويات', `<div class="list">${d.settlements.map(s => `<a class="item" href="#/settlement/${s.id}"><div class="item-ic">${ic('check')}</div><div class="item-main"><div class="item-title">${esc(s.no)} ${s.closed ? tag('إغلاق', '') : ''}</div><div class="item-sub">${s.expenseIds.length} مصروف${s.replenished ? ' · تعويض ' + fmt(s.replenished) : ''}${s.returned ? ' · رد ' + fmt(s.returned) : ''}${s.reimbursed ? ' · صرف فرق ' + fmt(s.reimbursed) : ''}</div><div class="item-meta">${fmtDate(s.date)}</div></div><div class="item-end">${money(s.total)}</div></a>`).join('')}</div>`) : ''}
   `, { back: '#/custodies' });
 
   const txForm = (type, title, extra = []) => formSheet({
     title, submit: 'حفظ',
-    fields: [{ type: 'money', name: 'amount', label: 'المبلغ', required: true, value: type === 'return' && c.balance > 0 ? c.balance : '' }, ...extra, { type: 'date', name: 'date', label: 'التاريخ', value: today() }, { type: 'select', name: 'method', label: 'الطريقة', options: PAY_METHODS }, { name: 'ref', label: 'رقم المرجع / الإيصال' }, { name: 'note', label: 'ملاحظة', full: true }],
+    fields: [{ type: 'money', name: 'amount', label: 'المبلغ', required: true, value: type === 'return' && c.balance > 0 ? c.balance : '' }, ...extra,
+      ...(type === 'topup' ? [srcField('مصدر مبلغ التعزيز — من أين؟')] : type === 'return' && staff ? [srcField('رُدّ المبلغ إلى')] : []), { type: 'date', name: 'date', label: 'التاريخ', value: today() }, { type: 'select', name: 'method', label: 'الطريقة', options: PAY_METHODS }, { name: 'ref', label: 'رقم المرجع / الإيصال' }, { name: 'note', label: 'ملاحظة', full: true }],
     onSubmit: async (b, close) => { await api('POST', `/api/custodies/${c.id}/tx`, { ...b, type }); close(); toast('تم التسجيل'); router(); },
   });
   ACT['c-exp'] = () => expenseForm({ custodyId: c.id });
@@ -718,12 +752,12 @@ async function custodyDetail(id) {
   });
   ACT['c-reopen'] = async () => { if (await confirmBox('إعادة فتح العهدة؟')) { await api('POST', `/api/custodies/${c.id}/reopen`); router(); } };
   ACT['c-approve-all'] = async () => { await api('POST', '/api/expenses/review', { ids: d.expenses.filter(e => e.status === 'pending').map(e => e.id), status: 'approved' }); toast('تم الاعتماد'); router(); };
-  ACT['tx-ok'] = async el => { await api('POST', `/api/tx/${el.dataset.id}/decide`, { approve: true }); toast('تم تأكيد الاستلام'); router(); };
+  ACT['tx-ok'] = el => formSheet({ title: 'تأكيد استلام المبلغ المردود', submit: 'تأكيد الاستلام', fields: [srcField('أين أُودع المبلغ؟')], onSubmit: async (b, close) => { await api('POST', `/api/tx/${el.dataset.id}/decide`, { ...b, approve: true }); close(); toast('تم تأكيد الاستلام'); router(); } });
   ACT['tx-no'] = async el => { await api('POST', `/api/tx/${el.dataset.id}/decide`, { approve: false }); router(); };
   ACT['c-print'] = () => {
     const issue = d.tx.find(t => t.type === 'issue') || { amount: c.received, date: c.issueDate, method: '' };
     printDoc(`<h2 class="doc-title">سند صرف عهدة ${esc(c.kindName)}</h2>
-      ${rows([['رقم العهدة', esc(c.no)], ['التاريخ', fmtDate(issue.date)], ['اسم المستلم', esc(c.employeeName)], ['المبلغ', `<b>${money(issue.amount)}</b>`], ['طريقة الصرف', esc(issue.method)], ['الغرض', esc(c.purpose)], ['مركز التكلفة', esc(c.costCenterName)], c.dueDate && ['موعد التسوية', fmtDate(c.dueDate)]])}
+      ${rows([['رقم العهدة', esc(c.no)], ['التاريخ', fmtDate(issue.date)], ['اسم المستلم', esc(c.employeeName)], ['المبلغ', `<b>${money(issue.amount)}</b>`], ['صُرف من', esc(issue.sourceName || '—')], ['طريقة الصرف', esc(issue.method)], issue.ref && ['المرجع', esc(issue.ref)], ['الغرض', esc(c.purpose)], ['مركز التكلفة', esc(c.costCenterName)], c.dueDate && ['موعد التسوية', fmtDate(c.dueDate)]])}
       <p class="doc-text">أقر أنا الموقع أدناه باستلامي المبلغ المذكور أعلاه كعهدة، وأتعهد بصرفه في الغرض المحدد وتقديم المستندات المؤيدة للصرف وتسوية العهدة في موعدها، ورد المتبقي منها.</p>
       ${signatures(['المستلم', 'المحاسب', 'المدير المعتمد'])}`);
   };
@@ -742,6 +776,7 @@ function settleForm(c, close) {
     submit: close ? 'تسوية وإغلاق' : 'تنفيذ التسوية',
     fields: [
       { type: 'date', name: 'date', label: 'تاريخ التسوية', value: today() },
+      ...(close ? (after !== 0 ? [srcField(after > 0 ? 'يُرد المتبقي إلى' : 'يُصرف الفرق من')] : []) : c.kind === 'permanent' ? [srcField('التعويض من')] : []),
       { type: 'select', name: 'method', label: close ? 'طريقة الرد / الصرف' : 'طريقة التعويض', options: PAY_METHODS },
       ...(!close && c.kind === 'permanent' ? [{ type: 'toggle', name: 'replenish', label: `تعويض العهدة المستديمة بمبلغ المصروفات (${fmt(c.unsettledAmount)}) لإعادتها لرصيدها`, value: true }] : []),
       { name: 'note', label: 'ملاحظة', full: true },
@@ -769,7 +804,7 @@ async function expenseDetail(id) {
   view(`مصروف ${e.no}`, `
     <div class="hero-card slim"><div class="hero-top"><div><div class="hero-label">${esc(e.categoryName)}</div><div class="hero-value">${money(e.amount)}</div><div class="hero-sub">${esc(e.description)}</div></div><div>${expTag(e)}</div></div></div>
     ${e.status === 'rejected' && e.reviewNote ? `<div class="notice bad">${ic('alert', 18)} سبب الرفض: ${esc(e.reviewNote)}</div>` : ''}
-    <div class="actions wrap mb">
+    <div class="astrip mb">
       ${staff && !e.settlementId && e.status !== 'approved' ? btn('اعتماد', { act: 'e-ok', icon: 'ok', cls: 'ok-btn' }) : ''}
       ${staff && !e.settlementId && e.status !== 'rejected' ? btn('رفض', { act: 'e-no', icon: 'x', cls: 'danger-o' }) : ''}
       ${editable ? btn(e.status === 'rejected' && !staff ? 'تعديل وإعادة الإرسال' : 'تعديل', { act: 'e-edit', icon: 'edit' }) : ''}
@@ -861,6 +896,7 @@ function custodyForm(employeeId) {
       { type: 'select', name: 'employeeId', label: 'الموظف المستلم', options: emps, value: employeeId, empty: '— اختر الموظف —', required: true, full: true },
       { type: 'chips', name: 'kind', label: 'نوع العهدة', value: 'temporary', options: [{ value: 'temporary', label: 'مؤقتة (لمهمة وتُسوّى وتُغلق)' }, { value: 'permanent', label: 'مستديمة (نثرية تُعوَّض دورياً)' }] },
       { type: 'money', name: 'amount', label: 'مبلغ العهدة', required: true },
+      srcField('مصدر المبلغ — صُرف من أين؟'),
       { name: 'purpose', label: 'الغرض من العهدة', required: true, full: true, placeholder: 'مثال: مشتريات موقع برج الريان' },
       { type: 'select', name: 'costCenterId', label: 'مركز التكلفة الافتراضي', options: ccOptions(), empty: '— اختر —', full: true, hint: 'يُقترح تلقائياً عند تسجيل المصروفات ويمكن تغييره لكل مصروف' },
       { type: 'date', name: 'issueDate', label: 'تاريخ الصرف', value: today() },
@@ -902,7 +938,7 @@ async function assetDetail(id) {
   ] : [mine && !a.acknowledged && btn('أقر باستلام هذه العهدة', { act: 'a-ack', icon: 'ok', cls: 'primary' })];
   view(a.name, `
     <div class="hero-card slim"><div class="hero-top"><div><div class="hero-label">${esc(a.no)} · ${esc(a.category)}</div><div class="hero-value sm">${esc(a.name)}</div><div class="hero-sub">${a.holderName ? 'بعهدة: ' + esc(a.holderName) : esc(a.statusName)}</div></div><div>${a.status === 'assigned' ? tag(a.acknowledged ? 'أقر بالاستلام ✓' : 'لم يُقر بعد', a.acknowledged ? 'light' : 'warn') : ''}</div></div></div>
-    <div class="actions wrap mb">${acts.filter(Boolean).join('')}${a.status === 'assigned' ? btn('طباعة نموذج التسليم', { act: 'a-print', icon: 'print', cls: 'ghost' }) : ''}</div>
+    <div class="astrip mb">${acts.filter(Boolean).join('')}${a.status === 'assigned' ? btn('طباعة نموذج التسليم', { act: 'a-print', icon: 'print', cls: 'ghost' }) : ''}</div>
     ${card('بيانات الأصل', rows([['الرقم التسلسلي / اللوحة', `<span class="num">${esc(a.serial || '—')}</span>`], a.model && ['الموديل', esc(a.model)], ['القيمة', money(a.value)], a.purchaseDate && ['تاريخ الشراء', fmtDate(a.purchaseDate)], ['مركز التكلفة', esc(a.costCenterName)], ['الحالة الفنية', esc(a.condition || '—')], a.notes && ['ملاحظات', esc(a.notes)]]))}
     ${a.photos?.length ? card('الصور', `<div class="gallery">${a.photos.map(f => `<a href="#" data-open-file="${esc(f)}" class="g-item"><img data-file="${esc(f)}" alt=""></a>`).join('')}</div>`) : ''}
     ${card('سجل الحركة', moves.length ? `<div class="timeline">${moves.map(m => `<div class="tl"><div class="tl-dot"></div><div class="tl-body"><div class="tl-title">${esc(m.typeName)}${m.toName ? ' ← ' + esc(m.toName) : ''}${m.fromName && !m.toName ? ' (من ' + esc(m.fromName) + ')' : ''}</div><div class="tl-sub">الحالة: ${esc(m.condition || '—')}${m.note ? ' · ' + esc(m.note) : ''}</div><div class="tl-meta">${fmtDate(m.date)} · ${esc(m.byName)}</div></div></div>`).join('')}</div>` : empty('لا توجد حركات'))}
@@ -951,7 +987,7 @@ async function userDetail(id) {
   const bal = cs.reduce((s, c) => s + c.balance, 0);
   view(u.name, `
     <div class="hero-card"><div class="hero-top"><div><div class="hero-label">إجمالي الرصيد لدى ${esc(u.name)}</div><div class="hero-value">${money(bal)}</div><div class="hero-sub">${esc(u.roleName)}${u.jobTitle ? ' · ' + esc(u.jobTitle) : ''}${u.custodyLimit ? ' · الحد الأعلى ' + fmt(u.custodyLimit) : ''}</div></div></div></div>
-    <div class="actions wrap mb">${btn('صرف عهدة', { act: 'u-give', icon: 'wallet', cls: 'primary' })}${btn('تسليم أصل', { act: 'u-asset', icon: 'box' })}${btn('كشف الحساب', { href: '#/report/statement?employeeId=' + id, icon: 'chart' })}${isAdmin() ? btn('تعديل الحساب', { act: 'u-edit', icon: 'edit', cls: 'ghost' }) : ''}</div>
+    <div class="astrip mb">${btn('صرف عهدة', { act: 'u-give', icon: 'wallet', cls: 'primary' })}${btn('تسليم أصل', { act: 'u-asset', icon: 'box' })}${btn('كشف الحساب', { href: '#/report/statement?employeeId=' + id, icon: 'chart' })}${isAdmin() ? btn('تعديل الحساب', { act: 'u-edit', icon: 'edit', cls: 'ghost' }) : ''}</div>
     ${card(`العهد النقدية المفتوحة (${cs.length})`, cs.length ? `<div class="list">${cs.map(custodyItem).join('')}</div>` : empty('لا توجد عهد مفتوحة'))}
     ${card(`العهد العينية (${assets.filter(a => a.status === 'assigned').length})`, assets.length ? `<div class="list">${assets.map(assetItem).join('')}</div>` : empty('لا توجد أصول بعهدته'))}
     ${card('آخر المصروفات', exps.length ? `<div class="list">${exps.slice(0, 10).map(e => expenseItem(e)).join('')}</div>` : empty('لا توجد مصروفات'), btn('الكل', { href: '#/expenses?status=&employeeId=' + id, cls: 'sm ghost' }))}
@@ -992,7 +1028,7 @@ async function ccDetail(id, q) {
   view(c.name, `
     <div class="hero-card"><div class="hero-top"><div><div class="hero-label">${c.code ? esc(c.code) + ' · ' : ''}${esc(S.b.ccTypes[c.type] || '')}${c.parentName ? ' · تابع لـ ' + esc(c.parentName) : ''}</div><div class="hero-value">${money(d.spent)}</div><div class="hero-sub">إجمالي المصروف (يشمل الفروع)</div></div>${c.active === false ? tag('مغلق', 'light') : ''}</div>
       ${c.budget ? progress(d.spent, c.budget, 'light') + `<div class="hero-stats"><div><small>الميزانية</small>${money(c.budget)}</div><div><small>المتبقي</small>${money(c.budget - d.spent)}</div><div><small>نسبة الصرف</small><span class="num">${Math.round(d.spent / c.budget * 100)}%</span></div></div>` : ''}</div>
-    <div class="actions wrap mb">${btn('تعديل', { act: 'cc-edit', icon: 'edit' })}${btn('مركز فرعي', { act: 'cc-child', icon: 'plus' })}${btn('كل المصروفات', { href: '#/expenses?status=&costCenterId=' + id, icon: 'receipt', cls: 'ghost' })}${btn('تقرير البنود', { href: '#/report/categories?costCenterId=' + id, icon: 'chart', cls: 'ghost' })}</div>
+    <div class="astrip mb">${btn('تعديل', { act: 'cc-edit', icon: 'edit' })}${btn('مركز فرعي', { act: 'cc-child', icon: 'plus' })}${btn('كل المصروفات', { href: '#/expenses?status=&costCenterId=' + id, icon: 'receipt', cls: 'ghost' })}${btn('تقرير البنود', { href: '#/report/categories?costCenterId=' + id, icon: 'chart', cls: 'ghost' })}</div>
     <form class="period" id="per">${fieldHtml({ type: 'date', name: 'from', label: 'من', value: q.from })}${fieldHtml({ type: 'date', name: 'to', label: 'إلى', value: q.to })}<button class="btn sm">عرض</button></form>
     ${d.children.length ? card('المراكز الفرعية', `<div class="list">${d.children.map(x => `<a class="item" href="#/cost-center/${x.id}"><div class="item-ic">${ic('layers')}</div><div class="item-main"><div class="item-title">${esc(x.name)}</div><div class="item-sub">${x.budget ? 'الميزانية ' + fmt(x.budget) : ''}</div></div>${ic('chev', 16)}</a>`).join('')}</div>`) : ''}
     <div class="grid2">
@@ -1009,9 +1045,9 @@ async function ccDetail(id, q) {
 }
 function ccForm(c, parentId) {
   formSheet({
-    title: c ? 'تعديل مركز تكلفة' : 'مركز تكلفة جديد', submit: 'حفظ',
+    title: c ? 'تعديل مشروع / مركز تكلفة' : 'مشروع / مركز تكلفة جديد', submit: 'حفظ',
     fields: [
-      { name: 'name', label: 'اسم المركز', required: true, value: c?.name, full: true, placeholder: 'مثال: مشروع برج الريان / الإدارة / شاحنة 4521' },
+      { name: 'name', label: 'الاسم', required: true, value: c?.name, full: true, placeholder: 'مثال: مشروع مجمع الورود / الإدارة العامة / شاحنة 4521' },
       { name: 'code', label: 'الرمز', value: c?.code, placeholder: '100' },
       { type: 'select', name: 'type', label: 'النوع', value: c?.type || 'project', options: Object.entries(S.b.ccTypes).map(([value, label]) => ({ value, label })) },
       { type: 'select', name: 'parentId', label: 'تابع لمركز رئيسي', options: ccOptions({ activeOnly: false }).filter(o => o.value !== c?.id), value: c ? c.parentId : parentId, empty: '— مركز رئيسي —', full: true },
@@ -1028,7 +1064,9 @@ function ccForm(c, parentId) {
 const REPORTS = [
   ['balances', 'wallet', 'أرصدة العهد حسب الموظف', 'كم استلم كل موظف وكم صرف وكم بقي معه', true],
   ['statement', 'list', 'كشف حساب موظف', 'كل الحركات بالرصيد الجاري لموظف أو عهدة', false],
-  ['cost-centers', 'layers', 'المصروفات حسب مراكز التكلفة', 'مقارنة بالميزانية مع تجميع الفروع', true],
+  ['sources', 'bank', 'مصادر أموال العهد', 'من أين صُرفت العهد (بنك، صندوق، مالك…) وإلى أين رُدّت', true],
+  ['source-ledger', 'list', 'حركة أموال العهد بالتفصيل', 'كل مبلغ: من أي مصدر، لأي موظف، بأي مرجع', true],
+  ['cost-centers', 'layers', 'المصروفات حسب المشاريع ومراكز التكلفة', 'مقارنة بالميزانية مع تجميع المراحل الفرعية', true],
   ['categories', 'tag', 'المصروفات حسب البنود', 'لكل حساب: الصافي والضريبة والإجمالي', true],
   ['expenses', 'receipt', 'سجل المصروفات التفصيلي', 'كل مصروف ببياناته الكاملة مع التصفية', true],
   ['aging', 'clock', 'أعمار العهد المفتوحة', 'العهد المتأخرة عن التسوية', true],
@@ -1051,6 +1089,8 @@ async function reportView(name, q) {
     name === 'expenses' && { type: 'select', name: 'employeeId', label: 'الموظف', options: userOptions(), value: q.employeeId, empty: 'الكل' },
     name === 'expenses' && { type: 'select', name: 'status', label: 'الحالة', options: Object.entries(S.b.expenseStatus).map(([value, label]) => ({ value, label })), value: q.status, empty: 'الكل' },
     name === 'assets' && { type: 'select', name: 'holderId', label: 'بعهدة', options: userOptions(), value: q.holderId, empty: 'الكل' },
+    name === 'source-ledger' && { type: 'select', name: 'sourceId', label: 'المصدر', options: S.b.fundSources.map(x => ({ value: x.id, label: x.name })), value: q.sourceId, empty: 'الكل' },
+    name === 'source-ledger' && { type: 'select', name: 'employeeId', label: 'الموظف', options: userOptions(), value: q.employeeId, empty: 'الكل' },
   ].filter(Boolean);
   const r = needsEmp ? null : await api('GET', `/api/reports/${name}?` + qsOf(q));
   const cell = (c, v) => c.type === 'money' ? (v === '' ? '' : `<span class="num ${v < 0 ? 'neg' : ''}">${fmt(v)}</span>`) : c.type === 'num' ? `<span class="num">${v}</span>` : c.type === 'date' ? fmtDate(v) : esc(v);
@@ -1124,17 +1164,20 @@ const EMP_VIEWS = {
     const t = d.totals;
     const unack = d.assets.filter(a => !a.acknowledged);
     view('الرئيسية', `
-      <div class="hello"><div><div class="hello-t">أهلاً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="muted">${nextReminderText()}</div></div></div>
+      <div class="home-head ${t.balance < 0 ? 'neg' : ''}">
+        <div class="hh-top"><div><div class="hh-hi">أهلاً ${esc(S.user.name.split(' ')[0])} 👋</div><div class="hh-date">${nextReminderText() || esc(S.user.jobTitle || '')}</div></div><img src="${BRAND.logo}" alt=""></div>
+        <div class="hh-label">المتبقي معك من العهد</div>
+        <div class="hh-value">${money(t.balance)}</div>
+        <div class="hh-stats"><div><small>استلمت</small><span class="num">${fmt(t.received)}</span></div><div><small>صرفت</small><span class="num">${fmt(t.spent)}</span></div><div><small>بانتظار الاعتماد</small><span class="num">${fmt(t.pendingAmount)}</span></div></div>
+      </div>
+      <div class="qa">
+        <button class="qa-i main" data-act="q-expenseForm"><span>${ic('plus', 24)}</span>مصروف جديد</button>
+        <button class="qa-i" data-act="q-returnForm"><span>${ic('undo', 22)}</span>رد مبلغ</button>
+        <button class="qa-i" data-act="q-requestForm"><span>${ic('inbox', 22)}</span>طلب عهدة</button>
+        <a class="qa-i" href="#/report/statement"><span>${ic('chart', 22)}</span>كشف حسابي</a>
+      </div>
       ${notifNotice()}
       ${unack.map(a => `<a class="notice" href="#/asset/${a.id}">${ic('box', 18)} تم تسليمك «${esc(a.name)}» — اضغط للإقرار بالاستلام</a>`).join('')}
-      <div class="hero-card ${t.balance < 0 ? 'neg' : ''}"><div class="hero-label">المتبقي معك من العهد</div><div class="hero-value">${money(t.balance)}</div>
-        <div class="hero-stats"><div><small>استلمت</small>${money(t.received)}</div><div><small>صرفت</small>${money(t.spent)}</div><div><small>بانتظار الاعتماد</small>${money(t.pendingAmount)}</div></div></div>
-      <button class="btn primary xl" data-act="q-expenseForm">${ic('plus', 24)} تسجيل مصروف جديد</button>
-      <div class="quick three">
-        <button class="q" data-act="q-returnForm">${ic('undo', 22)}<span>رد مبلغ</span></button>
-        <button class="q" data-act="q-requestForm">${ic('inbox', 22)}<span>طلب عهدة</span></button>
-        <a class="q" href="#/report/statement">${ic('chart', 22)}<span>كشف حسابي</span></a>
-      </div>
       ${card(`عهدي المفتوحة (${d.custodies.length})`, d.custodies.length ? `<div class="list">${d.custodies.map(custodyItem).join('')}</div>` : empty('لا توجد عهدة مفتوحة باسمك', btn('طلب عهدة', { act: 'q-requestForm', cls: 'primary sm' })))}
       ${card('آخر مصروفاتي', d.recent.length ? `<div class="list">${d.recent.map(e => expenseItem(e)).join('')}</div>` : empty('لم تسجل مصروفات بعد'), btn('الكل', { href: '#/expenses', cls: 'sm ghost' }))}
       ${d.assets.length ? card(`عهدي العينية (${d.assets.length})`, `<div class="list">${d.assets.map(a => assetItem({ ...a, statusName: 'بعهدتك' })).join('')}</div>`) : ''}
@@ -1256,7 +1299,7 @@ async function showReminder(test = false) {
   if (!NATIVE && 'Notification' in window && Notification.permission === 'granted') {
     try {
       const reg = await navigator.serviceWorker?.getRegistration();
-      const o = { body: 'هل صرفت شيئاً من العهدة؟ ولأي مشروع؟', icon: '/icon.svg', tag: 'custody-reminder', renotify: true, requireInteraction: true, dir: 'rtl', lang: 'ar', actions: [{ action: 'yes', title: 'نعم، سأسجل' }, { action: 'no', title: 'لا، لم أصرف' }] };
+      const o = { body: 'هل صرفت شيئاً من العهدة؟ ولأي مشروع؟', icon: '/logo.png', tag: 'custody-reminder', renotify: true, requireInteraction: true, dir: 'rtl', lang: 'ar', actions: [{ action: 'yes', title: 'نعم، سأسجل' }, { action: 'no', title: 'لا، لم أصرف' }] };
       if (reg) reg.showNotification('🔔 تذكير العهدة', o); else new Notification('🔔 تذكير العهدة', o);
     } catch { }
   }

@@ -4,17 +4,18 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>نظام إدارة العهد</title>
 <style>
-  :root { --p: #0f5c4d; --muted: #5d6b66; --border: #dfe5e2; }
+  :root { --p: #1e1757; --c: #c0743f; --muted: #5d6b66; --border: #dfe5e2; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; padding: 22px 16px; font-family: system-ui, sans-serif; background: radial-gradient(circle at 20% 0%, #1b7a65, transparent 50%), linear-gradient(160deg, var(--p), #06261f); color: #15201c; display: flex; flex-direction: column; justify-content: center; }
+  body { margin: 0; min-height: 100vh; padding: 22px 16px; font-family: system-ui, sans-serif; background: radial-gradient(circle at 15% 0%, #3a2f8f, transparent 55%), radial-gradient(circle at 100% 100%, rgba(192,116,63,.35), transparent 50%), linear-gradient(160deg, var(--p), #0c0828); color: #15201c; display: flex; flex-direction: column; justify-content: center; }
   .head { text-align: center; color: #fff; margin-bottom: 18px; }
-  .head h1 { font-size: 23px; margin: 10px 0 4px; } .head p { margin: 0; opacity: .85; font-size: 14px; }
+  .logo { display: inline-block; background: #fff; border-radius: 20px; padding: 8px 12px; } .logo img { width: 64px; display: block; }
+  .head h1 { font-size: 18px; margin: 10px 0 4px; } .head p { margin: 0; opacity: .85; font-size: 14px; }
   .opt { display: flex; gap: 14px; align-items: flex-start; background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 12px; width: 100%; border: 0; text-align: start; font: inherit; color: inherit; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,.15); }
-  .opt .ic { width: 46px; height: 46px; border-radius: 14px; background: #e3f1ed; display: grid; place-items: center; font-size: 24px; flex-shrink: 0; }
-  .opt b { display: block; font-size: 16.5px; margin-bottom: 3px; }
-  .opt span { color: var(--muted); font-size: 13.5px; line-height: 1.6; }
-  .opt.main { outline: 3px solid #d9a441; }
-  .badge { display: inline-block; background: #d9a441; color: #2a1d00; border-radius: 99px; padding: 0 8px; font-size: 11px; font-weight: 800; margin-inline-start: 6px; vertical-align: middle; }
+  .opt .ic { width: 46px; height: 46px; border-radius: 14px; background: #ebe9f6; display: grid; place-items: center; font-size: 24px; flex-shrink: 0; }
+  .opt b { display: block; font-size: 15px; margin-bottom: 3px; }
+  .opt span { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+  .opt.main { outline: 3px solid var(--c); }
+  .opt .badge { display: inline-block; background: var(--c); color: #fff; border-radius: 99px; padding: 0 8px; font-size: 11px; font-weight: 800; margin-inline-start: 6px; vertical-align: middle; }
   .server { display: none; margin-top: 12px; }
   .server.show { display: block; }
   input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 11px; font-size: 16px; direction: ltr; text-align: left; }
@@ -24,9 +25,9 @@
 </head>
 <body>
   <div class="head">
-    <svg width="68" height="68" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#fff"/><rect x="96" y="150" width="320" height="220" rx="36" fill="#0f5c4d"/><rect x="96" y="196" width="320" height="44" fill="#d9a441"/><circle cx="350" cy="310" r="26" fill="#fff"/></svg>
-    <h1>نظام إدارة العهد</h1>
-    <p>اختر طريقة التشغيل</p>
+    <div class="logo"><img src="logo.png" alt="الخطوط المعدنية"></div>
+    <h1>شركة الخطوط المعدنية للمقاولات العامة</h1>
+    <p>نظام إدارة العهد — اختر طريقة التشغيل</p>
   </div>
 
   <button class="opt main" id="local">

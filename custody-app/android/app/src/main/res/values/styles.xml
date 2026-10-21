@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#0F5C4D</color>
-    <color name="icon_bg">#0F5C4D</color>
+    <color name="primary">#1E1757</color>
+    <color name="icon_bg">#FFFFFF</color>
     <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimary">@color/primary</item>
         <item name="android:colorPrimaryDark">@color/primary</item>

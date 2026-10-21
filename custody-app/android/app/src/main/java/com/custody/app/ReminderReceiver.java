@@ -56,7 +56,7 @@ public class ReminderReceiver extends BroadcastReceiver {
 
         Notification n = new Notification.Builder(c, ReminderScheduler.CHANNEL)
                 .setSmallIcon(R.drawable.ic_notify)
-                .setColor(Color.parseColor("#0F5C4D"))
+                .setColor(Color.parseColor("#1E1757"))
                 .setContentTitle("🔔 تذكير العهدة")
                 .setContentText("هل صرفت شيئاً خلال آخر نصف ساعة؟ ولأي مشروع؟")
                 .setCategory(Notification.CATEGORY_REMINDER)

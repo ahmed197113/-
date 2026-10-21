@@ -1,11 +1,11 @@
 {
-  "name": "نظام إدارة العهد",
-  "short_name": "العهد",
+  "name": "الخطوط المعدنية — نظام إدارة العهد",
+  "short_name": "عهد الخطوط المعدنية",
   "start_url": "/",
   "display": "standalone",
   "dir": "rtl",
   "lang": "ar",
-  "background_color": "#f4f6f5",
-  "theme_color": "#0f5c4d",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "background_color": "#f5f3f1",
+  "theme_color": "#1e1757",
+  "icons": [{ "src": "/logo.png", "sizes": "224x280", "type": "image/png" }]
 }
