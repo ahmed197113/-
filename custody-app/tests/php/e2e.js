@@ -186,11 +186,13 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     const other = await api('POST', `/api/assets/${id.asset}/ack`, {}, T.emp2); assert(other.status === 403, 'إقرار من غير الحامل');
   });
   await step('تعميد مباشر: الموظف يسجل عهدة استلمها من المالك', async () => {
+    // التعميد المباشر مفعّل افتراضياً للموظف الجديد؛ نوقفه لموظف ونتأكد أنه يُمنع
+    await api('PUT', '/api/users/' + id.emp1, { directCustody: false }, T.admin);
     const no = await api('POST', '/api/requests', { alreadyPaid: true, amount: 900, purpose: 'محاولة غير مسموحة' }, T.emp1);
     assert(no.status === 403, 'موظف غير مسموح سجل تعميداً مباشراً ' + no.status);
     await login('admin', 'secret1'); T.admin = await token();
     await go('#/user/' + id.emp2); await act('u-edit');
-    await modal().locator('label.toggle').filter({ has: page.locator('[name=directCustody]') }).click();
+    if (!(await modal().locator('[name=directCustody]').isChecked())) await modal().locator('label.toggle').filter({ has: page.locator('[name=directCustody]') }).click();
     await submit(); await toast('تم الحفظ');
     await login('emp2', '1234'); T.emp2 = await token();
     // زر «استلمت عهدة» السريع: المبلغ والمشروع فقط، والمصدر «المالك» تلقائياً

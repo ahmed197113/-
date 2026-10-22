@@ -203,7 +203,25 @@
       addTx(user, c, 'issue', amount, { date: c.issueDate, method: b.method, ref: b.ref, note: b.direct ? 'تعميد مباشر' : 'صرف العهدة', sourceId });
       if (!b.direct) notify(emp.id, `تم صرف ${KINDS[kind]} رقم ${c.no} بمبلغ ${amount} — ${c.purpose}`, '#/custody/' + c.id);
       log(user, 'إنشاء عهدة', `${c.no} لـ ${emp.name} بمبلغ ${amount}${sourceId ? ' من ' + srcName(sourceId) : ''}`, 'custody', c.id);
+      if (b.coverDeficit !== false) coverDeficits(user, c, amount);
       return c;
+    }
+    // الموظف دفع من جيبه (عهدة سابقة بالسالب): يُغطّى العجز تلقائياً من العهدة الجديدة بتحويل داخلي
+    function coverDeficits(user, c, amount) {
+      let left = amount, covered = 0;
+      const olds = D().custodies.filter(x => x.id !== c.id && x.employeeId === c.employeeId && x.status === 'open').sort((a, b) => String(a.issueDate + a.createdAt).localeCompare(String(b.issueDate + b.createdAt)));
+      for (const o of olds) {
+        const need = num(-custodyBalance(o).balance);
+        const cover = num(Math.min(need, left));
+        if (!(cover > 0)) continue;
+        const out = addTx(user, c, 'transfer_out', cover, { date: c.issueDate, method: 'تسوية داخلية', note: `تغطية عجز العهدة ${o.no} (دفعه الموظف من جيبه)` });
+        const inn = addTx(user, o, 'transfer_in', cover, { date: c.issueDate, method: 'تسوية داخلية', note: `تغطية العجز من العهدة ${c.no}`, relatedId: out.id });
+        out.relatedId = inn.id;
+        left = num(left - cover); covered = num(covered + cover);
+        log(user, 'تغطية عجز', `${cover} من ${c.no} إلى ${o.no}`, 'custody', o.id);
+        if (!left) break;
+      }
+      if (covered) { c.coveredDeficit = covered; notify(c.employeeId, `تم خصم ${covered} من العهدة ${c.no} لتعويض ما دفعته من جيبك سابقاً — المتبقي معك ${num(amount - covered)}`, '#/custody/' + c.id); }
     }
 
     // ---------- التقارير ----------

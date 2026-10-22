@@ -985,7 +985,19 @@ function custodyForm(employeeId) {
         if (!/يتجاوز الحد/.test(e.message) || !(await confirmBox(e.message + ' — صرفها على أي حال؟'))) throw e;
         r = await api('POST', '/api/custodies', { ...d, force: true });
       }
-      close(); toast(`تم صرف العهدة ${r.no}`); go('#/custody/' + r.id);
+      close(); toast(r.coveredDeficit ? `تم صرف العهدة ${r.no} — خُصم منها ${fmt(r.coveredDeficit)} عجزاً سابقاً دفعه الموظف من جيبه` : `تم صرف العهدة ${r.no}`); go('#/custody/' + r.id);
+    },
+    onMount: (el, _c, form) => {
+      const box = document.createElement('div'); box.className = 'notice full'; box.hidden = true;
+      form.querySelector('[name=amount]').closest('.field').after(box);
+      const sync = async () => {
+        box.hidden = true;
+        if (!form.employeeId.value) return;
+        const cs = await api('GET', '/api/custodies?' + qsOf({ employeeId: form.employeeId.value, status: 'open' })).catch(() => []);
+        const debt = cs.filter(c => c.balance < 0).reduce((a, c) => a - c.balance, 0);
+        if (debt > 0) { box.hidden = false; box.innerHTML = `${ic('alert', 18)} هذا الموظف دفع <b class="num">${fmt(debt)}</b> من جيبه على عهدة سابقة — سيُخصم تلقائياً من هذه العهدة ليعوَّض، ويبقى معه الباقي.`; }
+      };
+      form.employeeId.addEventListener('change', sync); sync();
     },
   });
 }
@@ -1102,7 +1114,7 @@ function userForm(u) {
       { name: 'phone', label: 'الجوال', value: u?.phone, attrs: 'inputmode="tel" dir="ltr"' },
       { type: 'select', name: 'role', label: 'الصلاحية', value: u?.role || 'employee', options: [{ value: 'employee', label: 'موظف — يسجل مصروفاته فقط' }, { value: 'accountant', label: 'محاسب — يعتمد ويصرف ويسوي' }, { value: 'owner', label: 'المالك — واجهة مبسطة: يتابع ويعتمد ويصرف' }, { value: 'admin', label: 'مدير النظام — كل الصلاحيات' }] },
       { type: 'number', name: 'custodyLimit', label: 'الحد الأعلى للعهدة (اختياري)', value: u?.custodyLimit || '', attrs: 'min="0"' },
-      { type: 'toggle', name: 'directCustody', label: 'تعميد مباشر: يستلم عهدته من المالك مباشرة ويسجلها بنفسه بدون طلب', value: u?.directCustody },
+      { type: 'toggle', name: 'directCustody', label: 'تعميد مباشر: يستلم عهدته من المالك مباشرة ويسجلها بنفسه بدون طلب', value: u ? u.directCustody : true },
       { name: 'username', label: 'اسم المستخدم للدخول', required: !u, value: u?.username, attrs: `dir="ltr" autocapitalize="off" ${u ? 'disabled' : ''}` },
       { name: 'password', label: u ? 'كلمة مرور جديدة (اتركها فارغة)' : 'كلمة المرور', required: !u, attrs: 'dir="ltr" minlength="4"' },
       ...(u ? [{ type: 'toggle', name: 'active', label: 'الحساب نشط', value: u.active }] : []),
@@ -1262,8 +1274,9 @@ const EMP_VIEWS = {
     view('الرئيسية', `
       <div class="s-bal ${t.balance < 0 ? 'neg' : ''}">
         <div class="s-hi">أهلاً ${esc(S.user.name.split(' ')[0])} 👋</div>
-        <div class="s-label">المتبقي معك</div>
-        <div class="s-value">${money(t.balance)}</div>
+        <div class="s-label">${t.balance < 0 ? 'دفعت من جيبك — لك عند الشركة' : 'المتبقي معك'}</div>
+        <div class="s-value">${money(Math.abs(t.balance))}</div>
+        ${t.balance < 0 ? '<div class="s-sub">يُعوَّض لك تلقائياً من العهدة القادمة</div>' : ''}
         ${t.pendingAmount ? `<div class="s-sub">بانتظار الاعتماد: <span class="num">${fmt(t.pendingAmount)}</span></div>` : ''}
       </div>
       ${notifNotice()}
@@ -1279,7 +1292,7 @@ const EMP_VIEWS = {
       ${S.user.directCustody
         ? `<button class="s-btn" data-act="q-receive">${ic('wallet', 26)}<span>استلمت عهدة<small>اكتب المبلغ فقط</small></span></button>`
         : `<button class="s-btn" data-act="q-requestForm">${ic('inbox', 26)}<span>اطلب عهدة<small>أرسل طلباً للإدارة</small></span></button>`}
-      <div class="q-row"><button class="btn ghost" data-act="q-expenseForm">${ic('receipt', 18)} مصروف بالتفاصيل</button><button class="btn ghost" data-act="q-returnForm">${ic('undo', 18)} رجّعت مبلغاً</button></div>
+      <div class="q-row"><button class="btn ghost" data-act="q-expenseForm">${ic('receipt', 18)} مصروف بالتفاصيل</button><button class="btn ghost" data-act="q-returnForm">${ic('undo', 18)} رجّعت مبلغاً</button>${S.user.directCustody ? `<button class="btn ghost" data-act="q-requestForm">${ic('inbox', 18)} اطلب عهدة</button>` : ''}</div>
       <h3 class="s-h">آخر مصروفاتي</h3>
       ${d.recent.length ? `<div class="s-list">${d.recent.slice(0, 6).map(e => `<a href="#/expense/${e.id}"><div><b>${esc(e.description)}</b><small class="${STATUS[e.status][1]}">${STATUS[e.status][0]} · ${fmtDate(e.date)}</small></div>${money(e.amount)}</a>`).join('')}</div>` : '<p class="muted center">لم تسجل مصروفات بعد</p>'}
       <div class="s-links"><a href="#/custodies">${ic('wallet', 18)}عهدي</a><a href="#/report/statement">${ic('chart', 18)}كشف حسابي</a>${d.assets.length ? `<a href="#/assets">${ic('box', 18)}أجهزتي</a>` : ''}<a href="#/settings">${ic('settings', 18)}الإعدادات</a></div>
@@ -1374,6 +1387,7 @@ function parseLine(line) {
   const receive = /^(استلمت|استلام|وصلني|عهده|عهدة)/.test(normAr(desc));
   return { amount, desc, receive };
 }
+const num2 = n => Math.round((Number(n) || 0) * 100) / 100;
 // العهدة التي يُسجَّل عليها: المفتوحة الوحيدة، وإلا الأحدث التي فيها رصيد
 async function pickCustody() {
   const cs = await api('GET', '/api/custodies?status=open');
@@ -1389,7 +1403,12 @@ async function saveQuick({ amount, cat, desc, attachments = [] }) {
   const c = await pickCustody();
   if (!c) return noCustody();
   const body = { custodyId: c.id, amount, categoryId: cat.id, description: desc || cat.name, attachments, date: today() };
-  const done = async b => { const e = await api('POST', '/api/expenses', b); markUsed(cat.id); toast(`✓ تم: ${e.description} ${fmt(e.amount)}`); router(); return e; };
+  const over = num2(Number(amount) - Math.max(0, c.balance));
+  const done = async b => {
+    const e = await api('POST', '/api/expenses', b); markUsed(cat.id);
+    toast(over > 0 ? `✓ تم: ${e.description} ${fmt(e.amount)} — دفعت ${fmt(over)} من جيبك، تُعوَّض من العهدة القادمة` : `✓ تم: ${e.description} ${fmt(e.amount)}`);
+    router(); return e;
+  };
   if (c.costCenterId) return done(body);
   const last = store.get('q_cc');
   formSheet({
@@ -1458,8 +1477,9 @@ function quickReceive(amount) {
       if (ccs.length && !d.costCenterId) throw new Error('اختر المشروع');
       if (d.costCenterId) store.set('q_cc', d.costCenterId);
       const proj = d.costCenterId ? ccName(d.costCenterId) : '';
-      await api('POST', '/api/requests', { type: 'cash', alreadyPaid: true, amount: d.amount, sourceId: ownerSrc?.id, costCenterId: d.costCenterId || null, purpose: 'عهدة مستلمة' + (proj && proj !== '—' ? ' — ' + proj : ''), issueDate: today(), method: 'نقداً' });
-      close(); toast(`✓ تم تسجيل استلام ${fmt(d.amount)}`); router();
+      const r = await api('POST', '/api/requests', { type: 'cash', alreadyPaid: true, amount: d.amount, sourceId: ownerSrc?.id, costCenterId: d.costCenterId || null, purpose: 'عهدة مستلمة' + (proj && proj !== '—' ? ' — ' + proj : ''), issueDate: today(), method: 'نقداً' });
+      const cov = r.custodyId ? (await api('GET', '/api/custodies/' + r.custodyId).catch(() => ({ custody: {} }))).custody.coveredDeficit : 0;
+      close(); toast(cov ? `✓ تم تسجيل استلام ${fmt(d.amount)} — خُصم منها ${fmt(cov)} عوضاً عما دفعته من جيبك` : `✓ تم تسجيل استلام ${fmt(d.amount)}`); router();
     },
   });
 }

@@ -300,7 +300,25 @@ class Core {
     $this->addTx($user, $c, 'issue', $amount, ['date' => $c->issueDate, 'method' => g($b, 'method'), 'ref' => g($b, 'ref'), 'note' => $direct ? 'تعميد مباشر' : 'صرف العهدة', 'sourceId' => $sourceId]);
     if (!$direct) $this->notify($emp->id, 'تم صرف ' . KINDS[$kind] . " رقم {$c->no} بمبلغ " . jsstr($amount) . " — {$c->purpose}", '#/custody/' . $c->id);
     $this->log($user, 'إنشاء عهدة', "{$c->no} لـ {$emp->name} بمبلغ " . jsstr($amount) . ($sourceId ? ' من ' . $this->srcName($sourceId) : ''), 'custody', $c->id);
+    if (g($b, 'coverDeficit') !== false) $this->coverDeficits($user, $c, $amount);
     return $c;
+  }
+  // الموظف دفع من جيبه (عهدة سابقة بالسالب): يُغطّى العجز تلقائياً من العهدة الجديدة بتحويل داخلي
+  private function coverDeficits($user, $c, $amount) {
+    $left = $amount; $covered = 0;
+    $olds = sortBy(filt($this->D()->custodies, fn($x) => $x->id !== $c->id && $x->employeeId === $c->employeeId && $x->status === 'open'), fn($a, $b) => strcmp($a->issueDate . $a->createdAt, $b->issueDate . $b->createdAt));
+    foreach ($olds as $o) {
+      $need = num(-$this->custodyBalance($o)['balance']);
+      $cover = num(min($need, $left));
+      if (!($cover > 0)) continue;
+      $out = $this->addTx($user, $c, 'transfer_out', $cover, ['date' => $c->issueDate, 'method' => 'تسوية داخلية', 'note' => "تغطية عجز العهدة {$o->no} (دفعه الموظف من جيبه)"]);
+      $inn = $this->addTx($user, $o, 'transfer_in', $cover, ['date' => $c->issueDate, 'method' => 'تسوية داخلية', 'note' => "تغطية العجز من العهدة {$c->no}", 'relatedId' => $out->id]);
+      $out->relatedId = $inn->id;
+      $left = num($left - $cover); $covered = num($covered + $cover);
+      $this->log($user, 'تغطية عجز', jsstr($cover) . " من {$c->no} إلى {$o->no}", 'custody', $o->id);
+      if (!$left) break;
+    }
+    if ($covered) { $c->coveredDeficit = $covered; $this->notify($c->employeeId, 'تم خصم ' . jsstr($covered) . " من العهدة {$c->no} لتعويض ما دفعته من جيبك سابقاً — المتبقي معك " . jsstr(num($amount - $covered)), '#/custody/' . $c->id); }
   }
 
   // ---------- التقارير ----------

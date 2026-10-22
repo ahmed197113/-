@@ -62,6 +62,18 @@ const base = process.argv[2], SP = process.argv[3];
 
   h = await home();
   ok(h.totals.balance === 500 - 30 - 50 - 20 - 15 - 40, 'الرصيد صحيح: ' + h.totals.balance);
+  // 5) صرف أكثر من العهدة: يدفع من جيبه، والعجز يُغطّى من العهدة القادمة
+  await page.fill('#q-line input', 'اسمنت 400'); await page.click('#q-line button'); await page.waitForTimeout(900);
+  h = await home();
+  ok(h.totals.balance === -55, 'الصرف أكثر من العهدة مسموح والرصيد بالسالب: ' + h.totals.balance);
+  ok((await page.locator('.s-bal').innerText()).includes('من جيبك'), 'الشاشة تقول: دفعت من جيبك');
+  await page.click('[data-act="q-receive"]'); await modal().locator('[name=amount]').fill('500');
+  await modal().locator('.chip', { hasText: 'المصنع' }).click();
+  await modal().locator('button[type=submit]').click(); await page.waitForTimeout(1200);
+  const cs = await j('GET', '/api/custodies?status=open', null, at);
+  const neu = cs.find(c => c.coveredDeficit), old = cs.find(c => !c.coveredDeficit);
+  ok(neu && neu.coveredDeficit === 55 && neu.balance === 445 && old.balance === 0, `العهدة الجديدة 500 غطّت العجز 55 فبقي 445 (القديمة ${old && old.balance})`);
+  ok((await home()).totals.balance === 445, 'الرصيد الإجمالي 445');
   await page.reload(); await page.waitForSelector('#q-line');
   await page.screenshot({ path: SP + '/q-home-after.png', fullPage: true });
   ok(errors.length === 0, 'لا أخطاء JavaScript ' + errors.join(' | '));
