@@ -490,3 +490,17 @@ tr.strong td { font-weight: 700; }
 .facts svg { color: var(--accent); margin-top: 3px; }
 .report-card.feature { margin-bottom: 14px; background: var(--primary-soft); border-color: transparent; }
 .period-tabs a { flex: 1 1 0; }
+
+/* ---------- التسجيل السريع للعامل ---------- */
+.q-line { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 12px; }
+.q-line input { font-size: 20px; font-weight: 700; padding: 14px 16px; border-radius: 16px; border: 2px solid var(--primary); background: var(--surface); color: var(--text); min-width: 0; }
+.q-line input:focus { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent); }
+.q-line .btn { border-radius: 16px; min-width: 58px; justify-content: center; }
+.q-hint { grid-column: 1 / -1; font-size: 14px; color: var(--muted); padding: 0 6px; min-height: 20px; }
+.q-hint b { color: var(--text); }
+.q-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.q-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 84px; padding: 8px 4px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 700; line-height: 1.25; text-align: center; cursor: pointer; box-shadow: var(--shadow); }
+.q-tile:active { transform: scale(.97); }
+.q-emo { font-size: 28px; line-height: 1; }
+.q-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.q-row .btn { justify-content: center; }

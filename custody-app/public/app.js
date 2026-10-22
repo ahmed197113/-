@@ -1269,15 +1269,22 @@ const EMP_VIEWS = {
       ${notifNotice()}
       ${unack.map(a => `<a class="notice" href="#/asset/${a.id}">${ic('box', 18)} تم تسليمك «${esc(a.name)}» — اضغط للإقرار بالاستلام</a>`).join('')}
       ${rejected.map(e => `<a class="notice bad" href="#/expense/${e.id}">${ic('alert', 18)} رُفض مصروف «${esc(e.description)}»${e.reviewNote ? ' — ' + esc(e.reviewNote) : ''} — اضغط للتعديل</a>`).join('')}
-      <button class="s-btn main" data-act="q-expenseForm">${ic('camera', 30)}<span>سجّل مصروف<small>صوّر الفاتورة واكتب المبلغ</small></span></button>
+      <form class="q-line" id="q-line" autocomplete="off">
+        <input name="q" placeholder="اكتب مثل: اكل 300" aria-label="سجّل بسطر واحد" enterkeyhint="send">
+        <button class="btn primary" aria-label="حفظ">${ic('ok', 22)}</button>
+        <div class="q-hint" id="q-hint">${S.user.directCustody ? 'أو: استلمت 500' : 'اكتب النوع والمبلغ ثم اضغط ✓'}</div>
+      </form>
+      <div class="q-tiles">${quickCats().map(c => `<button class="q-tile" data-act="q-cat" data-id="${c.id}"><span class="q-emo">${catEmoji(c.name)}</span>${esc(c.name)}</button>`).join('')}</div>
+      <button class="s-btn main" data-act="q-photo">${ic('camera', 30)}<span>صوّر الفاتورة<small>صورة + المبلغ فقط</small></span></button>
       ${S.user.directCustody
-        ? `<button class="s-btn" data-act="q-directForm">${ic('wallet', 26)}<span>استلمت عهدة<small>سجّل مبلغاً استلمته من المالك</small></span></button>`
+        ? `<button class="s-btn" data-act="q-receive">${ic('wallet', 26)}<span>استلمت عهدة<small>اكتب المبلغ فقط</small></span></button>`
         : `<button class="s-btn" data-act="q-requestForm">${ic('inbox', 26)}<span>اطلب عهدة<small>أرسل طلباً للإدارة</small></span></button>`}
-      <button class="s-btn" data-act="q-returnForm">${ic('undo', 26)}<span>رجّعت مبلغاً<small>رد الباقي معك للإدارة</small></span></button>
+      <div class="q-row"><button class="btn ghost" data-act="q-expenseForm">${ic('receipt', 18)} مصروف بالتفاصيل</button><button class="btn ghost" data-act="q-returnForm">${ic('undo', 18)} رجّعت مبلغاً</button></div>
       <h3 class="s-h">آخر مصروفاتي</h3>
       ${d.recent.length ? `<div class="s-list">${d.recent.slice(0, 6).map(e => `<a href="#/expense/${e.id}"><div><b>${esc(e.description)}</b><small class="${STATUS[e.status][1]}">${STATUS[e.status][0]} · ${fmtDate(e.date)}</small></div>${money(e.amount)}</a>`).join('')}</div>` : '<p class="muted center">لم تسجل مصروفات بعد</p>'}
       <div class="s-links"><a href="#/custodies">${ic('wallet', 18)}عهدي</a><a href="#/report/statement">${ic('chart', 18)}كشف حسابي</a>${d.assets.length ? `<a href="#/assets">${ic('box', 18)}أجهزتي</a>` : ''}<a href="#/settings">${ic('settings', 18)}الإعدادات</a></div>
     `);
+    bindQuickLine();
   },
   async expenses(_, q) {
     const status = q.status ?? '';
@@ -1311,6 +1318,155 @@ const EMP_VIEWS = {
   settings: settingsView,
   more: moreView,
 };
+// ================= التسجيل السريع للعامل =================
+// تطبيع النص العربي لمطابقة الكلمات: أ إ آ ← ا، ة ← ه، ى ← ي، وأرقام هندية ← عربية
+const normAr = t => String(t || '').replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+  .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g, '.').toLowerCase();
+// كلمات يكتبها العامل ← جزء من اسم البند
+const CAT_WORDS = [
+  ['اعاشه', 'اكل غدا غداء عشا عشاء فطور فطار مطعم وجبه وجبات شاي قهوه مويه ماء موية بوفيه ضيافه سندوتش عصير بقاله تموين'],
+  ['نقل', 'نقل توصيل تاكسي اوبر كريم مواصلات اجره شحن ونيت دينا سطحه'],
+  ['وقود', 'بنزين ديزل وقود سولار محروقات جاز'],
+  ['مواد', 'مواد اسمنت حديد رمل بلك طوب خشب دهان دهانات بويه سلك مسامير مواسير بلاستيك سيراميك جبس كهربا افياش لمبات براغي'],
+  ['عماله', 'عمال عماله يوميه يوميات اجره عامل'],
+  ['ادوات', 'عده عدد ادوات معدات مفك شنيور منشار'],
+  ['صيانه', 'صيانه تصليح اصلاح ورشه قطع غيار كفرات زيت'],
+  ['رسوم', 'رسوم حكومي بلديه مخالفه تصريح'],
+  ['قرطاسيه', 'ورق طباعه قرطاسيه تصوير احبار'],
+  ['اتصالات', 'رصيد نت انترنت جوال باقه'],
+  ['سكن', 'سكن فندق ايجار شقه'],
+  ['سفر', 'سفر تذكره طيران'],
+];
+const CAT_EMOJI = [['اعاشه', '🍽️'], ['نقل', '🚚'], ['وقود', '⛽'], ['مواد', '🧱'], ['عماله', '👷'], ['ادوات', '🔧'], ['صيانه', '🛠️'], ['رسوم', '🏛️'], ['قرطاسيه', '📄'], ['اتصالات', '📱'], ['سكن', '🏠'], ['سفر', '✈️'], ['متنوع', '🧾']];
+const catEmoji = name => (CAT_EMOJI.find(([k]) => normAr(name).includes(k)) || [, '🧾'])[1];
+const activeCats = () => S.b.categories.filter(c => c.active !== false);
+const otherCat = () => activeCats().find(c => normAr(c.name).includes('متنوع')) || activeCats()[activeCats().length - 1];
+// أكثر البنود استخداماً عند هذا العامل (تُحفظ على الجهاز) ثم البنود الشائعة
+function quickCats() {
+  let used = {};
+  try { used = JSON.parse(store.get('q_used') || '{}'); } catch { }
+  const cats = activeCats();
+  const pref = ['اعاشه', 'نقل', 'وقود', 'مواد', 'عماله', 'ادوات'];
+  const rank = c => -(used[c.id] || 0) * 100 + (pref.findIndex(k => normAr(c.name).includes(k)) + 1 || 50);
+  return cats.slice().sort((a, b) => rank(a) - rank(b)).slice(0, 6);
+}
+function markUsed(catId) {
+  try { const u = JSON.parse(store.get('q_used') || '{}'); u[catId] = (u[catId] || 0) + 1; store.set('q_used', JSON.stringify(u)); } catch { }
+}
+function guessCat(text) {
+  const t = ' ' + normAr(text) + ' ';
+  const cats = activeCats();
+  // 1) اسم البند نفسه أو كلمة منه
+  for (const c of cats) { const words = normAr(c.name).split(/[\s/،,]+/).filter(w => w.length > 2); if (words.some(w => t.includes(w) || t.includes(w.replace(/^ال/, '')))) return c; }
+  // 2) كلمات العامل المعتادة
+  for (const [key, words] of CAT_WORDS) {
+    if (words.split(' ').some(w => t.includes(' ' + w + ' ') || t.includes(' ال' + w + ' ') || t.includes(w))) { const c = cats.find(x => normAr(x.name).includes(key)); if (c) return c; }
+  }
+  return null;
+}
+// «اكل 300» ← { amount: 300, desc: 'اكل' } — يقبل الأرقام العربية والهندية
+function parseLine(line) {
+  const t = normAr(line).replace(/(\d),(\d)/g, '$1$2');
+  const m = t.match(/\d+(?:\.\d+)?/);
+  if (!m) return null;
+  const amount = Number(m[0]);
+  const desc = String(line).replace(/[0-9٠-٩۰-۹.,٫]+/, ' ').replace(/\s*(ريال|رس|ر\.س|sar)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+  const receive = /^(استلمت|استلام|وصلني|عهده|عهدة)/.test(normAr(desc));
+  return { amount, desc, receive };
+}
+// العهدة التي يُسجَّل عليها: المفتوحة الوحيدة، وإلا الأحدث التي فيها رصيد
+async function pickCustody() {
+  const cs = await api('GET', '/api/custodies?status=open');
+  if (!cs.length) return null;
+  return cs.slice().sort((a, b) => (b.balance > 0) - (a.balance > 0) || String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+}
+async function noCustody() {
+  if (S.user.directCustody) { toast('سجّل العهدة التي استلمتها أولاً'); return quickReceive(); }
+  return modal(`<h3>لا توجد عهدة معك</h3><p class="muted">اطلب عهدة من الإدارة أولاً.</p><div class="sheet-foot"><button class="btn ghost" data-close>إغلاق</button><button class="btn primary" id="nx">طلب عهدة</button></div>`, { onMount: (el, close) => { $('#nx', el).onclick = () => { close(); requestForm(); }; } });
+}
+// حفظ مصروف سريع؛ يطلب المشروع مرة واحدة فقط إذا لم يكن للعهدة مشروع
+async function saveQuick({ amount, cat, desc, attachments = [] }) {
+  const c = await pickCustody();
+  if (!c) return noCustody();
+  const body = { custodyId: c.id, amount, categoryId: cat.id, description: desc || cat.name, attachments, date: today() };
+  const done = async b => { const e = await api('POST', '/api/expenses', b); markUsed(cat.id); toast(`✓ تم: ${e.description} ${fmt(e.amount)}`); router(); return e; };
+  if (c.costCenterId) return done(body);
+  const last = store.get('q_cc');
+  formSheet({
+    title: 'على أي مشروع؟', submit: 'حفظ',
+    fields: [{ type: 'chips', name: 'costCenterId', label: 'المشروع', required: true, value: ccOptions().some(o => o.value === last) ? last : '', options: ccOptions().map(o => ({ value: o.value, label: o.label.trim() })) }],
+    onSubmit: async (d, close) => { if (!d.costCenterId) throw new Error('اختر المشروع'); store.set('q_cc', d.costCenterId); await done({ ...body, costCenterId: d.costCenterId }); close(); },
+  });
+}
+function bindQuickLine() {
+  const form = $('#q-line');
+  if (!form) return;
+  const input = form.q, hint = $('#q-hint');
+  const base = hint.textContent;
+  input.addEventListener('input', () => {
+    const p = parseLine(input.value);
+    if (!p) { hint.textContent = input.value.trim() ? 'اكتب المبلغ أيضاً' : base; return; }
+    if (p.receive && S.user.directCustody) { hint.innerHTML = `استلام عهدة: <b class="num">${fmt(p.amount)}</b>`; return; }
+    const c = guessCat(p.desc) || otherCat();
+    hint.innerHTML = `${catEmoji(c.name)} ${esc(c.name)} · <b class="num">${fmt(p.amount)}</b>`;
+  });
+  form.onsubmit = async ev => {
+    ev.preventDefault();
+    const p = parseLine(input.value);
+    if (!p || !(p.amount > 0)) { toast('اكتب النوع والمبلغ، مثل: اكل 300', true); return input.focus(); }
+    const b = $('button', form); b.disabled = true;
+    try {
+      if (p.receive && S.user.directCustody) return await quickReceive(p.amount);
+      const cat = guessCat(p.desc) || otherCat();
+      await saveQuick({ amount: p.amount, cat, desc: p.desc || cat.name });
+    } catch (e) { toast(e.message, true); } finally { b.disabled = false; }
+  };
+}
+// بلاطة بند: المبلغ فقط (والصورة اختيارية)
+function quickCatForm(cat) {
+  formSheet({
+    title: `${catEmoji(cat.name)} ${esc(cat.name)}`, submit: 'حفظ',
+    fields: [{ type: 'money', name: 'amount', label: 'المبلغ', required: true }, { name: 'description', label: 'ملاحظة (اختياري)', full: true, placeholder: cat.name }, { type: 'files', name: 'attachments', label: '', button: 'صورة الفاتورة (اختياري)' }],
+    onMount: (_el, _c, form) => setTimeout(() => form.amount.focus(), 200),
+    onSubmit: async (d, close) => { close(); await saveQuick({ amount: d.amount, cat, desc: d.description.trim() || cat.name, attachments: d.attachments }); },
+  });
+}
+// صورة + مبلغ فقط؛ النوع «متنوعة» والمحاسب يصحّحه عند الاعتماد
+function quickPhoto() {
+  formSheet({
+    title: '📷 صوّر الفاتورة', submit: 'حفظ',
+    fields: [{ type: 'files', name: 'attachments', label: '', button: 'افتح الكاميرا' }, { type: 'money', name: 'amount', label: 'المبلغ', required: true }],
+    onMount: el => { const inp = $('[data-files] input[type=file]', el); inp.setAttribute('capture', 'environment'); inp.removeAttribute('multiple'); setTimeout(() => inp.click(), 150); },
+    onSubmit: async (d, close) => {
+      if (!d.attachments.length) throw new Error('صوّر الفاتورة أولاً');
+      close(); await saveQuick({ amount: d.amount, cat: otherCat(), desc: 'فاتورة مصورة — يحددها المحاسب', attachments: d.attachments });
+    },
+  });
+}
+// استلمت عهدة: المبلغ فقط (والمشروع إن لزم) — المصدر «المالك» والتاريخ اليوم تلقائياً
+function quickReceive(amount) {
+  const ownerSrc = S.b.fundSources.find(x => x.active !== false && x.type === 'owner') || S.b.fundSources.find(x => x.active !== false);
+  const last = store.get('q_cc');
+  const ccs = ccOptions();
+  formSheet({
+    title: '💰 استلمت عهدة', submit: 'تسجيل',
+    intro: `<p class="muted">من: <b>${esc(ownerSrc?.name || '—')}</b> · اليوم</p>`,
+    fields: [{ type: 'money', name: 'amount', label: 'المبلغ المستلم', required: true, value: amount || '' },
+      ...(ccs.length ? [{ type: 'chips', name: 'costCenterId', label: 'لأي مشروع؟', value: ccs.some(o => o.value === last) ? last : ccs.length === 1 ? ccs[0].value : '', options: ccs.map(o => ({ value: o.value, label: o.label.trim() })) }] : [])],
+    onMount: (_el, _c, form) => setTimeout(() => form.amount.focus(), 200),
+    onSubmit: async (d, close) => {
+      if (ccs.length && !d.costCenterId) throw new Error('اختر المشروع');
+      if (d.costCenterId) store.set('q_cc', d.costCenterId);
+      const proj = d.costCenterId ? ccName(d.costCenterId) : '';
+      await api('POST', '/api/requests', { type: 'cash', alreadyPaid: true, amount: d.amount, sourceId: ownerSrc?.id, costCenterId: d.costCenterId || null, purpose: 'عهدة مستلمة' + (proj && proj !== '—' ? ' — ' + proj : ''), issueDate: today(), method: 'نقداً' });
+      close(); toast(`✓ تم تسجيل استلام ${fmt(d.amount)}`); router();
+    },
+  });
+}
+ACT['q-cat'] = el => quickCatForm(S.b.categories.find(c => c.id === el.dataset.id));
+ACT['q-photo'] = () => quickPhoto();
+ACT['q-receive'] = () => quickReceive();
+
 async function returnForm() {
   const cs = await api('GET', '/api/custodies?status=open');
   if (!cs.length) return toast('لا توجد عهدة مفتوحة', true);

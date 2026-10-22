@@ -5,3 +5,5 @@
   `node e2e.js http://localhost:8080` على بيانات فارغة.
 - `admin-fix.js`: تصحيح وحذف لمدير النظام (مبلغ العهدة، الحركات، التسويات، حذف العهد والمستخدمين والبيانات الأساسية). شغّله على خادم Node وخادم PHP بالبيانات التجريبية (`DEMO=1`) وقارن الناتج:
   `node admin-fix.js http://localhost:3000 > n.txt && node admin-fix.js http://localhost:8080 > p.txt && diff n.txt p.txt`
+- `quick-entry.js`: التسجيل السريع للعامل (سطر واحد «اكل 300»، أزرار البنود، صورة + مبلغ، «استلمت عهدة») على خادم فارغ:
+  `node quick-entry.js http://localhost:8080 <مجلد يحتوي t3/r.png للصور>`

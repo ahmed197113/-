@@ -193,13 +193,12 @@ fs.writeFileSync(PNG, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2A
     await modal().locator('label.toggle').filter({ has: page.locator('[name=directCustody]') }).click();
     await submit(); await toast('تم الحفظ');
     await login('emp2', '1234'); T.emp2 = await token();
-    await act('q-directForm'); await modal().locator('[name=amount]').waitFor();
-    assert(await modal().locator('[name=alreadyPaid]').isChecked(), 'خانة «تم الصرف بالفعل» غير مفعلة');
-    assert(await modal().locator('[data-chips="sourceId"] .chip.on').textContent() === 'المالك', 'المصدر الافتراضي ليس المالك');
-    await fill('amount', 2000); await fill('purpose', 'مصاريف موقع بتعميد المالك'); await selectPart('costCenterId', 'T-1-1');
-    await submit(); await toast('تم تسجيل العهدة'); await page.waitForURL(/#\/custody\//);
-    await page.locator('.hero-tags').getByText('تعميد مباشر').waitFor();
-    const cid = page.url().split('/').pop();
+    // زر «استلمت عهدة» السريع: المبلغ والمشروع فقط، والمصدر «المالك» تلقائياً
+    await act('q-receive'); await modal().locator('[name=amount]').waitFor();
+    assert((await modal().innerText()).includes('المالك'), 'المصدر الافتراضي ليس المالك');
+    await fill('amount', 2000); await modal().locator('[data-chips="costCenterId"] .chip', { hasText: 'T-1-1' }).click();
+    await submit(); await toast('تم تسجيل استلام');
+    const cid = (await api('GET', '/api/custodies?employeeId=' + id.emp2, null, T.admin)).data.find(x => x.direct).id;
     const c = (await api('GET', '/api/custodies/' + cid, null, T.admin)).data;
     assert(c.custody.direct === true && c.custody.balance === 2000 && c.custody.employeeId === id.emp2, 'العهدة المباشرة ' + JSON.stringify(c.custody));
     assert(c.tx[0].sourceName === 'المالك' && c.tx[0].note === 'تعميد مباشر', 'حركة الصرف ' + JSON.stringify(c.tx[0]));
