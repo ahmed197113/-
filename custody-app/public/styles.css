@@ -504,3 +504,10 @@ tr.strong td { font-weight: 700; }
 .q-emo { font-size: 28px; line-height: 1; }
 .q-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 14px; }
 .q-row .btn { justify-content: center; }
+/* شريط المشروع أسفل شاشة العامل */
+.p-bar { position: sticky; bottom: 0; z-index: 5; margin: 16px -4px 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--surface); border: 1px solid var(--border); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 20px rgba(0, 0, 0, .08); }
+.p-title { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.p-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.p-chips::-webkit-scrollbar { display: none; }
+.p-chip { flex: none; padding: 10px 16px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; white-space: nowrap; }
+.p-chip.on { background: var(--primary); border-color: var(--primary); color: #fff; }

@@ -62,18 +62,33 @@ const base = process.argv[2], SP = process.argv[3];
 
   h = await home();
   ok(h.totals.balance === 500 - 30 - 50 - 20 - 15 - 40, 'الرصيد صحيح: ' + h.totals.balance);
+  // 4ب) شريط المشروع أسفل الصفحة + التعرف الذكي على المشروع من السطر
+  ok(await page.locator('#p-bar .p-chip').count() === 2, 'شريط المشاريع يظهر في أسفل الصفحة');
+  await page.locator('#p-bar .p-chip', { hasText: 'المصنع' }).click();
+  await page.fill('#q-line input', 'نقل 5');
+  ok((await page.locator('#q-hint').innerText()).includes('المصنع'), 'التلميح يعرض المشروع المختار: ' + await page.locator('#q-hint').innerText());
+  await page.click('#q-line button'); await page.waitForTimeout(900);
+  await page.fill('#q-line input', 'حديد 10 مشروع المسغله');
+  ok((await page.locator('#q-hint').innerText()).includes('المسغله'), 'النظام يعرف المشروع من النص: ' + await page.locator('#q-hint').innerText());
+  await page.click('#q-line button'); await page.waitForTimeout(900);
+  const all = await j('GET', '/api/expenses', null, at);
+  const e5 = all.find(e => e.amount === 5), e10 = all.find(e => e.amount === 10);
+  ok(e5.costCenterName.includes('المصنع'), 'المصروف على المشروع المختار من الشريط (لا مشروع العهدة)');
+  ok(e10.costCenterName.includes('المسغله') && e10.description === 'حديد' && e10.categoryName.includes('مواد'), `«حديد 10 مشروع المسغله» ← ${e10.categoryName} / ${e10.costCenterName} / البيان «${e10.description}»`);
+  await page.locator('#p-bar .p-chip', { hasText: 'المسغله' }).click();
+
   // 5) صرف أكثر من العهدة: يدفع من جيبه، والعجز يُغطّى من العهدة القادمة
   await page.fill('#q-line input', 'اسمنت 400'); await page.click('#q-line button'); await page.waitForTimeout(900);
   h = await home();
-  ok(h.totals.balance === -55, 'الصرف أكثر من العهدة مسموح والرصيد بالسالب: ' + h.totals.balance);
+  ok(h.totals.balance === -70, 'الصرف أكثر من العهدة مسموح والرصيد بالسالب: ' + h.totals.balance);
   ok((await page.locator('.s-bal').innerText()).includes('من جيبك'), 'الشاشة تقول: دفعت من جيبك');
   await page.click('[data-act="q-receive"]'); await modal().locator('[name=amount]').fill('500');
   await modal().locator('.chip', { hasText: 'المصنع' }).click();
   await modal().locator('button[type=submit]').click(); await page.waitForTimeout(1200);
   const cs = await j('GET', '/api/custodies?status=open', null, at);
   const neu = cs.find(c => c.coveredDeficit), old = cs.find(c => !c.coveredDeficit);
-  ok(neu && neu.coveredDeficit === 55 && neu.balance === 445 && old.balance === 0, `العهدة الجديدة 500 غطّت العجز 55 فبقي 445 (القديمة ${old && old.balance})`);
-  ok((await home()).totals.balance === 445, 'الرصيد الإجمالي 445');
+  ok(neu && neu.coveredDeficit === 70 && neu.balance === 430 && old.balance === 0, `العهدة الجديدة 500 غطّت العجز 70 فبقي 430 (القديمة ${old && old.balance})`);
+  ok((await home()).totals.balance === 430, 'الرصيد الإجمالي 430');
   await page.reload(); await page.waitForSelector('#q-line');
   await page.screenshot({ path: SP + '/q-home-after.png', fullPage: true });
   ok(errors.length === 0, 'لا أخطاء JavaScript ' + errors.join(' | '));

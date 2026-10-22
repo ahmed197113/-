@@ -1296,6 +1296,7 @@ const EMP_VIEWS = {
       <h3 class="s-h">آخر مصروفاتي</h3>
       ${d.recent.length ? `<div class="s-list">${d.recent.slice(0, 6).map(e => `<a href="#/expense/${e.id}"><div><b>${esc(e.description)}</b><small class="${STATUS[e.status][1]}">${STATUS[e.status][0]} · ${fmtDate(e.date)}</small></div>${money(e.amount)}</a>`).join('')}</div>` : '<p class="muted center">لم تسجل مصروفات بعد</p>'}
       <div class="s-links"><a href="#/custodies">${ic('wallet', 18)}عهدي</a><a href="#/report/statement">${ic('chart', 18)}كشف حسابي</a>${d.assets.length ? `<a href="#/assets">${ic('box', 18)}أجهزتي</a>` : ''}<a href="#/settings">${ic('settings', 18)}الإعدادات</a></div>
+      ${projectBar()}
     `);
     bindQuickLine();
   },
@@ -1388,6 +1389,39 @@ function parseLine(line) {
   return { amount, desc, receive };
 }
 const num2 = n => Math.round((Number(n) || 0) * 100) / 100;
+// ----- المشروع الحالي للعامل: يُختار من الشريط أسفل الصفحة ويبقى محفوظاً -----
+const projects = () => S.b.costCenters.filter(c => c.active !== false);
+const curProject = () => { const id = store.get('q_cc'); return projects().find(c => c.id === id) || null; };
+const setProject = id => { store.set('q_cc', id); $$('.p-chip').forEach(x => x.classList.toggle('on', x.dataset.id === id)); };
+function projectBar() {
+  const list = projects();
+  if (!list.length) return '';
+  const cur = curProject();
+  return `<div class="p-bar" id="p-bar"><div class="p-title">${ic('layers', 16)} المشروع / مركز التكلفة ${cur ? '' : '<b class="warn-t">— اختر المشروع</b>'}</div>
+    <div class="p-chips">${list.map(c => `<button type="button" class="p-chip ${cur && cur.id === c.id ? 'on' : ''}" data-act="p-set" data-id="${c.id}">${esc(c.name)}</button>`).join('')}</div></div>`;
+}
+ACT['p-set'] = el => { setProject(el.dataset.id); toast('المشروع: ' + el.textContent); $('#q-line input')?.dispatchEvent(new Event('input')); const t = $('#p-bar .p-title b'); if (t) t.remove(); };
+// النظام الذكي: إذا ذكر العامل اسم المشروع أو رمزه في السطر يُسجَّل عليه (مثل: اسمنت 400 العسيله)
+const GENERIC = new Set(['مشروع', 'مشاريع', 'مركز', 'تكلفه', 'قسم', 'اداره', 'فرع', 'موقع', 'خاص']);
+function guessProject(text) {
+  const t = ' ' + normAr(text) + ' ';
+  let best = null, score = 0;
+  for (const c of projects()) {
+    const words = normAr(c.name).split(/[\s/،,\-]+/).map(w => w.replace(/^ال/, '')).filter(w => w.length > 2 && !GENERIC.has(w));
+    let sc = words.filter(w => t.includes(w)).length * 10;
+    if (c.code && new RegExp('(^|\\s)' + normAr(c.code).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\s|$)').test(t)) sc += 5;
+    if (sc > score) { score = sc; best = c; }
+  }
+  return best;
+}
+// يحذف اسم المشروع من البيان حتى لا يتكرر
+function stripProject(desc, c) {
+  if (!c) return desc;
+  let out = ' ' + desc + ' ';
+  for (const w of String(c.name).split(/\s+/).filter(w => w.length > 2 && !GENERIC.has(normAr(w).replace(/^ال/, '')))) out = out.replace(new RegExp('\\s(ال)?' + w.replace(/^ال/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s', 'g'), ' ');
+  out = out.replace(/\s(مشروع|موقع)\s*$/, ' ').replace(/\s(في|على|لل?)\s*$/, ' ');
+  return out.replace(/\s+/g, ' ').trim();
+}
 // العهدة التي يُسجَّل عليها: المفتوحة الوحيدة، وإلا الأحدث التي فيها رصيد
 async function pickCustody() {
   const cs = await api('GET', '/api/custodies?status=open');
@@ -1399,22 +1433,22 @@ async function noCustody() {
   return modal(`<h3>لا توجد عهدة معك</h3><p class="muted">اطلب عهدة من الإدارة أولاً.</p><div class="sheet-foot"><button class="btn ghost" data-close>إغلاق</button><button class="btn primary" id="nx">طلب عهدة</button></div>`, { onMount: (el, close) => { $('#nx', el).onclick = () => { close(); requestForm(); }; } });
 }
 // حفظ مصروف سريع؛ يطلب المشروع مرة واحدة فقط إذا لم يكن للعهدة مشروع
-async function saveQuick({ amount, cat, desc, attachments = [] }) {
+async function saveQuick({ amount, cat, desc, attachments = [], project }) {
   const c = await pickCustody();
   if (!c) return noCustody();
-  const body = { custodyId: c.id, amount, categoryId: cat.id, description: desc || cat.name, attachments, date: today() };
+  const ccId = project?.id || curProject()?.id || c.costCenterId || null;
+  const body = { custodyId: c.id, amount, categoryId: cat.id, description: desc || cat.name, attachments, date: today(), ...(ccId ? { costCenterId: ccId } : {}) };
   const over = num2(Number(amount) - Math.max(0, c.balance));
   const done = async b => {
     const e = await api('POST', '/api/expenses', b); markUsed(cat.id);
     toast(over > 0 ? `✓ تم: ${e.description} ${fmt(e.amount)} — دفعت ${fmt(over)} من جيبك، تُعوَّض من العهدة القادمة` : `✓ تم: ${e.description} ${fmt(e.amount)}`);
     router(); return e;
   };
-  if (c.costCenterId) return done(body);
-  const last = store.get('q_cc');
+  if (ccId) return done(body);
   formSheet({
     title: 'على أي مشروع؟', submit: 'حفظ',
-    fields: [{ type: 'chips', name: 'costCenterId', label: 'المشروع', required: true, value: ccOptions().some(o => o.value === last) ? last : '', options: ccOptions().map(o => ({ value: o.value, label: o.label.trim() })) }],
-    onSubmit: async (d, close) => { if (!d.costCenterId) throw new Error('اختر المشروع'); store.set('q_cc', d.costCenterId); await done({ ...body, costCenterId: d.costCenterId }); close(); },
+    fields: [{ type: 'chips', name: 'costCenterId', label: 'المشروع', required: true, value: '', options: projects().map(p => ({ value: p.id, label: (p.code ? p.code + ' · ' : '') + p.name })) }],
+    onSubmit: async (d, close) => { if (!d.costCenterId) throw new Error('اختر المشروع'); setProject(d.costCenterId); await done({ ...body, costCenterId: d.costCenterId }); close(); },
   });
 }
 function bindQuickLine() {
@@ -1427,7 +1461,8 @@ function bindQuickLine() {
     if (!p) { hint.textContent = input.value.trim() ? 'اكتب المبلغ أيضاً' : base; return; }
     if (p.receive && S.user.directCustody) { hint.innerHTML = `استلام عهدة: <b class="num">${fmt(p.amount)}</b>`; return; }
     const c = guessCat(p.desc) || otherCat();
-    hint.innerHTML = `${catEmoji(c.name)} ${esc(c.name)} · <b class="num">${fmt(p.amount)}</b>`;
+    const pr = guessProject(p.desc) || curProject();
+    hint.innerHTML = `${catEmoji(c.name)} ${esc(c.name)} · <b class="num">${fmt(p.amount)}</b> · ${pr ? '🏗️ ' + esc(pr.name) : '<span class="warn-t">اختر المشروع من الأسفل</span>'}`;
   });
   form.onsubmit = async ev => {
     ev.preventDefault();
@@ -1436,8 +1471,10 @@ function bindQuickLine() {
     const b = $('button', form); b.disabled = true;
     try {
       if (p.receive && S.user.directCustody) return await quickReceive(p.amount);
-      const cat = guessCat(p.desc) || otherCat();
-      await saveQuick({ amount: p.amount, cat, desc: p.desc || cat.name });
+      const project = guessProject(p.desc);
+      const desc = stripProject(p.desc, project);
+      const cat = guessCat(desc) || otherCat();
+      await saveQuick({ amount: p.amount, cat, desc: desc || cat.name, project });
     } catch (e) { toast(e.message, true); } finally { b.disabled = false; }
   };
 }
@@ -1445,6 +1482,7 @@ function bindQuickLine() {
 function quickCatForm(cat) {
   formSheet({
     title: `${catEmoji(cat.name)} ${esc(cat.name)}`, submit: 'حفظ',
+    intro: curProject() ? `<p class="muted">🏗️ على مشروع: <b>${esc(curProject().name)}</b></p>` : '',
     fields: [{ type: 'money', name: 'amount', label: 'المبلغ', required: true }, { name: 'description', label: 'ملاحظة (اختياري)', full: true, placeholder: cat.name }, { type: 'files', name: 'attachments', label: '', button: 'صورة الفاتورة (اختياري)' }],
     onMount: (_el, _c, form) => setTimeout(() => form.amount.focus(), 200),
     onSubmit: async (d, close) => { close(); await saveQuick({ amount: d.amount, cat, desc: d.description.trim() || cat.name, attachments: d.attachments }); },
@@ -1454,6 +1492,7 @@ function quickCatForm(cat) {
 function quickPhoto() {
   formSheet({
     title: '📷 صوّر الفاتورة', submit: 'حفظ',
+    intro: curProject() ? `<p class="muted">🏗️ على مشروع: <b>${esc(curProject().name)}</b></p>` : '',
     fields: [{ type: 'files', name: 'attachments', label: '', button: 'افتح الكاميرا' }, { type: 'money', name: 'amount', label: 'المبلغ', required: true }],
     onMount: el => { const inp = $('[data-files] input[type=file]', el); inp.setAttribute('capture', 'environment'); inp.removeAttribute('multiple'); setTimeout(() => inp.click(), 150); },
     onSubmit: async (d, close) => {
@@ -1471,11 +1510,11 @@ function quickReceive(amount) {
     title: '💰 استلمت عهدة', submit: 'تسجيل',
     intro: `<p class="muted">من: <b>${esc(ownerSrc?.name || '—')}</b> · اليوم</p>`,
     fields: [{ type: 'money', name: 'amount', label: 'المبلغ المستلم', required: true, value: amount || '' },
-      ...(ccs.length ? [{ type: 'chips', name: 'costCenterId', label: 'لأي مشروع؟', value: ccs.some(o => o.value === last) ? last : ccs.length === 1 ? ccs[0].value : '', options: ccs.map(o => ({ value: o.value, label: o.label.trim() })) }] : [])],
+      ...(ccs.length ? [{ type: 'chips', name: 'costCenterId', label: 'لأي مشروع؟', value: ccs.some(o => o.value === last) ? last : ccs.length === 1 ? ccs[0].value : '', options: projects().map(p => ({ value: p.id, label: (p.code ? p.code + ' · ' : '') + p.name })) }] : [])],
     onMount: (_el, _c, form) => setTimeout(() => form.amount.focus(), 200),
     onSubmit: async (d, close) => {
       if (ccs.length && !d.costCenterId) throw new Error('اختر المشروع');
-      if (d.costCenterId) store.set('q_cc', d.costCenterId);
+      if (d.costCenterId) setProject(d.costCenterId);
       const proj = d.costCenterId ? ccName(d.costCenterId) : '';
       const r = await api('POST', '/api/requests', { type: 'cash', alreadyPaid: true, amount: d.amount, sourceId: ownerSrc?.id, costCenterId: d.costCenterId || null, purpose: 'عهدة مستلمة' + (proj && proj !== '—' ? ' — ' + proj : ''), issueDate: today(), method: 'نقداً' });
       const cov = r.custodyId ? (await api('GET', '/api/custodies/' + r.custodyId).catch(() => ({ custody: {} }))).custody.coveredDeficit : 0;
