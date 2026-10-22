@@ -1417,10 +1417,11 @@ function guessProject(text) {
 // يحذف اسم المشروع من البيان حتى لا يتكرر
 function stripProject(desc, c) {
   if (!c) return desc;
-  let out = ' ' + desc + ' ';
-  for (const w of String(c.name).split(/\s+/).filter(w => w.length > 2 && !GENERIC.has(normAr(w).replace(/^ال/, '')))) out = out.replace(new RegExp('\\s(ال)?' + w.replace(/^ال/, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s', 'g'), ' ');
-  out = out.replace(/\s(مشروع|موقع)\s*$/, ' ').replace(/\s(في|على|لل?)\s*$/, ' ');
-  return out.replace(/\s+/g, ' ').trim();
+  const key = w => normAr(w).replace(/^(وال|بال|لل|ال)/, '');
+  const pw = new Set(String(c.name).split(/[\s/،,\-]+/).map(key).filter(w => w.length > 2 && !GENERIC.has(w)));
+  const toks = String(desc).split(/\s+/).filter(Boolean).filter(w => !pw.has(key(w)) && !pw.has(normAr(w).replace(/^[بل]/, '')));
+  while (toks.length && /^(مشروع|موقع|في|على|لل?)$/.test(normAr(toks[toks.length - 1]))) toks.pop();
+  return toks.join(' ');
 }
 // العهدة التي يُسجَّل عليها: المفتوحة الوحيدة، وإلا الأحدث التي فيها رصيد
 async function pickCustody() {
