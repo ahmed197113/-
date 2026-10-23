@@ -6,6 +6,7 @@ function runJobsIfDue(): void {
   $last = (int)setting('jobs_at', 0);
   if (time() - $last < 60) return;
   setSetting('jobs_at', time());
+  dailyBackup();
   $changed = autoMarkAbsent() + escalateOverdue();
   if ($changed) touchVersion();
 }
@@ -23,4 +24,19 @@ function autoMarkAbsent(): int {
 /** Flag issues past their deadline as escalated to the general manager. */
 function escalateOverdue(): int {
   return q("UPDATE issues SET escalated = 1 WHERE status <> 'closed' AND escalated = 0 AND due_at < ?", [today() . 'T' . nowTime()])->rowCount();
+}
+
+/** Daily backup: mawqi-data/backups/mawqi-YYYY-MM-DD.sqlite, keeping the last 14. */
+function dailyBackup(): void {
+  $dir = resolveDataDir() . '/backups';
+  $file = $dir . '/mawqi-' . today() . '.sqlite';
+  if (is_file($file)) return;
+  try {
+    if (!is_dir($dir)) mkdir($dir, 0750, true);
+    db()->exec("VACUUM INTO " . db()->quote($file));
+    $old = array_slice(glob($dir . '/mawqi-????-??-??.sqlite') ?: [], 0, -14);
+    foreach ($old as $f) @unlink($f);
+  } catch (\Throwable $e) {
+    error_log('mawqi backup failed: ' . $e->getMessage());
+  }
 }

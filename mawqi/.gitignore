@@ -1,5 +1,6 @@
 node_modules/
 server/.dev-data/
+server-node/data/
 dist/
 .expo/
 *.tsbuildinfo
