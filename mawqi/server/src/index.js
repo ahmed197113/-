@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'node:http';
+import { existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import { db } from './db.js';
 import { login, projectScope, requireAuth, verifyToken } from './auth.js';
@@ -59,6 +62,13 @@ if (process.env.NODE_ENV !== 'production') {
     broadcast('data:changed', { entity: 'attendance', projectId: req.body?.projectId });
     res.json({ ok: true });
   });
+}
+
+// In production the server also hosts the built web dashboard (web/dist).
+const webDist = process.env.MAWQI_WEB_DIST || resolve(dirname(fileURLToPath(import.meta.url)), '../../web/dist');
+if (existsSync(webDist)) {
+  app.use(express.static(webDist));
+  app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => res.sendFile(resolve(webDist, 'index.html')));
 }
 
 startJobs(broadcast);
