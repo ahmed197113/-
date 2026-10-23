@@ -1,0 +1,12 @@
+{
+  "name": "mawqi-deploy",
+  "private": true,
+  "description": "Root entry for hosting platforms (SiteGround Node.js): builds the web dashboard and runs mawqi/server.",
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "build": "npm --prefix mawqi/web ci --include=dev && npm --prefix mawqi/web run build && npm --prefix mawqi/server ci --omit=dev",
+    "start": "npm --prefix mawqi/server start"
+  }
+}
