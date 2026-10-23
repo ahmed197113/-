@@ -1,4 +1,6 @@
-import { db, getSetting } from './db.js';
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { db, getSetting, DB_PATH } from './db.js';
 import { nowTime, todayStr, isFriday } from './util.js';
 
 /** Mark as absent every active worker not recorded today once the cutoff time has passed. */
@@ -23,8 +25,24 @@ export function escalateOverdue() {
   return rows;
 }
 
+/** Daily backup: copy the database into <db folder>/backups/mawqi-YYYY-MM-DD.db, keep the last 14. */
+export function dailyBackup() {
+  const dir = join(dirname(DB_PATH), 'backups');
+  const file = join(dir, `mawqi-${todayStr()}.db`);
+  if (existsSync(file)) return;
+  try {
+    mkdirSync(dir, { recursive: true });
+    db.exec(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
+    const old = readdirSync(dir).filter((f) => /^mawqi-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort().slice(0, -14);
+    for (const f of old) rmSync(join(dir, f), { force: true });
+  } catch (e) {
+    console.error('backup failed:', e.message);
+  }
+}
+
 export function startJobs(broadcast) {
   const tick = () => {
+    dailyBackup();
     for (const projectId of autoMarkAbsent()) broadcast('data:changed', { entity: 'attendance', projectId });
     for (const i of escalateOverdue()) {
       broadcast('notify', { projectId: i.project_id, title: 'تصعيد بلاغ متأخر', body: i.title });

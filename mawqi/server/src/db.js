@@ -1,10 +1,16 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-export const DB_PATH = process.env.MAWQI_DB || resolve(here, '../data/mawqi.db');
+// MAWQI_DB may start with "~/" to keep the database in the user's home folder,
+// outside the deploy directory, so redeploys never replace it.
+const envDb = process.env.MAWQI_DB;
+export const DB_PATH = envDb
+  ? (envDb.startsWith('~/') ? resolve(homedir(), envDb.slice(2)) : resolve(envDb))
+  : resolve(here, '../data/mawqi.db');
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
 export const db = new DatabaseSync(DB_PATH);
