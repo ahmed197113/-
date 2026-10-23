@@ -1,0 +1,11 @@
+{
+  "name": "موقعي — إدارة مواقع المقاولات",
+  "short_name": "موقعي",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F6F8",
+  "theme_color": "#1F3A5F",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
