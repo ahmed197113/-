@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { api, closeSocket, loadSession, setServer, setToken, type User } from './api'
+import { api, loadSession, setServer, setToken, type User } from './api'
 
 interface AuthState {
   user: User | null
@@ -22,13 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (server: string, username: string, password: string) => {
     await setServer(server)
-    const out = await api<{ token: string; user: User }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) })
+    const out = await api<{ token: string; user: User }>('/api/login', { method: 'POST', body: JSON.stringify({ username, password }) })
     await setToken(out.token)
     setUser(out.user)
   }
   const logout = async () => {
+    api('/api/logout', { method: 'POST' }).catch(() => undefined)
     await setToken(null)
-    closeSocket()
     setUser(null)
   }
 

@@ -2,7 +2,7 @@ import { ActivityIndicator, I18nManager, View } from 'react-native'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { useFonts, Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold, Cairo_800ExtraBold } from '@expo-google-fonts/cairo'
+import { useFonts, Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold } from '@expo-google-fonts/tajawal'
 import { AuthProvider, useAuth } from '../lib/auth'
 import { C } from '../components/ui'
 
@@ -14,7 +14,7 @@ function Gate() {
   const { user, ready } = useAuth()
 
   if (!ready) {
-    return <View style={{ flex: 1, justifyContent: 'center', backgroundColor: C.navy }}><ActivityIndicator color={C.amber} size="large" /></View>
+    return <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#fff' }}><ActivityIndicator color={C.navy} size="large" /></View>
   }
   // Screens are only mounted for the matching auth state, so nothing calls the server before login.
   return (
@@ -30,7 +30,7 @@ function Gate() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ Cairo_400Regular, Cairo_600SemiBold, Cairo_700Bold, Cairo_800ExtraBold })
+  const [fontsLoaded] = useFonts({ Tajawal_400Regular, Tajawal_500Medium, Tajawal_700Bold, Tajawal_800ExtraBold })
   if (!fontsLoaded) return null
   return (
     <SafeAreaProvider>

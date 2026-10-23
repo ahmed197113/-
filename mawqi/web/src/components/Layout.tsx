@@ -5,17 +5,17 @@ import { Icon } from '../icons'
 import { NAV } from '../nav'
 
 export default function Layout() {
-  const { user, logout } = useAuth()
+  const { user, logout, status } = useAuth()
   const [open, setOpen] = useState(false)
 
   return (
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <div className="brand">
-          <img src="/logo.svg" alt="" width={42} height={42} />
+          <img src="/logo.png" alt="" />
           <div>
             <strong>موقعي</strong>
-            <span>إدارة مواقع المشاريع</span>
+            <span>{status?.companyName ?? 'الخطوط المعدنية'}</span>
           </div>
         </div>
         <nav>

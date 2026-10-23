@@ -1,36 +1,55 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, liveSocket } from './api'
+import { api } from './api'
 
-/** Loads `path` and reloads it whenever the server pushes a change. */
+const POLL_MS = 8000
+
+/**
+ * Loads `path` and keeps it in sync with the company server. Shared hosting has no
+ * WebSockets, so the page polls the cheap /api/version counter and reloads only when it changes.
+ */
 export function useLive<T>(path: string) {
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [connected, setConnected] = useState(false)
+  const [connected, setConnected] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
-  const timer = useRef<number | undefined>(undefined)
+  const version = useRef<number | null>(null)
 
-  const load = useCallback(() => {
-    api<T>(path)
-      .then((d) => { setData(d); setError(null); setUpdatedAt(new Date()) })
-      .catch((e: Error) => setError(e.message))
+  const load = useCallback(async () => {
+    try {
+      const d = await api<T>(path)
+      setData(d)
+      setError(null)
+      setUpdatedAt(new Date())
+    } catch (e) {
+      setError((e as Error).message)
+    }
   }, [path])
 
   useEffect(() => {
-    load()
-    const s = liveSocket()
-    // Bursts of changes (e.g. a whole crew checked in) collapse into one reload.
-    const onChange = () => { window.clearTimeout(timer.current); timer.current = window.setTimeout(load, 300) }
-    const onConnect = () => { setConnected(true); load() }
-    const onDisconnect = () => setConnected(false)
-    setConnected(s.connected)
-    s.on('data:changed', onChange)
-    s.on('connect', onConnect)
-    s.on('disconnect', onDisconnect)
+    let alive = true
+    const check = async () => {
+      try {
+        const { version: v } = await api<{ version: number }>('/api/version')
+        if (!alive) return
+        setConnected(true)
+        if (version.current !== v) {
+          version.current = v
+          await load()
+        }
+      } catch {
+        if (alive) setConnected(false)
+      }
+    }
+    check()
+    const timer = window.setInterval(() => { if (!document.hidden) check() }, POLL_MS)
+    const onVisible = () => { if (!document.hidden) check() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onVisible)
     return () => {
-      s.off('data:changed', onChange)
-      s.off('connect', onConnect)
-      s.off('disconnect', onDisconnect)
-      window.clearTimeout(timer.current)
+      alive = false
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onVisible)
     }
   }, [load])
 

@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { io, type Socket } from 'socket.io-client'
 
 export type Role = 'admin' | 'project_manager' | 'supervisor' | 'accountant'
 export interface User { id: number; name: string; username: string; role: Role; roleLabel: string }
@@ -62,22 +61,8 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T
 }
 
-let socket: Socket | null = null
-let socketKey = ''
-/** One shared real-time connection, rebuilt if the server address or login changes. */
-export function liveSocket(): Socket {
-  const key = `${server}|${token}`
-  if (socket && socketKey !== key) closeSocket()
-  if (!socket) {
-    socket = io(server, { auth: { token }, transports: ['websocket'] })
-    socketKey = key
-  }
-  return socket
-}
-export function closeSocket() {
-  socket?.disconnect()
-  socket = null
-}
+export interface Status { needsSetup: boolean; companyName: string; version: number }
+export const DEFAULT_SERVER = 'https://mawqi.metal-lines.com'
 
 const num = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 export const fmt = (n: number) => num.format(n)

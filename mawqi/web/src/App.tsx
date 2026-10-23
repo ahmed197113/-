@@ -2,13 +2,14 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import Setup from './pages/Setup'
 import DashboardPage from './pages/Dashboard'
 import ComingSoon from './pages/ComingSoon'
 
 function Routed() {
-  const { user, ready } = useAuth()
-  if (!ready) return <div className="splash">موقعي</div>
-  if (!user) return <Login />
+  const { user, ready, status } = useAuth()
+  if (!ready) return <div className="splash"><img src="/logo.png" alt="" /></div>
+  if (!user) return status?.needsSetup ? <Setup /> : <Login />
   return (
     <Routes>
       <Route element={<Layout />}>

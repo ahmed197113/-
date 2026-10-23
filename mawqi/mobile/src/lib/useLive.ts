@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, liveSocket } from './api'
+import { AppState } from 'react-native'
+import { api } from './api'
 
-/** Loads `path` and reloads it whenever the company server pushes a change. */
+const POLL_MS = 8000
+
+/**
+ * Loads `path` and keeps it in sync with the company server. Shared hosting has no
+ * WebSockets, so the app polls the cheap /api/version counter and reloads only when it changes.
+ */
 export function useLive<T>(path: string) {
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [connected, setConnected] = useState(false)
+  const [connected, setConnected] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const version = useRef<number | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -25,20 +31,32 @@ export function useLive<T>(path: string) {
   }, [load])
 
   useEffect(() => {
-    load()
-    const s = liveSocket()
-    const onChange = () => { clearTimeout(timer.current); timer.current = setTimeout(load, 300) }
-    const onConnect = () => { setConnected(true); load() }
-    const onDisconnect = () => setConnected(false)
-    setConnected(s.connected)
-    s.on('data:changed', onChange)
-    s.on('connect', onConnect)
-    s.on('disconnect', onDisconnect)
+    let alive = true
+    let active = AppState.currentState === 'active'
+    const check = async () => {
+      try {
+        const { version: v } = await api<{ version: number }>('/api/version')
+        if (!alive) return
+        setConnected(true)
+        if (version.current !== v) {
+          version.current = v
+          await load()
+        }
+      } catch {
+        if (alive) setConnected(false)
+      }
+    }
+    check()
+    // Polling pauses while the app is in the background and catches up when it returns.
+    const timer = setInterval(() => { if (active) check() }, POLL_MS)
+    const sub = AppState.addEventListener('change', (s) => {
+      active = s === 'active'
+      if (active) check()
+    })
     return () => {
-      s.off('data:changed', onChange)
-      s.off('connect', onConnect)
-      s.off('disconnect', onDisconnect)
-      clearTimeout(timer.current)
+      alive = false
+      clearInterval(timer)
+      sub.remove()
     }
   }, [load])
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native'
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { fmt, longDate, sar, shortDate, type Alert, type Dashboard } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -16,15 +16,16 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.navy }} edges={['top']}>
       <View style={s.header}>
+        <View style={s.headerLogo}><Image source={require('../../assets/logo.png')} style={{ width: 30, height: 38 }} resizeMode="contain" /></View>
         <View style={{ flex: 1 }}>
           <T w="black" style={{ color: '#fff', fontSize: 22 }}>لوحة التحكم</T>
-          <T style={{ color: '#9fb3c8', fontSize: 13 }}>{user?.name} · {user?.roleLabel}</T>
+          <T style={{ color: '#b9b3dc', fontSize: 13 }}>{user?.name} · {user?.roleLabel}</T>
         </View>
         <View style={[s.live, { backgroundColor: connected ? 'rgba(12,163,12,.18)' : 'rgba(208,59,59,.2)' }]}>
           <View style={[s.dot, { backgroundColor: connected ? '#3ddc3d' : C.bad }]} />
-          <T w="semibold" style={{ color: '#fff', fontSize: 13 }}>{connected ? 'مباشر' : 'غير متصل'}</T>
+          <T w="semibold" style={{ color: '#fff', fontSize: 13 }}>{connected ? 'متصل' : 'غير متصل'}</T>
         </View>
-        <Pressable onPress={logout} style={s.logout}><T w="semibold" style={{ color: '#9fb3c8', fontSize: 13 }}>خروج</T></Pressable>
+        <Pressable onPress={logout} style={s.logout}><T w="semibold" style={{ color: '#b9b3dc', fontSize: 13 }}>خروج</T></Pressable>
       </View>
 
       <ScrollView style={{ backgroundColor: C.bg }} contentContainerStyle={s.body}
@@ -52,11 +53,11 @@ function Content({ d }: { d: Dashboard }) {
       </View>
       <Card style={s.costCard}>
         <View>
-          <T w="semibold" style={{ color: '#9fb3c8' }}>تكلفة العمالة اليوم</T>
+          <T w="semibold" style={{ color: '#b9b3dc' }}>تكلفة العمالة اليوم</T>
           <T w="black" style={{ color: '#fff', fontSize: 28 }}>{sar(c.costToday)}</T>
         </View>
         <View>
-          <T style={{ color: '#9fb3c8', fontSize: 13 }}>الشهر الحالي</T>
+          <T style={{ color: '#b9b3dc', fontSize: 13 }}>الشهر الحالي</T>
           <T w="bold" style={{ color: C.amber, fontSize: 18 }}>{sar(c.costMonth)}</T>
         </View>
       </Card>
@@ -172,7 +173,7 @@ function AttendanceBars({ series }: { series: Dashboard['attendanceSeries'] }) {
       <T style={{ fontSize: 12, color: C.muted }}>{picked ? shortDate(picked.date) : ''} — اضغط على أي عمود لعرض تفاصيله</T>
       <View style={s.bars}>
         {series.map((d, i) => (
-          <Pressable key={d.date} style={[s.barCol, sel === i && { backgroundColor: '#eef2f6' }]} onPress={() => setSel(i)}>
+          <Pressable key={d.date} style={[s.barCol, sel === i && { backgroundColor: '#ebe9f6' }]} onPress={() => setSel(i)}>
             <View style={{ height: 150, justifyContent: 'flex-end' }}>
               {[...SERIES].reverse().map((x) => (
                 <View key={x.key} style={{ height: (d[x.key] / max) * 150, backgroundColor: x.color, borderBottomWidth: d[x.key] ? 1 : 0, borderColor: '#fff' }} />
@@ -208,6 +209,7 @@ function CostBars({ d }: { d: Dashboard }) {
 
 const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingBottom: 14, paddingTop: 6 },
+  headerLogo: { width: 42, height: 48, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   live: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
   dot: { width: 9, height: 9, borderRadius: 5 },
   logout: { paddingHorizontal: 8, paddingVertical: 4 },
@@ -219,8 +221,8 @@ const s = StyleSheet.create({
   costCard: { backgroundColor: C.navy, borderColor: C.navy, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   count: { backgroundColor: C.bad, borderRadius: 99, paddingHorizontal: 9 },
   alert: { borderWidth: 1, borderColor: C.line, borderStartWidth: 4, borderRadius: 12, padding: 10 },
-  more: { alignItems: 'center', paddingVertical: 8, borderRadius: 10, backgroundColor: '#eef2f6' },
-  search: { borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, fontFamily: 'Cairo_400Regular', backgroundColor: '#fafbfc', textAlign: 'right' },
+  more: { alignItems: 'center', paddingVertical: 8, borderRadius: 10, backgroundColor: '#ebe9f6' },
+  search: { borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, fontFamily: 'Tajawal_400Regular', backgroundColor: '#fafbfc', textAlign: 'right' },
   project: { borderWidth: 1, borderColor: C.line, borderStartWidth: 4, borderRadius: 12, padding: 12, gap: 6 },
   stat: { fontSize: 13, color: C.ink2 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },

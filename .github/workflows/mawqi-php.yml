@@ -1,0 +1,46 @@
+name: Mawqi PHP (SiteGround)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/determined-ride-fvej2t]
+    paths:
+      - 'mawqi/server/**'
+      - 'mawqi/web/**'
+      - 'mawqi/scripts/**'
+      - '.github/workflows/mawqi-php.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mawqi/web/package-lock.json
+
+      - name: Check PHP syntax
+        run: for f in mawqi/server/api.php mawqi/server/lib/*.php; do php -l "$f"; done
+
+      - name: Build web dashboard and package for SiteGround
+        run: mawqi/scripts/package-siteground.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mawqi-siteground
+          path: mawqi/dist/mawqi-siteground.zip
+
+      # Same layout as the custody app: releases/download/mawqi-php-vN/mawqi-siteground.zip
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mawqi-php-v${{ github.run_number }}
+          name: موقعي لاستضافة SiteGround — نسخة ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: mawqi/dist/mawqi-siteground.zip

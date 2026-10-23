@@ -58,7 +58,7 @@ function LiveBadge({ connected, updatedAt }: { connected: boolean; updatedAt: Da
   return (
     <div className={`live ${connected ? 'on' : 'off'}`}>
       <span className="dot" />
-      <span>{connected ? 'متصل مباشر' : 'غير متصل'}</span>
+      <span>{connected ? 'متصل بالخادم' : 'غير متصل'}</span>
       {updatedAt && <small>آخر تحديث {updatedAt.toLocaleTimeString('ar-SA-u-nu-latn', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</small>}
     </div>
   )
@@ -176,7 +176,7 @@ function AlertsPanel({ alerts }: { alerts: Alert[] }) {
   )
 }
 
-const tooltipStyle = { fontFamily: 'Cairo', borderRadius: 10, border: '1px solid #e3e6ea', direction: 'rtl' as const }
+const tooltipStyle = { fontFamily: 'Tajawal', borderRadius: 10, border: '1px solid #e6e0da', direction: 'rtl' as const }
 
 function AttendanceChart({ series }: { series: Dashboard['attendanceSeries'] }) {
   const data = series.map((d) => ({ ...d, label: shortDate(d.date) }))
@@ -189,8 +189,8 @@ function AttendanceChart({ series }: { series: Dashboard['attendanceSeries'] }) 
             <CartesianGrid vertical={false} stroke="#eceef1" />
             <XAxis dataKey="label" reversed tick={{ fontSize: 12, fill: '#6b7380' }} tickLine={false} axisLine={{ stroke: '#d5d9df' }} interval="preserveStartEnd" minTickGap={16} />
             <YAxis orientation="right" tick={{ fontSize: 12, fill: '#6b7380' }} tickLine={false} axisLine={false} width={32} allowDecimals={false} />
-            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(15,42,68,.06)' }} />
-            <Legend iconType="circle" wrapperStyle={{ fontFamily: 'Cairo', fontSize: 14 }} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(30,23,87,.06)' }} />
+            <Legend iconType="circle" wrapperStyle={{ fontFamily: 'Tajawal', fontSize: 14 }} />
             <Bar dataKey="present" name="حاضر" stackId="a" fill={STATUS.present} stroke="#fff" strokeWidth={1} />
             <Bar dataKey="late" name="متأخر" stackId="a" fill={STATUS.late} stroke="#fff" strokeWidth={1} />
             <Bar dataKey="leave" name="إجازة" stackId="a" fill={STATUS.leave} stroke="#fff" strokeWidth={1} />

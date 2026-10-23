@@ -1,5 +1,6 @@
 node_modules/
-server/data/
+server/.dev-data/
 dist/
 .expo/
 *.tsbuildinfo
+*.sqlite*

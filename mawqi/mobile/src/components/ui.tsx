@@ -1,27 +1,30 @@
 import { Text as RNText, View, StyleSheet, type TextProps, type ViewProps } from 'react-native'
 
 export const C = {
-  navy: '#0f2a44',
-  navy2: '#173b5c',
-  amber: '#f59e0b',
-  bg: '#f4f6f8',
+  // هوية الخطوط المعدنية
+  navy: '#1e1757',
+  navy2: '#2a2178',
+  navyDark: '#120c3a',
+  amber: '#c0743f',
+  sand: '#c8a78e',
+  bg: '#f5f3f1',
   surface: '#ffffff',
-  line: '#e3e6ea',
-  ink: '#1f2933',
-  ink2: '#52606d',
-  muted: '#7b8794',
+  line: '#e6e0da',
+  ink: '#19162b',
+  ink2: '#4d475c',
+  muted: '#6b6578',
   good: '#0ca30c',
   goodBg: '#e7f6e7',
   warn: '#b7791f',
   warnBg: '#fff4dc',
   bad: '#d03b3b',
   badBg: '#fdecec',
-  blue: '#2a78d6',
+  blue: '#2a2178',
   leave: '#a3a29b',
   late: '#fab219',
 }
 
-const weights = { regular: 'Cairo_400Regular', semibold: 'Cairo_600SemiBold', bold: 'Cairo_700Bold', black: 'Cairo_800ExtraBold' }
+const weights = { regular: 'Tajawal_400Regular', semibold: 'Tajawal_500Medium', bold: 'Tajawal_700Bold', black: 'Tajawal_800ExtraBold' }
 
 export function T({ w = 'regular', style, ...p }: TextProps & { w?: keyof typeof weights }) {
   return <RNText {...p} style={[{ fontFamily: weights[w], color: C.ink, fontSize: 16, textAlign: 'left', writingDirection: 'rtl' }, style]} />

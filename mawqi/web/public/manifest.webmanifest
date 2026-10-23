@@ -1,0 +1,11 @@
+{
+  "name": "موقعي — الخطوط المعدنية",
+  "short_name": "موقعي",
+  "start_url": "/",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar",
+  "background_color": "#f5f3f1",
+  "theme_color": "#1e1757",
+  "icons": [{ "src": "/logo.png", "sizes": "224x280", "type": "image/png" }]
+}

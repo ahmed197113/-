@@ -1,5 +1,3 @@
-import { io, type Socket } from 'socket.io-client'
-
 export type Role = 'admin' | 'project_manager' | 'supervisor' | 'accountant'
 export interface User { id: number; name: string; username: string; role: Role; roleLabel: string }
 
@@ -38,16 +36,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T
 }
 
-let socket: Socket | null = null
-/** One shared real-time connection to the company server. */
-export function liveSocket(): Socket {
-  if (!socket) socket = io({ auth: { token: getToken() }, transports: ['websocket', 'polling'] })
-  return socket
-}
-export function closeSocket() {
-  socket?.disconnect()
-  socket = null
-}
+export interface Status { needsSetup: boolean; companyName: string; version: number }
 
 const num = new Intl.NumberFormat('ar-SA-u-nu-latn', { maximumFractionDigits: 0 })
 export const fmt = (n: number) => num.format(n)
