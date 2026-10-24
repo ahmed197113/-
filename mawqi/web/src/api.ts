@@ -1,5 +1,5 @@
 export type Role = 'admin' | 'project_manager' | 'supervisor' | 'accountant'
-export interface User { id: number; name: string; username: string; role: Role; roleLabel: string }
+export interface User { id: number; name: string; username: string; role: Role; roleLabel: string; permissions: Record<string, boolean> }
 
 export interface ProjectRow {
   id: number; name: string; city: string; planned_workers: number; progress: number
@@ -41,6 +41,9 @@ export interface Status { needsSetup: boolean; companyName: string; version: num
 const num = new Intl.NumberFormat('ar-SA-u-nu-latn', { maximumFractionDigits: 0 })
 export const fmt = (n: number) => num.format(n)
 export const sar = (n: number) => `${num.format(n)} ر.س`
+const num2 = new Intl.NumberFormat('ar-SA-u-nu-latn', { maximumFractionDigits: 2 })
+export const sar2 = (n: number) => `${num2.format(n)} ر.س`
+export const compact = (n: number) => (Math.abs(n) >= 1e6 ? `${num2.format(n / 1e6)} مليون` : Math.abs(n) >= 1e4 ? `${num.format(n / 1e3)} ألف` : num.format(n))
 export const shortDate = (d: string) =>
   new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { day: 'numeric', month: 'short' }).format(new Date(d + 'T12:00:00'))
 export const longDate = (d: string) =>

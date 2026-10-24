@@ -21,7 +21,7 @@ export function seed() {
   const hash = bcrypt.hashSync('123456', 8);
 
   tx(() => {
-    for (const t of ['attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects', 'users', 'settings']) {
+    for (const t of ['direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects', 'users', 'settings']) {
       db.exec(`DELETE FROM ${t}`);
     }
 
@@ -160,6 +160,44 @@ export function seed() {
     for (const [pid, title, cat, sev, status, assignee, dueOff] of issues) {
       insIssue.run(pid, title, cat, sev, status, assignee, projById[pid][9], `${addDays(today, dueOff)}T17:00`, `${addDays(today, dueOff - 3)}T09:30`);
     }
+
+
+    // Owners and contract values, a week of daily reports, invoices and direct orders.
+    const owners = [[1, 'شركة الريان العقارية', 48000000], [2, 'مؤسسة النخيل للاستثمار', 22500000], [3, 'هيئة الموانئ', 31000000], [4, 'وزارة التعليم', 14800000], [5, 'وزارة الصحة', 19600000]];
+    for (const [pid, client, value] of owners) db.prepare('UPDATE projects SET client = ?, contract_value = ? WHERE id = ?').run(client, value, pid);
+
+    const works = ['صب خرسانة سقف الدور', 'تركيب حديد تسليح أعمدة', 'أعمال البلوك للجدران الداخلية', 'تمديدات كهربائية', 'أعمال اللياسة', 'تمديدات صحية', 'شدات خشبية للسقف', 'أعمال العزل المائي'];
+    const weathers = ['مشمس', 'حار', 'غائم جزئياً', 'رياح مثيرة للأتربة'];
+    const insRep = db.prepare(`INSERT INTO daily_reports (project_id, date, weather, work_done, next_plan, equipment, materials, obstacles, progress, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    for (const p of projects) {
+      for (let k = 6; k >= 1; k--) {
+        const d = addDays(today, -k);
+        if (isFriday(d)) continue;
+        insRep.run(p[0], d, pick(weathers), `${pick(works)} — ${pick(works)}`, pick(works), 'رافعة برجية، خلاطة، هزاز خرسانة', 'حديد 16مم: 4 طن، خرسانة: 60م³',
+          rand() < 0.3 ? 'تأخر توريد بعض المواد' : null, null, p[9], `${d}T17:30`);
+      }
+    }
+
+    const insInv = db.prepare(`INSERT INTO invoices (project_id, kind, subcontractor_id, number, period_from, period_to, gross, retention_pct, deductions, vat_pct, status, notes, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 10, ?, 15, ?, NULL, 9, ?)`);
+    const m1 = addDays(today, -60), m2 = addDays(today, -30);
+    insInv.run(1, 'client', null, 'م-1', m1, addDays(m2, -1), 2850000, 0, 'paid', `${m2}T10:00`);
+    insInv.run(1, 'client', null, 'م-2', m2, addDays(today, -1), 3120000, 15000, 'submitted', `${today}T09:00`);
+    insInv.run(2, 'client', null, 'م-1', m2, addDays(today, -1), 1460000, 0, 'approved', `${addDays(today, -2)}T11:00`);
+    insInv.run(3, 'client', null, 'م-3', m2, addDays(today, -1), 2240000, 0, 'paid', `${addDays(today, -5)}T12:00`);
+    insInv.run(1, 'subcontractor', 1, 'ب-1', m2, addDays(today, -1), 185000, 2500, 'approved', `${addDays(today, -1)}T13:00`);
+    insInv.run(2, 'subcontractor', 2, 'ب-1', m2, addDays(today, -1), 96000, 0, 'draft', `${today}T08:00`);
+
+    const insOrd = db.prepare(`INSERT INTO direct_orders (project_id, subcontractor_id, number, title, date, due_date, status, notes, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 2, ?)`);
+    const insItem = db.prepare('INSERT INTO direct_order_items (order_id, description, unit, qty, unit_price, done_qty) VALUES (?, ?, ?, ?, ?, ?)');
+    const o1 = Number(insOrd.run(1, 3, 'إس-001', 'أعمال تشطيبات الدور الأرضي', addDays(today, -20), addDays(today, 25), 'in_progress', `${addDays(today, -20)}T10:00`).lastInsertRowid);
+    insItem.run(o1, 'لياسة داخلية', 'م²', 1800, 28, 1100);
+    insItem.run(o1, 'دهان بلاستيك 3 أوجه', 'م²', 1800, 22, 400);
+    insItem.run(o1, 'تركيب بلاط أرضيات', 'م²', 650, 45, 0);
+    const o2 = Number(insOrd.run(2, 2, 'إس-002', 'تمديدات كهرباء الفلل 1-6', addDays(today, -35), addDays(today, 10), 'open', `${addDays(today, -35)}T09:00`).lastInsertRowid);
+    insItem.run(o2, 'تمديد مواسير ونقاط إنارة', 'نقطة', 420, 85, 260);
+    insItem.run(o2, 'تركيب لوحات توزيع', 'عدد', 6, 2400, 2);
 
     db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('absence_cutoff', '09:00');
   });

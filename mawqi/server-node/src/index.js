@@ -5,11 +5,12 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { db } from './db.js';
+import { db, getSetting } from './db.js';
 import { login, projectScope, requireAuth, verifyToken } from './auth.js';
 import { buildDashboard } from './dashboard.js';
 import { startJobs } from './jobs.js';
 import { seed } from './seed.js';
+import { api } from './routes.js';
 
 if (db.prepare('SELECT COUNT(*) AS n FROM projects').get().n === 0) seed();
 
@@ -28,13 +29,14 @@ const loginRoute = (req, res) => {
 };
 app.post('/api/auth/login', loginRoute);
 app.post('/api/login', loginRoute);
-app.get('/api/status', (_req, res) => res.json({ needsSetup: false, companyName: 'شركة الخطوط المعدنية للمقاولات العامة', version: dataVersion }));
+app.get('/api/status', (_req, res) => res.json({ needsSetup: false, companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), version: dataVersion }));
 app.get('/api/version', requireAuth, (_req, res) => res.json({ version: dataVersion }));
 app.post('/api/logout', (_req, res) => res.json({ ok: true }));
 
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
 
 app.get('/api/dashboard', requireAuth, (req, res) => res.json(buildDashboard(projectScope(req.user))));
+app.use('/api', requireAuth, api);
 
 const http = createServer(app);
 const io = new Server(http, { cors: { origin: '*' } });

@@ -107,11 +107,85 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS daily_reports (
+  id INTEGER PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  date TEXT NOT NULL,
+  weather TEXT,
+  work_done TEXT NOT NULL,
+  next_plan TEXT,
+  equipment TEXT,
+  materials TEXT,
+  obstacles TEXT,
+  progress REAL,
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL,
+  UNIQUE (project_id, date)
+);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id INTEGER PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  kind TEXT NOT NULL CHECK (kind IN ('client','subcontractor')),
+  subcontractor_id INTEGER REFERENCES subcontractors(id),
+  number TEXT NOT NULL,
+  period_from TEXT,
+  period_to TEXT,
+  gross REAL NOT NULL DEFAULT 0,
+  retention_pct REAL NOT NULL DEFAULT 10,
+  deductions REAL NOT NULL DEFAULT 0,
+  vat_pct REAL NOT NULL DEFAULT 15,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','submitted','approved','paid','rejected')),
+  notes TEXT,
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS direct_orders (
+  id INTEGER PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  subcontractor_id INTEGER REFERENCES subcontractors(id),
+  number TEXT NOT NULL,
+  title TEXT NOT NULL,
+  date TEXT NOT NULL,
+  due_date TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','done','cancelled')),
+  notes TEXT,
+  created_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS direct_order_items (
+  id INTEGER PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES direct_orders(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  unit TEXT NOT NULL DEFAULT 'مقطوعية',
+  qty REAL NOT NULL DEFAULT 1,
+  unit_price REAL NOT NULL DEFAULT 0,
+  done_qty REAL NOT NULL DEFAULT 0
+);
 `);
+
+// Columns added after the first release; ignore "duplicate column" on databases that already have them.
+for (const sql of [
+  'ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE projects ADD COLUMN client TEXT',
+  'ALTER TABLE projects ADD COLUMN contract_value REAL NOT NULL DEFAULT 0',
+  'ALTER TABLE workers ADD COLUMN phone TEXT',
+  'ALTER TABLE issues ADD COLUMN resolution TEXT',
+  'ALTER TABLE issues ADD COLUMN closed_at TEXT',
+]) {
+  try { db.exec(sql); } catch { /* already applied */ }
+}
 
 export function getSetting(key, fallback) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
   return row ? row.value : fallback;
+}
+
+export function setSetting(key, value) {
+  db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, String(value));
 }
 
 export function tx(fn) {

@@ -4,7 +4,15 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Setup from './pages/Setup'
 import DashboardPage from './pages/Dashboard'
-import ComingSoon from './pages/ComingSoon'
+import ProjectsPage, { ProjectDetailPage } from './pages/Projects'
+import WorkersPage from './pages/Workers'
+import AttendancePage from './pages/Attendance'
+import DailyReportsPage from './pages/DailyReports'
+import IssuesPage from './pages/Issues'
+import InvoicesPage from './pages/Invoices'
+import DirectOrdersPage from './pages/DirectOrders'
+import ReportsPage from './pages/Reports'
+import SettingsPage from './pages/Settings'
 
 function Routed() {
   const { user, ready, status } = useAuth()
@@ -14,7 +22,16 @@ function Routed() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<DashboardPage />} />
-        <Route path=":section" element={<ComingSoon />} />
+        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="workers" element={<WorkersPage />} />
+        <Route path="attendance" element={<AttendancePage />} />
+        <Route path="daily-reports" element={<DailyReportsPage />} />
+        <Route path="issues" element={<IssuesPage />} />
+        <Route path="invoices" element={<InvoicesPage />} />
+        <Route path="direct-orders" element={<DirectOrdersPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
