@@ -163,7 +163,7 @@ export function ProjectSelect({ value, onChange, all = true, label, unassigned }
       {all && <option value="">{unassigned ? 'كل المواقع' : 'كل المشاريع'}</option>}
       {unassigned && <option value="none">غير موزّع</option>}
       {!all && <option value="">اختر المشروع…</option>}
-      {meta?.projects.map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</option>)}
+      {meta?.projects.map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}{p.name}</option>)}
     </select>
   )
 }

@@ -205,6 +205,19 @@ for (const sql of [
   }
 }
 
+// Iqama renewal fees, charged to the site where the worker was working at renewal.
+db.exec(`CREATE TABLE IF NOT EXISTS iqama_renewals (
+  id INTEGER PRIMARY KEY,
+  worker_id INTEGER NOT NULL REFERENCES workers(id),
+  project_id INTEGER REFERENCES projects(id),
+  date TEXT NOT NULL,
+  amount REAL NOT NULL,
+  new_expiry TEXT,
+  note TEXT,
+  created_by INTEGER,
+  created_at TEXT
+)`);
+
 // A project can have several managers and several supervisors.
 db.exec(`CREATE TABLE IF NOT EXISTS project_members (
   project_id INTEGER NOT NULL REFERENCES projects(id),
@@ -242,6 +255,16 @@ export function ensureFactory() {
     VALUES ('المصنع', NULL, 0, 0, 300, ?, '2099-12-31', 1, 0, 'active', 'factory')`).run(today);
   return Number(r.lastInsertRowid);
 }
+/** Head office (kind = 'office'): admin staff work here; their cost is shared equally by the running projects. */
+export function ensureOffice() {
+  const f = db.prepare(`SELECT id FROM projects WHERE kind = 'office' ORDER BY id LIMIT 1`).get();
+  if (f) return f.id;
+  const today = new Date().toISOString().slice(0, 10);
+  const r = db.prepare(`INSERT INTO projects (name, city, lat, lng, radius_m, start_date, end_date, planned_workers, progress, status, kind)
+    VALUES ('الإدارة', NULL, 0, 0, 300, ?, '2099-12-31', 1, 0, 'active', 'office')`).run(today);
+  return Number(r.lastInsertRowid);
+}
+export const officeId = () => db.prepare(`SELECT id FROM projects WHERE kind = 'office' ORDER BY id LIMIT 1`).get()?.id ?? null;
 export const factoryId = () => db.prepare(`SELECT id FROM projects WHERE kind = 'factory' ORDER BY id LIMIT 1`).get()?.id ?? null;
 
 export function getSetting(key, fallback) {

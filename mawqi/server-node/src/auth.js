@@ -24,6 +24,8 @@ export const PERMISSIONS = {
   issues: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
   invoices: ['admin', 'sysadmin', 'accountant', 'project_manager'],
   directOrders: ['admin', 'sysadmin', 'project_manager'],
+  /** Record iqama renewal fees and see the full cost of each project. */
+  costs: ['admin', 'sysadmin', 'accountant', 'project_manager'],
   users: ['admin', 'sysadmin'],
   /** Delete anything and edit records others created — the general manager and the system manager only. */
   delete: ['admin', 'sysadmin'],

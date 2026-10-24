@@ -1,11 +1,12 @@
 // REST API for every section of موقعي. Mounted under /api after requireAuth.
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { db, ensureFactory, factoryId, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
+import { db, ensureFactory, ensureOffice, factoryId, officeId, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
 import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
 import { addDays, round, todayStr, nowTime } from './util.js';
 import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
 import { rmSync } from 'node:fs';
+import { monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
 import { join } from 'node:path';
 
 const withFiles = (entity, rows) => { const f = filesFor(entity, rows.map((r) => r.id)); return rows.map((r) => ({ ...r, media: f[r.id] || [] })); };
@@ -52,9 +53,9 @@ api.get('/meta', (req, res) => {
   res.json({
     roles: ROLE_LABELS,
     users: db.prepare('SELECT id, name, role, active FROM users ORDER BY name').all(),
-    projects: db.prepare(`SELECT id, name, status, kind FROM projects WHERE ${inList('id', scope)} ORDER BY kind = 'factory' DESC, name`).all(),
+    projects: db.prepare(`SELECT id, name, status, kind FROM projects WHERE ${inList('id', scope)} ORDER BY kind = 'project', kind = 'factory' DESC, name`).all(),
     // Every active site a worker can be sent to — engineers move workers freely between all projects.
-    places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ORDER BY kind = 'factory' DESC, name`).all(),
+    places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ORDER BY kind = 'project', kind = 'factory' DESC, name`).all(),
     subcontractors: db.prepare('SELECT id, name FROM subcontractors ORDER BY name').all(),
     // Every profession already used, so new ones typed once become suggestions for everyone.
     professions: professionList().map((p) => p.name),
@@ -126,9 +127,10 @@ api.post('/admin/reset', need('users'), (req, res) => {
   if (String(req.body?.confirm || '') !== 'ابدأ') fail(400, 'اكتب كلمة «ابدأ» للتأكيد');
   for (const f of db.prepare('SELECT path FROM attachments').all()) rmSync(join(UPLOAD_DIR, f.path), { force: true });
   tx(() => {
-    for (const t of ['attachments', 'project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
+    for (const t of ['iqama_renewals', 'attachments', 'project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
     db.prepare('DELETE FROM users WHERE id <> ?').run(req.user.id);
     ensureFactory();
+    ensureOffice();
   });
   changed(req, 'all');
   res.json({ ok: true });
@@ -230,6 +232,13 @@ api.get('/projects/:id', (req, res) => {
   const inv = db.prepare(`SELECT kind, COALESCE(SUM(gross), 0) AS gross FROM invoices WHERE project_id = ? AND status IN ('approved','paid') GROUP BY kind`).all(id);
   p.invoiced = round(inv.find((r) => r.kind === 'client')?.gross ?? 0);
   p.subcontracted = round(inv.find((r) => r.kind === 'subcontractor')?.gross ?? 0);
+  {
+    const month = today.slice(0, 7);
+    const m = projectCost(id, `${month}-01`, today);
+    const all = projectCost(id, p.start_date < today ? p.start_date : today, today);
+    p.costs = { month: m, total: all };
+  }
+  p.renewals = db.prepare(`SELECT r.id, r.date, r.amount, w.name FROM iqama_renewals r JOIN workers w ON w.id = r.worker_id WHERE r.project_id = ? ORDER BY r.date DESC LIMIT 50`).all(id);
   p.gallery = projectGallery(id);
   p.documents = filesFor('project', [id])[id]?.filter((f) => f.tag === 'doc') ?? [];
   res.json(p);
@@ -304,13 +313,14 @@ api.get('/workers', (req, res) => {
 });
 
 api.get('/workers/:id', (req, res) => {
-  const w = db.prepare(`SELECT w.*, p.name AS project, s.name AS subcontractor FROM workers w
+  const w = db.prepare(`SELECT w.*, p.name AS project, p.kind AS location_kind, s.name AS subcontractor FROM workers w
     LEFT JOIN projects p ON p.id = w.project_id LEFT JOIN subcontractors s ON s.id = w.subcontractor_id WHERE w.id = ?`).get(Number(req.params.id));
   if (!w) fail(404, 'العامل غير موجود');
   w.history = db.prepare(`SELECT wa.from_date, wa.to_date, p.name AS project FROM worker_assignments wa JOIN projects p ON p.id = wa.project_id
     WHERE wa.worker_id = ? ORDER BY wa.from_date DESC`).all(w.id);
   w.attendance = db.prepare(`SELECT a.date, a.status, a.check_in, a.check_out, a.overtime_hours, p.name AS project FROM attendance a LEFT JOIN projects p ON p.id = a.project_id
     WHERE a.worker_id = ? ORDER BY a.date DESC LIMIT 62`).all(w.id);
+  w.renewals = db.prepare(`SELECT r.id, r.date, r.amount, r.new_expiry, r.note, p.name AS project FROM iqama_renewals r LEFT JOIN projects p ON p.id = r.project_id WHERE r.worker_id = ? ORDER BY r.date DESC`).all(w.id);
   w.media = filesFor('worker', [w.id])[w.id] || [];
   const ph = [...w.media].reverse().find((m) => m.tag === 'photo');
   w.photo = ph ? ph.url : null;
@@ -398,6 +408,7 @@ api.post('/workers/import', need('workers'), (req, res) => {
     const n = String(name || '').trim();
     if (!n) return null;
     if (/^(المصنع|مصنع|الورشة|factory)$/i.test(n)) return factoryId();
+    if (/^(الإدارة|الادارة|إدارة|ادارة|المكتب|office)$/i.test(n)) return officeId();
     return places.find((p) => p.name.trim() === n)?.id ?? fail(400, `المشروع «${n}» غير موجود`);
   };
   const subs = new Map(db.prepare('SELECT id, name FROM subcontractors').all().map((s) => [s.name.trim(), s.id]));
@@ -814,16 +825,63 @@ api.delete('/direct-orders/:id', need('delete'), (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- iqama renewals (a real cost charged to the worker's site) ----------
+api.get('/iqama-renewals', (req, res) => {
+  const where = ['1=1']; const params = [];
+  if (req.query.worker) { where.push('r.worker_id = ?'); params.push(Number(req.query.worker)); }
+  if (/^\d{4}-\d{2}$/.test(String(req.query.month || ''))) { const b = monthBounds(req.query.month); where.push('r.date BETWEEN ? AND ?'); params.push(b.from, b.to); }
+  const scope = scopeOf(req);
+  if (scope !== null) where.push(inList('r.project_id', scope));
+  res.json(db.prepare(`SELECT r.*, w.name, w.iqama_no, p.name AS project, p.kind AS project_kind, u.name AS author FROM iqama_renewals r
+    JOIN workers w ON w.id = r.worker_id LEFT JOIN projects p ON p.id = r.project_id LEFT JOIN users u ON u.id = r.created_by
+    WHERE ${where.join(' AND ')} ORDER BY r.date DESC, r.id DESC LIMIT 500`).all(...params));
+});
+api.post('/workers/:id/iqama-renewal', need('costs'), (req, res) => {
+  const id = Number(req.params.id);
+  const w = db.prepare('SELECT id, project_id FROM workers WHERE id = ?').get(id);
+  if (!w) fail(404, 'العامل غير موجود');
+  const b = req.body || {};
+  const date = isDate(b.date) ? b.date : todayStr();
+  const amount = num(b.amount, NaN);
+  if (!(amount > 0)) fail(400, 'اكتب مبلغ التجديد');
+  const expiry = str(b.new_expiry);
+  if (expiry && !isDate(expiry)) fail(400, 'تاريخ الانتهاء الجديد غير صحيح');
+  // Charged to the site the worker belonged to on that day (or the chosen one).
+  const at = db.prepare(`SELECT project_id FROM worker_assignments WHERE worker_id = ? AND from_date <= ? AND (to_date IS NULL OR to_date >= ?) ORDER BY from_date DESC LIMIT 1`).get(id, date, date)?.project_id;
+  const project = b.project_id ? Number(b.project_id) : at ?? w.project_id ?? null;
+  const rid = tx(() => {
+    const r = db.prepare(`INSERT INTO iqama_renewals (worker_id, project_id, date, amount, new_expiry, note, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(id, project, date, amount, expiry, str(b.note), req.user.id, nowStamp());
+    if (expiry) db.prepare('UPDATE workers SET iqama_expiry = ? WHERE id = ?').run(expiry, id);
+    return Number(r.lastInsertRowid);
+  });
+  changed(req, 'workers', project);
+  res.json({ ok: true, id: rid });
+});
+api.delete('/iqama-renewals/:id', need('delete'), (req, res) => {
+  const r = db.prepare('SELECT project_id FROM iqama_renewals WHERE id = ?').get(Number(req.params.id));
+  if (!r) fail(404, 'السجل غير موجود');
+  db.prepare('DELETE FROM iqama_renewals WHERE id = ?').run(Number(req.params.id));
+  changed(req, 'workers', r.project_id);
+  res.json({ ok: true });
+});
+api.get('/overhead', (req, res) => {
+  const { month } = monthRange(req.query.month);
+  res.json(overheadMonth(month, scopeOf(req) === null));
+});
+
 // ---------- deletes (general manager & system manager only) ----------
 const del = (sql, ...a) => db.prepare(sql).run(...a);
 api.delete('/projects/:id', need('delete'), (req, res) => {
   const id = ensureProject(req, req.params.id);
   if (id === factoryId()) fail(400, 'لا يمكن حذف المصنع');
+  if (id === officeId()) fail(400, 'لا يمكن حذف الإدارة');
   tx(() => {
     del('DELETE FROM direct_order_items WHERE order_id IN (SELECT id FROM direct_orders WHERE project_id = ?)', id);
     for (const f of db.prepare('SELECT path FROM attachments WHERE project_id = ?').all(id)) rmSync(join(UPLOAD_DIR, f.path), { force: true });
     del(`DELETE FROM attachments WHERE project_id = ? AND entity <> 'worker'`, id);
     for (const t of ['direct_orders', 'invoices', 'daily_reports', 'issues', 'attendance', 'worker_assignments', 'project_members']) del(`DELETE FROM ${t} WHERE project_id = ?`, id);
+    del('UPDATE iqama_renewals SET project_id = NULL WHERE project_id = ?', id);
     del('UPDATE workers SET project_id = NULL WHERE project_id = ?', id);
     del('DELETE FROM projects WHERE id = ?', id);
   });
@@ -838,6 +896,7 @@ api.delete('/workers/:id', need('delete'), (req, res) => {
     removeFilesOf('worker', [id]);
     del('DELETE FROM attendance WHERE worker_id = ?', id);
     del('DELETE FROM worker_assignments WHERE worker_id = ?', id);
+    del('DELETE FROM iqama_renewals WHERE worker_id = ?', id);
     del('DELETE FROM workers WHERE id = ?', id);
   });
   changed(req, 'workers', w.project_id);
@@ -905,10 +964,16 @@ api.get('/reports/summary', (req, res) => {
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to AND a.status = 'absent') AS absences,
       (SELECT COALESCE(SUM(gross), 0) FROM invoices v WHERE v.project_id = p.id AND v.kind = 'client' AND v.status IN ('approved','paid')) AS billed,
       (SELECT COALESCE(SUM(gross), 0) FROM invoices v WHERE v.project_id = p.id AND v.kind = 'subcontractor' AND v.status IN ('approved','paid')) AS sub_cost,
-      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status <> 'closed') AS open_issues
-    FROM projects p WHERE ${inList('p.id', scope)} ORDER BY p.name`).all({ $from: from, $to: toCapped })
-    .map((p) => ({ ...p, labour: round(p.labour), billed: round(p.billed), sub_cost: round(p.sub_cost) }));
-  res.json({ month, projects });
+      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status <> 'closed') AS open_issues,
+      (SELECT COALESCE(SUM(amount), 0) FROM iqama_renewals r WHERE r.project_id = p.id AND r.date BETWEEN $from AND $to) AS iqama
+    FROM projects p WHERE ${inList('p.id', scope)} AND p.kind <> 'office' ORDER BY p.kind <> 'project', p.name`).all({ $from: from, $to: toCapped })
+    .map((p) => {
+      const overhead = p.kind === 'project' ? overheadFor(p.id, [month]) : 0;
+      return { ...p, labour: round(p.labour), billed: round(p.billed), sub_cost: round(p.sub_cost), iqama: round(p.iqama), overhead, total_cost: round(p.labour + p.iqama + overhead) };
+    });
+  const o = overheadMonth(month, true);
+  const top = scope === null;
+  res.json({ month, projects, overhead: { ...o, staff: top ? o.staff : [], renewals: top ? o.renewals : [] } });
 });
 
 const csvCell = (v) => {

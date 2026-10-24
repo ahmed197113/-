@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 
 export type Role = 'admin' | 'sysadmin' | 'project_manager' | 'supervisor' | 'accountant'
-export type Permission = 'projects' | 'projectsCreate' | 'workers' | 'moveWorkers' | 'attendance' | 'dailyReports' | 'issues' | 'invoices' | 'directOrders' | 'users' | 'delete'
+export type Permission = 'projects' | 'projectsCreate' | 'workers' | 'moveWorkers' | 'attendance' | 'dailyReports' | 'issues' | 'invoices' | 'directOrders' | 'users' | 'delete' | 'costs'
 export interface User { id: number; name: string; username: string; role: Role; roleLabel: string; permissions: Partial<Record<Permission, boolean>> }
 
 export interface ProjectRow {
@@ -47,6 +47,7 @@ export interface Worker {
   photo?: string | null; today?: AttStatus | null
 }
 export interface WorkerDetail extends Worker {
+  renewals?: { id: number; date: string; amount: number; new_expiry: string | null; note: string | null; project: string | null }[]
   media?: import('./media').MediaFile[]
   attendance: { date: string; status: AttStatus; check_in: string | null; overtime_hours: number; project?: string | null }[]
   history: { from_date: string; to_date: string | null; project: string }[]

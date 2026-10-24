@@ -131,7 +131,7 @@ function DaySheet() {
                           <span>الموقع</span>
                           <select value={siteOf(r)} onChange={(e) => setSite(r, Number(e.target.value))}>
                             {!places.some((p) => p.id === r.project_id) && <option value={r.project_id}>{r.project}</option>}
-                            {places.map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</option>)}
+                            {places.map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}{p.name}</option>)}
                           </select>
                           {siteOf(r) !== r.project_id && <em>سيُنقل إلى {placeName(siteOf(r))}</em>}
                         </label>
@@ -226,7 +226,7 @@ function PullWorker({ project, exclude, onClose, onPick }: { date: string; proje
           <label className="inline">يعمل اليوم في
             <select className="select" value={site} onChange={(e) => setSite(e.target.value)}>
               <option value="">اختر الموقع…</option>
-              {(meta?.places ?? []).map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</option>)}
+              {(meta?.places ?? []).map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}{p.name}</option>)}
             </select>
           </label>
           <Search value={q} onChange={setQ} placeholder="ابحث باسم العامل" />
@@ -241,7 +241,7 @@ function PullWorker({ project, exclude, onClose, onPick }: { date: string; proje
                   status: null, check_in: null, check_out: null, overtime_hours: 0, method: null }, Number(site))
               }}>
                 {w.photo ? <img className="avatar-s img" src={src(w.photo)} alt="" /> : <span className="avatar-s">{w.name.slice(0, 1)}</span>}
-                <div><strong>{w.name}</strong><small>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'}</small></div>
+                <div><strong>{w.name}</strong><small>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : w.location_kind === 'office' ? '🏢 ' : ''}${w.project}` : 'غير موزّع'}</small></div>
                 <span className="btn sm">إضافة</span>
               </li>
             ))}

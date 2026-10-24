@@ -4,12 +4,13 @@ import { useAuth } from '../auth'
 import { Icon } from '../icons'
 import { src, type MediaFile } from '../media'
 import { ErrorBox, INVOICE_STATUS, ISSUE_STATUS, Loading, SEVERITY, today, useData } from '../ui'
-import type { Project } from './Projects'
+import type { Cost, Project } from './Projects'
 
 interface Detail extends Project {
   workers: { id: number; name: string; profession: string; today: string | null }[]
   series: { date: string; present: number; absent: number }[]
   invoiced: number; subcontracted: number; gallery: MediaFile[]
+  costs?: { month: Cost; total: Cost }
 }
 interface Report { id: number; date: string; weather: string | null; work_done: string; obstacles: string | null; author: string | null; present: number; absent: number; media: MediaFile[] }
 interface Issue { id: number; title: string; severity: string; status: string; due_at: string | null; assignee: string | null; resolution: string | null; overdue: number; created_at: string }
@@ -75,10 +76,27 @@ export default function ProjectReportPage() {
           <div><span>العمال على المشروع</span><b>{fmt(d.assigned)}</b><small>المخطط {fmt(d.planned_workers)}</small></div>
           <div><span>الحضور اليوم</span><b>{fmt(d.present)}</b></div>
           <div><span>نسبة الغياب (14 يوماً)</span><b>{absRate.toFixed(1)}%</b></div>
-          <div><span>تكلفة العمالة هذا الشهر</span><b>{sar(d.cost_month)}</b></div>
-          <div><span>تكلفة العمالة الإجمالية</span><b>{compact(d.cost_total)} ر.س</b></div>
+          <div><span>التكلفة الفعلية هذا الشهر</span><b>{sar(d.costs?.month.total ?? d.cost_month)}</b></div>
+          <div><span>التكلفة الفعلية منذ البداية</span><b>{compact(d.costs?.total.total ?? d.cost_total)} ر.س</b></div>
           <div><span>المستخلصات المعتمدة</span><b>{compact(d.invoiced)} ر.س</b>{d.contract_value > 0 && <small>من عقد {compact(d.contract_value)}</small>}</div>
         </section>
+
+        {d.costs && (
+          <section>
+            <h2>التكلفة الفعلية</h2>
+            <table className="rp-table">
+              <thead><tr><th>البند</th><th>هذا الشهر</th><th>منذ بداية المشروع</th></tr></thead>
+              <tbody>
+                <tr><th>العمالة (حسب الحضور)</th><td>{sar(d.costs.month.labour)}</td><td>{sar(d.costs.total.labour)}</td></tr>
+                <tr><th>تجديد إقامات عمال المشروع</th><td>{sar(d.costs.month.iqama)}</td><td>{sar(d.costs.total.iqama)}</td></tr>
+                <tr><th>حصة المشروع من مصاريف الإدارة</th><td>{sar(d.costs.month.overhead)}</td><td>{sar(d.costs.total.overhead)}</td></tr>
+                {d.subcontracted > 0 && <tr><th>مستخلصات مقاولي الباطن المعتمدة</th><td>—</td><td>{sar(d.subcontracted)}</td></tr>}
+                <tr className="total"><th>الإجمالي</th><td><b>{sar(d.costs.month.total)}</b></td><td><b>{sar(d.costs.total.total + d.subcontracted)}</b></td></tr>
+              </tbody>
+            </table>
+            <p className="muted">حصة الإدارة = رواتب وإقامات موظفي الإدارة ÷ عدد المشاريع الجارية في كل شهر.</p>
+          </section>
+        )}
 
         <section>
           <h2>بيانات المشروع</h2>

@@ -17,6 +17,7 @@ interface Worker {
 }
 interface WorkerDetail extends Worker {
   history: { from_date: string; to_date: string | null; project: string }[]
+  renewals?: { id: number; date: string; amount: number; new_expiry: string | null; note: string | null; project: string | null }[]
   attendance: { date: string; status: string; check_in: string | null; check_out: string | null; overtime_hours: number; project: string | null }[]
   media: MediaFile[]
 }
@@ -82,7 +83,7 @@ export default function WorkersPage() {
                     <td><div className="who"><Avatar w={w} /><div><strong>{w.name}</strong><small>{w.profession} · {w.nationality}{w.subcontractor ? ` · ${w.subcontractor}` : ''}</small></div></div></td>
                     <td>
                       <div className="loc">
-                        {w.project ? <Badge tone={w.location_kind === 'factory' ? 'amber' : 'navy'}>{w.location_kind === 'factory' ? '🏭 ' : ''}{w.project}</Badge> : <Badge>غير موزّع</Badge>}
+                        {w.project ? <Badge tone={w.location_kind === 'factory' ? 'amber' : 'navy'}>{w.location_kind === 'factory' ? '🏭 ' : w.location_kind === 'office' ? '🏢 ' : ''}{w.project}</Badge> : <Badge>غير موزّع</Badge>}
                         {can('moveWorkers') && <button className="btn sm" onClick={(e) => { e.stopPropagation(); setMoving(w) }}>نقل</button>}
                       </div>
                     </td>
@@ -188,6 +189,7 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
   const can = useCan()
   const canDel = useCanDeleteFile()
   const canAdd = can('workers') || can('moveWorkers')
+  const [renew, setRenew] = useState(false)
   return (
     <Modal title={w?.name ?? '…'} onClose={onClose} wide footer={w && can('workers') ? <button className="btn primary" onClick={() => onEdit(w)}><Icon name="edit" size={18} /> تعديل</button> : undefined}>
       {!w ? <Loading /> : (
@@ -195,7 +197,7 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
           <div className="wk-head">
             {w.photo ? <img className="wk-photo" src={src(w.photo)} alt={w.name} /> : <span className="wk-photo none">{w.name.slice(0, 1)}</span>}
             <div><h2>{w.name}</h2><p className="muted">{w.profession} · {w.nationality}</p>
-              <p>{w.project ? `${w.location_kind === 'factory' ? '🏭 ' : '🏗️ '}${w.project}` : 'غير موزّع'}</p></div>
+              <p>{w.project ? `${w.location_kind === 'factory' ? '🏭 ' : w.location_kind === 'office' ? '🏢 ' : '🏗️ '}${w.project}` : 'غير موزّع'}</p></div>
           </div>
           <div className="facts">
             <div><span>المهنة</span><b>{w.profession}</b></div>
@@ -210,6 +212,32 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
             <Attachments entity="worker" id={w.id} files={w.media ?? []} tag="photo" canAdd={canAdd} canDelete={canDel} accept="image/*" title="الصورة الشخصية" empty="لا توجد صورة" compact />
             <Attachments entity="worker" id={w.id} files={w.media ?? []} tag="iqama" canAdd={canAdd} canDelete={canDel} accept={ACCEPT_ALL} title="الإقامة والمستندات" empty="لا توجد صورة للإقامة" compact />
           </div>
+          <div className="row-head">
+            <h3>تجديدات الإقامة ومصاريفها</h3>
+            {can('costs') && <button className="btn sm primary" onClick={() => setRenew(true)}><Icon name="plus" size={16} /> تسجيل تجديد</button>}
+          </div>
+          {!w.renewals?.length ? <p className="muted">لا توجد تجديدات مسجلة. سجّل كل تجديد بمبلغه ليُحمَّل على موقع العامل{w.location_kind === 'office' ? ' (موظف إدارة: يُوزَّع على كل المشاريع)' : ''}.</p> : (
+            <ul className="list">
+              {w.renewals.map((r) => (
+                <li key={r.id}><b>{sar(r.amount)}</b><span>{shortDate(r.date)}{r.new_expiry ? ` · الانتهاء الجديد ${r.new_expiry}` : ''}{r.note ? ` · ${r.note}` : ''}</span><span className="grow" /><small>{r.project ?? '—'}</small>
+                  <DeleteButton path={`/api/iqama-renewals/${r.id}`} what="هذا التجديد" icon /></li>
+              ))}
+            </ul>
+          )}
+          {renew && (
+            <FormModal title={`تجديد إقامة ${w.name}`} initial={{ date: today(), amount: '', new_expiry: addDays(w.iqama_expiry.startsWith('9999') ? today() : w.iqama_expiry, 365), note: '' }}
+              onClose={() => setRenew(false)} onSubmit={(v) => send(`/api/workers/${w.id}/iqama-renewal`, 'POST', v, 'تم تسجيل التجديد')}>
+              {(v, set) => (
+                <>
+                  <Field label="تاريخ التجديد">{inp(v, set, 'date', 'date')}</Field>
+                  <Field label="المبلغ المدفوع (ر.س)" hint="رسوم الإقامة + مكتب العمل + التأمين…">{inp(v, set, 'amount', 'number', { inputMode: 'decimal', autoFocus: true })}</Field>
+                  <Field label="تاريخ الانتهاء الجديد">{inp(v, set, 'new_expiry', 'date')}</Field>
+                  <Field label="ملاحظة" span={3}>{inp(v, set, 'note')}</Field>
+                  <p className="muted span-3">يُحمَّل المبلغ على {w.location_kind === 'office' ? 'مصاريف الإدارة وتُوزَّع بالتساوي على المشاريع الجارية' : `موقع العامل في تاريخ التجديد (${w.project ?? 'غير موزّع'})`}.</p>
+                </>
+              )}
+            </FormModal>
+          )}
           <h3>آخر 31 يوماً</h3>
           <div className="days">
             {w.attendance.length === 0 && <p className="muted">لا يوجد حضور مسجل.</p>}
@@ -256,7 +284,7 @@ function MoveWorker({ worker, onClose }: { worker: Worker; onClose: () => void }
       <div className="places">
         {places.map((p) => (
           <button key={p.id} type="button" className={`place ${target === String(p.id) ? 'on' : ''}`} onClick={() => setTarget(String(p.id))}>
-            <span>{p.kind === 'factory' ? '🏭' : '🏗️'}</span>{p.name}
+            <span>{p.kind === 'factory' ? '🏭' : p.kind === 'office' ? '🏢' : '🏗️'}</span>{p.name}
           </button>
         ))}
         <button type="button" className={`place ${target === '' ? 'on' : ''}`} onClick={() => setTarget('')}><span>⏸️</span>غير موزّع</button>
@@ -277,11 +305,11 @@ function Board({ workers, onOpen, onMove }: { workers: Worker[]; onOpen: (id: nu
   const meta = useMeta()
   const places = [...(meta?.places ?? (meta?.projects ?? []).filter((p) => p.status === 'active'))]
   const groups = [
-    ...places.map((p) => ({ key: String(p.id), name: p.name, icon: p.kind === 'factory' ? '🏭' : '🏗️', list: workers.filter((w) => w.project_id === p.id) })),
+    ...places.map((p) => ({ key: String(p.id), name: p.name, icon: p.kind === 'factory' ? '🏭' : p.kind === 'office' ? '🏢' : '🏗️', list: workers.filter((w) => w.project_id === p.id) })),
     // Workers in projects outside my list still show, grouped by their project name.
     ...[...new Set(workers.filter((w) => w.project_id && !places.some((p) => p.id === w.project_id)).map((w) => w.project_id))].map((pid) => {
       const list = workers.filter((w) => w.project_id === pid)
-      return { key: String(pid), name: list[0]?.project ?? '—', icon: list[0]?.location_kind === 'factory' ? '🏭' : '🏗️', list }
+      return { key: String(pid), name: list[0]?.project ?? '—', icon: list[0]?.location_kind === 'factory' ? '🏭' : list[0]?.location_kind === 'office' ? '🏢' : '🏗️', list }
     }),
     { key: 'none', name: 'غير موزّع', icon: '⏸️', list: workers.filter((w) => !w.project_id) },
   ]

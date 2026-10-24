@@ -25,7 +25,7 @@ export default function Site() {
   const [tab, setTab] = useState<'report' | 'issues'>(can('dailyReports') ? 'report' : 'issues')
   const meta = useData<Meta>('/api/meta')
   // Real projects first, the factory last.
-  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number(a.kind === 'factory') - Number(b.kind === 'factory'))
+  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number((a.kind ?? 'project') !== 'project') - Number((b.kind ?? 'project') !== 'project'))
   const [projectId, setProjectId] = useState<number | null>(null)
   useEffect(() => {
     if (projects.length && !projects.some((p) => p.id === projectId)) setProjectId(projects[0].id)

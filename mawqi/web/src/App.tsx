@@ -12,6 +12,7 @@ import IssuesPage from './pages/Issues'
 import InvoicesPage from './pages/Invoices'
 import DirectOrdersPage from './pages/DirectOrders'
 import ReportsPage from './pages/Reports'
+import ReportViewPage from './pages/ReportView'
 import SettingsPage from './pages/Settings'
 import ProjectReportPage from './pages/ProjectReport'
 
@@ -33,6 +34,7 @@ function Routed() {
         <Route path="invoices" element={<InvoicesPage />} />
         <Route path="direct-orders" element={<DirectOrdersPage />} />
         <Route path="reports" element={<ReportsPage />} />
+        <Route path="reports/:kind" element={<ReportViewPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />

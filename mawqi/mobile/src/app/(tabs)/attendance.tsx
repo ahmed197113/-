@@ -25,7 +25,7 @@ export default function Attendance() {
   const { send, queue } = useSync()
   const meta = useData<Meta>('/api/meta')
   // Real projects first, the factory last.
-  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number(a.kind === 'factory') - Number(b.kind === 'factory'))
+  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number((a.kind ?? 'project') !== 'project') - Number((b.kind ?? 'project') !== 'project'))
   const [projectId, setProjectId] = useState<number | null>(null)
   const [date, setDate] = useState(today())
   const [q, setQ] = useState('')
@@ -33,7 +33,7 @@ export default function Attendance() {
   const [busy, setBusy] = useState(false)
   const { can } = useAuth()
   const canMove = can('moveWorkers')
-  const places = [...(meta.data?.places ?? [])].sort((a, b) => Number(a.kind === 'factory') - Number(b.kind === 'factory'))
+  const places = [...(meta.data?.places ?? [])].sort((a, b) => Number((a.kind ?? 'project') !== 'project') - Number((b.kind ?? 'project') !== 'project'))
   const [siteFor, setSiteFor] = useState<AttRow | null>(null)
   const [pulling, setPulling] = useState(false)
   const [pulled, setPulled] = useState<AttRow[]>([])
@@ -202,7 +202,7 @@ export default function Attendance() {
               setMark(siteFor, { ...m, status: m.status ?? 'present', site: p.id })
               setSiteFor(null)
             }}>
-              <T style={{ fontSize: 22 }}>{p.kind === 'factory' ? '🏭' : '🏗️'}</T>
+              <T style={{ fontSize: 22 }}>{p.kind === 'factory' ? '🏭' : p.kind === 'office' ? '🏢' : '🏗️'}</T>
               <T w="bold" style={{ flex: 1, fontSize: 17 }}>{p.name}</T>
               {p.id === cur && <Ionicons name="checkmark-circle" size={24} color={C.navy} />}
             </Pressable>
@@ -310,7 +310,7 @@ function PullSheet({ visible, exclude, onClose, onPick }: { visible: boolean; ex
             <Pressable key={w.id} style={s.pick} onPress={() => onPick(w)}>
               <View style={{ flex: 1 }}>
                 <T w="bold" style={{ fontSize: 17 }}>{w.name}</T>
-                <T style={{ color: C.muted, fontSize: 14 }}>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'}</T>
+                <T style={{ color: C.muted, fontSize: 14 }}>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : w.location_kind === 'office' ? '🏢 ' : ''}${w.project}` : 'غير موزّع'}</T>
               </View>
               <Ionicons name="add-circle" size={28} color={C.navy} />
             </Pressable>

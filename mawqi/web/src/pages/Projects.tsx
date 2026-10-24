@@ -8,6 +8,7 @@ import {
   Stat, Tabs, today, useCan, useData, useMeta,
 } from '../ui'
 
+export interface Cost { labour: number; iqama: number; overhead: number; total: number }
 export interface Project {
   id: number; name: string; city: string | null; client: string | null; contract_value: number
   lat: number; lng: number; radius_m: number; start_date: string; end_date: string; planned_workers: number; progress: number
@@ -141,6 +142,7 @@ interface ProjectDetail extends Project {
   series: { date: string; present: number; absent: number }[]
   reports: { id: number; date: string; work_done: string; author: string }[]
   invoiced: number; subcontracted: number
+  costs?: { month: Cost; total: Cost }
   gallery: MediaFile[]; documents: MediaFile[]
 }
 
@@ -196,7 +198,8 @@ export function ProjectDetailPage() {
 
       <div className="stats">
         <Stat icon="workers" label="الحضور اليوم" value={`${p.present} / ${p.planned_workers}`} sub={`${p.assigned} عامل على المشروع`} tone={p.present < p.planned_workers * 0.8 ? 'bad' : 'good'} />
-        <Stat icon="money" label="تكلفة العمالة (الشهر)" value={sar(p.cost_month)} sub={`الإجمالي ${compact(p.cost_total)} ر.س`} />
+        {p.costs ? <Stat icon="money" label="التكلفة الفعلية (الشهر)" value={sar(p.costs.month.total)} sub={`عمالة ${compact(p.costs.month.labour)} · إقامات ${compact(p.costs.month.iqama)} · حصة الإدارة ${compact(p.costs.month.overhead)} — الإجمالي منذ البداية ${compact(p.costs.total.total)}`} />
+          : <Stat icon="money" label="تكلفة العمالة (الشهر)" value={sar(p.cost_month)} sub={`الإجمالي ${compact(p.cost_total)} ر.س`} />}
         <Stat icon="contracts" label="المستخلصات المعتمدة" value={compact(p.invoiced)} sub={p.contract_value ? `من عقد ${compact(p.contract_value)}` : 'ر.س'} tone="good" />
         <Stat icon="issues" label="بلاغات مفتوحة" value={fmt(p.open_issues)} tone={p.open_issues ? 'warn' : 'good'} />
       </div>

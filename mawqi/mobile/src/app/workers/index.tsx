@@ -35,8 +35,8 @@ export default function Workers() {
       if (!groups.has(key)) {
         groups.set(key, {
           title: w.project ?? 'غير موزّع',
-          icon: !w.project_id ? '⏸️' : w.location_kind === 'factory' ? '🏭' : '🏗️',
-          order: !w.project_id ? 2 : w.location_kind === 'factory' ? 0 : 1,
+          icon: !w.project_id ? '⏸️' : w.location_kind === 'factory' ? '🏭' : w.location_kind === 'office' ? '🏢' : '🏗️',
+          order: !w.project_id ? 2 : w.location_kind === 'office' ? -1 : w.location_kind === 'factory' ? 0 : 1,
           data: [],
         })
       }
@@ -145,7 +145,7 @@ function NewWorker({ visible, onClose, onDone }: { visible: boolean; onClose: ()
       <Picker value={wageType} onChange={setWageType} options={[{ value: 'daily', label: 'أجر يومي' }, { value: 'monthly', label: 'راتب شهري' }]} />
       <Field label={wageType === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'} value={f.wage} onChangeText={set('wage')} keyboardType="number-pad" />
       <T w="semibold" style={{ color: C.ink2 }}>أين يعمل؟</T>
-      <Picker value={place} onChange={setPlace} options={[...places.map((p) => ({ value: p.id, label: `${p.kind === 'factory' ? '🏭 ' : ''}${p.name}` })), { value: 0, label: 'غير موزّع' }]} />
+      <Picker value={place} onChange={setPlace} options={[...places.map((p) => ({ value: p.id, label: `${p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}${p.name}` })), { value: 0, label: 'غير موزّع' }]} />
       <Button label="حفظ العامل" icon="checkmark-circle" kind="accent" busy={busy} onPress={submit} />
     </Sheet>
   )

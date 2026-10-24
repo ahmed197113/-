@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Linking, Pressable, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { router } from 'expo-router'
+import type { Catalog } from '../r/[kind]'
 import { fileUrl, fmt, longDate, sar, today, type Meta, type Report } from '../../lib/api'
 import { useData } from '../../lib/sync'
 import { AppScreen } from '../../components/AppScreen'
@@ -10,7 +12,8 @@ import { C, Card, Chip, Empty, ErrorBox, Header, Loading, Meter, Row, Sheet, T, 
 
 interface Summary {
   month: string
-  projects: { id: number; name: string; kind?: string; contract_value: number; progress: number; labour: number; man_days: number; absences: number; billed: number; sub_cost: number; open_issues: number }[]
+  projects: { id: number; name: string; kind?: string; contract_value: number; progress: number; labour: number; man_days: number; absences: number; billed: number; sub_cost: number; open_issues: number; iqama?: number; overhead?: number; total_cost?: number }[]
+  overhead?: { total: number; share: number; projects: { id: number }[] }
 }
 
 const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
@@ -35,7 +38,8 @@ export default function Reports() {
   const thisMonth = today().slice(0, 7)
   const [month, setMonth] = useState(thisMonth)
   const [project, setProject] = useState<number | null>(null)
-  const [tab, setTab] = useState<'summary' | 'daily' | 'files'>('summary')
+  const [tab, setTab] = useState<'all' | 'summary' | 'daily' | 'files'>('all')
+  const cat = useData<Catalog>('/api/r')
   const meta = useData<Meta>('/api/meta')
   const summary = useData<Summary>(`/api/reports/summary?month=${month}`)
   const daily = useData<Report[]>(`/api/daily-reports${project ? `?project=${project}` : ''}`)
@@ -44,8 +48,8 @@ export default function Reports() {
 
   const places = (meta.data?.projects ?? []).filter((p) => p.status === 'active')
   const rows = (summary.data?.projects ?? []).filter((p) => !project || p.id === project)
-  const tot = rows.reduce((a, p) => ({ labour: a.labour + p.labour, days: a.days + p.man_days, abs: a.abs + p.absences, billed: a.billed + p.billed, issues: a.issues + p.open_issues }),
-    { labour: 0, days: 0, abs: 0, billed: 0, issues: 0 })
+  const tot = rows.reduce((a, p) => ({ labour: a.labour + p.labour, days: a.days + p.man_days, abs: a.abs + p.absences, billed: a.billed + p.billed, issues: a.issues + p.open_issues, real: a.real + (p.total_cost ?? p.labour) }),
+    { labour: 0, days: 0, abs: 0, billed: 0, issues: 0, real: 0 })
   const absRate = tot.days + tot.abs ? (tot.abs / (tot.days + tot.abs)) * 100 : 0
   const reports = (daily.data ?? []).filter((r) => r.date.startsWith(month))
 
@@ -57,6 +61,16 @@ export default function Reports() {
 
   return (
     <AppScreen inTabs onRefresh={refresh} refreshing={summary.refreshing || daily.refreshing} header={<Header title="التقارير" sub="كل تقارير المشاريع في مكان واحد" />}>
+      <Row style={s.tabs}>
+        {([['all', 'كل التقارير'], ['summary', 'ملخص الشهر'], ['daily', 'اليومية'], ['files', 'Excel']] as const).map(([k, l]) => (
+          <Pressable key={k} onPress={() => setTab(k)} style={[s.tab, tab === k && s.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: tab === k }}>
+            <T w="bold" style={{ color: tab === k ? C.navy : C.muted, fontSize: 15, textAlign: 'center' }}>{l}</T>
+          </Pressable>
+        ))}
+      </Row>
+
+      {tab !== 'all' && (
+        <>
       {/* month */}
       <Card style={s.monthBar}>
         <Pressable onPress={() => setMonth(shiftMonth(month, -1))} hitSlop={10} accessibilityLabel="الشهر السابق" style={s.arrow}>
@@ -72,22 +86,17 @@ export default function Reports() {
       {places.length > 1 && (
         <Row style={{ flexWrap: 'wrap' }}>
           <Chip label="الكل" active={project === null} onPress={() => setProject(null)} />
-          {places.map((p) => <Chip key={p.id} label={`${p.kind === 'factory' ? '🏭 ' : ''}${p.name}`} active={project === p.id} onPress={() => setProject(p.id)} />)}
+          {places.map((p) => <Chip key={p.id} label={`${p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}${p.name}`} active={project === p.id} onPress={() => setProject(p.id)} />)}
         </Row>
       )}
 
-      <Row style={s.tabs}>
-        {([['summary', 'ملخص الشهر'], ['daily', 'التقارير اليومية'], ['files', 'ملفات Excel']] as const).map(([k, l]) => (
-          <Pressable key={k} onPress={() => setTab(k)} style={[s.tab, tab === k && s.tabOn]} accessibilityRole="tab" accessibilityState={{ selected: tab === k }}>
-            <T w="bold" style={{ color: tab === k ? C.navy : C.muted, fontSize: 15, textAlign: 'center' }}>{l}</T>
-          </Pressable>
-        ))}
-      </Row>
+        </>
+      )}
 
       {tab === 'summary' && (!summary.data ? (summary.loading ? <Loading /> : <ErrorBox text={summary.error ?? ''} onRetry={summary.refresh} />) : (
         <>
           <Row style={{ gap: 10 }}>
-            <Big label="تكلفة العمالة" value={sar(tot.labour)} color={C.navy} />
+            <Big label="التكلفة الفعلية" value={sar(tot.real)} color={C.navy} />
             <Big label="أيام العمل" value={fmt(tot.days)} color={C.good} />
           </Row>
           <Row style={{ gap: 10 }}>
@@ -97,15 +106,41 @@ export default function Reports() {
           {rows.length === 0 ? <Empty icon="document-text-outline" title="لا توجد بيانات لهذا الشهر" /> : rows.map((p) => (
             <Card key={p.id} style={{ gap: 8 }}>
               <Row>
-                <T w="black" style={{ flex: 1, fontSize: 17, color: C.navy }}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</T>
-                {p.kind !== 'factory' && <T w="black" style={{ color: C.amber }}>{fmt(p.progress)}%</T>}
+                <T w="black" style={{ flex: 1, fontSize: 17, color: C.navy }}>{p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}{p.name}</T>
+                {!['factory', 'office'].includes(p.kind ?? '') && <T w="black" style={{ color: C.amber }}>{fmt(p.progress)}%</T>}
               </Row>
-              {p.kind !== 'factory' && <Meter value={p.progress / 100} color={C.amber} />}
+              {!['factory', 'office'].includes(p.kind ?? '') && <Meter value={p.progress / 100} color={C.amber} />}
               <Line label="عمالة الشهر" value={sar(p.labour)} />
+              {!!p.iqama && <Line label="تجديد إقامات" value={sar(p.iqama)} />}
+              {!!p.overhead && <Line label="حصة الإدارة" value={sar(p.overhead)} />}
+              {p.total_cost !== undefined && <Line label="التكلفة الفعلية" value={sar(p.total_cost)} />}
               <Line label="أيام عمل / غياب" value={`${fmt(p.man_days)} / ${fmt(p.absences)}`} />
               {p.billed > 0 && <Line label="المستخلصات المعتمدة" value={`${compact(p.billed)} ر.س`} />}
               {p.contract_value > 0 && <Line label="المتبقي من العقد" value={`${compact(p.contract_value - p.billed)} ر.س`} />}
             </Card>
+          ))}
+        </>
+      ))}
+
+      {tab === 'all' && (!cat.data ? (cat.loading ? <Loading /> : <ErrorBox text={cat.error ?? ''} onRetry={cat.refresh} />) : (
+        <>
+          <T style={{ color: C.muted }}>اختر التقرير، ثم حدد الفترة والموقع والفلاتر داخله.</T>
+          {[...new Set(cat.data.reports.map((r) => r.group))].map((g) => (
+            <View key={g} style={{ gap: 8 }}>
+              <T w="black" style={{ fontSize: 17, color: C.navy, marginTop: 6 }}>{g}</T>
+              {cat.data!.reports.filter((r) => r.group === g).map((r) => (
+                <Pressable key={r.kind} onPress={() => router.push(`/r/${r.kind}`)} style={({ pressed }) => [pressed && { opacity: 0.85 }]}>
+                  <Card style={s.file}>
+                    <View style={s.fileIcon}><Ionicons name="document-text" size={24} color={C.amber} /></View>
+                    <View style={{ flex: 1 }}>
+                      <T w="bold" style={{ fontSize: 16 }}>{r.title}</T>
+                      <T style={{ color: C.muted, fontSize: 13 }} numberOfLines={2}>{r.text}</T>
+                    </View>
+                    <Ionicons name="chevron-back" size={22} color={C.muted} />
+                  </Card>
+                </Pressable>
+              ))}
+            </View>
           ))}
         </>
       ))}

@@ -5,12 +5,13 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { db, ensureFactory, getSetting, setSetting, tx } from './db.js';
+import { db, ensureFactory, ensureOffice, getSetting, setSetting, tx } from './db.js';
 import { hashPassword } from './auth.js';
 import { login, projectScope, requireAuth, verifyToken } from './auth.js';
 import { buildDashboard } from './dashboard.js';
 import { startJobs } from './jobs.js';
 import { seed } from './seed.js';
+import { reports } from './reports.js';
 import { api } from './routes.js';
 import { media } from './media.js';
 
@@ -38,6 +39,7 @@ if (PROD) {
   }
 } else if (count('projects') === 0) seed();
 ensureFactory();
+ensureOffice();
 
 const app = express();
 app.use(cors());
@@ -70,6 +72,7 @@ app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
 
 app.get('/api/dashboard', requireAuth, (req, res) => res.json(buildDashboard(projectScope(req.user))));
 app.use('/api', requireAuth, media);
+app.use('/api', requireAuth, reports);
 app.use('/api', requireAuth, api);
 
 const http = createServer(app);

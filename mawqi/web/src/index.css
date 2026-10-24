@@ -699,3 +699,21 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
 .site em { font-style: normal; color: var(--amber); font-weight: 700; font-size: 12px; }
 .pull .people li.pickable { cursor: pointer; } .pull .people li.pickable:hover { border-color: var(--navy); background: #f7f6fc; }
 @media (max-width: 860px) { .site { width: 100%; } .site select { flex: 1; max-width: none; } }
+.rv-head { margin-bottom: 12px; } .rv-head small { color: var(--muted); } .rv-head h1 { margin: 2px 0; font-size: 26px; color: var(--navy); }
+.rv-filters { display: inline-block; background: #f3f2fa; border-radius: 10px; padding: 6px 12px; font-size: 14px; margin-top: 6px; }
+.rv-filterbar { display: grid; gap: 12px; }
+.rv-periods { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 7px 14px; font: inherit; font-size: 14px; cursor: pointer; color: var(--ink2, #333); display: inline-flex; align-items: center; gap: 6px; }
+.chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.chip.custom input { border: 0; background: transparent; font: inherit; color: inherit; }
+.rv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0; }
+.rv-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px; }
+.rv-card span { color: var(--muted); font-size: 13px; } .rv-card b { font-size: 21px; color: var(--navy); }
+.rv-card.good b { color: var(--green, #15803d); } .rv-card.bad b { color: var(--red, #b91c1c); }
+.rv-table th { cursor: pointer; white-space: nowrap; } .rv-table td.strong { font-weight: 800; }
+.rv-table td.long { min-width: 260px; white-space: pre-wrap; font-size: 13px; }
+.rv-table tfoot td { font-weight: 800; background: #f6f5fb; border-top: 2px solid var(--navy); }
+.rp-table tr.total th, .rp-table tr.total td { border-top: 2px solid var(--navy); }
+.row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+@media print { .rv-filterbar { display: none; } .rv-table td.long { min-width: 0; } }
+a.export { text-decoration: none; color: inherit; }
