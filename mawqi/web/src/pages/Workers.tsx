@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
 import ImportWorkers from './ImportWorkers'
@@ -49,6 +50,7 @@ export default function WorkersPage() {
     <div className="page">
       <PageHead title="العمال" sub={`${fmt(data.length)} عامل`}>
         <button className="btn" onClick={() => download(`/api/export/workers${project ? `?project=${project}` : ''}`)}><Icon name="download" size={18} /> Excel</button>
+        {can('workers') && <Link className="btn" to="/settings#professions"><Icon name="settings" size={18} /> مهن الشركة</Link>}
         {can('workers') && <button className="btn" onClick={() => setImporting(true)}><Icon name="exports" size={18} /> استيراد من Excel</button>}
         {can('workers') && <button className="btn primary" onClick={() => setEditing({ project_id: project ? Number(project) : null })}><Icon name="plus" size={18} /> عامل جديد</button>}
       </PageHead>

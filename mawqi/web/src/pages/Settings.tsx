@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Icon } from '../icons'
 import { Badge, DeleteButton, ErrorBox, Field, FormModal, inp, Loading, PageHead, send, toast, useCan, useData, useMeta } from '../ui'
@@ -7,10 +8,15 @@ interface UserRow { id: number; name: string; username: string; role: string; ph
 
 export default function SettingsPage() {
   const can = useCan()
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (hash) window.setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400)
+  }, [hash])
   return (
     <div className="page narrow">
       <PageHead title={can('users') ? 'المستخدمون والإعدادات' : 'حسابي'} />
       <PasswordCard />
+      {can('workers') && <ProfessionsCard />}
       {can('users') && <UsersCard />}
       {can('users') && <CompanyCard />}
       {can('users') && <StorageCard />}
@@ -152,6 +158,53 @@ function StorageCard() {
         <div><span>قاعدة البيانات</span><b>{mb(data.dbBytes)}</b></div>
       </div>
       <p className="muted">الملفات محفوظة على استضافتك في SiteGround خارج مجلد الموقع، ولا تُحذف عند التحديث. باقتك تتسع لنحو 40 جيجا؛ الفيديو هو الأكثر استهلاكاً (دقيقة تقريباً = 30-100 ميجا).</p>
+    </section>
+  )
+}
+
+function ProfessionsCard() {
+  const { data } = useData<{ name: string; workers: number }[]>('/api/professions')
+  const [names, setNames] = useState('')
+  const [renaming, setRenaming] = useState<{ from: string; to: string } | null>(null)
+  const add = async () => {
+    try { await send('/api/professions', 'POST', { names }, 'تمت إضافة المهن'); setNames('') } catch (e) { toast((e as Error).message, 'err') }
+  }
+  const rename = async () => {
+    if (!renaming) return
+    try { await send('/api/professions', 'PUT', renaming, 'تم تعديل المهنة'); setRenaming(null) } catch (e) { toast((e as Error).message, 'err') }
+  }
+  const del = async (name: string) => {
+    if (!window.confirm(`حذف المهنة «${name}» من القائمة؟`)) return
+    try { await send(`/api/professions?name=${encodeURIComponent(name)}`, 'DELETE', undefined, 'تم الحذف') } catch (e) { toast((e as Error).message, 'err') }
+  }
+  return (
+    <section className="panel" id="professions">
+      <div className="panel-head"><h2><Icon name="workers" /> مهن الشركة</h2><small className="muted">تظهر كاختيارات جاهزة عند إضافة أي عامل</small></div>
+      <div className="form-grid">
+        <Field label="أضف مهنة أو أكثر (كل مهنة في سطر، أو افصل بينها بفاصلة)" span={2}>
+          <textarea rows={3} value={names} onChange={(e) => setNames(e.target.value)} placeholder={'مثال:\nمهندس موقع\nفني ألمنيوم\nمساح'} />
+        </Field>
+        <div className="field end"><button className="btn primary" disabled={!names.trim()} onClick={add}><Icon name="plus" size={16} /> إضافة</button></div>
+      </div>
+      <div className="prof-list">
+        {(data ?? []).map((p) => (
+          <span key={p.name} className="prof">
+            <b>{p.name}</b><em>{p.workers ? `${p.workers} عامل` : 'لا يوجد'}</em>
+            <button className="icon-btn dark" title="تعديل الاسم" onClick={() => setRenaming({ from: p.name, to: p.name })}><Icon name="edit" size={15} /></button>
+            {!p.workers && <button className="icon-btn dark del" title="حذف" onClick={() => del(p.name)}><Icon name="trash" size={15} /></button>}
+          </span>
+        ))}
+        {data && !data.length && <p className="muted">لا توجد مهن بعد — أضف مهن الشركة من الخانة أعلاه.</p>}
+      </div>
+      {renaming && (
+        <div className="rename">
+          <span>تعديل «{renaming.from}» إلى</span>
+          <input value={renaming.to} onChange={(e) => setRenaming({ ...renaming, to: e.target.value })} autoFocus />
+          <button className="btn primary sm" onClick={rename}>حفظ</button>
+          <button className="btn ghost sm" onClick={() => setRenaming(null)}>إلغاء</button>
+          <small className="muted">سيتغير الاسم أيضاً عند كل العمال المسجلين بهذه المهنة.</small>
+        </div>
+      )}
     </section>
   )
 }

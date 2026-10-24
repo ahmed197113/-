@@ -136,10 +136,11 @@ function NewWorker({ visible, onClose, onDone }: { visible: boolean; onClose: ()
       <Field label="الاسم *" value={f.name} onChangeText={set('name')} autoFocus />
       <Field label="رقم الإقامة *" value={f.iqama_no} onChangeText={set('iqama_no')} keyboardType="number-pad" ltr />
       <Field label="انتهاء الإقامة" value={f.iqama_expiry} onChangeText={set('iqama_expiry')} placeholder="2027-05-30" ltr />
-      <Row style={{ gap: 10, alignItems: 'flex-start' }}>
-        <View style={{ flex: 1 }}><Field label="المهنة" value={f.profession} onChangeText={set('profession')} placeholder="نجار" /></View>
-        <View style={{ flex: 1 }}><Field label="الجنسية" value={f.nationality} onChangeText={set('nationality')} placeholder="مصري" /></View>
-      </Row>
+      <Field label="المهنة / الوظيفة" value={f.profession} onChangeText={set('profession')} placeholder="اختر من الأسفل أو اكتب مهنة جديدة" />
+      {!!meta.data?.professions?.length && (
+        <Picker value={f.profession} onChange={set('profession')} options={meta.data.professions.slice(0, 18).map((p) => ({ value: p, label: p }))} />
+      )}
+      <Field label="الجنسية" value={f.nationality} onChangeText={set('nationality')} placeholder="مصري" />
       <Field label="الجوال" value={f.phone} onChangeText={set('phone')} keyboardType="phone-pad" ltr />
       <Picker value={wageType} onChange={setWageType} options={[{ value: 'daily', label: 'أجر يومي' }, { value: 'monthly', label: 'راتب شهري' }]} />
       <Field label={wageType === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'} value={f.wage} onChangeText={set('wage')} keyboardType="number-pad" />

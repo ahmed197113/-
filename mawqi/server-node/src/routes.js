@@ -57,7 +57,7 @@ api.get('/meta', (req, res) => {
     places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ORDER BY kind = 'factory' DESC, name`).all(),
     subcontractors: db.prepare('SELECT id, name FROM subcontractors ORDER BY name').all(),
     // Every profession already used, so new ones typed once become suggestions for everyone.
-    professions: db.prepare(`SELECT profession AS name, COUNT(*) AS n FROM workers WHERE TRIM(profession) <> '' GROUP BY profession ORDER BY n DESC, profession`).all().map((r) => r.name),
+    professions: professionList().map((p) => p.name),
     settings: { companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), absenceCutoff: getSetting('absence_cutoff', '09:00') },
   });
 });
@@ -131,6 +131,41 @@ api.post('/admin/reset', need('users'), (req, res) => {
     ensureFactory();
   });
   changed(req, 'all');
+  res.json({ ok: true });
+});
+
+// ---------- professions (the company's list of jobs) ----------
+const savedProfessions = () => { try { return JSON.parse(getSetting('professions', '[]')) } catch { return [] } };
+/** The saved list plus any profession already used by a worker, with how many workers have each. */
+function professionList() {
+  const used = new Map(db.prepare(`SELECT TRIM(profession) AS name, COUNT(*) AS n FROM workers WHERE active = 1 AND TRIM(profession) <> '' GROUP BY TRIM(profession)`).all().map((r) => [r.name, r.n]));
+  const names = [...new Set([...savedProfessions(), ...used.keys()])];
+  return names.map((name) => ({ name, workers: used.get(name) ?? 0 })).sort((a, b) => b.workers - a.workers || a.name.localeCompare(b.name, 'ar'));
+}
+api.get('/professions', (_req, res) => res.json(professionList()));
+api.post('/professions', need('workers'), (req, res) => {
+  // Accepts one name or many (one per line) so a whole list can be pasted at once.
+  const names = String(req.body?.names ?? req.body?.name ?? '').split(/[\n،,]+/).map((n) => n.trim()).filter(Boolean);
+  if (!names.length) fail(400, 'اكتب اسم المهنة');
+  setSetting('professions', JSON.stringify([...new Set([...savedProfessions(), ...names])]));
+  changed(req, 'professions');
+  res.json({ ok: true, added: names.length });
+});
+api.put('/professions', need('workers'), (req, res) => {
+  const from = required(req.body?.from, 'المهنة الحالية');
+  const to = required(req.body?.to, 'الاسم الجديد');
+  // Renaming also updates every worker who has this profession.
+  const r = db.prepare('UPDATE workers SET profession = ? WHERE TRIM(profession) = ?').run(to, from);
+  setSetting('professions', JSON.stringify([...new Set(savedProfessions().map((n) => (n === from ? to : n)).concat(to))]));
+  changed(req, 'professions');
+  res.json({ ok: true, workers: r.changes });
+});
+api.delete('/professions', need('workers'), (req, res) => {
+  const name = required(req.query.name, 'المهنة');
+  const n = db.prepare('SELECT COUNT(*) AS n FROM workers WHERE active = 1 AND TRIM(profession) = ?').get(name).n;
+  if (n) fail(400, `لا يمكن حذف «${name}» — مسجلة لـ ${n} عامل. غيّر اسمها أو مهنة العمال أولاً`);
+  setSetting('professions', JSON.stringify(savedProfessions().filter((x) => x !== name)));
+  changed(req, 'professions');
   res.json({ ok: true });
 });
 

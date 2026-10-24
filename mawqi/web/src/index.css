@@ -686,3 +686,10 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
 .bad-row td { background: #fff3f3; }
 .moves li { padding: 7px 4px; font-size: 14px; }
 @media (max-width: 860px) { .import-src { grid-template-columns: 1fr; } }
+.prof-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.prof { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 99px; padding: 4px 6px 4px 14px; background: #fff; }
+.prof b { font-size: 14px; } .prof em { font-style: normal; font-size: 12px; color: var(--muted); }
+.prof .icon-btn { padding: 4px; }
+.rename { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; background: #faf8f6; padding: 10px 12px; border-radius: 12px; }
+.rename input { border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font: inherit; }
+.rename small { flex-basis: 100%; }

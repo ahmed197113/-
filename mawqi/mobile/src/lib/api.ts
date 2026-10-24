@@ -24,7 +24,7 @@ export interface Dashboard {
   projects: ProjectRow[]
   alerts: Alert[]
 }
-export interface Meta { places?: { id: number; name: string; kind: string }[]; projects: { id: number; name: string; status: string; kind?: string }[]; users: { id: number; name: string; role: Role; active: number }[] }
+export interface Meta { professions?: string[]; places?: { id: number; name: string; kind: string }[]; projects: { id: number; name: string; status: string; kind?: string }[]; users: { id: number; name: string; role: Role; active: number }[] }
 
 export type AttStatus = 'present' | 'late' | 'overtime' | 'absent' | 'leave'
 export interface AttRow { worker_id: number; name: string; profession: string; project_id: number; project: string; status: AttStatus | null; check_in: string | null; check_out: string | null; overtime_hours: number | null }
