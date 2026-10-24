@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   name TEXT NOT NULL,
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin','project_manager','supervisor','accountant')),
+  role TEXT NOT NULL CHECK (role IN ('admin','sysadmin','project_manager','supervisor','accountant')),
   phone TEXT
 );
 
@@ -177,6 +177,31 @@ for (const sql of [
   'ALTER TABLE issues ADD COLUMN closed_at TEXT',
 ]) {
   try { db.exec(sql); } catch { /* already applied */ }
+}
+
+// Older databases were created before the «مدير النظام» role; rebuild the users table to allow it.
+{
+  const sql = db.prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'`).get()?.sql || '';
+  if (!sql.includes('sysadmin')) {
+    const cols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name).join(', ');
+    db.exec('PRAGMA foreign_keys = OFF');
+    db.exec('BEGIN');
+    try {
+      db.exec(`CREATE TABLE users_new (
+        id INTEGER PRIMARY KEY, name TEXT NOT NULL, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('admin','sysadmin','project_manager','supervisor','accountant')),
+        phone TEXT, active INTEGER NOT NULL DEFAULT 1)`);
+      db.exec(`INSERT INTO users_new (${cols}) SELECT ${cols} FROM users`);
+      db.exec('DROP TABLE users');
+      db.exec('ALTER TABLE users_new RENAME TO users');
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    } finally {
+      db.exec('PRAGMA foreign_keys = ON');
+    }
+  }
 }
 
 export function getSetting(key, fallback) {

@@ -15,7 +15,7 @@ export default function Layout() {
         <div className="brand">
           <img src="/logo.png" alt="" />
           <div>
-            <strong>موقعي</strong>
+            <strong>المشاريع</strong>
             <span>{status?.companyName ?? 'الخطوط المعدنية'}</span>
           </div>
         </div>

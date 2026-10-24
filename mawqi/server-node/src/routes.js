@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
 import { db, getSetting, setSetting, tx } from './db.js';
-import { checkPassword, hashPassword, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
+import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
 import { addDays, round, todayStr, nowTime } from './util.js';
 
 export const api = Router();
@@ -86,6 +86,7 @@ const uniqueUser = (fn) => {
 };
 api.post('/users', need('users'), (req, res) => {
   const u = userInput(req.body || {}, true);
+  if (u.role === 'admin' && req.user.role !== 'admin') fail(403, 'تعيين مدير عام متاح للمدير العام فقط');
   const r = uniqueUser(() => db.prepare('INSERT INTO users (name, username, role, phone, active, password_hash) VALUES (?, ?, ?, ?, ?, ?)')
     .run(u.name, u.username, u.role, u.phone, u.active, u.password_hash));
   changed(req, 'users');
@@ -94,7 +95,8 @@ api.post('/users', need('users'), (req, res) => {
 api.put('/users/:id', need('users'), (req, res) => {
   const id = Number(req.params.id);
   const u = userInput(req.body || {}, false);
-  if (id === req.user.id && (u.role !== 'admin' || !u.active)) fail(400, 'لا يمكنك إلغاء صلاحية المدير عن حسابك');
+  if (id === req.user.id && (!['admin', 'sysadmin'].includes(u.role) || !u.active)) fail(400, 'لا يمكنك إلغاء صلاحياتك عن حسابك');
+  if (u.role === 'admin' && req.user.role !== 'admin' && db.prepare('SELECT role FROM users WHERE id = ?').get(id)?.role !== 'admin') fail(403, 'تعيين مدير عام متاح للمدير العام فقط');
   uniqueUser(() => db.prepare('UPDATE users SET name = ?, username = ?, role = ?, phone = ?, active = ? WHERE id = ?')
     .run(u.name, u.username, u.role, u.phone, u.active, id));
   if (u.password_hash) db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(u.password_hash, id);
@@ -201,7 +203,7 @@ api.post('/projects', need('projectsCreate'), (req, res) => {
 api.put('/projects/:id', need('projects'), (req, res) => {
   const id = ensureProject(req, req.params.id);
   const p = projectInput(req.body || {});
-  if (req.user.role !== 'admin') {
+  if (!isTop(req.user)) {
     // A project manager cannot hand the project to someone else.
     const cur = db.prepare('SELECT manager_id FROM projects WHERE id = ?').get(id);
     p.manager_id = cur.manager_id;
@@ -515,11 +517,10 @@ api.put('/invoices/:id', need('invoices'), (req, res) => {
   changed(req, 'invoices', v.project_id);
   res.json({ ok: true });
 });
-api.delete('/invoices/:id', need('invoices'), (req, res) => {
+api.delete('/invoices/:id', need('delete'), (req, res) => {
   const cur = db.prepare('SELECT project_id, status FROM invoices WHERE id = ?').get(Number(req.params.id));
   if (!cur) fail(404, 'المستخلص غير موجود');
   ensureProject(req, cur.project_id);
-  if (cur.status !== 'draft') fail(400, 'يمكن حذف المسودات فقط');
   db.prepare('DELETE FROM invoices WHERE id = ?').run(Number(req.params.id));
   changed(req, 'invoices', cur.project_id);
   res.json({ ok: true });
@@ -590,7 +591,7 @@ api.put('/direct-orders/:id', need('directOrders'), (req, res) => {
   changed(req, 'direct_orders', o.project_id);
   res.json({ ok: true });
 });
-api.delete('/direct-orders/:id', need('directOrders'), (req, res) => {
+api.delete('/direct-orders/:id', need('delete'), (req, res) => {
   const cur = db.prepare('SELECT project_id FROM direct_orders WHERE id = ?').get(Number(req.params.id));
   if (!cur) fail(404, 'أمر الإسناد غير موجود');
   ensureProject(req, cur.project_id);
@@ -599,6 +600,73 @@ api.delete('/direct-orders/:id', need('directOrders'), (req, res) => {
     db.prepare('DELETE FROM direct_orders WHERE id = ?').run(Number(req.params.id));
   });
   changed(req, 'direct_orders', cur.project_id);
+  res.json({ ok: true });
+});
+
+// ---------- deletes (general manager & system manager only) ----------
+const del = (sql, ...a) => db.prepare(sql).run(...a);
+api.delete('/projects/:id', need('delete'), (req, res) => {
+  const id = ensureProject(req, req.params.id);
+  tx(() => {
+    del('DELETE FROM direct_order_items WHERE order_id IN (SELECT id FROM direct_orders WHERE project_id = ?)', id);
+    for (const t of ['direct_orders', 'invoices', 'daily_reports', 'issues', 'attendance', 'worker_assignments']) del(`DELETE FROM ${t} WHERE project_id = ?`, id);
+    del('UPDATE workers SET project_id = NULL WHERE project_id = ?', id);
+    del('DELETE FROM projects WHERE id = ?', id);
+  });
+  changed(req, 'projects');
+  res.json({ ok: true });
+});
+api.delete('/workers/:id', need('delete'), (req, res) => {
+  const id = Number(req.params.id);
+  const w = db.prepare('SELECT project_id FROM workers WHERE id = ?').get(id);
+  if (!w) fail(404, 'العامل غير موجود');
+  tx(() => {
+    del('DELETE FROM attendance WHERE worker_id = ?', id);
+    del('DELETE FROM worker_assignments WHERE worker_id = ?', id);
+    del('DELETE FROM workers WHERE id = ?', id);
+  });
+  changed(req, 'workers', w.project_id);
+  res.json({ ok: true });
+});
+api.delete('/daily-reports/:id', need('delete'), (req, res) => {
+  const r = db.prepare('SELECT project_id FROM daily_reports WHERE id = ?').get(Number(req.params.id));
+  if (!r) fail(404, 'التقرير غير موجود');
+  del('DELETE FROM daily_reports WHERE id = ?', Number(req.params.id));
+  changed(req, 'daily_reports', r.project_id);
+  res.json({ ok: true });
+});
+api.delete('/issues/:id', need('delete'), (req, res) => {
+  const r = db.prepare('SELECT project_id FROM issues WHERE id = ?').get(Number(req.params.id));
+  if (!r) fail(404, 'البلاغ غير موجود');
+  del('DELETE FROM issues WHERE id = ?', Number(req.params.id));
+  changed(req, 'issues', r.project_id);
+  res.json({ ok: true });
+});
+api.delete('/subcontractors/:id', need('delete'), (req, res) => {
+  const id = Number(req.params.id);
+  tx(() => {
+    for (const t of ['workers', 'invoices', 'direct_orders']) del(`UPDATE ${t} SET subcontractor_id = NULL WHERE subcontractor_id = ?`, id);
+    del('DELETE FROM subcontractors WHERE id = ?', id);
+  });
+  changed(req, 'subcontractors');
+  res.json({ ok: true });
+});
+api.delete('/users/:id', need('delete'), (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) fail(400, 'لا يمكنك حذف حسابك');
+  const u = db.prepare('SELECT role FROM users WHERE id = ?').get(id);
+  if (!u) fail(404, 'المستخدم غير موجود');
+  if (u.role === 'admin' && req.user.role !== 'admin') fail(403, 'حذف المدير العام متاح للمدير العام فقط');
+  tx(() => {
+    del('UPDATE projects SET manager_id = NULL WHERE manager_id = ?', id);
+    del('UPDATE projects SET supervisor_id = NULL WHERE supervisor_id = ?', id);
+    del('UPDATE issues SET assignee_id = NULL WHERE assignee_id = ?', id);
+    del('UPDATE issues SET reported_by = NULL WHERE reported_by = ?', id);
+    del('UPDATE attendance SET recorded_by = NULL WHERE recorded_by = ?', id);
+    for (const t of ['daily_reports', 'invoices', 'direct_orders']) del(`UPDATE ${t} SET created_by = NULL WHERE created_by = ?`, id);
+    del('DELETE FROM users WHERE id = ?', id);
+  });
+  changed(req, 'users');
   res.json({ ok: true });
 });
 

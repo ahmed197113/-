@@ -29,7 +29,7 @@ export default function Setup() {
     <div className="login">
       <form className="login-card" onSubmit={submit}>
         <img className="login-logo" src="/logo.png" alt="" />
-        <h1>إعداد «موقعي»</h1>
+        <h1>إعداد «المشاريع»</h1>
         <p className="muted">أول تشغيل على هذا الخادم: أنشئ حساب المدير العام.</p>
         <label>اسم الشركة<input value={companyName} onChange={(e) => setCompanyName(e.target.value)} /></label>
         <label>اسم المدير العام<input value={name} onChange={(e) => setName(e.target.value)} required /></label>

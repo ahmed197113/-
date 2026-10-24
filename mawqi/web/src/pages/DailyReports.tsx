@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { longDate, shortDate } from '../api'
 import { Icon } from '../icons'
-import { addDays, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, send, today, useCan, useData, useMeta } from '../ui'
+import { addDays, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, send, today, useCan, useData, useMeta } from '../ui'
 
 interface Report {
   id: number; project_id: number; project: string; date: string; weather: string | null; work_done: string; next_plan: string | null
@@ -88,6 +88,7 @@ function ReportForm({ report, onClose }: { report: Partial<Report>; onClose: () 
   const meta = useMeta()
   return (
     <FormModal title={isNew ? 'تقرير يومي جديد' : `تقرير ${report.project} — ${shortDate(report.date!)}`} initial={initial} onClose={onClose} wide
+      extra={!isNew ? <DeleteButton path={`/api/daily-reports/${report.id}`} what="هذا التقرير" onDone={onClose} /> : undefined}
       onSubmit={(v) => (isNew ? send('/api/daily-reports', 'POST', v, 'تم رفع التقرير') : send(`/api/daily-reports/${report.id}`, 'PUT', v, 'تم حفظ التقرير'))}>
       {(v, set) => (
         <>

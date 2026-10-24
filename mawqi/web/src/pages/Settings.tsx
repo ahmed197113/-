@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../auth'
 import { Icon } from '../icons'
-import { Badge, ErrorBox, Field, FormModal, inp, Loading, PageHead, send, toast, useCan, useData, useMeta } from '../ui'
+import { Badge, DeleteButton, ErrorBox, Field, FormModal, inp, Loading, PageHead, send, toast, useCan, useData, useMeta } from '../ui'
 
 interface UserRow { id: number; name: string; username: string; role: string; phone: string | null; active: number; projects: number }
 
@@ -72,6 +72,7 @@ function UserForm({ u, onClose, roles }: { u: Partial<UserRow>; onClose: () => v
   const initial = { name: u.name ?? '', username: u.username ?? '', role: u.role ?? 'supervisor', phone: u.phone ?? '', active: u.active ?? 1, password: '' }
   return (
     <FormModal title={isNew ? 'مستخدم جديد' : `تعديل: ${u.name}`} initial={initial} onClose={onClose}
+      extra={!isNew ? <DeleteButton path={`/api/users/${u.id}`} what={`المستخدم «${u.name}»`} onDone={onClose} /> : undefined}
       onSubmit={(v) => (isNew ? send('/api/users', 'POST', v, 'تمت إضافة المستخدم') : send(`/api/users/${u.id}`, 'PUT', { ...v, active: Number(v.active) }, 'تم الحفظ'))}>
       {(v, set) => (
         <>
@@ -88,7 +89,7 @@ function UserForm({ u, onClose, roles }: { u: Partial<UserRow>; onClose: () => v
             </Field>
           )}
           <p className="muted span-3 hint-box">
-            <b>الصلاحيات:</b> المدير العام يرى ويعدّل كل شيء · مدير المشروع: مشاريعه وعمالها وأوامر الإسناد · مشرف الموقع: الحضور والتقرير اليومي والبلاغات لمشروعه · المحاسب: يرى كل المشاريع ويدير المستخلصات والتقارير.
+            <b>الصلاحيات:</b> المدير العام ومدير النظام: يريان ويعدّلان ويحذفان كل شيء (الحذف لهما فقط) · مدير المشروع: مشاريعه وعمالها وأوامر الإسناد · مشرف الموقع: الحضور والتقرير اليومي والبلاغات لمشروعه · المحاسب: يرى كل المشاريع ويدير المستخلصات والتقارير.
           </p>
         </>
       )}

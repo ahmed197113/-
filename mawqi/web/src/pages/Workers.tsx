@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
 import {
-  ATT, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, today, addDays,
+  ATT, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, today, addDays,
   useCan, useData, useMeta,
 } from '../ui'
 
@@ -99,6 +99,7 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
   }
   return (
     <FormModal title={isNew ? 'عامل جديد' : `تعديل: ${worker.name}`} initial={initial} onClose={onClose} wide
+      extra={!isNew ? <DeleteButton path={`/api/workers/${worker.id}`} what={`العامل «${worker.name}» وسجل حضوره`} onDone={onClose} /> : undefined}
       onSubmit={async (v) => {
         let sub = v.subcontractor_id
         if (sub === 'new') {

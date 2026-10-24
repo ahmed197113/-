@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { compact, fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
 import {
-  ATT, Badge, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, Meter, PageHead, PROJECT_STATUS, Ring, Search, send, SEVERITY,
+  ATT, Badge, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, Meter, PageHead, PROJECT_STATUS, Ring, Search, send, SEVERITY,
   Stat, Tabs, today, useCan, useData, useMeta,
 } from '../ui'
 
@@ -88,7 +88,7 @@ export default function ProjectsPage() {
   )
 }
 
-export function ProjectForm({ project, onClose }: { project: Partial<Project>; onClose: () => void }) {
+export function ProjectForm({ project, onClose, onDeleted }: { project: Partial<Project>; onClose: () => void; onDeleted?: () => void }) {
   const meta = useMeta()
   const can = useCan()
   const isNew = !project.id
@@ -101,6 +101,7 @@ export function ProjectForm({ project, onClose }: { project: Partial<Project>; o
   const users = (role: string) => meta?.users.filter((u) => u.role === role && u.active) ?? []
   return (
     <FormModal title={isNew ? 'مشروع جديد' : `تعديل: ${project.name}`} initial={initial} onClose={onClose} wide
+      extra={!isNew ? <DeleteButton path={`/api/projects/${project.id}`} what={`المشروع «${project.name}» وكل حضوره وبلاغاته وتقاريره ومستخلصاته`} onDone={() => { onClose(); onDeleted?.() }} /> : undefined}
       onSubmit={(v) => (isNew ? send('/api/projects', 'POST', v, 'تمت إضافة المشروع') : send(`/api/projects/${project.id}`, 'PUT', v, 'تم حفظ التعديلات'))}>
       {(v, set) => (
         <>
@@ -222,7 +223,7 @@ export function ProjectDetailPage() {
         ) : <Empty icon="report" title="لا توجد تقارير يومية بعد" />)}
       </section>
 
-      {editing && <ProjectForm project={p} onClose={() => setEditing(false)} />}
+      {editing && <ProjectForm project={p} onClose={() => setEditing(false)} onDeleted={() => nav('/projects')} />}
     </div>
   )
 }

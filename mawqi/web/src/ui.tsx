@@ -232,3 +232,14 @@ export function FormModal<T extends Record<string, unknown>>({ title, initial, o
 export function inp<T extends Record<string, unknown>>(v: T, set: (p: Partial<T>) => void, key: keyof T, type = 'text', extra: Record<string, unknown> = {}) {
   return <input type={type} value={(v[key] as string | number | undefined) ?? ''} onChange={(e) => set({ [key]: e.target.value } as Partial<T>)} {...extra} />
 }
+
+/** Red "delete" button for edit dialogs — shown only to the general manager and the system manager. */
+export function DeleteButton({ path, what, onDone }: { path: string; what: string; onDone: () => void }) {
+  const can = useCan()
+  if (!can('delete')) return null
+  const go = async () => {
+    if (!window.confirm(`حذف ${what} نهائياً؟ لا يمكن التراجع.`)) return
+    try { await send(path, 'DELETE', undefined, 'تم الحذف'); onDone() } catch (e) { toast((e as Error).message, 'err') }
+  }
+  return <button type="button" className="btn ghost danger" onClick={go}><Icon name="trash" size={16} /> حذف</button>
+}

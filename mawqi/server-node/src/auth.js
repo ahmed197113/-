@@ -6,6 +6,7 @@ const SECRET = process.env.MAWQI_JWT_SECRET || 'mawqi-dev-secret-change-me';
 
 export const ROLE_LABELS = {
   admin: 'مدير عام',
+  sysadmin: 'مدير النظام',
   project_manager: 'مدير مشروع',
   supervisor: 'مشرف موقع',
   accountant: 'محاسب',
@@ -13,15 +14,17 @@ export const ROLE_LABELS = {
 
 /** What each role may change. Everyone signed in may read what their project scope allows. */
 export const PERMISSIONS = {
-  projects: ['admin', 'project_manager'],
-  projectsCreate: ['admin'],
-  workers: ['admin', 'project_manager'],
-  attendance: ['admin', 'project_manager', 'supervisor'],
-  dailyReports: ['admin', 'project_manager', 'supervisor'],
-  issues: ['admin', 'project_manager', 'supervisor'],
-  invoices: ['admin', 'accountant', 'project_manager'],
-  directOrders: ['admin', 'project_manager'],
-  users: ['admin'],
+  projects: ['admin', 'sysadmin', 'project_manager'],
+  projectsCreate: ['admin', 'sysadmin'],
+  workers: ['admin', 'sysadmin', 'project_manager'],
+  attendance: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
+  dailyReports: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
+  issues: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
+  invoices: ['admin', 'sysadmin', 'accountant', 'project_manager'],
+  directOrders: ['admin', 'sysadmin', 'project_manager'],
+  users: ['admin', 'sysadmin'],
+  /** Delete anything and edit records others created — the general manager and the system manager only. */
+  delete: ['admin', 'sysadmin'],
 };
 
 export const permissionsOf = (role) =>
@@ -62,8 +65,10 @@ export function requireAuth(req, res, next) {
 }
 
 /** IDs of the projects a user may see; null means all projects. */
+export const isTop = (user) => user.role === 'admin' || user.role === 'sysadmin';
+
 export function projectScope(user) {
-  if (user.role === 'admin' || user.role === 'accountant') return null;
+  if (['admin', 'sysadmin', 'accountant'].includes(user.role)) return null;
   const col = user.role === 'project_manager' ? 'manager_id' : 'supervisor_id';
   return db.prepare(`SELECT id FROM projects WHERE ${col} = ?`).all(user.id).map((r) => r.id);
 }

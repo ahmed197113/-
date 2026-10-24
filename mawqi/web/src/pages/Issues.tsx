@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { shortDate } from '../api'
 import { Icon } from '../icons'
 import {
-  addDays, Badge, CATEGORY, download, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, PageHead, ProjectSelect, Search, send,
+  addDays, Badge, CATEGORY, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, PageHead, ProjectSelect, Search, send,
   SEVERITY, Tabs, today, toast, useCan, useData, useMeta,
 } from '../ui'
 
@@ -101,6 +101,7 @@ function IssueForm({ issue, onClose }: { issue: Partial<Issue>; onClose: () => v
   }
   return (
     <FormModal title={isNew ? 'بلاغ جديد' : issue.status === 'closed' && issue.closed_at === null ? 'إغلاق البلاغ' : 'تعديل البلاغ'} initial={initial} onClose={onClose} wide
+      extra={!isNew ? <DeleteButton path={`/api/issues/${issue.id}`} what={`البلاغ «${issue.title}»`} onDone={onClose} /> : undefined}
       onSubmit={(v) => (isNew ? send('/api/issues', 'POST', v, 'تم تسجيل البلاغ') : send(`/api/issues/${issue.id}`, 'PUT', v, 'تم حفظ البلاغ'))}>
       {(v, set) => (
         <>

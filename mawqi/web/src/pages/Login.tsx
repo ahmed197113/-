@@ -25,7 +25,7 @@ export default function Login() {
     <div className="login">
       <form className="login-card" onSubmit={submit}>
         <img className="login-logo" src="/logo.png" alt="" />
-        <h1>موقعي</h1>
+        <h1>المشاريع</h1>
         <p className="muted">{status?.companyName ?? 'شركة الخطوط المعدنية للمقاولات العامة'}<br />نظام إدارة المواقع والعمالة</p>
         <label>اسم المستخدم<input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" required /></label>
         <label>كلمة المرور<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required /></label>

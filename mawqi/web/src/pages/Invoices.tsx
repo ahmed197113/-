@@ -23,7 +23,7 @@ export default function InvoicesPage() {
   const retention = rows.filter((v) => ['approved', 'paid'].includes(v.status)).reduce((a, v) => a + v.retention, 0)
 
   const del = async (v: Invoice) => {
-    if (!window.confirm(`حذف المسودة ${v.number}؟`)) return
+    if (!window.confirm(`حذف المستخلص ${v.number} نهائياً؟`)) return
     try { await send(`/api/invoices/${v.id}`, 'DELETE', undefined, 'تم الحذف') } catch (e) { toast((e as Error).message, 'err') }
   }
 
@@ -67,7 +67,7 @@ export default function InvoicesPage() {
                     <td><Badge tone={INVOICE_STATUS[v.status].tone}>{INVOICE_STATUS[v.status].label}</Badge></td>
                     <td className="row-actions">
                       {can('invoices') && <button className="icon-btn dark" onClick={() => setEditing(v)} title="تعديل"><Icon name="edit" size={18} /></button>}
-                      {can('invoices') && v.status === 'draft' && <button className="icon-btn dark" onClick={() => del(v)} title="حذف"><Icon name="trash" size={18} /></button>}
+                      {can('delete') && <button className="icon-btn dark" onClick={() => del(v)} title="حذف"><Icon name="trash" size={18} /></button>}
                     </td>
                   </tr>
                 ))}

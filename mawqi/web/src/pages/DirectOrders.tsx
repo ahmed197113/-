@@ -81,7 +81,7 @@ function OrderForm({ order, onClose }: { order: Partial<OrderDetail>; onClose: (
   }
   return (
     <FormModal title={isNew ? 'أمر إسناد جديد' : `أمر ${order.number}`} initial={initial} onClose={onClose} wide
-      extra={!isNew && can('directOrders') ? <button type="button" className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /> حذف</button> : undefined}
+      extra={!isNew && can('delete') ? <button type="button" className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /> حذف</button> : undefined}
       onSubmit={(v) => (isNew ? send('/api/direct-orders', 'POST', v, 'تم إنشاء أمر الإسناد') : send(`/api/direct-orders/${order.id}`, 'PUT', v, 'تم حفظ الأمر'))}>
       {(v, set) => {
         const setItem = (i: number, patch: Partial<Item>) => set({ items: v.items.map((it, k) => (k === i ? { ...it, ...patch } : it)) })
