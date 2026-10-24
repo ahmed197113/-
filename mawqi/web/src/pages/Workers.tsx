@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
+import { ACCEPT_ALL, Attachments, PickFiles, src, uploadAll, useCanDeleteFile, type MediaFile } from '../media'
 import {
-  ATT, Badge, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, today, addDays, toast,
+  ATT, Badge, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, Tabs, today, addDays, toast,
   useCan, useData, useMeta,
 } from '../ui'
 
@@ -10,10 +11,12 @@ interface Worker {
   id: number; name: string; iqama_no: string; iqama_expiry: string; nationality: string; profession: string; phone: string | null
   wage_type: 'daily' | 'monthly'; wage: number; subcontractor_id: number | null; project_id: number | null; active: number
   project: string | null; location_kind?: string | null; subcontractor: string | null; days_present: number; days_absent: number; iqama_soon: number
+  photo?: string | null; today?: string | null
 }
 interface WorkerDetail extends Worker {
   history: { from_date: string; to_date: string | null; project: string }[]
   attendance: { date: string; status: string; check_in: string | null; check_out: string | null; overtime_hours: number }[]
+  media: MediaFile[]
 }
 
 const NATIONALITIES = ['مصري', 'هندي', 'باكستاني', 'بنجلاديشي', 'نيبالي', 'يمني', 'سوداني', 'فلبيني', 'سعودي', 'أخرى']
@@ -27,6 +30,8 @@ export default function WorkersPage() {
   const [editing, setEditing] = useState<Partial<Worker> | null>(null)
   const [viewing, setViewing] = useState<number | null>(null)
   const [moving, setMoving] = useState<Worker | null>(null)
+  const [view, setView] = useState<'board' | 'list'>(() => { try { return (localStorage.getItem('mawqi.workersView') as 'board' | 'list') || 'board' } catch { return 'board' } })
+  const pickView = (v: 'board' | 'list') => { setView(v); try { localStorage.setItem('mawqi.workersView', v) } catch { /* ignore */ } }
   const can = useCan()
   const { data, error } = useData<Worker[]>(`/api/workers?active=${active}${project ? `&project=${project}` : ''}`)
 
@@ -52,15 +57,17 @@ export default function WorkersPage() {
       </div>
 
       <div className="toolbar">
+        <Tabs value={view} onChange={pickView} items={[{ key: 'board', label: 'توزيع العمال على المواقع' }, { key: 'list', label: 'قائمة العمال' }]} />
         <Search value={q} onChange={setQ} placeholder="بحث بالاسم أو الإقامة أو المهنة" />
-        <ProjectSelect value={project} onChange={setProject} unassigned />
+        {view === 'list' && <ProjectSelect value={project} onChange={setProject} unassigned />}
         <select className="select" value={active} onChange={(e) => setActive(e.target.value)}>
           <option value="1">النشطون</option><option value="0">الموقوفون</option><option value="all">الكل</option>
         </select>
         <label className="toggle"><input type="checkbox" checked={onlyIqama} onChange={(e) => setOnlyIqama(e.target.checked)} /> إقامات قاربت على الانتهاء</label>
       </div>
 
-      <section className="panel flush">
+      {view === 'board' && <Board workers={shown} onOpen={setViewing} onMove={can('moveWorkers') ? setMoving : undefined} />}
+      {view === 'list' && <section className="panel flush">
         {shown.length === 0 ? <Empty icon="workers" title="لا يوجد عمال مطابقون" /> : (
           <div className="table-scroll">
             <table className="data">
@@ -68,7 +75,7 @@ export default function WorkersPage() {
               <tbody>
                 {shown.map((w) => (
                   <tr key={w.id} onClick={() => setViewing(w.id)} className="clickable">
-                    <td><div className="who"><span className="avatar-s">{w.name.slice(0, 1)}</span><div><strong>{w.name}</strong><small>{w.profession} · {w.nationality}{w.subcontractor ? ` · ${w.subcontractor}` : ''}</small></div></div></td>
+                    <td><div className="who"><Avatar w={w} /><div><strong>{w.name}</strong><small>{w.profession} · {w.nationality}{w.subcontractor ? ` · ${w.subcontractor}` : ''}</small></div></div></td>
                     <td>
                       <div className="loc">
                         {w.project ? <Badge tone={w.location_kind === 'factory' ? 'amber' : 'navy'}>{w.location_kind === 'factory' ? '🏭 ' : ''}{w.project}</Badge> : <Badge>غير موزّع</Badge>}
@@ -85,7 +92,7 @@ export default function WorkersPage() {
             </table>
           </div>
         )}
-      </section>
+      </section>}
 
       {editing && <WorkerForm worker={editing} onClose={() => setEditing(null)} />}
       {moving && <MoveWorker worker={moving} onClose={() => setMoving(null)} />}
@@ -98,6 +105,8 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
   const meta = useMeta()
   const isNew = !worker.id
   const [newSub, setNewSub] = useState('')
+  const [photo, setPhoto] = useState<File[]>([])
+  const [iqama, setIqama] = useState<File[]>([])
   const initial = {
     name: worker.name ?? '', iqama_no: worker.iqama_no ?? '', iqama_expiry: worker.iqama_expiry ?? addDays(today(), 365),
     nationality: worker.nationality ?? '', profession: worker.profession ?? '', phone: worker.phone ?? '',
@@ -114,7 +123,11 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
           sub = String(((await send('/api/subcontractors', 'POST', { name: newSub })) as { id: number }).id)
         }
         const body = { ...v, subcontractor_id: sub }
-        return isNew ? send('/api/workers', 'POST', body, 'تمت إضافة العامل') : send(`/api/workers/${worker.id}`, 'PUT', body, 'تم حفظ بيانات العامل')
+        const out = (isNew ? await send('/api/workers', 'POST', body) : await send(`/api/workers/${worker.id}`, 'PUT', body)) as { id?: number }
+        const id = isNew ? out.id! : worker.id!
+        if (photo.length) await uploadAll('worker', id, photo.slice(-1), 'photo')
+        if (iqama.length) await uploadAll('worker', id, iqama, 'iqama')
+        toast(isNew ? 'تمت إضافة العامل' : 'تم حفظ بيانات العامل')
       }}>
       {(v, set) => (
         <>
@@ -151,6 +164,14 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
               <select value={v.active} onChange={(e) => set({ active: Number(e.target.value) })}><option value={1}>نشط</option><option value={0}>موقوف / غادر</option></select>
             </Field>
           )}
+          <div>
+            <span className="field-label">الصورة الشخصية</span>
+            <PickFiles files={photo} onChange={(f) => setPhoto(f.slice(-1))} accept="image/*" label={worker.photo ? 'تغيير الصورة' : 'إضافة صورة'} />
+          </div>
+          <div className="span-2">
+            <span className="field-label">صورة الإقامة / المستندات</span>
+            <PickFiles files={iqama} onChange={setIqama} accept={ACCEPT_ALL} label="صورة الإقامة" />
+          </div>
         </>
       )}
     </FormModal>
@@ -160,10 +181,17 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
 function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; onEdit: (w: Worker) => void }) {
   const { data: w } = useData<WorkerDetail>(`/api/workers/${id}`)
   const can = useCan()
+  const canDel = useCanDeleteFile()
+  const canAdd = can('workers') || can('moveWorkers')
   return (
     <Modal title={w?.name ?? '…'} onClose={onClose} wide footer={w && can('workers') ? <button className="btn primary" onClick={() => onEdit(w)}><Icon name="edit" size={18} /> تعديل</button> : undefined}>
       {!w ? <Loading /> : (
         <div className="detail">
+          <div className="wk-head">
+            {w.photo ? <img className="wk-photo" src={src(w.photo)} alt={w.name} /> : <span className="wk-photo none">{w.name.slice(0, 1)}</span>}
+            <div><h2>{w.name}</h2><p className="muted">{w.profession} · {w.nationality}</p>
+              <p>{w.project ? `${w.location_kind === 'factory' ? '🏭 ' : '🏗️ '}${w.project}` : 'غير موزّع'}</p></div>
+          </div>
           <div className="facts">
             <div><span>المهنة</span><b>{w.profession}</b></div>
             <div><span>الجنسية</span><b>{w.nationality}</b></div>
@@ -172,6 +200,10 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
             <div><span>المشروع</span><b>{w.project ?? '—'}</b></div>
             <div><span>الجهة</span><b>{w.subcontractor ?? 'عمالة الشركة'}</b></div>
             {w.phone && <div><span>الجوال</span><b><a href={`tel:${w.phone}`}>{w.phone}</a></b></div>}
+          </div>
+          <div className="grid-2 even">
+            <Attachments entity="worker" id={w.id} files={w.media ?? []} tag="photo" canAdd={canAdd} canDelete={canDel} accept="image/*" title="الصورة الشخصية" empty="لا توجد صورة" compact />
+            <Attachments entity="worker" id={w.id} files={w.media ?? []} tag="iqama" canAdd={canAdd} canDelete={canDel} accept={ACCEPT_ALL} title="الإقامة والمستندات" empty="لا توجد صورة للإقامة" compact />
           </div>
           <h3>آخر 31 يوماً</h3>
           <div className="days">
@@ -219,5 +251,53 @@ function MoveWorker({ worker, onClose }: { worker: Worker; onClose: () => void }
         <button type="button" className={`place ${target === '' ? 'on' : ''}`} onClick={() => setTarget('')}><span>⏸️</span>غير موزّع</button>
       </div>
     </Modal>
+  )
+}
+
+function Avatar({ w }: { w: Pick<Worker, 'name' | 'photo' | 'today'> }) {
+  const tone = w.today ? ATT[w.today]?.tone : ''
+  return w.photo
+    ? <img className={`avatar-s img ${tone ? `ring-${tone}` : ''}`} src={src(w.photo)} alt="" loading="lazy" />
+    : <span className={`avatar-s ${tone ? `a-${tone}` : ''}`}>{w.name.slice(0, 1)}</span>
+}
+
+/** Every location as a column: the factory, each project, and the unassigned — with today's attendance at a glance. */
+function Board({ workers, onOpen, onMove }: { workers: Worker[]; onOpen: (id: number) => void; onMove?: (w: Worker) => void }) {
+  const meta = useMeta()
+  const places = [...(meta?.projects ?? []).filter((p) => p.status === 'active')]
+  const groups = [
+    ...places.map((p) => ({ key: String(p.id), name: p.name, icon: p.kind === 'factory' ? '🏭' : '🏗️', list: workers.filter((w) => w.project_id === p.id) })),
+    // Workers in projects outside my list still show, grouped by their project name.
+    ...[...new Set(workers.filter((w) => w.project_id && !places.some((p) => p.id === w.project_id)).map((w) => w.project_id))].map((pid) => {
+      const list = workers.filter((w) => w.project_id === pid)
+      return { key: String(pid), name: list[0]?.project ?? '—', icon: list[0]?.location_kind === 'factory' ? '🏭' : '🏗️', list }
+    }),
+    { key: 'none', name: 'غير موزّع', icon: '⏸️', list: workers.filter((w) => !w.project_id) },
+  ]
+  return (
+    <div className="board-wf">
+      {groups.map((g) => {
+        const present = g.list.filter((w) => w.today && ['present', 'late', 'overtime'].includes(w.today)).length
+        const absent = g.list.filter((w) => w.today === 'absent').length
+        return (
+          <section key={g.key} className="wf-col">
+            <header>
+              <span className="wf-icon">{g.icon}</span>
+              <div><strong>{g.name}</strong><small>{g.list.length} عامل{g.key !== 'none' ? ` · حاضر ${present}${absent ? ` · غائب ${absent}` : ''}` : ''}</small></div>
+            </header>
+            {g.list.length === 0 && <p className="muted center">لا يوجد</p>}
+            <ul>
+              {g.list.map((w) => (
+                <li key={w.id} onClick={() => onOpen(w.id)}>
+                  <Avatar w={w} />
+                  <div className="grow"><strong>{w.name}</strong><small>{w.profession}{w.today ? ` · ${ATT[w.today]?.label}` : ''}</small></div>
+                  {onMove && <button className="icon-btn dark" title="نقل" onClick={(e) => { e.stopPropagation(); onMove(w) }}>⇄</button>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
+    </div>
   )
 }

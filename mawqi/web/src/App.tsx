@@ -13,6 +13,7 @@ import InvoicesPage from './pages/Invoices'
 import DirectOrdersPage from './pages/DirectOrders'
 import ReportsPage from './pages/Reports'
 import SettingsPage from './pages/Settings'
+import ProjectReportPage from './pages/ProjectReport'
 
 function Routed() {
   const { user, ready, status } = useAuth()
@@ -24,6 +25,7 @@ function Routed() {
         <Route index element={<DashboardPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="projects/:id" element={<ProjectDetailPage />} />
+        <Route path="projects/:id/report" element={<ProjectReportPage />} />
         <Route path="workers" element={<WorkersPage />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="daily-reports" element={<DailyReportsPage />} />

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { longDate, shortDate } from '../api'
 import { Icon } from '../icons'
-import { addDays, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, send, today, useCan, useData, useMeta } from '../ui'
+import { Attachments, MediaGrid, PickFiles, uploadAll, useCanDeleteFile, type MediaFile } from '../media'
+import { addDays, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, send, toast, today, useCan, useData, useMeta } from '../ui'
 
 interface Report {
   id: number; project_id: number; project: string; date: string; weather: string | null; work_done: string; next_plan: string | null
   equipment: string | null; materials: string | null; obstacles: string | null; progress: number | null; author: string | null
-  present: number; absent: number; new_issues: number
+  present: number; absent: number; new_issues: number; media: MediaFile[]
 }
 
 const WEATHER = ['مشمس', 'حار', 'معتدل', 'غائم جزئياً', 'رياح وأتربة', 'ممطر']
@@ -15,7 +16,7 @@ export default function DailyReportsPage() {
   const [project, setProject] = useState('')
   const [from, setFrom] = useState(addDays(today(), -30))
   const [editing, setEditing] = useState<Partial<Report> | null>(null)
-  const [viewing, setViewing] = useState<Report | null>(null)
+  const [viewingId, setViewingId] = useState<number | null>(null)
   const can = useCan()
   const meta = useMeta()
   const { data, error } = useData<Report[]>(`/api/daily-reports?from=${from}${project ? `&project=${project}` : ''}`)
@@ -55,13 +56,15 @@ export default function DailyReportsPage() {
               <h3 className="tl-date">{longDate(date)}</h3>
               <div className="cards-grid">
                 {list.map((r) => (
-                  <article key={r.id} className="rcard" onClick={() => setViewing(r)}>
+                  <article key={r.id} className="rcard" onClick={() => setViewingId(r.id)}>
                     <div className="rcard-top"><strong>{r.project}</strong>{r.weather && <small><Icon name="sun" size={14} /> {r.weather}</small>}</div>
                     <p className="clip-3">{r.work_done}</p>
+                    {r.media?.length > 0 && <MediaGrid files={r.media.filter((m) => m.kind !== 'file')} small max={4} />}
                     <div className="rcard-foot">
                       <span className="good-t">{r.present} حاضر</span>
                       {r.absent > 0 && <span className="bad-t">{r.absent} غائب</span>}
                       {r.obstacles && <span className="warn-t">عوائق</span>}
+                      {r.media?.length > 0 && <span className="muted">📷 {r.media.length}</span>}
                       <span className="grow" /><small>{r.author}</small>
                     </div>
                   </article>
@@ -73,7 +76,7 @@ export default function DailyReportsPage() {
       )}
 
       {editing && <ReportForm report={editing} onClose={() => setEditing(null)} />}
-      {viewing && <ReportView r={viewing} onClose={() => setViewing(null)} onEdit={() => { setEditing(viewing); setViewing(null) }} />}
+      {viewingId && data.find((r) => r.id === viewingId) && (() => { const r = data.find((x) => x.id === viewingId)!; return <ReportView r={r} onClose={() => setViewingId(null)} onEdit={() => { setEditing(r); setViewingId(null) }} /> })()}
     </div>
   )
 }
@@ -86,10 +89,18 @@ function ReportForm({ report, onClose }: { report: Partial<Report>; onClose: () 
     progress: report.progress ?? '',
   }
   const meta = useMeta()
+  const canDel = useCanDeleteFile()
+  const [files, setFiles] = useState<File[]>([])
+  const [up, setUp] = useState('')
   return (
     <FormModal title={isNew ? 'تقرير يومي جديد' : `تقرير ${report.project} — ${shortDate(report.date!)}`} initial={initial} onClose={onClose} wide
       extra={!isNew ? <DeleteButton path={`/api/daily-reports/${report.id}`} what="هذا التقرير" onDone={onClose} /> : undefined}
-      onSubmit={(v) => (isNew ? send('/api/daily-reports', 'POST', v, 'تم رفع التقرير') : send(`/api/daily-reports/${report.id}`, 'PUT', v, 'تم حفظ التقرير'))}>
+      onSubmit={async (v) => {
+        const out = (isNew ? await send('/api/daily-reports', 'POST', v) : await send(`/api/daily-reports/${report.id}`, 'PUT', v)) as { id?: number }
+        const id = isNew ? out.id! : report.id!
+        if (files.length) await uploadAll('daily_report', id, files, undefined, (d, t, p) => setUp(`جارٍ رفع الصور والفيديو ${d + 1} من ${t} — ${Math.round(p * 100)}%`))
+        toast(isNew ? 'تم رفع التقرير' : 'تم حفظ التقرير')
+      }}>
       {(v, set) => (
         <>
           <Field label="المشروع">
@@ -107,6 +118,12 @@ function ReportForm({ report, onClose }: { report: Partial<Report>; onClose: () 
           <Field label="المواد الواردة">{inp(v, set, 'materials')}</Field>
           <Field label="نسبة الإنجاز الكلية %" hint="تحدّث نسبة المشروع">{inp(v, set, 'progress', 'number', { min: 0, max: 100 })}</Field>
           <Field label="العوائق والملاحظات" span={3}><textarea rows={2} value={v.obstacles} onChange={(e) => set({ obstacles: e.target.value })} /></Field>
+          <div className="span-3">
+            <span className="field-label">صور وفيديو من الموقع (حتى 3 دقائق للفيديو)</span>
+            {!isNew && <Attachments entity="daily_report" id={report.id!} files={report.media ?? []} canAdd={false} canDelete={canDel} compact />}
+            <PickFiles files={files} onChange={setFiles} />
+            {up && <p className="muted">{up}</p>}
+          </div>
         </>
       )}
     </FormModal>
@@ -115,6 +132,7 @@ function ReportForm({ report, onClose }: { report: Partial<Report>; onClose: () 
 
 function ReportView({ r, onClose, onEdit }: { r: Report; onClose: () => void; onEdit: () => void }) {
   const can = useCan()
+  const canDel = useCanDeleteFile()
   const rows: [string, string | null][] = [['الأعمال المنفذة', r.work_done], ['خطة الغد', r.next_plan], ['المعدات', r.equipment], ['المواد الواردة', r.materials], ['العوائق والملاحظات', r.obstacles]]
   return (
     <Modal title={`${r.project} — ${longDate(r.date)}`} onClose={onClose} wide footer={
@@ -136,6 +154,7 @@ function ReportView({ r, onClose, onEdit }: { r: Report; onClose: () => void; on
         {rows.filter(([, t]) => t).map(([label, text]) => (
           <div key={label} className="block"><h3>{label}</h3><p className="pre">{text}</p></div>
         ))}
+        <Attachments entity="daily_report" id={r.id} files={r.media ?? []} canAdd={can('dailyReports')} canDelete={canDel} title="الصور والفيديو" empty="لا توجد صور لهذا التقرير — أضف صوراً لتوثيق سير العمل" />
       </div>
     </Modal>
   )

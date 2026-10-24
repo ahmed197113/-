@@ -31,6 +31,8 @@ export default function DashboardPage() {
         <LiveBadge connected={connected} updatedAt={updatedAt} />
       </header>
 
+      <TodaySummary data={data} />
+
       <section className="kpis">
         <Kpi icon="workers" label="إجمالي العمال" value={fmt(c.totalWorkers)} tone="navy" />
         <Kpi icon="attendance" label="الحاضرون اليوم" value={fmt(c.presentToday)} tone="good"
@@ -217,6 +219,33 @@ function CostChart({ rows }: { rows: ProjectRow[] }) {
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+/** The day in plain sentences, so the numbers need no explaining. */
+function TodaySummary({ data }: { data: Dashboard }) {
+  const c = data.cards
+  const rate = c.totalWorkers ? Math.round((c.presentToday / c.totalWorkers) * 100) : 0
+  const short = data.projects.filter((p) => p.present < p.planned_workers * 0.8)
+  const overdue = data.alerts.filter((a) => a.type === 'overdue_issue').length
+  const iqama = data.alerts.filter((a) => a.type === 'iqama_expiry').length
+  const lines: { tone: 'good' | 'bad' | 'warn' | 'navy'; text: string }[] = []
+  if (!c.totalWorkers) lines.push({ tone: 'navy', text: 'لا يوجد عمال بعد — ابدأ بإضافة مشروع ثم العمال من قسم «العمال».' })
+  else {
+    lines.push({ tone: rate >= 85 ? 'good' : rate >= 70 ? 'warn' : 'bad', text: `حضر اليوم ${fmt(c.presentToday)} من ${fmt(c.totalWorkers)} عامل (${rate}%)، وغاب ${fmt(c.absentToday)}${c.onLeaveToday ? `، وفي إجازة ${fmt(c.onLeaveToday)}` : ''}.` })
+    if (c.notRecorded) lines.push({ tone: 'warn', text: `لم يُسجَّل حضور ${fmt(c.notRecorded)} عامل حتى الآن.` })
+    lines.push({ tone: 'navy', text: `تكلفة العمالة اليوم ${sar(c.costToday)}، ومنذ بداية الشهر ${sar(c.costMonth)}.` })
+  }
+  if (short.length) lines.push({ tone: 'bad', text: `نقص عمالة في: ${short.map((p) => `${p.name} (${p.present} من ${p.planned_workers})`).join('، ')}.` })
+  if (overdue) lines.push({ tone: 'bad', text: `${fmt(overdue)} بلاغ تجاوز موعده ويحتاج متابعة.` })
+  else if (c.openIssues) lines.push({ tone: 'warn', text: `${fmt(c.openIssues)} بلاغ مفتوح، لا يوجد منها متأخر.` })
+  if (iqama) lines.push({ tone: 'warn', text: `${fmt(iqama)} إقامة تنتهي خلال 30 يوماً.` })
+  if (c.totalWorkers && !short.length && !overdue) lines.push({ tone: 'good', text: 'كل المشاريع بعمالة كافية ولا توجد بلاغات متأخرة. 👍' })
+  return (
+    <section className="summary">
+      <h2>ملخص اليوم</h2>
+      <ul>{lines.map((l, i) => <li key={i} className={`s-${l.tone}`}>{l.text}</li>)}</ul>
     </section>
   )
 }

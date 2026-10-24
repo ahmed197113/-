@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { sar, sar2, shortDate } from '../api'
 import { Icon } from '../icons'
+import { ACCEPT_ALL, Attachments, MediaGrid, PickFiles, uploadAll, useCanDeleteFile, type MediaFile } from '../media'
 import { Badge, download, Empty, ErrorBox, Field, FormModal, inp, INVOICE_STATUS, Loading, PageHead, ProjectSelect, send, Stat, Tabs, toast, useCan, useData, useMeta } from '../ui'
 
 interface Invoice {
   id: number; project_id: number; project: string; client: string | null; kind: 'client' | 'subcontractor'; subcontractor_id: number | null; subcontractor: string | null
   number: string; period_from: string | null; period_to: string | null; gross: number; retention_pct: number; deductions: number; vat_pct: number
-  status: string; notes: string | null; retention: number; net: number; vat: number; total: number; created_at: string
+  status: string; notes: string | null; retention: number; net: number; vat: number; total: number; created_at: string; media?: MediaFile[]
 }
 
 export default function InvoicesPage() {
@@ -57,7 +58,7 @@ export default function InvoicesPage() {
               <tbody>
                 {rows.map((v) => (
                   <tr key={v.id}>
-                    <td><strong>{v.number}</strong></td>
+                    <td><strong>{v.number}</strong>{(v.media?.length ?? 0) > 0 && <MediaGrid files={v.media!} small max={3} />}</td>
                     <td><strong>{v.project}</strong><small>{kind === 'client' ? v.client ?? '—' : v.subcontractor}</small></td>
                     <td><small>{v.period_from ? `${shortDate(v.period_from)} ← ${v.period_to ? shortDate(v.period_to) : ''}` : '—'}</small></td>
                     <td className="num">{sar(v.gross)}</td>
@@ -89,9 +90,15 @@ function InvoiceForm({ inv, onClose }: { inv: Partial<Invoice>; onClose: () => v
     period_from: inv.period_from ?? '', period_to: inv.period_to ?? '', gross: inv.gross ?? '', retention_pct: inv.retention_pct ?? 10,
     deductions: inv.deductions ?? 0, vat_pct: inv.vat_pct ?? 15, status: inv.status ?? 'draft', notes: inv.notes ?? '',
   }
+  const canDel = useCanDeleteFile()
+  const [files, setFiles] = useState<File[]>([])
   return (
     <FormModal title={isNew ? 'مستخلص جديد' : `مستخلص ${inv.number}`} initial={initial} onClose={onClose} wide
-      onSubmit={(v) => (isNew ? send('/api/invoices', 'POST', v, 'تم حفظ المستخلص') : send(`/api/invoices/${inv.id}`, 'PUT', v, 'تم حفظ المستخلص'))}>
+      onSubmit={async (v) => {
+        const out = (isNew ? await send('/api/invoices', 'POST', v) : await send(`/api/invoices/${inv.id}`, 'PUT', v)) as { id?: number }
+        if (files.length) await uploadAll('invoice', isNew ? out.id! : inv.id!, files)
+        toast('تم حفظ المستخلص')
+      }}>
       {(v, set) => {
         const gross = Number(v.gross) || 0
         const ret = (gross * (Number(v.retention_pct) || 0)) / 100
@@ -132,6 +139,11 @@ function InvoiceForm({ inv, onClose }: { inv: Partial<Invoice>; onClose: () => v
               <div className="total"><span>المستحق</span><b>{sar2(net + vat)}</b></div>
             </div>
             <Field label="ملاحظات" span={3}><textarea rows={2} value={v.notes} onChange={(e) => set({ notes: e.target.value })} /></Field>
+            <div className="span-3">
+              <span className="field-label">المرفقات (نسخة المستخلص، الحصر، صور الأعمال)</span>
+              {!isNew && <Attachments entity="invoice" id={inv.id!} files={inv.media ?? []} canAdd={false} canDelete={canDel} compact />}
+              <PickFiles files={files} onChange={setFiles} accept={ACCEPT_ALL} label="إرفاق ملف" />
+            </div>
           </>
         )
       }}

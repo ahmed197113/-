@@ -192,7 +192,7 @@ api.get('/projects/:id', (req, res) => {
   p.invoiced = round(inv.find((r) => r.kind === 'client')?.gross ?? 0);
   p.subcontracted = round(inv.find((r) => r.kind === 'subcontractor')?.gross ?? 0);
   p.gallery = projectGallery(id);
-  p.documents = filesFor('project', [id])[id]?.filter((f) => f.kind === 'file') ?? [];
+  p.documents = filesFor('project', [id])[id]?.filter((f) => f.tag === 'doc') ?? [];
   res.json(p);
 });
 
@@ -451,24 +451,25 @@ const reportInput = (req, b) => ({
   progress: b.progress === '' || b.progress === null || b.progress === undefined ? null : Math.min(100, Math.max(0, num(b.progress))),
 });
 const saveReport = (req, d, id) => {
-  tx(() => {
+  return tx(() => {
     if (id) {
       db.prepare(`UPDATE daily_reports SET project_id=?, date=?, weather=?, work_done=?, next_plan=?, equipment=?, materials=?, obstacles=?, progress=? WHERE id=?`)
         .run(d.project_id, d.date, d.weather, d.work_done, d.next_plan, d.equipment, d.materials, d.obstacles, d.progress, id);
     } else {
       try {
-        db.prepare(`INSERT INTO daily_reports (project_id, date, weather, work_done, next_plan, equipment, materials, obstacles, progress, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(d.project_id, d.date, d.weather, d.work_done, d.next_plan, d.equipment, d.materials, d.obstacles, d.progress, req.user.id, nowStamp());
+        id = Number(db.prepare(`INSERT INTO daily_reports (project_id, date, weather, work_done, next_plan, equipment, materials, obstacles, progress, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(d.project_id, d.date, d.weather, d.work_done, d.next_plan, d.equipment, d.materials, d.obstacles, d.progress, req.user.id, nowStamp()).lastInsertRowid);
       } catch (e) {
         if (String(e.message).includes('UNIQUE')) fail(400, 'يوجد تقرير لهذا المشروع في نفس اليوم — افتحه وعدّله');
         throw e;
       }
     }
     if (d.progress !== null) db.prepare('UPDATE projects SET progress = ? WHERE id = ?').run(d.progress, d.project_id);
+    changed(req, 'daily_reports', d.project_id);
+    return id;
   });
-  changed(req, 'daily_reports', d.project_id);
 };
-api.post('/daily-reports', need('dailyReports'), (req, res) => { saveReport(req, reportInput(req, req.body || {})); res.json({ ok: true }); });
+api.post('/daily-reports', need('dailyReports'), (req, res) => { const id = saveReport(req, reportInput(req, req.body || {})); res.json({ ok: true, id }); });
 api.put('/daily-reports/:id', need('dailyReports'), (req, res) => {
   const cur = db.prepare('SELECT project_id FROM daily_reports WHERE id = ?').get(Number(req.params.id));
   if (!cur) fail(404, 'التقرير غير موجود');

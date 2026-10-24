@@ -59,7 +59,7 @@ function checkAccess(user, entity, id, write) {
 
 const publicFile = (a) => ({
   id: a.id, kind: a.kind, tag: a.tag, caption: a.caption, mime: a.mime, size: a.size, name: a.name,
-  url: `/api/files/${a.id}`, created_at: a.created_at, by: a.by ?? null, entity: a.entity, entity_id: a.entity_id,
+  url: `/api/files/${a.id}`, created_at: a.created_at, by: a.by ?? null, created_by: a.created_by, entity: a.entity, entity_id: a.entity_id,
 });
 
 /** Files for many records at once: { [entity_id]: [file, …] }. */
@@ -76,7 +76,7 @@ export function filesFor(entity, ids) {
 /** Every photo and video of a project: its gallery plus those of its reports and issues. */
 export function projectGallery(projectId, limit = 300) {
   return db.prepare(`SELECT a.*, u.name AS by FROM attachments a LEFT JOIN users u ON u.id = a.created_by
-    WHERE a.project_id = ? AND a.kind IN ('image','video') AND a.entity IN ('project','daily_report','issue')
+    WHERE a.project_id = ? AND a.kind IN ('image','video') AND a.entity IN ('project','daily_report','issue') AND (a.tag IS NULL OR a.tag <> 'doc')
     ORDER BY a.id DESC LIMIT ?`).all(projectId, limit).map(publicFile);
 }
 

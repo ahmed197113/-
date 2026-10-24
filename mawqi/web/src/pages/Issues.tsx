@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { shortDate } from '../api'
 import { Icon } from '../icons'
+import { Attachments, MediaGrid, PickFiles, uploadAll, useCanDeleteFile, type MediaFile } from '../media'
 import {
   addDays, Badge, CATEGORY, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, PageHead, ProjectSelect, Search, send,
   SEVERITY, Tabs, today, toast, useCan, useData, useMeta,
@@ -9,7 +10,7 @@ import {
 interface Issue {
   id: number; project_id: number; project: string; title: string; description: string | null; category: string; severity: string
   status: 'open' | 'in_progress' | 'closed'; assignee_id: number | null; assignee: string | null; reporter: string | null
-  due_at: string | null; created_at: string; closed_at: string | null; resolution: string | null; overdue: number; escalated: number
+  due_at: string | null; created_at: string; closed_at: string | null; resolution: string | null; overdue: number; escalated: number; media: MediaFile[]
 }
 
 const COLS: Issue['status'][] = ['open', 'in_progress', 'closed']
@@ -69,6 +70,7 @@ export default function IssuesPage() {
                   <strong>{i.title}</strong>
                   {i.description && <p className="clip-2">{i.description}</p>}
                   {i.resolution && col === 'closed' && <p className="good-t clip-2">الحل: {i.resolution}</p>}
+                  {i.media?.length > 0 && <MediaGrid files={i.media} small max={4} />}
                   <div className="icard-meta">
                     <span><Icon name="projects" size={14} /> {i.project}</span>
                     <span><Icon name="user" size={14} /> {i.assignee ?? 'غير محدد'}</span>
@@ -100,10 +102,21 @@ function IssueForm({ issue, onClose }: { issue: Partial<Issue>; onClose: () => v
     severity: issue.severity ?? 'medium', assignee_id: issue.assignee_id ?? '', due_at: (issue.due_at ?? `${addDays(today(), 2)}T17:00`).slice(0, 16),
     status: issue.status ?? 'open', resolution: issue.resolution ?? '',
   }
+  const canDel = useCanDeleteFile()
+  const [before, setBefore] = useState<File[]>([])
+  const [after, setAfter] = useState<File[]>([])
+  const [up, setUp] = useState('')
   return (
     <FormModal title={isNew ? 'بلاغ جديد' : issue.status === 'closed' && issue.closed_at === null ? 'إغلاق البلاغ' : 'تعديل البلاغ'} initial={initial} onClose={onClose} wide
       extra={!isNew ? <DeleteButton path={`/api/issues/${issue.id}`} what={`البلاغ «${issue.title}»`} onDone={onClose} /> : undefined}
-      onSubmit={(v) => (isNew ? send('/api/issues', 'POST', v, 'تم تسجيل البلاغ') : send(`/api/issues/${issue.id}`, 'PUT', v, 'تم حفظ البلاغ'))}>
+      onSubmit={async (v) => {
+        const out = (isNew ? await send('/api/issues', 'POST', v) : await send(`/api/issues/${issue.id}`, 'PUT', v)) as { id?: number }
+        const id = isNew ? out.id! : issue.id!
+        const prog = (d: number, t: number, p: number) => setUp(`جارٍ رفع الصور ${d + 1} من ${t} — ${Math.round(p * 100)}%`)
+        if (before.length) await uploadAll('issue', id, before, 'before', prog)
+        if (after.length) await uploadAll('issue', id, after, 'after', prog)
+        toast(isNew ? 'تم تسجيل البلاغ' : 'تم حفظ البلاغ')
+      }}>
       {(v, set) => (
         <>
           <Field label="عنوان المشكلة" span={2}>{inp(v, set, 'title', 'text', { autoFocus: isNew })}</Field>
@@ -135,6 +148,19 @@ function IssueForm({ issue, onClose }: { issue: Partial<Issue>; onClose: () => v
           )}
           <Field label="التفاصيل" span={3}><textarea rows={3} value={v.description} onChange={(e) => set({ description: e.target.value })} /></Field>
           {v.status === 'closed' && <Field label="ما الذي تم لحل المشكلة؟" span={3}><textarea rows={2} value={v.resolution} onChange={(e) => set({ resolution: e.target.value })} autoFocus /></Field>}
+          <div className="span-3">
+            <span className="field-label">صور أو فيديو للمشكلة</span>
+            {!isNew && <Attachments entity="issue" id={issue.id!} files={issue.media ?? []} tag="before" canAdd={false} canDelete={canDel} compact />}
+            <PickFiles files={before} onChange={setBefore} label="صورة المشكلة" />
+          </div>
+          {(v.status === 'closed' || (issue.media ?? []).some((m) => m.tag === 'after')) && (
+            <div className="span-3">
+              <span className="field-label">صور بعد الحل</span>
+              {!isNew && <Attachments entity="issue" id={issue.id!} files={issue.media ?? []} tag="after" canAdd={false} canDelete={canDel} compact />}
+              <PickFiles files={after} onChange={setAfter} label="صورة بعد الحل" />
+            </div>
+          )}
+          {up && <p className="muted span-3">{up}</p>}
         </>
       )}
     </FormModal>

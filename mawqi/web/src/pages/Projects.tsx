@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { compact, fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
+import { ACCEPT_ALL, Attachments, src, useCanDeleteFile, type MediaFile } from '../media'
 import {
   ATT, Badge, DeleteButton, PickMany, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, Meter, PageHead, PROJECT_STATUS, Ring, Search, send, SEVERITY,
   Stat, Tabs, today, useCan, useData, useMeta,
@@ -12,6 +13,7 @@ export interface Project {
   lat: number; lng: number; radius_m: number; start_date: string; end_date: string; planned_workers: number; progress: number
   manager_id: number | null; supervisor_id: number | null; manager_ids?: number[]; supervisor_ids?: number[]; status: string; supervisor: string | null; manager: string | null
   assigned: number; present: number; open_issues: number; cost_month: number; cost_total: number; last_report: string | null
+  cover?: string | null
 }
 
 const daysBetween = (a: string, b: string) => Math.round((new Date(b + 'T12:00:00').getTime() - new Date(a + 'T12:00:00').getTime()) / 864e5)
@@ -55,7 +57,8 @@ export default function ProjectsPage() {
             const used = timeUsed(p)
             const behind = p.status === 'active' && used - p.progress > 15
             return (
-              <Link key={p.id} to={`/projects/${p.id}`} className={`pcard ${behind ? 'behind' : ''}`}>
+              <Link key={p.id} to={`/projects/${p.id}`} className={`pcard ${behind ? 'behind' : ''} ${p.cover ? 'has-cover' : ''}`}>
+                {p.cover && <img className="pcover" src={src(p.cover)} alt="" loading="lazy" />}
                 <div className="pcard-top">
                   <div>
                     <strong>{p.name}</strong>
@@ -138,6 +141,7 @@ interface ProjectDetail extends Project {
   series: { date: string; present: number; absent: number }[]
   reports: { id: number; date: string; work_done: string; author: string }[]
   invoiced: number; subcontracted: number
+  gallery: MediaFile[]; documents: MediaFile[]
 }
 
 export function ProjectDetailPage() {
@@ -146,7 +150,8 @@ export function ProjectDetailPage() {
   const can = useCan()
   const { data: p, error } = useData<ProjectDetail>(`/api/projects/${id}`)
   const [editing, setEditing] = useState(false)
-  const [tab, setTab] = useState<'workers' | 'issues' | 'reports'>('workers')
+  const [tab, setTab] = useState<'gallery' | 'workers' | 'issues' | 'reports' | 'docs'>('gallery')
+  const canDel = useCanDeleteFile()
 
   if (error && !p) return <ErrorBox error={error} />
   if (!p) return <Loading />
@@ -159,6 +164,7 @@ export function ProjectDetailPage() {
       <button className="back" onClick={() => nav('/projects')}><Icon name="back" size={18} /> كل المشاريع</button>
       <PageHead title={p.name} sub={<>{p.city ?? ''}{p.client ? ` · المالك: ${p.client}` : ''} · {shortDate(p.start_date)} ← {shortDate(p.end_date)}</>}>
         <Badge tone={PROJECT_STATUS[p.status]?.tone}>{PROJECT_STATUS[p.status]?.label}</Badge>
+        <Link className="btn primary" to={`/projects/${p.id}/report`}><Icon name="print" size={18} /> تقرير المشروع</Link>
         {can('projects') && <button className="btn" onClick={() => setEditing(true)}><Icon name="edit" size={18} /> تعديل</button>}
         <DeleteButton path={`/api/projects/${p.id}`} what={`المشروع «${p.name}» وكل حضوره وبلاغاته وتقاريره ومستخلصاته`} onDone={() => nav('/projects')} />
       </PageHead>
@@ -197,14 +203,18 @@ export function ProjectDetailPage() {
 
       <section className="panel">
         <Tabs value={tab} onChange={setTab} items={[
+          { key: 'gallery', label: 'الصور والفيديو', count: p.gallery.length },
           { key: 'workers', label: 'العمال اليوم', count: p.workers.length }, { key: 'issues', label: 'البلاغات المفتوحة', count: p.issues.length },
           { key: 'reports', label: 'آخر التقارير', count: p.reports.length },
+          { key: 'docs', label: 'العقود والمستندات', count: p.documents.length },
         ]} />
+        {tab === 'gallery' && <Attachments entity="project" id={p.id} files={p.gallery} canAdd={can('projects') || can('dailyReports')} canDelete={canDel} title="كل صور وفيديوهات المشروع" empty="لا توجد صور بعد — أضف صوراً للموقع، وستظهر هنا أيضاً صور التقارير اليومية والبلاغات" />}
+        {tab === 'docs' && <Attachments entity="project" id={p.id} files={p.documents} tag="doc" accept={ACCEPT_ALL} canAdd={can('projects')} canDelete={canDel} title="العقود والمخططات والمستندات" empty="ارفع العقد والمخططات وأي مستندات للمشروع (PDF أو صور)" />}
         {tab === 'workers' && (p.workers.length ? (
           <ul className="people">
             {p.workers.map((w) => (
               <li key={w.id}>
-                <span className="avatar-s">{w.name.slice(0, 1)}</span>
+                <span className={`avatar-s ${w.today ? `a-${ATT[w.today].tone}` : ''}`}>{w.name.slice(0, 1)}</span>
                 <div><strong>{w.name}</strong><small>{w.profession} · {w.nationality}</small></div>
                 {w.today ? <Badge tone={ATT[w.today].tone}>{ATT[w.today].label}</Badge> : <Badge>لم يُسجل</Badge>}
               </li>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api, fmt, sar, sar2, shortDate } from '../api'
 import { Icon } from '../icons'
+import { ACCEPT_ALL, Attachments, PickFiles, uploadAll, useCanDeleteFile, type MediaFile } from '../media'
 import { Badge, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, Loading, Meter, ORDER_STATUS, PageHead, ProjectSelect, send, Stat, today, toast, useCan, useData, useMeta } from '../ui'
 
 interface Order {
@@ -8,7 +9,7 @@ interface Order {
   date: string; due_date: string | null; status: string; notes: string | null; value: number; done_value: number; items_count: number
 }
 interface Item { description: string; unit: string; qty: number | string; unit_price: number | string; done_qty: number | string }
-interface OrderDetail extends Order { items: Item[] }
+interface OrderDetail extends Order { items: Item[]; media?: MediaFile[] }
 
 export default function DirectOrdersPage() {
   const [project, setProject] = useState('')
@@ -75,6 +76,8 @@ function OrderForm({ order, onClose }: { order: Partial<OrderDetail>; onClose: (
     date: order.date ?? today(), due_date: order.due_date ?? '', status: order.status ?? 'open', notes: order.notes ?? '',
     items: order.items?.length ? order.items : [blankItem()],
   }
+  const canDel = useCanDeleteFile()
+  const [files, setFiles] = useState<File[]>([])
   const remove = async () => {
     if (!window.confirm('حذف أمر الإسناد نهائياً؟')) return
     try { await send(`/api/direct-orders/${order.id}`, 'DELETE', undefined, 'تم حذف الأمر'); onClose() } catch (e) { toast((e as Error).message, 'err') }
@@ -82,7 +85,11 @@ function OrderForm({ order, onClose }: { order: Partial<OrderDetail>; onClose: (
   return (
     <FormModal title={isNew ? 'أمر إسناد جديد' : `أمر ${order.number}`} initial={initial} onClose={onClose} wide
       extra={!isNew && can('delete') ? <button type="button" className="btn ghost danger" onClick={remove}><Icon name="trash" size={16} /> حذف</button> : undefined}
-      onSubmit={(v) => (isNew ? send('/api/direct-orders', 'POST', v, 'تم إنشاء أمر الإسناد') : send(`/api/direct-orders/${order.id}`, 'PUT', v, 'تم حفظ الأمر'))}>
+      onSubmit={async (v) => {
+        const out = (isNew ? await send('/api/direct-orders', 'POST', v) : await send(`/api/direct-orders/${order.id}`, 'PUT', v)) as { id?: number }
+        if (files.length) await uploadAll('direct_order', isNew ? out.id! : order.id!, files)
+        toast(isNew ? 'تم إنشاء أمر الإسناد' : 'تم حفظ الأمر')
+      }}>
       {(v, set) => {
         const setItem = (i: number, patch: Partial<Item>) => set({ items: v.items.map((it, k) => (k === i ? { ...it, ...patch } : it)) })
         const total = v.items.reduce((a, it) => a + (Number(it.qty) || 0) * (Number(it.unit_price) || 0), 0)
@@ -131,6 +138,11 @@ function OrderForm({ order, onClose }: { order: Partial<OrderDetail>; onClose: (
               </div>
             </div>
             <Field label="ملاحظات" span={3}><textarea rows={2} value={v.notes} onChange={(e) => set({ notes: e.target.value })} /></Field>
+            <div className="span-3">
+              <span className="field-label">المرفقات (العرض، العقد، صور الأعمال)</span>
+              {!isNew && <Attachments entity="direct_order" id={order.id!} files={order.media ?? []} canAdd={false} canDelete={canDel} compact />}
+              <PickFiles files={files} onChange={setFiles} accept={ACCEPT_ALL} label="إرفاق ملف" />
+            </div>
           </>
         )
       }}
