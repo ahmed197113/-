@@ -27,6 +27,10 @@ interface SyncState {
 }
 const SyncContext = createContext<SyncState>(null!)
 
+/** The server's answer to the last change sent online (e.g. the id of a new report). */
+let lastResult: unknown = null
+export const takeLastResult = <T,>() => { const r = lastResult as T; lastResult = null; return r }
+
 export function SyncProvider({ children }: { children: ReactNode }) {
   const toast = useToast()
   const [online, setOnline] = useState(true)
@@ -108,7 +112,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
   const send = useCallback<SyncState['send']>(async (method, path, body, label) => {
     try {
-      await api(path, { method, body: JSON.stringify(body) })
+      lastResult = await api(path, { method, body: JSON.stringify(body) })
       setOnline(true)
       check()
       return 'sent'

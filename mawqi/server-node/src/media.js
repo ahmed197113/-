@@ -29,7 +29,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS attachments (
 CREATE INDEX IF NOT EXISTS idx_att_entity ON attachments(entity, entity_id);
 CREATE INDEX IF NOT EXISTS idx_att_project ON attachments(project_id);`);
 
-const MAX_BYTES = 250 * 1024 * 1024; // a 3-minute phone video at medium quality fits comfortably
+const MAX_BYTES = 500 * 1024 * 1024; // a 3-minute 1080p phone video (~350 MB) fits
 const ALLOWED = /^(image\/(jpeg|png|webp|heic|heif|gif)|video\/(mp4|quicktime|3gpp|webm|x-matroska)|application\/pdf)$/;
 const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/heic': '.heic', 'image/heif': '.heif', 'image/gif': '.gif',
   'video/mp4': '.mp4', 'video/quicktime': '.mov', 'video/3gpp': '.3gp', 'video/webm': '.webm', 'video/x-matroska': '.mkv', 'application/pdf': '.pdf' };
@@ -110,7 +110,7 @@ media.post('/attachments', (req, res, next) => {
     const mime = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
     if (!ALLOWED.test(mime)) fail(400, 'نوع الملف غير مدعوم — الصور والفيديو وملفات PDF فقط');
     const declared = Number(req.headers['content-length'] || 0);
-    if (declared > MAX_BYTES) fail(413, 'الملف أكبر من المسموح (250 ميجا) — قلّل مدة الفيديو أو جودته');
+    if (declared > MAX_BYTES) fail(413, 'الملف أكبر من المسموح (500 ميجا) — قلّل مدة الفيديو أو جودته');
     const kind = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : 'file';
     const month = todayStr().slice(0, 7);
     const rel = join(month, `${randomUUID()}${EXT[mime] || extname(String(req.headers['x-file-name'] || '')) || ''}`);
@@ -125,7 +125,7 @@ media.post('/attachments', (req, res, next) => {
       if (size > MAX_BYTES && !aborted) {
         aborted = true;
         cleanup();
-        res.status(413).json({ error: 'الملف أكبر من المسموح (250 ميجا)' });
+        res.status(413).json({ error: 'الملف أكبر من المسموح (500 ميجا)' });
         req.destroy();
       }
     });

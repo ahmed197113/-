@@ -3,7 +3,9 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { api, longDate, shortDate, today, type Issue, type Meta, type Report, type Severity } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
-import { useData, useSync } from '../../lib/sync'
+import { takeLastResult, useData, useSync } from '../../lib/sync'
+import { uploadAll, type Picked } from '../../lib/media'
+import { MediaPicker, MediaStrip } from '../../components/Media'
 import { AppScreen } from '../../components/AppScreen'
 import { confirm, useToast } from '../../components/Toast'
 import { Badge, Button, C, Card, Chip, Empty, ErrorBox, Field, Header, Loading, Picker, Row, Sheet, T } from '../../components/ui'
@@ -22,7 +24,8 @@ export default function Site() {
   const { can } = useAuth()
   const [tab, setTab] = useState<'report' | 'issues'>(can('dailyReports') ? 'report' : 'issues')
   const meta = useData<Meta>('/api/meta')
-  const projects = meta.data?.projects ?? []
+  // Real projects first, the factory last.
+  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number(a.kind === 'factory') - Number(b.kind === 'factory'))
   const [projectId, setProjectId] = useState<number | null>(null)
   useEffect(() => {
     if (projects.length && !projects.some((p) => p.id === projectId)) setProjectId(projects[0].id)
@@ -73,6 +76,8 @@ function DailyReport({ projectId }: { projectId: number }) {
   const existing = data?.find((r) => r.date === date)
   const [form, setForm] = useState(EMPTY_REPORT)
   const [busy, setBusy] = useState(false)
+  const [files, setFiles] = useState<Picked[]>([])
+  const [up, setUp] = useState<string | null>(null)
   const queued = queue.some((q) => q.path.startsWith('/api/daily-reports') && (q.body as { project_id?: number; date?: string }).project_id === projectId && (q.body as { date?: string }).date === date)
 
   useEffect(() => {
@@ -94,7 +99,14 @@ function DailyReport({ projectId }: { projectId: number }) {
       const res = existing
         ? await send('PUT', `/api/daily-reports/${existing.id}`, body, `تقرير ${date}`)
         : await send('POST', '/api/daily-reports', body, `تقرير ${date}`)
-      toast(res === 'sent' ? (existing ? 'تم تحديث التقرير' : 'تم رفع التقرير اليومي') : 'لا يوجد اتصال — حُفظ التقرير وسيُرفع تلقائياً', res === 'sent' ? 'success' : 'info')
+      const id = existing?.id ?? takeLastResult<{ id?: number }>()?.id
+      if (res === 'sent' && files.length && id) {
+        const r = await uploadAll('daily_report', id, files, undefined, (d, t, p) => setUp(`جارٍ رفع الصور والفيديو ${d + 1} من ${t} — ${Math.round(p * 100)}%`))
+        setUp(null)
+        if (r.error) toast(r.error, 'error')
+        if (r.ok) setFiles([])
+      }
+      toast(res === 'sent' ? (existing ? 'تم تحديث التقرير' : 'تم رفع التقرير اليومي') : files.length ? 'لا يوجد اتصال — حُفظ التقرير، وارفع الصور عند عودة الإنترنت' : 'لا يوجد اتصال — حُفظ التقرير وسيُرفع تلقائياً', res === 'sent' ? 'success' : 'info')
       if (res === 'sent') refresh()
     } catch (e) {
       toast((e as Error).message, 'error')
@@ -120,7 +132,10 @@ function DailyReport({ projectId }: { projectId: number }) {
           <View style={{ flex: 1 }}><Field label="نسبة الإنجاز %" value={form.progress} onChangeText={set('progress')} keyboardType="number-pad" placeholder="0 - 100" maxLength={3} /></View>
           <View style={{ flex: 1 }}><Field label="الطقس" value={form.weather} onChangeText={set('weather')} placeholder="مشمس" /></View>
         </Row>
-        <Button label={existing ? 'تحديث التقرير' : 'رفع التقرير'} icon="cloud-upload" kind="accent" busy={busy} onPress={submit} />
+        {!!existing?.media?.length && <MediaStrip files={existing.media} />}
+        <MediaPicker value={files} onChange={setFiles} label={existing?.media?.length ? 'إضافة صور أو فيديو أخرى' : 'صور وفيديو من الموقع (حتى 3 دقائق)'} />
+        {!!up && <T w="bold" style={{ color: C.good }}>{up}</T>}
+        <Button label={up ? 'جارٍ الرفع…' : existing ? 'تحديث التقرير' : 'رفع التقرير'} icon="cloud-upload" kind="accent" busy={busy} onPress={submit} />
       </Card>
 
       <T w="black" style={{ fontSize: 18, color: C.navy }}>التقارير السابقة</T>
@@ -132,6 +147,7 @@ function DailyReport({ projectId }: { projectId: number }) {
               {r.progress !== null && <Badge label={`${r.progress}%`} color={C.amber} bg={C.amberSoft} />}
             </Row>
             <T style={{ color: C.ink2 }} numberOfLines={3}>{r.work_done}</T>
+            {!!r.media?.length && <MediaStrip files={r.media} size={70} max={5} />}
             <T style={{ color: C.muted, fontSize: 14 }}>{r.author ?? ''} · حاضر {r.present} · غائب {r.absent}</T>
           </Card>
         )) : <Empty icon="document-text-outline" title="لا توجد تقارير سابقة" />}
@@ -185,6 +201,7 @@ function Issues({ projectId, projects }: { projectId: number; projects: Meta['pr
                   <Badge label={sev.label} color={sev.color} bg={sev.bg} />
                 </Row>
                 {!!i.description && <T style={{ color: C.ink2 }}>{i.description}</T>}
+                {!!i.media?.length && <MediaStrip files={i.media} size={74} max={5} />}
                 <T style={{ color: C.muted, fontSize: 14 }}>
                   {STATUS_AR[i.status]} · {shortDate(i.created_at)}{i.reporter ? ` · ${i.reporter}` : ''}{i.overdue ? ' · متأخر ⚠' : ''}
                 </T>
@@ -217,13 +234,21 @@ function NewIssue({ visible, onClose, projects, projectId, onDone }: { visible: 
   const [severity, setSeverity] = useState<Severity>('medium')
   const [project, setProject] = useState(projectId)
   const [busy, setBusy] = useState(false)
-  useEffect(() => { if (visible) { setTitle(''); setSeverity('medium'); setProject(projectId) } }, [visible, projectId])
+  const [files, setFiles] = useState<Picked[]>([])
+  const [up, setUp] = useState<string | null>(null)
+  useEffect(() => { if (visible) { setTitle(''); setSeverity('medium'); setProject(projectId); setFiles([]) } }, [visible, projectId])
 
   const submit = async () => {
     if (!title.trim()) return toast('اكتب عنوان البلاغ', 'error')
     setBusy(true)
     try {
       const res = await send('POST', '/api/issues', { project_id: project, title: title.trim(), severity, category: 'other' }, `بلاغ: ${title.trim()}`)
+      const id = takeLastResult<{ id?: number }>()?.id
+      if (res === 'sent' && id && files.length) {
+        const r = await uploadAll('issue', id, files, 'before', (d, t, p) => setUp(`جارٍ رفع الصور ${d + 1} من ${t} — ${Math.round(p * 100)}%`))
+        setUp(null)
+        if (r.error) toast(r.error, 'error')
+      }
       toast(res === 'sent' ? 'تم إضافة البلاغ' : 'لا يوجد اتصال — حُفظ البلاغ وسيُرسل تلقائياً', res === 'sent' ? 'success' : 'info')
       onClose()
       onDone()
@@ -246,6 +271,8 @@ function NewIssue({ visible, onClose, projects, projectId, onDone }: { visible: 
           <Picker value={project} onChange={setProject} options={projects.map((p) => ({ value: p.id, label: p.name }))} />
         </>
       )}
+      <MediaPicker value={files} onChange={setFiles} label="صورة أو فيديو للمشكلة" />
+      {!!up && <T w="bold" style={{ color: C.good }}>{up}</T>}
       <Button label="إرسال البلاغ" icon="send" kind="accent" busy={busy} onPress={submit} />
     </Sheet>
   )
@@ -256,7 +283,9 @@ function CloseIssue({ issue, onClose, onDone }: { issue: Issue | null; onClose: 
   const { send } = useSync()
   const [resolution, setResolution] = useState('')
   const [busy, setBusy] = useState(false)
-  useEffect(() => setResolution(''), [issue?.id])
+  const [files, setFiles] = useState<Picked[]>([])
+  const [up, setUp] = useState<string | null>(null)
+  useEffect(() => { setResolution(''); setFiles([]) }, [issue?.id])
 
   const submit = async () => {
     if (!issue) return
@@ -264,6 +293,11 @@ function CloseIssue({ issue, onClose, onDone }: { issue: Issue | null; onClose: 
     setBusy(true)
     try {
       const res = await send('PUT', `/api/issues/${issue.id}`, { status: 'closed', resolution: resolution.trim() }, `إغلاق: ${issue.title}`)
+      if (res === 'sent' && files.length) {
+        const r = await uploadAll('issue', issue.id, files, 'after', (d, t, p) => setUp(`جارٍ رفع الصور ${d + 1} من ${t} — ${Math.round(p * 100)}%`))
+        setUp(null)
+        if (r.error) toast(r.error, 'error')
+      }
       toast(res === 'sent' ? 'تم إغلاق البلاغ' : 'لا يوجد اتصال — سيُغلق البلاغ عند عودة الاتصال', res === 'sent' ? 'success' : 'info')
       onClose()
       onDone()
@@ -278,6 +312,8 @@ function CloseIssue({ issue, onClose, onDone }: { issue: Issue | null; onClose: 
     <Sheet visible={!!issue} title="إغلاق البلاغ" onClose={onClose}>
       <T w="bold" style={{ fontSize: 17 }}>{issue?.title}</T>
       <Field label="الحل" value={resolution} onChangeText={setResolution} multiline placeholder="ماذا تم لحل المشكلة؟" autoFocus />
+      <MediaPicker value={files} onChange={setFiles} label="صورة بعد الحل" />
+      {!!up && <T w="bold" style={{ color: C.good }}>{up}</T>}
       <Button label="إغلاق البلاغ" icon="checkmark-circle" busy={busy} onPress={submit} />
     </Sheet>
   )

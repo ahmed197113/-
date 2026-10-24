@@ -5,7 +5,9 @@ import { api, fmt, sar, shortDate, type AttStatus, type WorkerDetail } from '../
 import { useAuth } from '../../lib/auth'
 import { useData, useSync } from '../../lib/sync'
 import { useState } from 'react'
-import { Pressable } from 'react-native'
+import { Image, Pressable } from 'react-native'
+import { mediaUri } from '../../lib/media'
+import { AddMedia, MediaStrip } from '../../components/Media'
 import type { Meta } from '../../lib/api'
 import { AppScreen } from '../../components/AppScreen'
 import { iqamaState } from '../../components/iqama'
@@ -62,6 +64,14 @@ export default function WorkerCard() {
     <AppScreen onRefresh={refresh} refreshing={refreshing} header={<Header title={w?.name ?? 'بطاقة العامل'} sub={w?.profession} onBack={() => router.back()} />}>
       {!w ? (loading ? <Loading /> : <ErrorBox text={error ?? ''} onRetry={refresh} />) : (
         <>
+          <Card style={[s.row, { gap: 14 }]}>
+            {w.photo ? <Image source={{ uri: mediaUri(w.photo) }} style={s.photo} /> : <View style={[s.photo, s.noPhoto]}><T w="black" style={{ fontSize: 36, color: C.navy }}>{w.name.trim()[0]}</T></View>}
+            <View style={{ flex: 1, gap: 4 }}>
+              <T w="black" style={{ fontSize: 20, color: C.navy }}>{w.name}</T>
+              <T style={{ color: C.muted }}>{w.profession} · {w.nationality}</T>
+              <T w="bold">{w.project ? `${w.location_kind === 'factory' ? '🏭 ' : '🏗️ '}${w.project}` : 'غير موزّع'}</T>
+            </View>
+          </Card>
           {iq && (
             <Card style={[s.row, { backgroundColor: iq.bg, borderColor: iq.bg }]}>
               <Ionicons name="warning" size={26} color={iq.color} />
@@ -93,6 +103,18 @@ export default function WorkerCard() {
                 <T w="bold" style={{ color: ST[a.status].color }}>{ST[a.status].label}{a.overtime_hours ? ` +${a.overtime_hours} س` : ''}</T>
               </Row>
             )) : <T style={{ color: C.muted }}>لا يوجد حضور مسجل بعد</T>}
+          </Card>
+          <Card style={{ gap: 10 }}>
+            <T w="black" style={{ fontSize: 18, color: C.navy }}>الصورة والإقامة والمستندات</T>
+            {(w.media ?? []).length ? <MediaStrip files={w.media ?? []} /> : <T style={{ color: C.muted }}>لا توجد صور بعد</T>}
+            {(can('workers') || can('moveWorkers')) && (
+              <>
+                <T w="bold" style={{ color: C.ink2 }}>الصورة الشخصية</T>
+                <AddMedia entity="worker" id={w.id} tag="photo" onlyImages label="صورة واضحة للوجه" />
+                <T w="bold" style={{ color: C.ink2 }}>صورة الإقامة</T>
+                <AddMedia entity="worker" id={w.id} tag="iqama" onlyImages label="صوّر الإقامة من الأمام والخلف" />
+              </>
+            )}
           </Card>
           {can('moveWorkers') && <Button label="نقل العامل (مشروع / المصنع)" icon="swap-horizontal" kind="accent" onPress={() => setMoving(true)} />}
           {can('delete') && <Button label="حذف العامل" icon="trash" kind="danger" onPress={remove} />}
@@ -142,4 +164,6 @@ const s = StyleSheet.create({
   dot: { width: 12, height: 12, borderRadius: 6 },
   place: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingHorizontal: 14, borderRadius: 14, borderWidth: 2, borderColor: C.line, backgroundColor: '#fff' },
   placeOn: { borderColor: C.navy, backgroundColor: C.navySoft },
+  photo: { width: 88, height: 88, borderRadius: 20 },
+  noPhoto: { backgroundColor: C.navySoft, alignItems: 'center', justifyContent: 'center' },
 })

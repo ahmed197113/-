@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { fileUrl, fmt, longDate, sar, today, type Meta, type Report } from '../../lib/api'
 import { useData } from '../../lib/sync'
 import { AppScreen } from '../../components/AppScreen'
+import { MediaStrip } from '../../components/Media'
 import { useToast } from '../../components/Toast'
 import { C, Card, Chip, Empty, ErrorBox, Header, Loading, Meter, Row, Sheet, T, type IconName } from '../../components/ui'
 
@@ -119,6 +120,7 @@ export default function Reports() {
                 <T style={{ color: C.muted, fontSize: 14 }}>{longDate(r.date)}</T>
               </Row>
               <T numberOfLines={2} style={{ color: C.ink2 }}>{r.work_done}</T>
+              {!!r.media?.length && <T style={{ color: C.muted, fontSize: 13 }}>📷 {r.media.length} صورة/فيديو</T>}
               <Row>
                 <T w="bold" style={{ color: C.good, fontSize: 14 }}>{r.present} حاضر</T>
                 {r.absent > 0 && <T w="bold" style={{ color: C.bad, fontSize: 14 }}>{r.absent} غائب</T>}
@@ -161,6 +163,7 @@ export default function Reports() {
             <Block title="المعدات" text={open.equipment} />
             <Block title="المواد الواردة" text={open.materials} />
             <Block title="العوائق والملاحظات" text={open.obstacles} />
+            {!!open.media?.length && <MediaStrip files={open.media} />}
             {!!open.author && <T style={{ color: C.muted }}>بواسطة: {open.author}</T>}
           </>
         )}

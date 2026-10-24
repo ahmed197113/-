@@ -21,7 +21,7 @@ export type Entity = 'daily_report' | 'issue' | 'worker' | 'project' | 'invoice'
 /** File URLs carry the token because <img> and <video> cannot send headers. */
 export const src = (url: string) => `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(getToken() ?? '')}`
 
-export const MAX_MB = 250
+export const MAX_MB = 500
 export const ACCEPT_MEDIA = 'image/*,video/*'
 export const ACCEPT_ALL = 'image/*,video/*,application/pdf'
 

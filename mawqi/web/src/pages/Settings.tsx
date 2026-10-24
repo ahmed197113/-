@@ -13,6 +13,7 @@ export default function SettingsPage() {
       <PasswordCard />
       {can('users') && <UsersCard />}
       {can('users') && <CompanyCard />}
+      {can('users') && <StorageCard />}
       {can('users') && <ResetCard />}
     </div>
   )
@@ -133,6 +134,24 @@ function ResetCard() {
         <Field label="اكتب «ابدأ» للتأكيد"><input value={word} onChange={(e) => setWord(e.target.value)} /></Field>
         <div className="field end"><button className="btn danger-solid" disabled={word !== 'ابدأ'} onClick={go}>مسح البيانات التجريبية</button></div>
       </div>
+    </section>
+  )
+}
+
+function StorageCard() {
+  const { data } = useData<{ files: number; bytes: number; images: number; videos: number; dbBytes: number }>('/api/storage')
+  if (!data) return null
+  const mb = (b: number) => (b > 1073741824 ? `${(b / 1073741824).toFixed(2)} جيجا` : `${(b / 1048576).toFixed(1)} ميجا`)
+  return (
+    <section className="panel">
+      <div className="panel-head"><h2><Icon name="download" /> مساحة التخزين</h2></div>
+      <div className="facts">
+        <div><span>الصور</span><b>{data.images ?? 0}</b></div>
+        <div><span>الفيديوهات</span><b>{data.videos ?? 0}</b></div>
+        <div><span>حجم الملفات</span><b>{mb(data.bytes)}</b></div>
+        <div><span>قاعدة البيانات</span><b>{mb(data.dbBytes)}</b></div>
+      </div>
+      <p className="muted">الملفات محفوظة على استضافتك في SiteGround خارج مجلد الموقع، ولا تُحذف عند التحديث. باقتك تتسع لنحو 40 جيجا؛ الفيديو هو الأكثر استهلاكاً (دقيقة تقريباً = 30-100 ميجا).</p>
     </section>
   )
 }

@@ -32,20 +32,22 @@ export interface AttRow { worker_id: number; name: string; profession: string; p
 export interface Report {
   id: number; project_id: number; project: string; date: string; weather: string | null; work_done: string; next_plan: string | null
   equipment: string | null; materials: string | null; obstacles: string | null; progress: number | null; author: string | null
-  present: number; absent: number
+  present: number; absent: number; media?: import('./media').MediaFile[]
 }
 export type Severity = 'low' | 'medium' | 'high' | 'critical'
 export interface Issue {
   id: number; project_id: number; project: string; title: string; description: string | null; category: string; severity: Severity
   status: 'open' | 'in_progress' | 'closed'; assignee: string | null; reporter: string | null; due_at: string | null
-  created_at: string; resolution: string | null; overdue: number
+  created_at: string; resolution: string | null; overdue: number; media?: import('./media').MediaFile[]
 }
 export interface Worker {
   id: number; name: string; iqama_no: string; iqama_expiry: string; nationality: string; profession: string; phone: string | null
   wage_type: 'daily' | 'monthly'; wage: number; project_id: number | null; project: string | null; location_kind?: string | null; subcontractor: string | null; active: number
   days_present: number; days_absent: number; iqama_soon: number
+  photo?: string | null; today?: AttStatus | null
 }
 export interface WorkerDetail extends Worker {
+  media?: import('./media').MediaFile[]
   attendance: { date: string; status: AttStatus; check_in: string | null; overtime_hours: number }[]
   history: { from_date: string; to_date: string | null; project: string }[]
 }
@@ -79,6 +81,7 @@ export async function loadSession() {
   return { server, token, user: raw ? (JSON.parse(raw) as User) : null }
 }
 export const getServer = () => server
+export const getToken = () => token
 /** A download link that opens in the phone's browser (it cannot send headers, so the token rides along). */
 export const fileUrl = (path: string) => `${server}${path}${path.includes('?') ? '&' : '?'}token=${encodeURIComponent(token ?? '')}`
 export const normalizeServer = (url: string) => {

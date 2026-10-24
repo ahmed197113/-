@@ -23,7 +23,8 @@ export default function Attendance() {
   const toast = useToast()
   const { send, queue } = useSync()
   const meta = useData<Meta>('/api/meta')
-  const projects = meta.data?.projects ?? []
+  // Real projects first, the factory last.
+  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number(a.kind === 'factory') - Number(b.kind === 'factory'))
   const [projectId, setProjectId] = useState<number | null>(null)
   const [date, setDate] = useState(today())
   const [q, setQ] = useState('')

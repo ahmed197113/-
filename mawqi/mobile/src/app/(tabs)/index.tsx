@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { router } from 'expo-router'
 import { fmt, longDate, sar, today, type Alert, type Dashboard, type ProjectRow } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useData, useSync } from '../../lib/sync'
@@ -44,6 +45,7 @@ function Content({ d }: { d: Dashboard }) {
         <Kpi icon="warning" label="بلاغات مفتوحة" value={fmt(c.openIssues)} color={C.amber} />
         <Kpi icon="cash" label="تكلفة اليوم" value={fmt(c.costToday)} unit="ر.س" color={C.navy} />
       </View>
+      <Summary d={d} />
       <Alerts alerts={d.alerts} />
       <T w="black" style={s.h2}>المشاريع</T>
       {d.projects.length ? d.projects.map((p) => <ProjectCard key={p.id} p={p} />) : (
@@ -108,9 +110,13 @@ function ProjectCard({ p }: { p: ProjectRow }) {
   const ratio = p.present / planned
   const short = ratio < 0.8
   return (
+    <Pressable onPress={() => router.push(`/projects/${p.id}`)} style={({ pressed }) => [pressed && { opacity: 0.85 }]} accessibilityRole="button">
     <Card style={{ gap: 10 }}>
+      <Row>
+        <T w="black" style={{ fontSize: 18, color: C.navy, flex: 1 }}>{p.name}</T>
+        <Ionicons name="chevron-back" size={22} color={C.muted} />
+      </Row>
       <View>
-        <T w="black" style={{ fontSize: 18, color: C.navy }}>{p.name}</T>
         {!!(p.city || p.supervisor) && <T style={{ fontSize: 14, color: C.muted }}>{[p.city, p.supervisor].filter(Boolean).join(' · ')}</T>}
       </View>
       <Row style={{ justifyContent: 'space-between' }}>
@@ -128,6 +134,34 @@ function ProjectCard({ p }: { p: ProjectRow }) {
         <T style={s.stat}>بلاغات <T w="bold" style={s.stat}>{fmt(p.open_issues)}</T></T>
         <T style={s.stat}>اليوم <T w="bold" style={s.stat}>{sar(p.cost_today)}</T></T>
       </Row>
+    </Card>
+    </Pressable>
+  )
+}
+
+/** The day in plain sentences. */
+function Summary({ d }: { d: Dashboard }) {
+  const c = d.cards
+  if (!c.totalWorkers && !d.projects.length) return null
+  const rate = c.totalWorkers ? Math.round((c.presentToday / c.totalWorkers) * 100) : 0
+  const short = d.projects.filter((p) => p.present < p.planned_workers * 0.8)
+  const overdue = d.alerts.filter((a) => a.type === 'overdue_issue').length
+  const lines: { color: string; text: string }[] = []
+  if (c.totalWorkers) lines.push({ color: rate >= 85 ? C.good : rate >= 70 ? C.late : C.bad, text: `حضر ${fmt(c.presentToday)} من ${fmt(c.totalWorkers)} عامل (${rate}%)، وغاب ${fmt(c.absentToday)}.` })
+  if (c.notRecorded) lines.push({ color: C.late, text: `لم يُسجَّل حضور ${fmt(c.notRecorded)} عامل بعد.` })
+  if (short.length) lines.push({ color: C.bad, text: `نقص عمالة في ${short.map((p) => p.name).join('، ')}.` })
+  if (overdue) lines.push({ color: C.bad, text: `${fmt(overdue)} بلاغ متأخر يحتاج متابعة.` })
+  if (c.totalWorkers) lines.push({ color: C.navy, text: `تكلفة العمالة اليوم ${sar(c.costToday)} — الشهر ${sar(c.costMonth)}.` })
+  if (c.totalWorkers && !short.length && !overdue) lines.push({ color: C.good, text: 'كل المواقع بعمالة كافية ولا بلاغات متأخرة 👍' })
+  return (
+    <Card style={{ gap: 8 }}>
+      <T w="black" style={{ fontSize: 18, color: C.navy }}>ملخص اليوم</T>
+      {lines.map((l, i) => (
+        <Row key={i} style={{ alignItems: 'flex-start', gap: 10 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: l.color, marginTop: 9 }} />
+          <T style={{ flex: 1, lineHeight: 26 }}>{l.text}</T>
+        </Row>
+      ))}
     </Card>
   )
 }
