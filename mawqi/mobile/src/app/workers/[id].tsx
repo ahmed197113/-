@@ -88,18 +88,18 @@ export default function WorkerCard() {
           <Card style={{ gap: 2 }}>
             <Info icon="business" label="الموقع الحالي" value={w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'} />
             <Info icon="card" label="رقم الإقامة" value={w.iqama_no} />
-            <Info icon="calendar" label="انتهاء الإقامة" value={w.iqama_expiry} />
+            <Info icon="calendar" label="انتهاء الإقامة" value={w.iqama_expiry.startsWith('9999') ? 'غير محدد' : w.iqama_expiry} />
             <Info icon="flag" label="الجنسية" value={w.nationality} />
             {!!w.phone && <Info icon="call" label="الجوال" value={w.phone} />}
             {!!w.subcontractor && <Info icon="people" label="مقاول الباطن" value={w.subcontractor} />}
             <Info icon="cash" label="الأجر" value={`${sar(w.wage)} ${w.wage_type === 'daily' ? 'يومياً' : 'شهرياً'}`} />
           </Card>
           <Card style={{ gap: 8 }}>
-            <T w="black" style={{ fontSize: 18, color: C.navy }}>آخر الحضور</T>
+            <T w="black" style={{ fontSize: 18, color: C.navy }}>أين عمل كل يوم</T>
             {month.length ? month.slice(0, 14).map((a) => (
               <Row key={a.date} style={s.att}>
                 <View style={[s.dot, { backgroundColor: ST[a.status].color }]} />
-                <T style={{ flex: 1 }}>{shortDate(a.date)}</T>
+                <View style={{ flex: 1 }}><T>{shortDate(a.date)}</T>{!!a.project && <T style={{ color: C.muted, fontSize: 13 }}>{a.project}</T>}</View>
                 <T w="bold" style={{ color: ST[a.status].color }}>{ST[a.status].label}{a.overtime_hours ? ` +${a.overtime_hours} س` : ''}</T>
               </Row>
             )) : <T style={{ color: C.muted }}>لا يوجد حضور مسجل بعد</T>}
@@ -120,7 +120,7 @@ export default function WorkerCard() {
           {can('delete') && <Button label="حذف العامل" icon="trash" kind="danger" onPress={remove} />}
           <Sheet visible={moving} title={`أين يعمل ${w.name}؟`} onClose={() => setMoving(false)}>
             <T style={{ color: C.muted }}>الموقع الحالي: {w.project ?? 'غير موزّع'}</T>
-            {(meta.data?.projects ?? []).filter((p) => p.status === 'active').map((p) => (
+            {(meta.data?.places ?? (meta.data?.projects ?? []).filter((p) => p.status === 'active')).map((p) => (
               <Pressable key={p.id} disabled={busy} onPress={() => move(p.id, p.name)} style={[s.place, w.project_id === p.id && s.placeOn]}>
                 <T style={{ fontSize: 24 }}>{p.kind === 'factory' ? '🏭' : '🏗️'}</T>
                 <T w="bold" style={{ flex: 1, fontSize: 17 }}>{p.name}</T>

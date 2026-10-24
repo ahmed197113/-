@@ -24,7 +24,7 @@ export interface Dashboard {
   projects: ProjectRow[]
   alerts: Alert[]
 }
-export interface Meta { projects: { id: number; name: string; status: string; kind?: string }[]; users: { id: number; name: string; role: Role; active: number }[] }
+export interface Meta { places?: { id: number; name: string; kind: string }[]; projects: { id: number; name: string; status: string; kind?: string }[]; users: { id: number; name: string; role: Role; active: number }[] }
 
 export type AttStatus = 'present' | 'late' | 'overtime' | 'absent' | 'leave'
 export interface AttRow { worker_id: number; name: string; profession: string; project_id: number; project: string; status: AttStatus | null; check_in: string | null; check_out: string | null; overtime_hours: number | null }
@@ -48,7 +48,7 @@ export interface Worker {
 }
 export interface WorkerDetail extends Worker {
   media?: import('./media').MediaFile[]
-  attendance: { date: string; status: AttStatus; check_in: string | null; overtime_hours: number }[]
+  attendance: { date: string; status: AttStatus; check_in: string | null; overtime_hours: number; project?: string | null }[]
   history: { from_date: string; to_date: string | null; project: string }[]
 }
 export interface Invoice {

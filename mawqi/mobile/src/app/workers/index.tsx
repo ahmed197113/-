@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Image, Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import type { AttStatus, Worker } from '../../lib/api'
+import { api, type AttStatus, type Meta, type Worker } from '../../lib/api'
+import { useAuth } from '../../lib/auth'
+import { useToast } from '../../components/Toast'
 import { mediaUri } from '../../lib/media'
-import { useData } from '../../lib/sync'
+import { useData, useSync } from '../../lib/sync'
 import { AppScreen } from '../../components/AppScreen'
 import { iqamaState } from '../../components/iqama'
-import { Badge, C, Chip, Empty, ErrorBox, Header, Loading, Row, Search, T } from '../../components/ui'
+import { Badge, Button, C, Chip, Empty, ErrorBox, Field, Header, Loading, Picker, Row, Search, Sheet, T } from '../../components/ui'
 
 const TODAY: Record<AttStatus, { label: string; color: string }> = {
   present: { label: 'حاضر', color: C.good }, late: { label: 'متأخر', color: C.late }, overtime: { label: 'إضافي', color: C.over },
@@ -19,6 +21,8 @@ export default function Workers() {
   const { data, error, loading, refreshing, refresh } = useData<Worker[]>('/api/workers?active=1')
   const [q, setQ] = useState('')
   const [onlyIqama, setOnlyIqama] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const { can } = useAuth()
 
   const expiring = (data ?? []).filter((w) => iqamaState(w.iqama_expiry)).length
   const sections = useMemo(() => {
@@ -42,7 +46,7 @@ export default function Workers() {
   }, [data, q, onlyIqama])
 
   return (
-    <AppScreen scroll={false} header={<Header title="العمال" sub={data ? `${data.length} عامل · موزعون على ${sections.length} موقع` : undefined} onBack={() => router.back()} />}>
+    <AppScreen scroll={false} footer={can('workers') ? <Button label="إضافة عامل" icon="person-add" kind="accent" onPress={() => setAdding(true)} /> : undefined} header={<Header title="العمال" sub={data ? `${data.length} عامل · موزعون على ${sections.length} موقع` : undefined} onBack={() => router.back()} />}>
       <SectionList
         sections={sections}
         keyExtractor={(w) => String(w.id)}
@@ -84,14 +88,65 @@ export default function Workers() {
               <View style={{ flex: 1, gap: 2 }}>
                 <T w="bold" style={{ fontSize: 17 }} numberOfLines={1}>{w.name}</T>
                 <T style={{ color: C.muted, fontSize: 14 }} numberOfLines={1}>{w.profession}{st ? ` · ` : ''}{st && <T w="bold" style={{ color: st.color, fontSize: 14 }}>{st.label}</T>}</T>
-                {iq && <View style={{ alignSelf: 'flex-start', marginTop: 4 }}><Badge label={`${iq.label} ${w.iqama_expiry}`} color={iq.color} bg={iq.bg} /></View>}
+                {iq && !w.iqama_expiry.startsWith('9999') && <View style={{ alignSelf: 'flex-start', marginTop: 4 }}><Badge label={`${iq.label} ${w.iqama_expiry}`} color={iq.color} bg={iq.bg} /></View>}
               </View>
               <Ionicons name="chevron-back" size={22} color={C.muted} />
             </Pressable>
           )
         }}
       />
+      <NewWorker visible={adding} onClose={() => setAdding(false)} onDone={refresh} />
     </AppScreen>
+  )
+}
+
+const EMPTY = { name: '', iqama_no: '', iqama_expiry: '', nationality: '', profession: '', phone: '', wage: '' }
+
+function NewWorker({ visible, onClose, onDone }: { visible: boolean; onClose: () => void; onDone: () => void }) {
+  const toast = useToast()
+  const { poke } = useSync()
+  const meta = useData<Meta>(visible ? '/api/meta' : null)
+  const [f, setF] = useState(EMPTY)
+  const [wageType, setWageType] = useState<'daily' | 'monthly'>('daily')
+  const [place, setPlace] = useState<number | 0>(0)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { if (visible) { setF(EMPTY); setWageType('daily'); setPlace(0) } }, [visible])
+  const set = (k: keyof typeof EMPTY) => (v: string) => setF((x) => ({ ...x, [k]: v }))
+  const submit = async () => {
+    if (!f.name.trim() || !f.iqama_no.trim()) return toast('اكتب الاسم ورقم الإقامة', 'error')
+    const exp = f.iqama_expiry.trim()
+    if (exp && !/^\d{4}-\d{2}-\d{2}$/.test(exp)) return toast('اكتب تاريخ الانتهاء بالشكل 2027-05-30', 'error')
+    setBusy(true)
+    try {
+      await api('/api/workers', { method: 'POST', body: JSON.stringify({
+        ...f, iqama_expiry: exp || '9999-12-31', nationality: f.nationality.trim() || 'غير محدد', profession: f.profession.trim() || 'عامل',
+        wage_type: wageType, wage: Number(f.wage) || 1, project_id: place || null,
+      }) })
+      toast(`تمت إضافة ${f.name.trim()}`)
+      onClose(); onDone(); poke()
+    } catch (e) {
+      toast((e as Error).message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+  const places = meta.data?.places ?? []
+  return (
+    <Sheet visible={visible} title="عامل جديد" onClose={onClose}>
+      <Field label="الاسم *" value={f.name} onChangeText={set('name')} autoFocus />
+      <Field label="رقم الإقامة *" value={f.iqama_no} onChangeText={set('iqama_no')} keyboardType="number-pad" ltr />
+      <Field label="انتهاء الإقامة" value={f.iqama_expiry} onChangeText={set('iqama_expiry')} placeholder="2027-05-30" ltr />
+      <Row style={{ gap: 10, alignItems: 'flex-start' }}>
+        <View style={{ flex: 1 }}><Field label="المهنة" value={f.profession} onChangeText={set('profession')} placeholder="نجار" /></View>
+        <View style={{ flex: 1 }}><Field label="الجنسية" value={f.nationality} onChangeText={set('nationality')} placeholder="مصري" /></View>
+      </Row>
+      <Field label="الجوال" value={f.phone} onChangeText={set('phone')} keyboardType="phone-pad" ltr />
+      <Picker value={wageType} onChange={setWageType} options={[{ value: 'daily', label: 'أجر يومي' }, { value: 'monthly', label: 'راتب شهري' }]} />
+      <Field label={wageType === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'} value={f.wage} onChangeText={set('wage')} keyboardType="number-pad" />
+      <T w="semibold" style={{ color: C.ink2 }}>أين يعمل؟</T>
+      <Picker value={place} onChange={setPlace} options={[...places.map((p) => ({ value: p.id, label: `${p.kind === 'factory' ? '🏭 ' : ''}${p.name}` })), { value: 0, label: 'غير موزّع' }]} />
+      <Button label="حفظ العامل" icon="checkmark-circle" kind="accent" busy={busy} onPress={submit} />
+    </Sheet>
   )
 }
 

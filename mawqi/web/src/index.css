@@ -672,3 +672,17 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
   .report-page { max-width: none; }
   .lightbox, .mdel { display: none !important; }
 }
+.import { display: flex; flex-direction: column; gap: 14px; }
+.steps { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 6px; }
+.steps li .btn { margin-inline-start: 8px; }
+.import-src { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; }
+.drop { border: 2px dashed #d5ccc3; border-radius: 14px; background: #fbfaf8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px; cursor: pointer; color: var(--amber); font: inherit; }
+.drop b { color: var(--ink); } .drop small { color: var(--muted); }
+.drop:hover { border-color: var(--amber); }
+.paste { display: flex; flex-direction: column; gap: 6px; }
+.paste textarea { border: 1px solid var(--line); border-radius: 12px; padding: 10px; font: inherit; font-size: 14px; resize: vertical; }
+.import-preview { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+.import-preview td, .import-preview th { font-size: 13px; padding: 6px 8px; white-space: nowrap; }
+.bad-row td { background: #fff3f3; }
+.moves li { padding: 7px 4px; font-size: 14px; }
+@media (max-width: 860px) { .import-src { grid-template-columns: 1fr; } }

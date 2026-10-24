@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
+import ImportWorkers from './ImportWorkers'
 import { ACCEPT_ALL, Attachments, PickFiles, src, uploadAll, useCanDeleteFile, type MediaFile } from '../media'
 import {
   ATT, Badge, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, Tabs, today, addDays, toast,
@@ -15,7 +16,7 @@ interface Worker {
 }
 interface WorkerDetail extends Worker {
   history: { from_date: string; to_date: string | null; project: string }[]
-  attendance: { date: string; status: string; check_in: string | null; check_out: string | null; overtime_hours: number }[]
+  attendance: { date: string; status: string; check_in: string | null; check_out: string | null; overtime_hours: number; project: string | null }[]
   media: MediaFile[]
 }
 
@@ -30,6 +31,7 @@ export default function WorkersPage() {
   const [editing, setEditing] = useState<Partial<Worker> | null>(null)
   const [viewing, setViewing] = useState<number | null>(null)
   const [moving, setMoving] = useState<Worker | null>(null)
+  const [importing, setImporting] = useState(false)
   const [view, setView] = useState<'board' | 'list'>(() => { try { return (localStorage.getItem('mawqi.workersView') as 'board' | 'list') || 'board' } catch { return 'board' } })
   const pickView = (v: 'board' | 'list') => { setView(v); try { localStorage.setItem('mawqi.workersView', v) } catch { /* ignore */ } }
   const can = useCan()
@@ -47,6 +49,7 @@ export default function WorkersPage() {
     <div className="page">
       <PageHead title="العمال" sub={`${fmt(data.length)} عامل`}>
         <button className="btn" onClick={() => download(`/api/export/workers${project ? `?project=${project}` : ''}`)}><Icon name="download" size={18} /> Excel</button>
+        {can('workers') && <button className="btn" onClick={() => setImporting(true)}><Icon name="exports" size={18} /> استيراد من Excel</button>}
         {can('workers') && <button className="btn primary" onClick={() => setEditing({ project_id: project ? Number(project) : null })}><Icon name="plus" size={18} /> عامل جديد</button>}
       </PageHead>
 
@@ -82,7 +85,7 @@ export default function WorkersPage() {
                         {can('moveWorkers') && <button className="btn sm" onClick={(e) => { e.stopPropagation(); setMoving(w) }}>نقل</button>}
                       </div>
                     </td>
-                    <td><span className="mono">{w.iqama_no}</span><small className={w.iqama_soon ? 'bad-t' : 'muted'}>تنتهي {w.iqama_expiry}</small></td>
+                    <td><span className="mono">{w.iqama_no}</span><small className={w.iqama_soon ? 'bad-t' : 'muted'}>{w.iqama_expiry.startsWith("9999") ? "الانتهاء غير محدد" : `تنتهي ${w.iqama_expiry}`}</small></td>
                     <td className="num">{fmt(w.wage)} <small className="muted">{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></td>
                     <td><span className="good-t">{w.days_present} يوم</span>{w.days_absent > 0 && <small className="bad-t"> · غياب {w.days_absent}</small>}</td>
                     <td>{can('workers') && <button className="icon-btn dark" onClick={(e) => { e.stopPropagation(); setEditing(w) }} title="تعديل"><Icon name="edit" size={18} /></button>}<DeleteButton icon path={`/api/workers/${w.id}`} what={`العامل «${w.name}» وسجل حضوره`} /></td>
@@ -96,6 +99,7 @@ export default function WorkersPage() {
 
       {editing && <WorkerForm worker={editing} onClose={() => setEditing(null)} />}
       {moving && <MoveWorker worker={moving} onClose={() => setMoving(null)} />}
+      {importing && <ImportWorkers onClose={() => setImporting(false)} />}
       {viewing && <WorkerView id={viewing} onClose={() => setViewing(null)} onEdit={(w) => { setViewing(null); setEditing(w) }} />}
     </div>
   )
@@ -195,7 +199,7 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
           <div className="facts">
             <div><span>المهنة</span><b>{w.profession}</b></div>
             <div><span>الجنسية</span><b>{w.nationality}</b></div>
-            <div><span>الإقامة</span><b className="mono">{w.iqama_no}</b><small>تنتهي {w.iqama_expiry}</small></div>
+            <div><span>الإقامة</span><b className="mono">{w.iqama_no}</b><small>{w.iqama_expiry.startsWith("9999") ? "الانتهاء غير محدد" : `تنتهي ${w.iqama_expiry}`}</small></div>
             <div><span>الأجر</span><b>{fmt(w.wage)} ر.س</b><small>{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></div>
             <div><span>المشروع</span><b>{w.project ?? '—'}</b></div>
             <div><span>الجهة</span><b>{w.subcontractor ?? 'عمالة الشركة'}</b></div>
@@ -209,11 +213,17 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
           <div className="days">
             {w.attendance.length === 0 && <p className="muted">لا يوجد حضور مسجل.</p>}
             {[...w.attendance].reverse().map((a) => (
-              <span key={a.date} className={`day d-${ATT[a.status].tone}`} title={`${a.date} — ${ATT[a.status].label}${a.check_in ? ` ${a.check_in}` : ''}`}>
+              <span key={a.date} className={`day d-${ATT[a.status].tone}`} title={`${a.date} — ${ATT[a.status].label}${a.project ? ` — ${a.project}` : ''}${a.check_in ? ` ${a.check_in}` : ''}`}>
                 {ATT[a.status].short}<small>{Number(a.date.slice(8))}</small>
               </span>
             ))}
           </div>
+          <h3>أين عمل كل يوم (آخر 14 يوماً)</h3>
+          <ul className="list moves">
+            {w.attendance.slice(0, 14).map((a) => (
+              <li key={a.date}><b>{a.date}</b><span>{a.project ?? '—'}</span><span className="grow" /><span className={`badge b-${ATT[a.status].tone}`}>{ATT[a.status].label}</span></li>
+            ))}
+          </ul>
           <h3>سجل التنقل بين المشاريع</h3>
           <ul className="list">
             {w.history.map((h, i) => <li key={i}><strong>{h.project}</strong><span className="grow" /><small>{shortDate(h.from_date)} ← {h.to_date ? shortDate(h.to_date) : 'حتى الآن'}</small></li>)}
@@ -233,7 +243,7 @@ function MoveWorker({ worker, onClose }: { worker: Worker; onClose: () => void }
     try { await send(`/api/workers/${worker.id}/move`, 'POST', { project_id: target ? Number(target) : null }, `تم نقل ${worker.name}`); onClose() }
     catch (e) { toast((e as Error).message, 'err') } finally { setBusy(false) }
   }
-  const places = meta?.projects.filter((p) => p.status === 'active') ?? []
+  const places = meta?.places ?? meta?.projects.filter((p) => p.status === 'active') ?? []
   return (
     <Modal title={`أين يعمل ${worker.name}؟`} onClose={onClose} footer={
       <>
@@ -264,7 +274,7 @@ function Avatar({ w }: { w: Pick<Worker, 'name' | 'photo' | 'today'> }) {
 /** Every location as a column: the factory, each project, and the unassigned — with today's attendance at a glance. */
 function Board({ workers, onOpen, onMove }: { workers: Worker[]; onOpen: (id: number) => void; onMove?: (w: Worker) => void }) {
   const meta = useMeta()
-  const places = [...(meta?.projects ?? []).filter((p) => p.status === 'active')]
+  const places = [...(meta?.places ?? (meta?.projects ?? []).filter((p) => p.status === 'active'))]
   const groups = [
     ...places.map((p) => ({ key: String(p.id), name: p.name, icon: p.kind === 'factory' ? '🏭' : '🏗️', list: workers.filter((w) => w.project_id === p.id) })),
     // Workers in projects outside my list still show, grouped by their project name.

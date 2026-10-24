@@ -53,6 +53,8 @@ api.get('/meta', (req, res) => {
     roles: ROLE_LABELS,
     users: db.prepare('SELECT id, name, role, active FROM users ORDER BY name').all(),
     projects: db.prepare(`SELECT id, name, status, kind FROM projects WHERE ${inList('id', scope)} ORDER BY kind = 'factory' DESC, name`).all(),
+    // Every active site a worker can be sent to — engineers move workers freely between all projects.
+    places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ORDER BY kind = 'factory' DESC, name`).all(),
     subcontractors: db.prepare('SELECT id, name FROM subcontractors ORDER BY name').all(),
     settings: { companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), absenceCutoff: getSetting('absence_cutoff', '09:00') },
   });
@@ -270,7 +272,8 @@ api.get('/workers/:id', (req, res) => {
   if (!w) fail(404, 'العامل غير موجود');
   w.history = db.prepare(`SELECT wa.from_date, wa.to_date, p.name AS project FROM worker_assignments wa JOIN projects p ON p.id = wa.project_id
     WHERE wa.worker_id = ? ORDER BY wa.from_date DESC`).all(w.id);
-  w.attendance = db.prepare(`SELECT date, status, check_in, check_out, overtime_hours FROM attendance WHERE worker_id = ? ORDER BY date DESC LIMIT 31`).all(w.id);
+  w.attendance = db.prepare(`SELECT a.date, a.status, a.check_in, a.check_out, a.overtime_hours, p.name AS project FROM attendance a LEFT JOIN projects p ON p.id = a.project_id
+    WHERE a.worker_id = ? ORDER BY a.date DESC LIMIT 62`).all(w.id);
   w.media = filesFor('worker', [w.id])[w.id] || [];
   const ph = [...w.media].reverse().find((m) => m.tag === 'photo');
   w.photo = ph ? ph.url : null;
@@ -331,7 +334,14 @@ api.post('/workers/:id/move', need('moveWorkers'), (req, res) => {
   const id = Number(req.params.id);
   const cur = db.prepare('SELECT id, name, project_id FROM workers WHERE id = ? AND active = 1').get(id);
   if (!cur) fail(404, 'العامل غير موجود');
-  const target = req.body?.project_id ? ensureProject(req, req.body.project_id) : null;
+  // Engineers and supervisors may send a worker to any active project or the factory, so workers can be followed day by day.
+  let target = null;
+  if (req.body?.project_id) {
+    const p = db.prepare(`SELECT id, status FROM projects WHERE id = ?`).get(Number(req.body.project_id));
+    if (!p) fail(400, 'المشروع غير موجود');
+    if (p.status !== 'active') fail(400, 'هذا المشروع غير نشط');
+    target = p.id;
+  }
   if (target === cur.project_id) return res.json({ ok: true });
   tx(() => {
     db.prepare('UPDATE workers SET project_id = ? WHERE id = ?').run(target, id);
@@ -341,6 +351,79 @@ api.post('/workers/:id/move', need('moveWorkers'), (req, res) => {
   changed(req, 'workers', target ?? cur.project_id);
   if (cur.project_id && cur.project_id !== target) changed(req, 'workers', cur.project_id);
   res.json({ ok: true });
+});
+
+/**
+ * Add many workers at once (from Excel). Rows are matched by iqama number: new ones are added,
+ * existing ones updated. Projects and subcontractors are matched by name (new subcontractors are created).
+ */
+api.post('/workers/import', need('workers'), (req, res) => {
+  const rows = Array.isArray(req.body?.rows) ? req.body.rows.slice(0, 3000) : [];
+  if (!rows.length) fail(400, 'لا توجد صفوف للاستيراد');
+  const places = db.prepare('SELECT id, name FROM projects').all();
+  const findPlace = (name) => {
+    const n = String(name || '').trim();
+    if (!n) return null;
+    if (/^(المصنع|مصنع|الورشة|factory)$/i.test(n)) return factoryId();
+    return places.find((p) => p.name.trim() === n)?.id ?? fail(400, `المشروع «${n}» غير موجود`);
+  };
+  const subs = new Map(db.prepare('SELECT id, name FROM subcontractors').all().map((s) => [s.name.trim(), s.id]));
+  const findSub = (name) => {
+    const n = String(name || '').trim();
+    if (!n || /^(الشركة|عمالة الشركة)$/.test(n)) return null;
+    if (!subs.has(n)) subs.set(n, Number(db.prepare('INSERT INTO subcontractors (name) VALUES (?)').run(n).lastInsertRowid));
+    return subs.get(n);
+  };
+  const normDate = (v) => {
+    const s = String(v ?? '').trim();
+    if (!s) return '9999-12-31';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    fail(400, `تاريخ غير مفهوم «${s}» — استخدم 2027-05-30 أو 30/05/2027`);
+  };
+  const scope = scopeOf(req);
+  const out = { added: 0, updated: 0, errors: [] };
+  const getByIqama = db.prepare('SELECT id, project_id FROM workers WHERE iqama_no = ?');
+  const ins = db.prepare(`INSERT INTO workers (name, iqama_no, iqama_expiry, nationality, profession, phone, wage_type, wage, subcontractor_id, project_id, active, qr_token)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`);
+  // Blank cells keep what is already saved for an existing worker.
+  const upd = db.prepare(`UPDATE workers SET name=?, iqama_expiry=COALESCE(?, iqama_expiry), nationality=COALESCE(?, nationality), profession=COALESCE(?, profession),
+    phone=COALESCE(?, phone), wage_type=COALESCE(?, wage_type), wage=COALESCE(?, wage), subcontractor_id=COALESCE(?, subcontractor_id), project_id=COALESCE(?, project_id), active=1 WHERE id=?`);
+  const assign = db.prepare('INSERT INTO worker_assignments (worker_id, project_id, from_date) VALUES (?, ?, ?)');
+  tx(() => {
+    rows.forEach((r, i) => {
+      try {
+        const name = required(r.name, 'الاسم');
+        const iqama = String(r.iqama_no ?? '').replace(/\s/g, '') || fail(400, 'رقم الإقامة مطلوب');
+        const project = findPlace(r.project);
+        if (project && scope !== null && !scope.includes(project)) fail(403, 'المشروع خارج صلاحياتك');
+        const wageTxt = String(r.wage_type ?? '').trim();
+        const wageType = /شهر|month/i.test(wageTxt) ? 'monthly' : 'daily';
+        const wageNum = String(r.wage ?? '').replace(/[^\d.]/g, '');
+        const sub = findSub(r.subcontractor);
+        const cur = getByIqama.get(iqama);
+        if (cur) {
+          upd.run(name, String(r.iqama_expiry ?? '').trim() ? normDate(r.iqama_expiry) : null, str(r.nationality), str(r.profession), str(r.phone),
+            wageTxt ? wageType : null, wageNum ? Number(wageNum) : null, sub, project, cur.id);
+          if (project && project !== cur.project_id) {
+            db.prepare('UPDATE worker_assignments SET to_date = ? WHERE worker_id = ? AND to_date IS NULL').run(addDays(todayStr(), -1), cur.id);
+            assign.run(cur.id, project, todayStr());
+          }
+          out.updated++;
+        } else {
+          const id = Number(ins.run(name, iqama, normDate(r.iqama_expiry), str(r.nationality) ?? 'غير محدد', str(r.profession) ?? 'عامل', str(r.phone),
+            wageType, wageNum ? Number(wageNum) : 0, sub, project, randomUUID()).lastInsertRowid);
+          if (project) assign.run(id, project, todayStr());
+          out.added++;
+        }
+      } catch (e) {
+        out.errors.push({ row: i + 1, error: e.message });
+      }
+    });
+  });
+  changed(req, 'workers');
+  res.json(out);
 });
 
 // ---------- attendance ----------
