@@ -21,7 +21,7 @@ interface WorkerDetail extends Worker {
 }
 
 const NATIONALITIES = ['مصري', 'هندي', 'باكستاني', 'بنجلاديشي', 'نيبالي', 'يمني', 'سوداني', 'فلبيني', 'سعودي', 'أخرى']
-const PROFESSIONS = ['نجار مسلح', 'حداد مسلح', 'بنّاء', 'كهربائي', 'سباك', 'دهان', 'مبلط', 'لحام', 'مشغل معدات', 'عامل عادي', 'فني تكييف', 'سائق']
+const PROFESSIONS = ['مهندس موقع', 'مهندس مدني', 'مهندس كهرباء', 'مشرف موقع', 'مراقب', 'فورمن', 'نجار مسلح', 'حداد مسلح', 'بنّاء', 'كهربائي', 'سباك', 'دهان', 'مبلط', 'لحام', 'مشغل معدات', 'عامل عادي', 'فني تكييف', 'سائق']
 
 export default function WorkersPage() {
   const [project, setProject] = useState('')
@@ -143,9 +143,9 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
             <input list="nat-list" value={v.nationality} onChange={(e) => set({ nationality: e.target.value })} />
             <datalist id="nat-list">{NATIONALITIES.map((n) => <option key={n} value={n} />)}</datalist>
           </Field>
-          <Field label="المهنة">
-            <input list="prof-list" value={v.profession} onChange={(e) => set({ profession: e.target.value })} />
-            <datalist id="prof-list">{PROFESSIONS.map((n) => <option key={n} value={n} />)}</datalist>
+          <Field label="المهنة / الوظيفة" hint="اختر من القائمة أو اكتب أي مهنة جديدة">
+            <input list="prof-list" value={v.profession} onChange={(e) => set({ profession: e.target.value })} placeholder="مثال: مهندس موقع" />
+            <datalist id="prof-list">{[...new Set([...(meta?.professions ?? []), ...PROFESSIONS])].map((n) => <option key={n} value={n} />)}</datalist>
           </Field>
           <Field label="نوع الأجر">
             <select value={v.wage_type} onChange={(e) => set({ wage_type: e.target.value as 'daily' | 'monthly' })}><option value="daily">يومي</option><option value="monthly">شهري</option></select>

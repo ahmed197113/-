@@ -37,6 +37,7 @@ export interface Meta {
   subcontractors: { id: number; name: string }[]
   settings: { companyName: string; absenceCutoff: string }
   places?: { id: number; name: string; kind: string }[]
+  professions?: string[]
 }
 export const useMeta = () => useLive<Meta>('/api/meta').data
 

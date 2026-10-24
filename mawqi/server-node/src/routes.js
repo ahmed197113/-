@@ -56,6 +56,8 @@ api.get('/meta', (req, res) => {
     // Every active site a worker can be sent to — engineers move workers freely between all projects.
     places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ORDER BY kind = 'factory' DESC, name`).all(),
     subcontractors: db.prepare('SELECT id, name FROM subcontractors ORDER BY name').all(),
+    // Every profession already used, so new ones typed once become suggestions for everyone.
+    professions: db.prepare(`SELECT profession AS name, COUNT(*) AS n FROM workers WHERE TRIM(profession) <> '' GROUP BY profession ORDER BY n DESC, profession`).all().map((r) => r.name),
     settings: { companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), absenceCutoff: getSetting('absence_cutoff', '09:00') },
   });
 });
