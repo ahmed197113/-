@@ -244,3 +244,18 @@ export function DeleteButton({ path, what, onDone = () => undefined, icon }: { p
   if (icon) return <button type="button" className="icon-btn dark del" title="حذف" aria-label="حذف" onClick={(e) => { e.stopPropagation(); go() }}><Icon name="trash" size={17} /></button>
   return <button type="button" className="btn ghost danger" onClick={go}><Icon name="trash" size={16} /> حذف</button>
 }
+
+/** Tap-to-toggle chips for choosing several people. */
+export function PickMany({ options, value, onChange, disabled, empty }: { options: { id: number; name: string }[]; value: number[]; onChange: (ids: number[]) => void; disabled?: boolean; empty?: string }) {
+  if (!options.length) return <small className="muted">{empty}</small>
+  const toggle = (id: number) => onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id])
+  return (
+    <div className="pick">
+      {options.map((o) => (
+        <button key={o.id} type="button" disabled={disabled} className={`pick-chip ${value.includes(o.id) ? 'on' : ''}`} onClick={() => toggle(o.id)} aria-pressed={value.includes(o.id)}>
+          {value.includes(o.id) && <Icon name="check" size={15} />} {o.name}
+        </button>
+      ))}
+    </div>
+  )
+}

@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { db, memberNames } from './db.js';
 import { addDays, nowTime, round, todayStr } from './util.js';
 
 const RATE = `(CASE w.wage_type WHEN 'daily' THEN w.wage ELSE w.wage / 30.0 END)`;
@@ -15,7 +15,7 @@ export function buildDashboard(scope) {
 
   const projects = db.prepare(`
     SELECT p.id, p.name, p.city, p.planned_workers, p.progress, p.start_date, p.end_date,
-      s.name AS supervisor, m.name AS manager,
+      ${memberNames('supervisor')} AS supervisor, ${memberNames('manager')} AS manager,
       (SELECT COUNT(*) FROM workers w WHERE w.project_id = p.id AND w.active = 1) AS assigned,
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date = $today AND a.status IN ('present','late','overtime')) AS present,
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date = $today AND a.status = 'absent') AS absent,
@@ -23,8 +23,6 @@ export function buildDashboard(scope) {
       (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date = $today) AS cost_today,
       (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date BETWEEN $monthStart AND $today) AS cost_month
     FROM projects p
-    LEFT JOIN users s ON s.id = p.supervisor_id
-    LEFT JOIN users m ON m.id = p.manager_id
     WHERE ${inList('p.id', scope)}
     ORDER BY p.id`).all({ $today: today, $monthStart: monthStart })
     .map((p) => ({ ...p, cost_today: round(p.cost_today), cost_month: round(p.cost_month) }));

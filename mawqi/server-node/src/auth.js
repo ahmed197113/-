@@ -69,6 +69,6 @@ export const isTop = (user) => user.role === 'admin' || user.role === 'sysadmin'
 
 export function projectScope(user) {
   if (['admin', 'sysadmin', 'accountant'].includes(user.role)) return null;
-  const col = user.role === 'project_manager' ? 'manager_id' : 'supervisor_id';
-  return db.prepare(`SELECT id FROM projects WHERE ${col} = ?`).all(user.id).map((r) => r.id);
+  const kind = user.role === 'project_manager' ? 'manager' : 'supervisor';
+  return db.prepare('SELECT project_id FROM project_members WHERE user_id = ? AND kind = ?').all(user.id, kind).map((r) => r.project_id);
 }

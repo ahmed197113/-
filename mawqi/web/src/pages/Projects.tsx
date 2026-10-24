@@ -3,14 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { compact, fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
 import {
-  ATT, Badge, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, Meter, PageHead, PROJECT_STATUS, Ring, Search, send, SEVERITY,
+  ATT, Badge, DeleteButton, PickMany, Empty, ErrorBox, Field, FormModal, inp, ISSUE_STATUS, Loading, Meter, PageHead, PROJECT_STATUS, Ring, Search, send, SEVERITY,
   Stat, Tabs, today, useCan, useData, useMeta,
 } from '../ui'
 
 export interface Project {
   id: number; name: string; city: string | null; client: string | null; contract_value: number
   lat: number; lng: number; radius_m: number; start_date: string; end_date: string; planned_workers: number; progress: number
-  manager_id: number | null; supervisor_id: number | null; status: string; supervisor: string | null; manager: string | null
+  manager_id: number | null; supervisor_id: number | null; manager_ids?: number[]; supervisor_ids?: number[]; status: string; supervisor: string | null; manager: string | null
   assigned: number; present: number; open_issues: number; cost_month: number; cost_total: number; last_report: string | null
 }
 
@@ -95,7 +95,7 @@ export function ProjectForm({ project, onClose, onDeleted }: { project: Partial<
   const initial = {
     name: project.name ?? '', city: project.city ?? '', client: project.client ?? '', contract_value: project.contract_value ?? '',
     start_date: project.start_date ?? today(), end_date: project.end_date ?? '', planned_workers: project.planned_workers ?? '',
-    progress: project.progress ?? 0, manager_id: project.manager_id ?? '', supervisor_id: project.supervisor_id ?? '', status: project.status ?? 'active',
+    progress: project.progress ?? 0, manager_ids: project.manager_ids ?? [] as number[], supervisor_ids: project.supervisor_ids ?? [] as number[], status: project.status ?? 'active',
     lat: project.lat ?? '', lng: project.lng ?? '', radius_m: project.radius_m ?? 300,
   }
   const users = (role: string) => meta?.users.filter((u) => u.role === role && u.active) ?? []
@@ -112,15 +112,11 @@ export function ProjectForm({ project, onClose, onDeleted }: { project: Partial<
           <Field label="تاريخ البداية">{inp(v, set, 'start_date', 'date')}</Field>
           <Field label="تاريخ النهاية">{inp(v, set, 'end_date', 'date')}</Field>
           <Field label="العمالة المخططة">{inp(v, set, 'planned_workers', 'number', { min: 1 })}</Field>
-          <Field label="مدير المشروع">
-            <select value={v.manager_id} disabled={!can('users')} onChange={(e) => set({ manager_id: e.target.value })}>
-              <option value="">—</option>{users('project_manager').concat(users('admin')).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+          <Field label="مديرو المشروع (يمكن اختيار أكثر من واحد)" span={3}>
+            <PickMany options={users('project_manager')} value={v.manager_ids} disabled={!can('users')} onChange={(ids) => set({ manager_ids: ids })} empty="لا يوجد مستخدمون بدور «مدير مشروع» — أضفهم من الإعدادات" />
           </Field>
-          <Field label="مشرف الموقع">
-            <select value={v.supervisor_id} onChange={(e) => set({ supervisor_id: e.target.value })}>
-              <option value="">—</option>{users('supervisor').map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+          <Field label="مشرفو الموقع (يمكن اختيار أكثر من واحد)" span={3}>
+            <PickMany options={users('supervisor')} value={v.supervisor_ids} onChange={(ids) => set({ supervisor_ids: ids })} empty="لا يوجد مستخدمون بدور «مشرف موقع» — أضفهم من الإعدادات" />
           </Field>
           <Field label="الحالة">
             <select value={v.status} onChange={(e) => set({ status: e.target.value })}>
@@ -167,6 +163,12 @@ export function ProjectDetailPage() {
         <DeleteButton path={`/api/projects/${p.id}`} what={`المشروع «${p.name}» وكل حضوره وبلاغاته وتقاريره ومستخلصاته`} onDone={() => nav('/projects')} />
       </PageHead>
 
+      {(p.manager || p.supervisor) && (
+        <div className="team">
+          {p.manager && <span><Icon name="user" size={16} /> مديرو المشروع: <b>{p.manager}</b></span>}
+          {p.supervisor && <span><Icon name="workers" size={16} /> المشرفون: <b>{p.supervisor}</b></span>}
+        </div>
+      )}
       <div className="hero">
         <Ring value={p.progress} size={120} label="إنجاز" />
         <div className="hero-bars">

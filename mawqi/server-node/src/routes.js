@@ -1,7 +1,7 @@
 // REST API for every section of موقعي. Mounted under /api after requireAuth.
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { db, getSetting, setSetting, tx } from './db.js';
+import { db, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
 import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
 import { addDays, round, todayStr, nowTime } from './util.js';
 
@@ -64,7 +64,7 @@ api.put('/me/password', (req, res) => {
 
 api.get('/users', need('users'), (_req, res) => {
   res.json(db.prepare(`SELECT u.id, u.name, u.username, u.role, u.phone, u.active,
-    (SELECT COUNT(*) FROM projects p WHERE p.manager_id = u.id OR p.supervisor_id = u.id) AS projects
+    (SELECT COUNT(DISTINCT pm.project_id) FROM project_members pm WHERE pm.user_id = u.id) AS projects
     FROM users u ORDER BY u.active DESC, u.role, u.name`).all());
 });
 
@@ -116,7 +116,7 @@ api.put('/settings', need('users'), (req, res) => {
 api.post('/admin/reset', need('users'), (req, res) => {
   if (String(req.body?.confirm || '') !== 'ابدأ') fail(400, 'اكتب كلمة «ابدأ» للتأكيد');
   tx(() => {
-    for (const t of ['direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
+    for (const t of ['project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
     db.prepare('DELETE FROM users WHERE id <> ?').run(req.user.id);
   });
   changed(req, 'all');
@@ -142,17 +142,25 @@ api.put('/subcontractors/:id', need('workers'), (req, res) => {
 
 // ---------- projects ----------
 const projectSelect = (where) => `
-  SELECT p.*, s.name AS supervisor, m.name AS manager,
+  SELECT p.*, ${memberNames('supervisor')} AS supervisor, ${memberNames('manager')} AS manager,
+    ${memberIds('manager')} AS manager_ids_csv, ${memberIds('supervisor')} AS supervisor_ids_csv,
     (SELECT COUNT(*) FROM workers w WHERE w.project_id = p.id AND w.active = 1) AS assigned,
     (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date = $today AND a.status IN ('present','late','overtime')) AS present,
     (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status <> 'closed') AS open_issues,
     (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date BETWEEN $monthStart AND $today) AS cost_month,
     (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id) AS cost_total,
     (SELECT MAX(date) FROM daily_reports d WHERE d.project_id = p.id) AS last_report
-  FROM projects p LEFT JOIN users s ON s.id = p.supervisor_id LEFT JOIN users m ON m.id = p.manager_id
+  FROM projects p
   WHERE ${where}`;
 const projectParams = () => { const today = todayStr(); return { $today: today, $monthStart: today.slice(0, 8) + '01' }; };
-const roundProject = (p) => ({ ...p, cost_month: round(p.cost_month), cost_total: round(p.cost_total) });
+const ids = (csv) => (csv ? String(csv).split(',').map(Number) : []);
+const roundProject = ({ manager_ids_csv, supervisor_ids_csv, ...p }) => ({
+  ...p, manager_ids: ids(manager_ids_csv), supervisor_ids: ids(supervisor_ids_csv), cost_month: round(p.cost_month), cost_total: round(p.cost_total),
+});
+const idList = (v, single) => {
+  const arr = Array.isArray(v) ? v : single ? [single] : [];
+  return [...new Set(arr.map(Number).filter((n) => n > 0))];
+};
 
 api.get('/projects', (req, res) => {
   const rows = db.prepare(projectSelect(inList('p.id', scopeOf(req))) + ' ORDER BY p.status, p.name').all(projectParams());
@@ -188,29 +196,38 @@ const projectInput = (b) => {
     contract_value: num(b.contract_value), lat: num(b.lat), lng: num(b.lng), radius_m: num(b.radius_m, 300),
     start_date: start, end_date: end, planned_workers: planned,
     progress: Math.min(100, Math.max(0, num(b.progress))),
-    manager_id: num(b.manager_id) || null, supervisor_id: num(b.supervisor_id) || null,
     status: ['active', 'paused', 'done'].includes(b.status) ? b.status : 'active',
   };
 };
 api.post('/projects', need('projectsCreate'), (req, res) => {
-  const p = projectInput(req.body || {});
-  const r = db.prepare(`INSERT INTO projects (name, city, client, contract_value, lat, lng, radius_m, start_date, end_date, planned_workers, progress, manager_id, supervisor_id, status)
-    VALUES ($name, $city, $client, $contract_value, $lat, $lng, $radius_m, $start_date, $end_date, $planned_workers, $progress, $manager_id, $supervisor_id, $status)`)
-    .run(Object.fromEntries(Object.entries(p).map(([k, v]) => [`$${k}`, v])));
-  changed(req, 'projects', Number(r.lastInsertRowid));
-  res.json({ id: Number(r.lastInsertRowid) });
+  const b = req.body || {};
+  const p = projectInput(b);
+  const id = tx(() => {
+    const r = db.prepare(`INSERT INTO projects (name, city, client, contract_value, lat, lng, radius_m, start_date, end_date, planned_workers, progress, status)
+      VALUES ($name, $city, $client, $contract_value, $lat, $lng, $radius_m, $start_date, $end_date, $planned_workers, $progress, $status)`)
+      .run(Object.fromEntries(Object.entries(p).map(([k, v]) => [`$${k}`, v])));
+    const pid = Number(r.lastInsertRowid);
+    setMembers(pid, idList(b.manager_ids, b.manager_id), idList(b.supervisor_ids, b.supervisor_id));
+    return pid;
+  });
+  changed(req, 'projects', id);
+  res.json({ id });
 });
 api.put('/projects/:id', need('projects'), (req, res) => {
   const id = ensureProject(req, req.params.id);
-  const p = projectInput(req.body || {});
+  const b = req.body || {};
+  const p = projectInput(b);
+  let managers = idList(b.manager_ids, b.manager_id);
   if (!isTop(req.user)) {
-    // A project manager cannot hand the project to someone else.
-    const cur = db.prepare('SELECT manager_id FROM projects WHERE id = ?').get(id);
-    p.manager_id = cur.manager_id;
+    // A project manager cannot change who manages the project; supervisors can be assigned.
+    managers = db.prepare(`SELECT user_id FROM project_members WHERE project_id = ? AND kind = 'manager'`).all(id).map((r) => r.user_id);
   }
-  db.prepare(`UPDATE projects SET name=$name, city=$city, client=$client, contract_value=$contract_value, lat=$lat, lng=$lng, radius_m=$radius_m,
-    start_date=$start_date, end_date=$end_date, planned_workers=$planned_workers, progress=$progress, manager_id=$manager_id, supervisor_id=$supervisor_id, status=$status
-    WHERE id=$id`).run({ ...Object.fromEntries(Object.entries(p).map(([k, v]) => [`$${k}`, v])), $id: id });
+  tx(() => {
+    db.prepare(`UPDATE projects SET name=$name, city=$city, client=$client, contract_value=$contract_value, lat=$lat, lng=$lng, radius_m=$radius_m,
+      start_date=$start_date, end_date=$end_date, planned_workers=$planned_workers, progress=$progress, status=$status
+      WHERE id=$id`).run({ ...Object.fromEntries(Object.entries(p).map(([k, v]) => [`$${k}`, v])), $id: id });
+    setMembers(id, managers, idList(b.supervisor_ids, b.supervisor_id));
+  });
   changed(req, 'projects', id);
   res.json({ ok: true });
 });
@@ -609,7 +626,7 @@ api.delete('/projects/:id', need('delete'), (req, res) => {
   const id = ensureProject(req, req.params.id);
   tx(() => {
     del('DELETE FROM direct_order_items WHERE order_id IN (SELECT id FROM direct_orders WHERE project_id = ?)', id);
-    for (const t of ['direct_orders', 'invoices', 'daily_reports', 'issues', 'attendance', 'worker_assignments']) del(`DELETE FROM ${t} WHERE project_id = ?`, id);
+    for (const t of ['direct_orders', 'invoices', 'daily_reports', 'issues', 'attendance', 'worker_assignments', 'project_members']) del(`DELETE FROM ${t} WHERE project_id = ?`, id);
     del('UPDATE workers SET project_id = NULL WHERE project_id = ?', id);
     del('DELETE FROM projects WHERE id = ?', id);
   });
@@ -658,6 +675,7 @@ api.delete('/users/:id', need('delete'), (req, res) => {
   if (!u) fail(404, 'المستخدم غير موجود');
   if (u.role === 'admin' && req.user.role !== 'admin') fail(403, 'حذف المدير العام متاح للمدير العام فقط');
   tx(() => {
+    del('DELETE FROM project_members WHERE user_id = ?', id);
     del('UPDATE projects SET manager_id = NULL WHERE manager_id = ?', id);
     del('UPDATE projects SET supervisor_id = NULL WHERE supervisor_id = ?', id);
     del('UPDATE issues SET assignee_id = NULL WHERE assignee_id = ?', id);

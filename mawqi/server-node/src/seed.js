@@ -2,7 +2,7 @@
 // Run with `npm run seed` — wipes and rebuilds the database.
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
-import { db, tx } from './db.js';
+import { backfillMembers, db, tx } from './db.js';
 import { addDays, isFriday, todayStr } from './util.js';
 
 let s = 20261023;
@@ -21,7 +21,7 @@ export function seed() {
   const hash = bcrypt.hashSync('123456', 8);
 
   tx(() => {
-    for (const t of ['direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects', 'users', 'settings']) {
+    for (const t of ['project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects', 'users', 'settings']) {
       db.exec(`DELETE FROM ${t}`);
     }
 
@@ -202,6 +202,7 @@ export function seed() {
     db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run('absence_cutoff', '09:00');
   });
 
+  backfillMembers();
   const n = (t) => db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n;
   console.log(`Seeded: ${n('projects')} projects, ${n('workers')} workers, ${n('attendance')} attendance rows, ${n('issues')} issues.`);
 }

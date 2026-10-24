@@ -20,7 +20,7 @@ if (PROD) {
   // One-time cleanup of the demo data shipped with the first release: keep only the general manager account.
   if (!getSetting('demo_cleared', null)) {
     tx(() => {
-      for (const t of ['direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
+      for (const t of ['project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
       const admin = db.prepare(`SELECT id FROM users WHERE username = 'admin'`).get() || db.prepare(`SELECT id FROM users WHERE role IN ('admin','sysadmin') ORDER BY id`).get();
       if (admin) {
         db.prepare('DELETE FROM users WHERE id <> ?').run(admin.id);

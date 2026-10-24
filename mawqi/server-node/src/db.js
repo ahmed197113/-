@@ -204,6 +204,34 @@ for (const sql of [
   }
 }
 
+// A project can have several managers and several supervisors.
+db.exec(`CREATE TABLE IF NOT EXISTS project_members (
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  kind TEXT NOT NULL CHECK (kind IN ('manager','supervisor')),
+  PRIMARY KEY (project_id, user_id, kind)
+)`);
+/** Copies the older single manager/supervisor columns into project_members (safe to repeat). */
+export function backfillMembers() {
+  db.exec(`INSERT OR IGNORE INTO project_members (project_id, user_id, kind)
+    SELECT id, manager_id, 'manager' FROM projects WHERE manager_id IS NOT NULL
+    UNION ALL SELECT id, supervisor_id, 'supervisor' FROM projects WHERE supervisor_id IS NOT NULL`);
+}
+backfillMembers();
+
+/** Replace a project's managers and supervisors; the first of each is kept in the legacy columns. */
+export function setMembers(projectId, managerIds, supervisorIds) {
+  db.prepare('DELETE FROM project_members WHERE project_id = ?').run(projectId);
+  const ins = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, kind) VALUES (?, ?, ?)');
+  for (const u of managerIds) ins.run(projectId, u, 'manager');
+  for (const u of supervisorIds) ins.run(projectId, u, 'supervisor');
+  db.prepare('UPDATE projects SET manager_id = ?, supervisor_id = ? WHERE id = ?').run(managerIds[0] ?? null, supervisorIds[0] ?? null, projectId);
+}
+
+/** SQL pieces: comma-separated names / ids of a project's members (project alias p). */
+export const memberNames = (kind) => `(SELECT GROUP_CONCAT(u.name, '، ') FROM project_members pm JOIN users u ON u.id = pm.user_id WHERE pm.project_id = p.id AND pm.kind = '${kind}')`;
+export const memberIds = (kind) => `(SELECT GROUP_CONCAT(pm.user_id) FROM project_members pm WHERE pm.project_id = p.id AND pm.kind = '${kind}')`;
+
 export function getSetting(key, fallback) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
   return row ? row.value : fallback;

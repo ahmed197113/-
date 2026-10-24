@@ -544,3 +544,9 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
 .icon-btn.del:hover { background: var(--bad-bg); color: var(--bad); }
 .row-actions { display: inline-flex; gap: 4px; align-items: center; }
 .tip { margin: -8px 0 0; font-size: 14px; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick-chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 7px 14px; font-weight: 600; font-size: 14px; cursor: pointer; color: var(--ink-2); }
+.pick-chip:hover:not(:disabled) { border-color: var(--navy); }
+.pick-chip.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+.pick-chip:disabled { opacity: .6; cursor: default; }
+.team { display: flex; gap: 18px; flex-wrap: wrap; color: var(--ink-2); font-size: 15px; margin-top: -8px; } .team span { display: inline-flex; gap: 6px; align-items: center; } .team b { color: var(--ink); }
