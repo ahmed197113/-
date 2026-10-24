@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "موقعي",
+    "name": "المشاريع",
     "slug": "mawqi",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,7 +19,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.metallines.mawqi",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": []
     },
     "web": {
@@ -53,7 +53,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "supportsRTL": true,

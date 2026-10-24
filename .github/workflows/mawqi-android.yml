@@ -61,7 +61,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: mawqi-android-${{ steps.apk.outputs.version }}-build${{ github.run_number }}
-          name: موقعي — نسخة أندرويد ${{ steps.apk.outputs.version }} (بناء ${{ github.run_number }})
+          name: المشاريع — نسخة أندرويد ${{ steps.apk.outputs.version }} (بناء ${{ github.run_number }})
           target_commitish: ${{ github.sha }}
           prerelease: true
           files: mawqi/mobile/${{ steps.apk.outputs.name }}
