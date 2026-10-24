@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fmt, longDate, sar } from '../api'
 import { Icon } from '../icons'
-import { addDays, ATT, download, Empty, ErrorBox, Loading, PageHead, ProjectSelect, Search, send, Tabs, thisMonth, today, toast, useCan, useData } from '../ui'
+import { src } from '../media'
+import { addDays, ATT, download, Empty, ErrorBox, Loading, Modal, PageHead, ProjectSelect, Search, send, Tabs, thisMonth, today, toast, useCan, useData, useMeta } from '../ui'
 
 interface Row {
-  worker_id: number; name: string; profession: string; project_id: number; project: string
+  worker_id: number; name: string; profession: string; project_id: number; project: string; project_kind?: string; photo?: string | null
   status: string | null; check_in: string | null; check_out: string | null; overtime_hours: number; method: string | null
 }
 interface MonthSheet {
@@ -33,12 +34,19 @@ function DaySheet() {
   const can = useCan()
   const editable = can('attendance')
   const { data, error } = useData<{ date: string; rows: Row[] }>(`/api/attendance?date=${date}${project ? `&project=${project}` : ''}`)
-  const [draft, setDraft] = useState<Record<number, { status: string | null; overtime_hours?: number }>>({})
+  const [draft, setDraft] = useState<Record<number, { status: string | null; overtime_hours?: number; project_id?: number }>>({})
   const [saving, setSaving] = useState(false)
+  const [pulled, setPulled] = useState<Row[]>([])
+  const [pulling, setPulling] = useState(false)
+  const meta = useMeta()
+  const canMove = can('moveWorkers')
+  const places = meta?.places ?? []
+  const placeName = (id: number) => places.find((p) => p.id === id)?.name ?? ''
 
-  useEffect(() => setDraft({}), [date, project])
+  useEffect(() => { setDraft({}); setPulled([]) }, [date, project])
 
-  const rows = useMemo(() => (data?.rows ?? []).filter((r) => !q || `${r.name} ${r.profession}`.includes(q.trim())), [data, q])
+  const rows = useMemo(() => [...pulled.filter((p) => !(data?.rows ?? []).some((r) => r.worker_id === p.worker_id)), ...(data?.rows ?? [])]
+    .filter((r) => !q || `${r.name} ${r.profession}`.includes(q.trim())), [data, q, pulled])
   const statusOf = (r: Row) => (r.worker_id in draft ? draft[r.worker_id].status : r.status)
   const dirty = Object.keys(draft).length
 
@@ -47,7 +55,10 @@ function DaySheet() {
 
   const counts = ORDER.map((s) => ({ s, n: data.rows.filter((r) => statusOf(r) === s).length }))
   const unrecorded = data.rows.filter((r) => !statusOf(r)).length
-  const set = (id: number, status: string | null) => setDraft((d) => ({ ...d, [id]: { status, overtime_hours: status === 'overtime' ? (d[id]?.overtime_hours ?? 2) : 0 } }))
+  const set = (id: number, status: string | null) => setDraft((d) => ({ ...d, [id]: { ...d[id], status, overtime_hours: status === 'overtime' ? (d[id]?.overtime_hours ?? 2) : 0 } }))
+  // Where the worker worked that day; changing it moves him (from today) and records the day on the new site.
+  const setSite = (r: Row, project_id: number) => setDraft((d) => ({ ...d, [r.worker_id]: { ...d[r.worker_id], status: d[r.worker_id]?.status ?? statusOf(r) ?? 'present', project_id } }))
+  const siteOf = (r: Row) => draft[r.worker_id]?.project_id ?? r.project_id
   const markRest = (status: string) => {
     const next = { ...draft }
     for (const r of rows) if (!statusOf(r)) next[r.worker_id] = { status }
@@ -56,9 +67,11 @@ function DaySheet() {
   const save = async () => {
     setSaving(true)
     try {
-      const entries = Object.entries(draft).map(([worker_id, v]) => ({ worker_id: Number(worker_id), status: v.status, overtime_hours: v.overtime_hours }))
-      await send('/api/attendance', 'POST', { date, entries }, `تم حفظ حضور ${fmt(entries.length)} عامل`)
+      const entries = Object.entries(draft).map(([worker_id, v]) => ({ worker_id: Number(worker_id), status: v.status, overtime_hours: v.overtime_hours, project_id: v.project_id }))
+      const moved = entries.filter((e) => e.project_id).length
+      await send('/api/attendance', 'POST', { date, entries }, `تم حفظ حضور ${fmt(entries.length)} عامل${moved ? ` ونقل ${fmt(moved)}` : ''}`)
       setDraft({})
+      setPulled([])
     } catch (e) { toast((e as Error).message, 'err') } finally { setSaving(false) }
   }
 
@@ -76,9 +89,10 @@ function DaySheet() {
         </div>
         <ProjectSelect value={project} onChange={setProject} />
         <Search value={q} onChange={setQ} placeholder="بحث عن عامل" />
+        {editable && canMove && <button className="btn primary" onClick={() => setPulling(true)}><Icon name="plus" size={18} /> عامل من موقع آخر</button>}
       </div>
 
-      {editable && <p className="muted tip">أخطأت في تسجيل عامل؟ اضغط على نفس الحالة مرة ثانية لإلغائها، أو اختر الحالة الصحيحة، ثم «حفظ الحضور».</p>}
+      {editable && <p className="muted tip">اختر حالة كل عامل{canMove ? '، وغيّر «الموقع» إن عمل اليوم في مشروع آخر أو المصنع' : ''}، ثم «حفظ الحضور». للإلغاء اضغط على نفس الحالة مرة ثانية.</p>}
       <div className="att-summary">
         <strong>{longDate(date)}</strong>
         {counts.map(({ s, n }) => <span key={s} className={`chip-s c-${ATT[s].tone}`}>{ATT[s].label} <b>{n}</b></span>)}
@@ -101,7 +115,7 @@ function DaySheet() {
                   const st = statusOf(r)
                   return (
                     <li key={r.worker_id} className={r.worker_id in draft ? 'changed' : ''}>
-                      <div className="who"><span className={`avatar-s ${st ? `a-${ATT[st].tone}` : ''}`}>{r.name.slice(0, 1)}</span>
+                      <div className="who">{r.photo ? <img className={`avatar-s img ${st ? `ring-${ATT[st].tone}` : ''}`} src={src(r.photo)} alt="" /> : <span className={`avatar-s ${st ? `a-${ATT[st].tone}` : ''}`}>{r.name.slice(0, 1)}</span>}
                         <div><strong>{r.name}</strong><small>{r.profession}{r.check_in && !(r.worker_id in draft) ? ` · دخول ${r.check_in}` : ''}{r.method === 'qr' ? ' · QR' : ''}</small></div>
                       </div>
                       <div className="seg" role="radiogroup" aria-label={`حالة ${r.name}`}>
@@ -112,6 +126,16 @@ function DaySheet() {
                           </button>
                         ))}
                       </div>
+                      {canMove && editable && (
+                        <label className={`site ${siteOf(r) !== r.project_id ? 'moved' : ''}`} title="أين عمل هذا اليوم">
+                          <span>الموقع</span>
+                          <select value={siteOf(r)} onChange={(e) => setSite(r, Number(e.target.value))}>
+                            {!places.some((p) => p.id === r.project_id) && <option value={r.project_id}>{r.project}</option>}
+                            {places.map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</option>)}
+                          </select>
+                          {siteOf(r) !== r.project_id && <em>سيُنقل إلى {placeName(siteOf(r))}</em>}
+                        </label>
+                      )}
                       {st === 'overtime' && editable && (
                         <label className="ot">ساعات
                           <input type="number" min={1} max={12} value={draft[r.worker_id]?.overtime_hours ?? r.overtime_hours ?? 2}
@@ -126,6 +150,9 @@ function DaySheet() {
           ))}
         </section>
       )}
+
+      {pulling && <PullWorker date={date} project={project} exclude={rows.map((r) => r.worker_id)} onClose={() => setPulling(false)}
+        onPick={(r, site) => { setPulled((l) => [r, ...l]); setDraft((d) => ({ ...d, [r.worker_id]: { status: 'present', project_id: site } })); setPulling(false) }} />}
 
       {dirty > 0 && (
         <div className="savebar">
@@ -180,5 +207,47 @@ function MonthView() {
         </section>
       )}
     </>
+  )
+}
+
+interface AnyWorker { id: number; name: string; profession: string; project_id: number | null; project: string | null; location_kind?: string | null; photo?: string | null }
+
+/** Bring a worker from any other site into today's sheet (he will be recorded and moved to the chosen site). */
+function PullWorker({ project, exclude, onClose, onPick }: { date: string; project: string; exclude: number[]; onClose: () => void; onPick: (r: Row, site: number) => void }) {
+  const { data } = useData<AnyWorker[]>('/api/workers?active=1')
+  const meta = useMeta()
+  const [q, setQ] = useState('')
+  const [site, setSite] = useState<string>(project)
+  const list = (data ?? []).filter((w) => !exclude.includes(w.id) && (!q || `${w.name} ${w.profession} ${w.project ?? ''}`.includes(q.trim()))).slice(0, 80)
+  return (
+    <Modal title="إضافة عامل من موقع آخر" onClose={onClose} wide>
+      <div className="pull">
+        <div className="toolbar">
+          <label className="inline">يعمل اليوم في
+            <select className="select" value={site} onChange={(e) => setSite(e.target.value)}>
+              <option value="">اختر الموقع…</option>
+              {(meta?.places ?? []).map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</option>)}
+            </select>
+          </label>
+          <Search value={q} onChange={setQ} placeholder="ابحث باسم العامل" />
+        </div>
+        {!data ? <Loading /> : !list.length ? <Empty icon="workers" title="لا يوجد عمال آخرون" /> : (
+          <ul className="people">
+            {list.map((w) => (
+              <li key={w.id} className={site ? 'pickable' : 'off'} onClick={() => {
+                if (!site) { toast('اختر أولاً الموقع الذي يعمل فيه اليوم', 'err'); return }
+                const p = meta?.places?.find((x) => x.id === Number(site))
+                onPick({ worker_id: w.id, name: w.name, profession: w.profession, project_id: w.project_id ?? Number(site), project: w.project ?? p?.name ?? '', photo: w.photo,
+                  status: null, check_in: null, check_out: null, overtime_hours: 0, method: null }, Number(site))
+              }}>
+                {w.photo ? <img className="avatar-s img" src={src(w.photo)} alt="" /> : <span className="avatar-s">{w.name.slice(0, 1)}</span>}
+                <div><strong>{w.name}</strong><small>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'}</small></div>
+                <span className="btn sm">إضافة</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </Modal>
   )
 }

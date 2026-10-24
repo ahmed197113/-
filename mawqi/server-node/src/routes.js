@@ -380,11 +380,7 @@ api.post('/workers/:id/move', need('moveWorkers'), (req, res) => {
     target = p.id;
   }
   if (target === cur.project_id) return res.json({ ok: true });
-  tx(() => {
-    db.prepare('UPDATE workers SET project_id = ? WHERE id = ?').run(target, id);
-    db.prepare('UPDATE worker_assignments SET to_date = ? WHERE worker_id = ? AND to_date IS NULL').run(addDays(todayStr(), -1), id);
-    if (target) db.prepare('INSERT INTO worker_assignments (worker_id, project_id, from_date) VALUES (?, ?, ?)').run(id, target, todayStr());
-  });
+  tx(() => relocate(id, cur.project_id, target));
   changed(req, 'workers', target ?? cur.project_id);
   if (cur.project_id && cur.project_id !== target) changed(req, 'workers', cur.project_id);
   res.json({ ok: true });
@@ -467,17 +463,32 @@ api.post('/workers/import', need('workers'), (req, res) => {
 api.get('/attendance', (req, res) => {
   const date = isDate(req.query.date) ? req.query.date : todayStr();
   const scope = scopeOf(req);
-  const where = [`w.active = 1`, `w.project_id IS NOT NULL`, inList('w.project_id', scope)];
+  // A worker belongs, on a given day, to the site where his attendance was recorded; otherwise to where he is now.
+  const site = 'COALESCE(a.project_id, w.project_id)';
+  const where = ['w.active = 1', `${site} IS NOT NULL`, inList(site, scope)];
   const params = [date];
-  if (req.query.project) { where.push('w.project_id = ?'); params.push(Number(req.query.project)); }
+  if (req.query.project) { where.push(`${site} = ?`); params.push(Number(req.query.project)); }
+  const photos = workerPhotos();
   const rows = db.prepare(`
-    SELECT w.id AS worker_id, w.name, w.profession, w.project_id, p.name AS project,
+    SELECT w.id AS worker_id, w.name, w.profession, ${site} AS project_id, p.name AS project, p.kind AS project_kind, w.project_id AS current_project_id,
       a.status, a.check_in, a.check_out, a.overtime_hours, a.method
-    FROM workers w JOIN projects p ON p.id = w.project_id
+    FROM workers w
     LEFT JOIN attendance a ON a.worker_id = w.id AND a.date = ?
-    WHERE ${where.join(' AND ')} ORDER BY p.name, w.name`).all(...params);
+    JOIN projects p ON p.id = ${site}
+    WHERE ${where.join(' AND ')} ORDER BY p.kind = 'factory', p.name, w.name`).all(...params)
+    .map((r) => ({ ...r, photo: photos[r.worker_id] ? `/api/files/${photos[r.worker_id]}` : null }));
   res.json({ date, rows });
 });
+
+/** Put a worker on another site from today (keeps the history of where he worked). */
+function relocate(workerId, from, to) {
+  if (from === to) return;
+  db.prepare('UPDATE workers SET project_id = ? WHERE id = ?').run(to, workerId);
+  db.prepare('UPDATE worker_assignments SET to_date = ? WHERE worker_id = ? AND to_date IS NULL').run(addDays(todayStr(), -1), workerId);
+  if (to) db.prepare('INSERT INTO worker_assignments (worker_id, project_id, from_date) VALUES (?, ?, ?)').run(workerId, to, todayStr());
+  // Today's attendance follows the worker to his new site.
+  if (to) db.prepare('UPDATE attendance SET project_id = ? WHERE worker_id = ? AND date = ?').run(to, workerId, todayStr());
+}
 
 api.post('/attendance', need('attendance'), (req, res) => {
   const b = req.body || {};
@@ -486,22 +497,41 @@ api.post('/attendance', need('attendance'), (req, res) => {
   const entries = Array.isArray(b.entries) ? b.entries : [];
   const statuses = ['present', 'absent', 'late', 'leave', 'overtime'];
   const touched = new Set();
+  const scope = scopeOf(req);
+  const inScope = (pid) => scope === null || scope.includes(pid);
+  const canMove = PERMISSIONS.moveWorkers.includes(req.user.role);
   tx(() => {
-    const getW = db.prepare('SELECT id, project_id FROM workers WHERE id = ?');
+    const getW = db.prepare('SELECT id, name, project_id FROM workers WHERE id = ?');
+    const getA = db.prepare('SELECT project_id FROM attendance WHERE worker_id = ? AND date = ?');
+    const getP = db.prepare('SELECT id, status FROM projects WHERE id = ?');
     const del = db.prepare('DELETE FROM attendance WHERE worker_id = ? AND date = ?');
     const up = db.prepare(`INSERT INTO attendance (worker_id, project_id, date, status, check_in, check_out, overtime_hours, method, recorded_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)
-      ON CONFLICT(worker_id, date) DO UPDATE SET status = excluded.status, check_in = excluded.check_in, check_out = excluded.check_out,
-        overtime_hours = excluded.overtime_hours, recorded_by = excluded.recorded_by`);
+      ON CONFLICT(worker_id, date) DO UPDATE SET project_id = excluded.project_id, status = excluded.status, check_in = excluded.check_in,
+        check_out = excluded.check_out, overtime_hours = excluded.overtime_hours, recorded_by = excluded.recorded_by`);
     for (const e of entries) {
       const w = getW.get(Number(e.worker_id));
-      if (!w || !w.project_id) continue;
-      ensureProject(req, w.project_id);
-      touched.add(w.project_id);
+      if (!w) continue;
+      const before = getA.get(w.id, date)?.project_id ?? w.project_id;
+      let site = before;
+      if (e.project_id && Number(e.project_id) !== before) {
+        // The supervisor says where the worker worked that day — any active site, so workers can be followed day by day.
+        if (!canMove) fail(403, 'ليست لديك صلاحية نقل العمال');
+        const p = getP.get(Number(e.project_id));
+        if (!p || p.status !== 'active') fail(400, 'الموقع المختار غير نشط');
+        if (!inScope(p.id) && !(before && inScope(before))) fail(403, 'هذا العامل خارج مواقعك');
+        site = p.id;
+      } else if (site) {
+        ensureProject(req, site);
+      }
+      if (!site) continue;
+      touched.add(site);
+      if (before) touched.add(before);
+      if (date === todayStr() && site !== w.project_id) relocate(w.id, w.project_id, site);
       if (!e.status) { del.run(w.id, date); continue; }
       if (!statuses.includes(e.status)) fail(400, 'حالة حضور غير معروفة');
       const works = ['present', 'late', 'overtime'].includes(e.status);
-      up.run(w.id, w.project_id, date, e.status, works ? str(e.check_in) : null, works ? str(e.check_out) : null,
+      up.run(w.id, site, date, e.status, works ? str(e.check_in) : null, works ? str(e.check_out) : null,
         e.status === 'overtime' ? Math.max(0, num(e.overtime_hours, 2)) : 0, req.user.id);
     }
   });
@@ -512,14 +542,18 @@ api.post('/attendance', need('attendance'), (req, res) => {
 /** Monthly sheet: one row per worker, one status letter per day. */
 function monthSheet(req, month, project) {
   const r = monthRange(month);
-  const where = [inList('w.project_id', scopeOf(req)), 'w.project_id IS NOT NULL'];
+  const scope = scopeOf(req);
   const params = { $from: r.from, $to: r.to };
-  if (project) { where.push('w.project_id = $project'); params.$project = Number(project); }
-  const workers = db.prepare(`SELECT w.id, w.name, w.profession, w.wage_type, w.wage, w.iqama_no, p.name AS project, s.name AS subcontractor
-    FROM workers w JOIN projects p ON p.id = w.project_id LEFT JOIN subcontractors s ON s.id = w.subcontractor_id
-    WHERE (w.active = 1 OR EXISTS (SELECT 1 FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to))
-      AND ${where.join(' AND ')} ORDER BY p.name, w.name`).all(params);
-  const att = db.prepare(`SELECT worker_id, date, status, overtime_hours FROM attendance WHERE date BETWEEN ? AND ?`).all(r.from, r.to);
+  if (project) params.$project = Number(project);
+  // Days are counted on the site where they were worked, so a worker who moved between sites is split correctly.
+  const site = (col) => (project ? `${col} = $project` : inList(col, scope));
+  const workers = db.prepare(`SELECT w.id, w.name, w.profession, w.wage_type, w.wage, w.iqama_no, COALESCE(p.name, 'غير موزّع') AS project, s.name AS subcontractor
+    FROM workers w LEFT JOIN projects p ON p.id = w.project_id LEFT JOIN subcontractors s ON s.id = w.subcontractor_id
+    WHERE (w.active = 1 AND ${site('w.project_id')})
+      OR EXISTS (SELECT 1 FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to AND ${site('a.project_id')})
+    ORDER BY p.kind = 'factory', p.name, w.name`).all(params);
+  const att = db.prepare(`SELECT a.worker_id, a.date, a.status, a.overtime_hours, p.name AS site FROM attendance a JOIN projects p ON p.id = a.project_id
+    WHERE a.date BETWEEN $from AND $to AND ${site('a.project_id')}`).all(params);
   const byWorker = new Map();
   for (const a of att) {
     if (!byWorker.has(a.worker_id)) byWorker.set(a.worker_id, {});
@@ -529,10 +563,13 @@ function monthSheet(req, month, project) {
     const days = byWorker.get(w.id) || {};
     let worked = 0, absent = 0, leave = 0, late = 0, ot = 0;
     const cells = [];
+    const cellSites = [];
+    const sites = [...new Set(Object.values(days).map((a) => a.site))];
     for (let d = 1; d <= r.days; d++) {
       const date = `${r.month}-${String(d).padStart(2, '0')}`;
       const a = days[date];
       cells.push(a ? a.status : null);
+      cellSites.push(a ? a.site : null);
       if (!a) continue;
       if (['present', 'late', 'overtime'].includes(a.status)) worked++;
       if (a.status === 'late') late++;
@@ -542,7 +579,7 @@ function monthSheet(req, month, project) {
     }
     const rate = w.wage_type === 'daily' ? w.wage : w.wage / 30;
     const pay = round(worked * rate + ot * (rate / 8) * 1.5);
-    return { ...w, cells, worked, absent, leave, late, overtime: ot, rate: round(rate), pay };
+    return { ...w, sites, cells, cellSites, worked, absent, leave, late, overtime: ot, rate: round(rate), pay };
   });
   return { ...r, rows };
 }

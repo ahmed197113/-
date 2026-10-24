@@ -1,11 +1,12 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { addDays, fmt, longDate, today, type AttRow, type AttStatus, type Meta } from '../../lib/api'
+import { addDays, fmt, longDate, today, type AttRow, type AttStatus, type Meta, type Worker } from '../../lib/api'
+import { useAuth } from '../../lib/auth'
 import { useData, useSync } from '../../lib/sync'
 import { AppScreen } from '../../components/AppScreen'
 import { confirm, useToast } from '../../components/Toast'
-import { Button, C, Chip, Empty, ErrorBox, Header, Loading, Row, Search, T, type IconName } from '../../components/ui'
+import { Button, C, Chip, Empty, ErrorBox, Header, Loading, Row, Search, Sheet, T, type IconName } from '../../components/ui'
 
 const STATUSES: { key: AttStatus; label: string; icon: IconName; color: string; bg: string }[] = [
   { key: 'present', label: 'حاضر', icon: 'checkmark-circle', color: C.good, bg: C.goodBg },
@@ -16,8 +17,8 @@ const STATUSES: { key: AttStatus; label: string; icon: IconName; color: string; 
 ]
 const DEFAULT_OT = 2
 
-interface Mark { status: AttStatus | null; ot: number }
-interface Entry { worker_id: number; status: AttStatus | null; overtime_hours: number; check_in?: string | null; check_out?: string | null }
+interface Mark { status: AttStatus | null; ot: number; site?: number }
+interface Entry { worker_id: number; status: AttStatus | null; overtime_hours: number; project_id?: number; check_in?: string | null; check_out?: string | null }
 
 export default function Attendance() {
   const toast = useToast()
@@ -30,6 +31,13 @@ export default function Attendance() {
   const [q, setQ] = useState('')
   const [edits, setEdits] = useState<Map<number, Mark>>(new Map())
   const [busy, setBusy] = useState(false)
+  const { can } = useAuth()
+  const canMove = can('moveWorkers')
+  const places = [...(meta.data?.places ?? [])].sort((a, b) => Number(a.kind === 'factory') - Number(b.kind === 'factory'))
+  const [siteFor, setSiteFor] = useState<AttRow | null>(null)
+  const [pulling, setPulling] = useState(false)
+  const [pulled, setPulled] = useState<AttRow[]>([])
+  useEffect(() => setPulled([]), [date, projectId])
 
   useEffect(() => {
     if (projects.length && !projects.some((p) => p.id === projectId)) setProjectId(projects[0].id)
@@ -43,12 +51,13 @@ export default function Attendance() {
     for (const it of queue) {
       const b = it.body as { date?: string; entries?: Entry[] }
       if (it.path !== '/api/attendance' || b.date !== date) continue
-      for (const e of b.entries ?? []) m.set(e.worker_id, { status: e.status, ot: e.overtime_hours })
+      for (const e of b.entries ?? []) m.set(e.worker_id, { status: e.status, ot: e.overtime_hours, site: e.project_id })
     }
     return m
   }, [queue, date])
 
-  const rows = att.data?.date === date ? att.data.rows : []
+  const loaded = att.data?.date === date ? att.data.rows : []
+  const rows = useMemo(() => [...pulled.filter((p) => !loaded.some((r) => r.worker_id === p.worker_id)), ...loaded], [loaded, pulled])
   const base = useCallback((r: AttRow): Mark => pending.get(r.worker_id) ?? { status: r.status, ot: r.overtime_hours || DEFAULT_OT }, [pending])
   const markOf = (r: AttRow) => edits.get(r.worker_id) ?? base(r)
 
@@ -70,7 +79,7 @@ export default function Attendance() {
     setEdits((prev) => {
       const m = new Map(prev)
       const b = base(r)
-      if (b.status === next.status && (next.status !== 'overtime' || b.ot === next.ot)) m.delete(r.worker_id)
+      if (b.status === next.status && (next.status !== 'overtime' || b.ot === next.ot) && (next.site ?? r.project_id) === (b.site ?? r.project_id)) m.delete(r.worker_id)
       else m.set(r.worker_id, next)
       return m
     })
@@ -78,7 +87,7 @@ export default function Attendance() {
 
   const tap = useCallback((r: AttRow, st: AttStatus, cur: Mark) => {
     // Tapping the current status again clears it.
-    setMark(r, { status: cur.status === st ? null : st, ot: cur.ot || DEFAULT_OT })
+    setMark(r, { ...cur, status: cur.status === st ? null : st, ot: cur.ot || DEFAULT_OT })
   }, [setMark])
 
   const restPresent = () => {
@@ -95,6 +104,7 @@ export default function Attendance() {
   const switchTo = async (fn: () => void) => {
     if (edits.size && !(await confirm('تغييرات غير محفوظة', 'هل تريد تجاهل التغييرات التي لم تُحفظ؟', 'تجاهل'))) return
     setEdits(new Map())
+    setPulled([])
     setQ('')
     fn()
   }
@@ -105,12 +115,13 @@ export default function Attendance() {
     const byId = new Map(rows.map((r) => [r.worker_id, r]))
     // The server replaces the whole record, so keep check-in times recorded by the QR scanner.
     const entries: Entry[] = [...edits].map(([worker_id, m]) => ({
-      worker_id, status: m.status, overtime_hours: m.status === 'overtime' ? m.ot : 0,
+      worker_id, status: m.status, overtime_hours: m.status === 'overtime' ? m.ot : 0, project_id: m.site,
       check_in: byId.get(worker_id)?.check_in ?? null, check_out: byId.get(worker_id)?.check_out ?? null,
     }))
     try {
       const res = await send('POST', '/api/attendance', { date, entries }, `حضور ${date}`)
       setEdits(new Map())
+      setPulled([])
       toast(res === 'sent' ? `تم حفظ حضور ${entries.length} عامل` : 'لا يوجد اتصال — حُفظ الحضور وسيُرسل تلقائياً', res === 'sent' ? 'success' : 'info')
       if (res === 'sent') att.reload()
     } catch (e) {
@@ -140,6 +151,7 @@ export default function Attendance() {
           <Ionicons name="chevron-back" size={26} color={C.navy} />
         </Pressable>
       </View>
+      {canMove && !!projectId && <Button label="إضافة عامل من موقع آخر" icon="person-add" kind="ghost" onPress={() => setPulling(true)} />}
       {rows.length > 0 && (
         <>
           <Row style={{ gap: 8 }}>
@@ -149,6 +161,7 @@ export default function Attendance() {
             <Count n={counts.none} label="لم يُسجَّل" color={C.muted} />
           </Row>
           <Search value={q} onChangeText={setQ} placeholder="ابحث باسم العامل" />
+          {canMove && <T style={{ color: C.muted, fontSize: 13 }}>عمل أحدهم اليوم في مكان آخر؟ اضغط «الموقع» تحت اسمه واختر المشروع أو المصنع.</T>}
           {counts.none > 0 && <Button label={`الباقي حاضر (${counts.none})`} icon="checkmark-done" kind="ghost" onPress={restPresent} />}
         </>
       )}
@@ -175,8 +188,34 @@ export default function Attendance() {
         contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: edits.size ? 110 : 32 }}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={att.refreshing} onRefresh={att.refresh} colors={[C.navy]} />}
-        renderItem={({ item }) => <WorkerRow r={item} mark={markOf(item)} dirty={edits.has(item.worker_id)} queued={pending.has(item.worker_id)} onTap={tap} onOt={setMark} />}
+        renderItem={({ item }) => <WorkerRow r={item} mark={markOf(item)} dirty={edits.has(item.worker_id)} queued={pending.has(item.worker_id)} onTap={tap} onOt={setMark}
+          siteName={places.find((p) => p.id === (markOf(item).site ?? item.project_id))?.name ?? item.project} onSite={canMove ? setSiteFor : undefined} />}
       />
+      <Sheet visible={!!siteFor} title={siteFor ? `أين عمل ${siteFor.name} هذا اليوم؟` : ''} onClose={() => setSiteFor(null)}>
+        <T style={{ color: C.muted }}>اختر المكان الذي عمل فيه. يُسجَّل اليوم عليه، وإن كان اليوم يُنقل العامل إليه.</T>
+        {places.map((p) => {
+          const cur = siteFor ? (markOf(siteFor).site ?? siteFor.project_id) : 0
+          return (
+            <Pressable key={p.id} style={[s.place, p.id === cur && { borderColor: C.navy, backgroundColor: C.navySoft }]} onPress={() => {
+              if (!siteFor) return
+              const m = markOf(siteFor)
+              setMark(siteFor, { ...m, status: m.status ?? 'present', site: p.id })
+              setSiteFor(null)
+            }}>
+              <T style={{ fontSize: 22 }}>{p.kind === 'factory' ? '🏭' : '🏗️'}</T>
+              <T w="bold" style={{ flex: 1, fontSize: 17 }}>{p.name}</T>
+              {p.id === cur && <Ionicons name="checkmark-circle" size={24} color={C.navy} />}
+            </Pressable>
+          )
+        })}
+      </Sheet>
+      <PullSheet visible={pulling} exclude={rows.map((r) => r.worker_id)} onClose={() => setPulling(false)} onPick={(w) => {
+        const r: AttRow = { worker_id: w.id, name: w.name, profession: w.profession, project_id: w.project_id ?? projectId!, project: w.project ?? '', status: null, check_in: null, check_out: null, overtime_hours: 0 }
+        setPulled((l) => [r, ...l])
+        setEdits((prev) => new Map(prev).set(w.id, { status: 'present', ot: DEFAULT_OT, site: projectId! }))
+        setPulling(false)
+        toast(`أُضيف ${w.name} — اضغط حفظ`, 'info')
+      }} />
     </AppScreen>
   )
 }
@@ -190,10 +229,11 @@ function Count({ n, label, color }: { n: number; label: string; color: string })
   )
 }
 
-const WorkerRow = memo(function WorkerRow({ r, mark, dirty, queued, onTap, onOt }: {
-  r: AttRow; mark: Mark; dirty: boolean; queued: boolean
+const WorkerRow = memo(function WorkerRow({ r, mark, dirty, queued, onTap, onOt, siteName, onSite }: {
+  r: AttRow; mark: Mark; dirty: boolean; queued: boolean; siteName: string; onSite?: (r: AttRow) => void
   onTap: (r: AttRow, st: AttStatus, cur: Mark) => void; onOt: (r: AttRow, m: Mark) => void
 }) {
+  const moved = mark.site != null && mark.site !== r.project_id
   const cur = STATUSES.find((x) => x.key === mark.status)
   return (
     <View style={[s.worker, { borderStartColor: cur?.color ?? C.line }, dirty && { borderColor: C.amber }]}>
@@ -216,6 +256,13 @@ const WorkerRow = memo(function WorkerRow({ r, mark, dirty, queued, onTap, onOt 
           )
         })}
       </View>
+      {onSite && (
+        <Pressable onPress={() => onSite(r)} style={[s.site, moved && { borderColor: C.amber, backgroundColor: '#fff6ee' }]} accessibilityLabel={`موقع ${r.name}`}>
+          <Ionicons name="location" size={18} color={moved ? C.amber : C.navy} />
+          <T w="semibold" style={{ flex: 1, color: moved ? C.amber : C.ink2 }} numberOfLines={1}>الموقع: {siteName}{moved ? ' (سيُنقل)' : ''}</T>
+          <Ionicons name="swap-horizontal" size={18} color={moved ? C.amber : C.muted} />
+        </Pressable>
+      )}
       {mark.status === 'overtime' && (
         <Row style={s.ot}>
           <T w="semibold" style={{ flex: 1, color: C.over }}>ساعات العمل الإضافي</T>
@@ -241,5 +288,35 @@ const s = StyleSheet.create({
   st: { flex: 1, minHeight: 60, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center', gap: 2, paddingVertical: 4 },
   ot: { backgroundColor: C.overBg, borderRadius: 12, padding: 6, paddingStart: 12 },
   otBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  site: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, minHeight: 44 },
+  place: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderColor: C.line, borderRadius: 14, padding: 14 },
+  pick: { flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 12 },
   tag: { borderWidth: 1.5, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
 })
+
+/** Bring a worker who is recorded on another site (or the factory) into this site's sheet. */
+function PullSheet({ visible, exclude, onClose, onPick }: { visible: boolean; exclude: number[]; onClose: () => void; onPick: (w: Worker) => void }) {
+  const all = useData<Worker[]>(visible ? '/api/workers?active=1' : null)
+  const [q, setQ] = useState('')
+  useEffect(() => { if (visible) setQ('') }, [visible])
+  const t = q.trim()
+  const list = (all.data ?? []).filter((w) => !exclude.includes(w.id) && (!t || w.name.includes(t) || (w.profession ?? '').includes(t) || (w.project ?? '').includes(t))).slice(0, 60)
+  return (
+    <Sheet visible={visible} title="إضافة عامل من موقع آخر" onClose={onClose}>
+      <Search value={q} onChangeText={setQ} placeholder="ابحث باسم العامل" />
+      {!all.data ? <Loading /> : !list.length ? <T style={{ color: C.muted, textAlign: 'center' }}>لا يوجد عمال آخرون</T> : (
+        <ScrollView style={{ maxHeight: 380 }} keyboardShouldPersistTaps="handled">
+          {list.map((w) => (
+            <Pressable key={w.id} style={s.pick} onPress={() => onPick(w)}>
+              <View style={{ flex: 1 }}>
+                <T w="bold" style={{ fontSize: 17 }}>{w.name}</T>
+                <T style={{ color: C.muted, fontSize: 14 }}>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'}</T>
+              </View>
+              <Ionicons name="add-circle" size={28} color={C.navy} />
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+    </Sheet>
+  )
+}

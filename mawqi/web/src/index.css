@@ -693,3 +693,9 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
 .rename { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; background: #faf8f6; padding: 10px 12px; border-radius: 12px; }
 .rename input { border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font: inherit; }
 .rename small { flex-basis: 100%; }
+.site { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.site select { border: 1px solid var(--line); border-radius: 9px; padding: 6px 8px; font: inherit; font-size: 14px; background: #fff; max-width: 200px; }
+.site.moved select { border-color: var(--amber); background: #fff6ee; color: var(--amber); font-weight: 700; }
+.site em { font-style: normal; color: var(--amber); font-weight: 700; font-size: 12px; }
+.pull .people li.pickable { cursor: pointer; } .pull .people li.pickable:hover { border-color: var(--navy); background: #f7f6fc; }
+@media (max-width: 860px) { .site { width: 100%; } .site select { flex: 1; max-width: none; } }
