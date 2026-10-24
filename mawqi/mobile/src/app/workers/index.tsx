@@ -12,13 +12,15 @@ export default function Workers() {
   const { data, error, loading, refreshing, refresh } = useData<Worker[]>('/api/workers?active=1')
   const [q, setQ] = useState('')
   const [onlyIqama, setOnlyIqama] = useState(false)
+  const [where, setWhere] = useState<'all' | 'factory' | 'none'>('all')
 
   const expiring = (data ?? []).filter((w) => iqamaState(w.iqama_expiry)).length
   const shown = useMemo(() => {
     const t = q.trim()
     return (data ?? []).filter((w) => (!onlyIqama || iqamaState(w.iqama_expiry)) &&
+      (where === 'all' || (where === 'factory' ? w.location_kind === 'factory' : !w.project_id)) &&
       (!t || w.name.includes(t) || w.iqama_no.includes(t) || (w.profession ?? '').includes(t) || (w.project ?? '').includes(t)))
-  }, [data, q, onlyIqama])
+  }, [data, q, onlyIqama, where])
 
   return (
     <AppScreen scroll={false} header={<Header title="العمال" sub={data ? `${data.length} عامل نشط` : undefined} onBack={() => router.back()} />}>
@@ -31,6 +33,11 @@ export default function Workers() {
         ListHeaderComponent={
           <View style={{ gap: 10, marginBottom: 4 }}>
             <Search value={q} onChangeText={setQ} placeholder="ابحث بالاسم أو رقم الإقامة أو المهنة" />
+            <Row>
+              <Chip label="كل العمال" active={where === 'all'} onPress={() => setWhere('all')} />
+              <Chip label="🏭 المصنع" active={where === 'factory'} onPress={() => setWhere('factory')} color={C.amber} />
+              <Chip label="غير موزّع" active={where === 'none'} onPress={() => setWhere('none')} />
+            </Row>
             {expiring > 0 && (
               <Row>
                 <Chip label="الكل" active={!onlyIqama} onPress={() => setOnlyIqama(false)} />
@@ -48,7 +55,7 @@ export default function Workers() {
               <View style={s.avatar}><T w="black" style={{ color: C.navy, fontSize: 20 }}>{w.name.trim()[0]}</T></View>
               <View style={{ flex: 1, gap: 2 }}>
                 <T w="bold" style={{ fontSize: 17 }} numberOfLines={1}>{w.name}</T>
-                <T style={{ color: C.muted, fontSize: 14 }} numberOfLines={1}>{w.profession}{w.project ? ` · ${w.project}` : ''}</T>
+                <T style={{ color: C.muted, fontSize: 14 }} numberOfLines={1}>{w.profession} · {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'}</T>
                 {iq && <View style={{ alignSelf: 'flex-start', marginTop: 4 }}><Badge label={`${iq.label} ${w.iqama_expiry}`} color={iq.color} bg={iq.bg} /></View>}
               </View>
               <Ionicons name="chevron-back" size={22} color={C.muted} />

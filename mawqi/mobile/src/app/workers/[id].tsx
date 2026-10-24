@@ -4,10 +4,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { api, fmt, sar, shortDate, type AttStatus, type WorkerDetail } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useData, useSync } from '../../lib/sync'
+import { useState } from 'react'
+import { Pressable } from 'react-native'
+import type { Meta } from '../../lib/api'
 import { AppScreen } from '../../components/AppScreen'
 import { iqamaState } from '../../components/iqama'
 import { confirm, useToast } from '../../components/Toast'
-import { Button, C, Card, ErrorBox, Header, Loading, Row, T, type IconName } from '../../components/ui'
+import { Button, C, Card, ErrorBox, Header, Loading, Row, Sheet, T, type IconName } from '../../components/ui'
 
 const ST: Record<AttStatus, { label: string; color: string }> = {
   present: { label: 'حاضر', color: C.good }, late: { label: 'متأخر', color: C.late }, overtime: { label: 'إضافي', color: C.over },
@@ -20,6 +23,24 @@ export default function WorkerCard() {
   const { poke } = useSync()
   const toast = useToast()
   const { data: w, error, loading, refreshing, refresh } = useData<WorkerDetail>(`/api/workers/${id}`)
+  const meta = useData<Meta>(can('moveWorkers') ? '/api/meta' : null)
+  const [moving, setMoving] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const move = async (projectId: number | null, label: string) => {
+    if (!w) return
+    setBusy(true)
+    try {
+      await api(`/api/workers/${w.id}/move`, { method: 'POST', body: JSON.stringify({ project_id: projectId }) })
+      toast(`تم نقل ${w.name} إلى ${label}`)
+      setMoving(false)
+      poke()
+      refresh()
+    } catch (e) {
+      toast((e as Error).message, 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
   const iq = w ? iqamaState(w.iqama_expiry) : null
   const month = (w?.attendance ?? []).slice(0, 31)
   const worked = month.filter((a) => a.status === 'present' || a.status === 'late' || a.status === 'overtime').length
@@ -55,7 +76,7 @@ export default function WorkerCard() {
             <Stat label="غياب" value={fmt(absent)} color={C.bad} />
           </Row>
           <Card style={{ gap: 2 }}>
-            <Info icon="business" label="المشروع" value={w.project ?? 'غير مسند'} />
+            <Info icon="business" label="الموقع الحالي" value={w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'} />
             <Info icon="card" label="رقم الإقامة" value={w.iqama_no} />
             <Info icon="calendar" label="انتهاء الإقامة" value={w.iqama_expiry} />
             <Info icon="flag" label="الجنسية" value={w.nationality} />
@@ -73,7 +94,22 @@ export default function WorkerCard() {
               </Row>
             )) : <T style={{ color: C.muted }}>لا يوجد حضور مسجل بعد</T>}
           </Card>
+          {can('moveWorkers') && <Button label="نقل العامل (مشروع / المصنع)" icon="swap-horizontal" kind="accent" onPress={() => setMoving(true)} />}
           {can('delete') && <Button label="حذف العامل" icon="trash" kind="danger" onPress={remove} />}
+          <Sheet visible={moving} title={`أين يعمل ${w.name}؟`} onClose={() => setMoving(false)}>
+            <T style={{ color: C.muted }}>الموقع الحالي: {w.project ?? 'غير موزّع'}</T>
+            {(meta.data?.projects ?? []).filter((p) => p.status === 'active').map((p) => (
+              <Pressable key={p.id} disabled={busy} onPress={() => move(p.id, p.name)} style={[s.place, w.project_id === p.id && s.placeOn]}>
+                <T style={{ fontSize: 24 }}>{p.kind === 'factory' ? '🏭' : '🏗️'}</T>
+                <T w="bold" style={{ flex: 1, fontSize: 17 }}>{p.name}</T>
+                {w.project_id === p.id && <Ionicons name="checkmark-circle" size={24} color={C.navy} />}
+              </Pressable>
+            ))}
+            <Pressable disabled={busy} onPress={() => move(null, 'غير موزّع')} style={[s.place, !w.project_id && s.placeOn]}>
+              <T style={{ fontSize: 24 }}>⏸️</T>
+              <T w="bold" style={{ flex: 1, fontSize: 17 }}>غير موزّع</T>
+            </Pressable>
+          </Sheet>
         </>
       )}
     </AppScreen>
@@ -104,4 +140,6 @@ const s = StyleSheet.create({
   info: { minHeight: 44, borderBottomWidth: 1, borderColor: '#f1ede9', gap: 10 },
   att: { minHeight: 40, gap: 10 },
   dot: { width: 12, height: 12, borderRadius: 6 },
+  place: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingHorizontal: 14, borderRadius: 14, borderWidth: 2, borderColor: C.line, backgroundColor: '#fff' },
+  placeOn: { borderColor: C.navy, backgroundColor: C.navySoft },
 })

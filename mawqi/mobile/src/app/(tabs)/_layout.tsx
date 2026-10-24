@@ -18,7 +18,7 @@ export default function TabsLayout() {
       headerShown: false,
       tabBarActiveTintColor: C.navy,
       tabBarInactiveTintColor: '#8d879a',
-      tabBarLabelStyle: { fontFamily: 'Tajawal_700Bold', fontSize: 14 },
+      tabBarLabelStyle: { fontFamily: 'Tajawal_700Bold', fontSize: 13 },
       tabBarStyle: { height: 66 + insets.bottom, paddingTop: 6, paddingBottom: 8 + insets.bottom, borderTopColor: C.line, backgroundColor: '#fff' },
       tabBarActiveBackgroundColor: '#fff',
       sceneStyle: { backgroundColor: C.bg },
@@ -29,6 +29,7 @@ export default function TabsLayout() {
         tabBarBadge: queue.length ? queue.length : undefined, tabBarBadgeStyle: { backgroundColor: C.amber, fontFamily: 'Tajawal_700Bold' },
       }} />
       <Tabs.Screen name="site" options={{ title: 'الموقع', tabBarIcon: icon('construct', 'construct-outline'), href: can('dailyReports') || can('issues') ? undefined : null }} />
+      <Tabs.Screen name="reports" options={{ title: 'التقارير', tabBarIcon: icon('document-text', 'document-text-outline') }} />
       <Tabs.Screen name="more" options={{ title: 'المزيد', tabBarIcon: icon('grid', 'grid-outline') }} />
     </Tabs>
   )

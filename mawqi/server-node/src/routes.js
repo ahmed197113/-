@@ -718,7 +718,7 @@ api.get('/reports/summary', (req, res) => {
   const { month, from, toCapped } = monthRange(req.query.month);
   const scope = scopeOf(req);
   const projects = db.prepare(`
-    SELECT p.id, p.name, p.contract_value, p.progress,
+    SELECT p.id, p.name, p.kind, p.contract_value, p.progress,
       (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to) AS labour,
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to AND a.status IN ('present','late','overtime')) AS man_days,
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to AND a.status = 'absent') AS absences,

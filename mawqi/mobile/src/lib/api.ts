@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 
 export type Role = 'admin' | 'sysadmin' | 'project_manager' | 'supervisor' | 'accountant'
-export type Permission = 'projects' | 'projectsCreate' | 'workers' | 'attendance' | 'dailyReports' | 'issues' | 'invoices' | 'directOrders' | 'users' | 'delete'
+export type Permission = 'projects' | 'projectsCreate' | 'workers' | 'moveWorkers' | 'attendance' | 'dailyReports' | 'issues' | 'invoices' | 'directOrders' | 'users' | 'delete'
 export interface User { id: number; name: string; username: string; role: Role; roleLabel: string; permissions: Partial<Record<Permission, boolean>> }
 
 export interface ProjectRow {
@@ -24,7 +24,7 @@ export interface Dashboard {
   projects: ProjectRow[]
   alerts: Alert[]
 }
-export interface Meta { projects: { id: number; name: string; status: string }[]; users: { id: number; name: string; role: Role; active: number }[] }
+export interface Meta { projects: { id: number; name: string; status: string; kind?: string }[]; users: { id: number; name: string; role: Role; active: number }[] }
 
 export type AttStatus = 'present' | 'late' | 'overtime' | 'absent' | 'leave'
 export interface AttRow { worker_id: number; name: string; profession: string; project_id: number; project: string; status: AttStatus | null; check_in: string | null; check_out: string | null; overtime_hours: number | null }
@@ -42,7 +42,7 @@ export interface Issue {
 }
 export interface Worker {
   id: number; name: string; iqama_no: string; iqama_expiry: string; nationality: string; profession: string; phone: string | null
-  wage_type: 'daily' | 'monthly'; wage: number; project: string | null; subcontractor: string | null; active: number
+  wage_type: 'daily' | 'monthly'; wage: number; project_id: number | null; project: string | null; location_kind?: string | null; subcontractor: string | null; active: number
   days_present: number; days_absent: number; iqama_soon: number
 }
 export interface WorkerDetail extends Worker {
@@ -79,6 +79,8 @@ export async function loadSession() {
   return { server, token, user: raw ? (JSON.parse(raw) as User) : null }
 }
 export const getServer = () => server
+/** A download link that opens in the phone's browser (it cannot send headers, so the token rides along). */
+export const fileUrl = (path: string) => `${server}${path}${path.includes('?') ? '&' : '?'}token=${encodeURIComponent(token ?? '')}`
 export const normalizeServer = (url: string) => {
   let s = url.trim().replace(/\/+$/, '')
   if (s && !/^https?:\/\//.test(s)) s = `https://${s}`
