@@ -2,7 +2,7 @@
 // Run with `npm run seed` — wipes and rebuilds the database.
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
-import { backfillMembers, db, tx } from './db.js';
+import { backfillMembers, db, ensureFactory, tx } from './db.js';
 import { addDays, isFriday, todayStr } from './util.js';
 
 let s = 20261023;
@@ -203,6 +203,7 @@ export function seed() {
   });
 
   backfillMembers();
+  ensureFactory();
   const n = (t) => db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n;
   console.log(`Seeded: ${n('projects')} projects, ${n('workers')} workers, ${n('attendance')} attendance rows, ${n('issues')} issues.`);
 }

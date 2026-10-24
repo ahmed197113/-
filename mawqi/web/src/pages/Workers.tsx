@@ -2,14 +2,14 @@ import { useMemo, useState } from 'react'
 import { fmt, sar, shortDate } from '../api'
 import { Icon } from '../icons'
 import {
-  ATT, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, today, addDays,
+  ATT, Badge, DeleteButton, download, Empty, ErrorBox, Field, FormModal, inp, Loading, Modal, PageHead, ProjectSelect, Search, send, Stat, today, addDays, toast,
   useCan, useData, useMeta,
 } from '../ui'
 
 interface Worker {
   id: number; name: string; iqama_no: string; iqama_expiry: string; nationality: string; profession: string; phone: string | null
   wage_type: 'daily' | 'monthly'; wage: number; subcontractor_id: number | null; project_id: number | null; active: number
-  project: string | null; subcontractor: string | null; days_present: number; days_absent: number; iqama_soon: number
+  project: string | null; location_kind?: string | null; subcontractor: string | null; days_present: number; days_absent: number; iqama_soon: number
 }
 interface WorkerDetail extends Worker {
   history: { from_date: string; to_date: string | null; project: string }[]
@@ -26,6 +26,7 @@ export default function WorkersPage() {
   const [onlyIqama, setOnlyIqama] = useState(false)
   const [editing, setEditing] = useState<Partial<Worker> | null>(null)
   const [viewing, setViewing] = useState<number | null>(null)
+  const [moving, setMoving] = useState<Worker | null>(null)
   const can = useCan()
   const { data, error } = useData<Worker[]>(`/api/workers?active=${active}${project ? `&project=${project}` : ''}`)
 
@@ -52,7 +53,7 @@ export default function WorkersPage() {
 
       <div className="toolbar">
         <Search value={q} onChange={setQ} placeholder="بحث بالاسم أو الإقامة أو المهنة" />
-        <ProjectSelect value={project} onChange={setProject} />
+        <ProjectSelect value={project} onChange={setProject} unassigned />
         <select className="select" value={active} onChange={(e) => setActive(e.target.value)}>
           <option value="1">النشطون</option><option value="0">الموقوفون</option><option value="all">الكل</option>
         </select>
@@ -63,12 +64,17 @@ export default function WorkersPage() {
         {shown.length === 0 ? <Empty icon="workers" title="لا يوجد عمال مطابقون" /> : (
           <div className="table-scroll">
             <table className="data">
-              <thead><tr><th>العامل</th><th>المشروع</th><th>الإقامة</th><th>الأجر</th><th>حضور الشهر</th><th /></tr></thead>
+              <thead><tr><th>العامل</th><th>الموقع الحالي</th><th>الإقامة</th><th>الأجر</th><th>حضور الشهر</th><th /></tr></thead>
               <tbody>
                 {shown.map((w) => (
                   <tr key={w.id} onClick={() => setViewing(w.id)} className="clickable">
                     <td><div className="who"><span className="avatar-s">{w.name.slice(0, 1)}</span><div><strong>{w.name}</strong><small>{w.profession} · {w.nationality}{w.subcontractor ? ` · ${w.subcontractor}` : ''}</small></div></div></td>
-                    <td>{w.project ?? <span className="muted">غير موزّع</span>}</td>
+                    <td>
+                      <div className="loc">
+                        {w.project ? <Badge tone={w.location_kind === 'factory' ? 'amber' : 'navy'}>{w.location_kind === 'factory' ? '🏭 ' : ''}{w.project}</Badge> : <Badge>غير موزّع</Badge>}
+                        {can('moveWorkers') && <button className="btn sm" onClick={(e) => { e.stopPropagation(); setMoving(w) }}>نقل</button>}
+                      </div>
+                    </td>
                     <td><span className="mono">{w.iqama_no}</span><small className={w.iqama_soon ? 'bad-t' : 'muted'}>تنتهي {w.iqama_expiry}</small></td>
                     <td className="num">{fmt(w.wage)} <small className="muted">{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></td>
                     <td><span className="good-t">{w.days_present} يوم</span>{w.days_absent > 0 && <small className="bad-t"> · غياب {w.days_absent}</small>}</td>
@@ -82,6 +88,7 @@ export default function WorkersPage() {
       </section>
 
       {editing && <WorkerForm worker={editing} onClose={() => setEditing(null)} />}
+      {moving && <MoveWorker worker={moving} onClose={() => setMoving(null)} />}
       {viewing && <WorkerView id={viewing} onClose={() => setViewing(null)} onEdit={(w) => { setViewing(null); setEditing(w) }} />}
     </div>
   )
@@ -181,6 +188,36 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
           </ul>
         </div>
       )}
+    </Modal>
+  )
+}
+
+function MoveWorker({ worker, onClose }: { worker: Worker; onClose: () => void }) {
+  const meta = useMeta()
+  const [target, setTarget] = useState<string>(String(worker.project_id ?? ''))
+  const [busy, setBusy] = useState(false)
+  const go = async () => {
+    setBusy(true)
+    try { await send(`/api/workers/${worker.id}/move`, 'POST', { project_id: target ? Number(target) : null }, `تم نقل ${worker.name}`); onClose() }
+    catch (e) { toast((e as Error).message, 'err') } finally { setBusy(false) }
+  }
+  const places = meta?.projects.filter((p) => p.status === 'active') ?? []
+  return (
+    <Modal title={`أين يعمل ${worker.name}؟`} onClose={onClose} footer={
+      <>
+        <button className="btn ghost" onClick={onClose}>إلغاء</button>
+        <button className="btn primary" onClick={go} disabled={busy}>{busy ? 'جارٍ النقل…' : 'تأكيد'}</button>
+      </>
+    }>
+      <p className="muted">الموقع الحالي: <b>{worker.project ?? 'غير موزّع'}</b></p>
+      <div className="places">
+        {places.map((p) => (
+          <button key={p.id} type="button" className={`place ${target === String(p.id) ? 'on' : ''}`} onClick={() => setTarget(String(p.id))}>
+            <span>{p.kind === 'factory' ? '🏭' : '🏗️'}</span>{p.name}
+          </button>
+        ))}
+        <button type="button" className={`place ${target === '' ? 'on' : ''}`} onClick={() => setTarget('')}><span>⏸️</span>غير موزّع</button>
+      </div>
     </Modal>
   )
 }

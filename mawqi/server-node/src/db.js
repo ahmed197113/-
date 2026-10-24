@@ -171,6 +171,7 @@ CREATE TABLE IF NOT EXISTS direct_order_items (
 for (const sql of [
   'ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1',
   'ALTER TABLE projects ADD COLUMN client TEXT',
+  "ALTER TABLE projects ADD COLUMN kind TEXT NOT NULL DEFAULT 'project'",
   'ALTER TABLE projects ADD COLUMN contract_value REAL NOT NULL DEFAULT 0',
   'ALTER TABLE workers ADD COLUMN phone TEXT',
   'ALTER TABLE issues ADD COLUMN resolution TEXT',
@@ -231,6 +232,17 @@ export function setMembers(projectId, managerIds, supervisorIds) {
 /** SQL pieces: comma-separated names / ids of a project's members (project alias p). */
 export const memberNames = (kind) => `(SELECT GROUP_CONCAT(u.name, '، ') FROM project_members pm JOIN users u ON u.id = pm.user_id WHERE pm.project_id = p.id AND pm.kind = '${kind}')`;
 export const memberIds = (kind) => `(SELECT GROUP_CONCAT(pm.user_id) FROM project_members pm WHERE pm.project_id = p.id AND pm.kind = '${kind}')`;
+
+/** The company factory/workshop is a special location (kind = 'factory') so attendance and costs work the same way. */
+export function ensureFactory() {
+  const f = db.prepare(`SELECT id FROM projects WHERE kind = 'factory' ORDER BY id LIMIT 1`).get();
+  if (f) return f.id;
+  const today = new Date().toISOString().slice(0, 10);
+  const r = db.prepare(`INSERT INTO projects (name, city, lat, lng, radius_m, start_date, end_date, planned_workers, progress, status, kind)
+    VALUES ('المصنع', NULL, 0, 0, 300, ?, '2099-12-31', 1, 0, 'active', 'factory')`).run(today);
+  return Number(r.lastInsertRowid);
+}
+export const factoryId = () => db.prepare(`SELECT id FROM projects WHERE kind = 'factory' ORDER BY id LIMIT 1`).get()?.id ?? null;
 
 export function getSetting(key, fallback) {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);

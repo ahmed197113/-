@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { db } from './db.js';
+import { db, factoryId } from './db.js';
 
 const SECRET = process.env.MAWQI_JWT_SECRET || 'mawqi-dev-secret-change-me';
 
@@ -17,6 +17,8 @@ export const PERMISSIONS = {
   projects: ['admin', 'sysadmin', 'project_manager'],
   projectsCreate: ['admin', 'sysadmin'],
   workers: ['admin', 'sysadmin', 'project_manager'],
+  /** Choose where a worker is today: a project or the factory. */
+  moveWorkers: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
   attendance: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
   dailyReports: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
   issues: ['admin', 'sysadmin', 'project_manager', 'supervisor'],
@@ -70,5 +72,8 @@ export const isTop = (user) => user.role === 'admin' || user.role === 'sysadmin'
 export function projectScope(user) {
   if (['admin', 'sysadmin', 'accountant'].includes(user.role)) return null;
   const kind = user.role === 'project_manager' ? 'manager' : 'supervisor';
-  return db.prepare('SELECT project_id FROM project_members WHERE user_id = ? AND kind = ?').all(user.id, kind).map((r) => r.project_id);
+  const own = db.prepare('SELECT project_id FROM project_members WHERE user_id = ? AND kind = ?').all(user.id, kind).map((r) => r.project_id);
+  // Every engineer and supervisor can work with the factory.
+  const f = factoryId();
+  return f && !own.includes(f) ? [...own, f] : own;
 }

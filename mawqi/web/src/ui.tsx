@@ -33,7 +33,7 @@ export const ORDER_STATUS: Record<string, { label: string; tone: string }> = {
 export interface Meta {
   roles: Record<string, string>
   users: { id: number; name: string; role: string; active: number }[]
-  projects: { id: number; name: string; status: string }[]
+  projects: { id: number; name: string; status: string; kind?: string }[]
   subcontractors: { id: number; name: string }[]
   settings: { companyName: string; absenceCutoff: string }
 }
@@ -154,13 +154,14 @@ export function Search({ value, onChange, placeholder }: { value: string; onChan
   return <label className="search"><Icon name="search" size={18} /><input placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} /></label>
 }
 
-export function ProjectSelect({ value, onChange, all = true, label }: { value: string; onChange: (v: string) => void; all?: boolean; label?: string }) {
+export function ProjectSelect({ value, onChange, all = true, label, unassigned }: { value: string; onChange: (v: string) => void; all?: boolean; label?: string; unassigned?: boolean }) {
   const meta = useMeta()
   return (
     <select className="select" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label ?? 'المشروع'}>
-      {all && <option value="">كل المشاريع</option>}
+      {all && <option value="">{unassigned ? 'كل المواقع' : 'كل المشاريع'}</option>}
+      {unassigned && <option value="none">غير موزّع</option>}
       {!all && <option value="">اختر المشروع…</option>}
-      {meta?.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      {meta?.projects.map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : ''}{p.name}</option>)}
     </select>
   )
 }

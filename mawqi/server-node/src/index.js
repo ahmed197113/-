@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { db, getSetting, setSetting, tx } from './db.js';
+import { db, ensureFactory, getSetting, setSetting, tx } from './db.js';
 import { hashPassword } from './auth.js';
 import { login, projectScope, requireAuth, verifyToken } from './auth.js';
 import { buildDashboard } from './dashboard.js';
@@ -36,6 +36,7 @@ if (PROD) {
     setSetting('demo_cleared', new Date().toISOString());
   }
 } else if (count('projects') === 0) seed();
+ensureFactory();
 
 const app = express();
 app.use(cors());

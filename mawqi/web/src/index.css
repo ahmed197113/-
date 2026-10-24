@@ -550,3 +550,9 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
 .pick-chip.on { background: var(--navy); border-color: var(--navy); color: #fff; }
 .pick-chip:disabled { opacity: .6; cursor: default; }
 .team { display: flex; gap: 18px; flex-wrap: wrap; color: var(--ink-2); font-size: 15px; margin-top: -8px; } .team span { display: inline-flex; gap: 6px; align-items: center; } .team b { color: var(--ink); }
+.loc { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.places { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 10px; }
+.place { display: flex; gap: 10px; align-items: center; padding: 14px; border: 2px solid var(--line); border-radius: 14px; background: #fff; font-weight: 700; font-size: 15px; cursor: pointer; text-align: start; }
+.place span { font-size: 22px; }
+.place:hover { border-color: var(--sand); }
+.place.on { border-color: var(--navy); background: #f1effa; color: var(--navy); }

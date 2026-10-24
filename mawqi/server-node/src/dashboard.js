@@ -23,7 +23,7 @@ export function buildDashboard(scope) {
       (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date = $today) AS cost_today,
       (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date BETWEEN $monthStart AND $today) AS cost_month
     FROM projects p
-    WHERE ${inList('p.id', scope)}
+    WHERE ${inList('p.id', scope)} AND p.kind = 'project'
     ORDER BY p.id`).all({ $today: today, $monthStart: monthStart })
     .map((p) => ({ ...p, cost_today: round(p.cost_today), cost_month: round(p.cost_month) }));
 

@@ -1,7 +1,7 @@
 // REST API for every section of موقعي. Mounted under /api after requireAuth.
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { db, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
+import { db, ensureFactory, factoryId, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
 import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
 import { addDays, round, todayStr, nowTime } from './util.js';
 
@@ -47,7 +47,7 @@ api.get('/meta', (req, res) => {
   res.json({
     roles: ROLE_LABELS,
     users: db.prepare('SELECT id, name, role, active FROM users ORDER BY name').all(),
-    projects: db.prepare(`SELECT id, name, status FROM projects WHERE ${inList('id', scope)} ORDER BY name`).all(),
+    projects: db.prepare(`SELECT id, name, status, kind FROM projects WHERE ${inList('id', scope)} ORDER BY kind = 'factory' DESC, name`).all(),
     subcontractors: db.prepare('SELECT id, name FROM subcontractors ORDER BY name').all(),
     settings: { companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), absenceCutoff: getSetting('absence_cutoff', '09:00') },
   });
@@ -118,6 +118,7 @@ api.post('/admin/reset', need('users'), (req, res) => {
   tx(() => {
     for (const t of ['project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
     db.prepare('DELETE FROM users WHERE id <> ?').run(req.user.id);
+    ensureFactory();
   });
   changed(req, 'all');
   res.json({ ok: true });
@@ -163,7 +164,7 @@ const idList = (v, single) => {
 };
 
 api.get('/projects', (req, res) => {
-  const rows = db.prepare(projectSelect(inList('p.id', scopeOf(req))) + ' ORDER BY p.status, p.name').all(projectParams());
+  const rows = db.prepare(projectSelect(`${inList('p.id', scopeOf(req))} AND p.kind = 'project'`) + ' ORDER BY p.status, p.name').all(projectParams());
   res.json(rows.map(roundProject));
 });
 
@@ -235,12 +236,14 @@ api.put('/projects/:id', need('projects'), (req, res) => {
 // ---------- workers ----------
 api.get('/workers', (req, res) => {
   const { from, toCapped } = monthRange();
-  const where = [inList('w.project_id', scopeOf(req))];
+  // All engineers and supervisors see every worker so they can pull them into their project or the factory.
+  const where = ['1=1'];
   const params = { $from: from, $to: toCapped, $soon: addDays(todayStr(), 30) };
-  if (req.query.project) { where.push('w.project_id = $project'); params.$project = Number(req.query.project); }
+  if (req.query.project === 'none') where.push('w.project_id IS NULL');
+  else if (req.query.project) { where.push('w.project_id = $project'); params.$project = Number(req.query.project); }
   if (req.query.active !== 'all') where.push(`w.active = ${req.query.active === '0' ? 0 : 1}`);
   const rows = db.prepare(`
-    SELECT w.*, p.name AS project, s.name AS subcontractor,
+    SELECT w.*, p.name AS project, p.kind AS location_kind, s.name AS subcontractor,
       (SELECT COUNT(*) FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to AND a.status IN ('present','late','overtime')) AS days_present,
       (SELECT COUNT(*) FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to AND a.status = 'absent') AS days_absent,
       (w.iqama_expiry <= $soon) AS iqama_soon
@@ -253,7 +256,6 @@ api.get('/workers/:id', (req, res) => {
   const w = db.prepare(`SELECT w.*, p.name AS project, s.name AS subcontractor FROM workers w
     LEFT JOIN projects p ON p.id = w.project_id LEFT JOIN subcontractors s ON s.id = w.subcontractor_id WHERE w.id = ?`).get(Number(req.params.id));
   if (!w) fail(404, 'العامل غير موجود');
-  if (w.project_id) ensureProject(req, w.project_id);
   w.history = db.prepare(`SELECT wa.from_date, wa.to_date, p.name AS project FROM worker_assignments wa JOIN projects p ON p.id = wa.project_id
     WHERE wa.worker_id = ? ORDER BY wa.from_date DESC`).all(w.id);
   w.attendance = db.prepare(`SELECT date, status, check_in, check_out, overtime_hours FROM attendance WHERE worker_id = ? ORDER BY date DESC LIMIT 31`).all(w.id);
@@ -295,7 +297,6 @@ api.put('/workers/:id', need('workers'), (req, res) => {
   const id = Number(req.params.id);
   const cur = db.prepare('SELECT * FROM workers WHERE id = ?').get(id);
   if (!cur) fail(404, 'العامل غير موجود');
-  if (cur.project_id) ensureProject(req, cur.project_id);
   const w = workerInput(req, req.body || {});
   tx(() => {
     uniqueIqama(() => db.prepare(`UPDATE workers SET name=?, iqama_no=?, iqama_expiry=?, nationality=?, profession=?, phone=?, wage_type=?, wage=?, subcontractor_id=?, project_id=?, active=? WHERE id=?`)
@@ -307,6 +308,23 @@ api.put('/workers/:id', need('workers'), (req, res) => {
     }
   });
   changed(req, 'workers', w.project_id ?? cur.project_id);
+  res.json({ ok: true });
+});
+
+/** Move a worker to one of my projects, the factory, or leave them unassigned. */
+api.post('/workers/:id/move', need('moveWorkers'), (req, res) => {
+  const id = Number(req.params.id);
+  const cur = db.prepare('SELECT id, name, project_id FROM workers WHERE id = ? AND active = 1').get(id);
+  if (!cur) fail(404, 'العامل غير موجود');
+  const target = req.body?.project_id ? ensureProject(req, req.body.project_id) : null;
+  if (target === cur.project_id) return res.json({ ok: true });
+  tx(() => {
+    db.prepare('UPDATE workers SET project_id = ? WHERE id = ?').run(target, id);
+    db.prepare('UPDATE worker_assignments SET to_date = ? WHERE worker_id = ? AND to_date IS NULL').run(addDays(todayStr(), -1), id);
+    if (target) db.prepare('INSERT INTO worker_assignments (worker_id, project_id, from_date) VALUES (?, ?, ?)').run(id, target, todayStr());
+  });
+  changed(req, 'workers', target ?? cur.project_id);
+  if (cur.project_id && cur.project_id !== target) changed(req, 'workers', cur.project_id);
   res.json({ ok: true });
 });
 
@@ -624,6 +642,7 @@ api.delete('/direct-orders/:id', need('delete'), (req, res) => {
 const del = (sql, ...a) => db.prepare(sql).run(...a);
 api.delete('/projects/:id', need('delete'), (req, res) => {
   const id = ensureProject(req, req.params.id);
+  if (id === factoryId()) fail(400, 'لا يمكن حذف المصنع');
   tx(() => {
     del('DELETE FROM direct_order_items WHERE order_id IN (SELECT id FROM direct_orders WHERE project_id = ?)', id);
     for (const t of ['direct_orders', 'invoices', 'daily_reports', 'issues', 'attendance', 'worker_assignments', 'project_members']) del(`DELETE FROM ${t} WHERE project_id = ?`, id);
