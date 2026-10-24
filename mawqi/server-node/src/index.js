@@ -108,8 +108,10 @@ if (process.env.NODE_ENV !== 'production') {
 // In production the server also hosts the built web dashboard (web/dist).
 const webDist = process.env.MAWQI_WEB_DIST || resolve(dirname(fileURLToPath(import.meta.url)), '../../web/dist');
 if (existsSync(webDist)) {
-  app.use(express.static(webDist));
-  app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => res.sendFile(resolve(webDist, 'index.html')));
+  const noStore = (res) => res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate', 'X-Cache-Enabled': 'False' });
+  // index.html must always be fresh so a new release reaches everyone at once; hashed assets can be cached.
+  app.use(express.static(webDist, { setHeaders: (res, file) => { if (file.endsWith('.html') || file.endsWith('.webmanifest')) noStore(res); } }));
+  app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => { noStore(res); res.sendFile(resolve(webDist, 'index.html')); });
 }
 
 startJobs(broadcast);
