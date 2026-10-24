@@ -119,7 +119,9 @@ if (existsSync(mobileDist)) {
     if (/\.(html|webmanifest)$|sw\.js$|version\.json$/.test(file)) fresh(res);
     else if (file.includes('/_expo/')) res.set('Cache-Control', 'public, max-age=31536000, immutable');
   } }));
-  app.get(/^\/m(\/.*)?$/, (_req, res) => { fresh(res); res.sendFile('index.html', { root: mobileDist, dotfiles: 'allow' }); });
+  app.get(/^\/m(\/.*)?$/, (req, res) => {
+    if (/\.[a-z0-9]{2,5}$/i.test(req.path)) return res.status(404).end(); // a missing file, not a page
+    fresh(res); res.sendFile('index.html', { root: mobileDist, dotfiles: 'allow' }); });
 }
 
 // In production the server also hosts the built web dashboard (web/dist).

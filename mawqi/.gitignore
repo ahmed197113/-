@@ -5,3 +5,6 @@ dist/
 .expo/
 *.tsbuildinfo
 *.sqlite*
+
+# The phone web build ships its fonts from a folder named node_modules.
+!/mobile-web/assets/node_modules/
