@@ -40,11 +40,19 @@ if (PROD) {
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
+// Live data must never be cached by the host (SiteGround caches GET responses otherwise).
+app.use('/api', (_req, res, next) => {
+  res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate, private', Pragma: 'no-cache', Expires: '0', 'X-Cache-Enabled': 'False' });
+  next();
+});
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, name: 'المشاريع' }));
 
 // The web dashboard and app talk to the PHP server's API shape; these routes keep the Node server compatible.
-let dataVersion = 1;
+// The change counter lives in the database so every server process (and restarts) agree on it.
+const readVersion = () => Number(getSetting('data_version', '1'));
+const bumpVersion = () => db.exec(`INSERT INTO settings (key, value) VALUES ('data_version', '2')
+  ON CONFLICT(key) DO UPDATE SET value = CAST(value AS INTEGER) + 1`);
 const loginRoute = (req, res) => {
   const out = login(String(req.body?.username || '').trim(), String(req.body?.password || ''));
   if (!out) return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
@@ -52,8 +60,8 @@ const loginRoute = (req, res) => {
 };
 app.post('/api/auth/login', loginRoute);
 app.post('/api/login', loginRoute);
-app.get('/api/status', (_req, res) => res.json({ needsSetup: false, companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), version: dataVersion }));
-app.get('/api/version', requireAuth, (_req, res) => res.json({ version: dataVersion }));
+app.get('/api/status', (_req, res) => res.json({ needsSetup: false, companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), version: readVersion() }));
+app.get('/api/version', requireAuth, (_req, res) => res.json({ version: readVersion() }));
 app.post('/api/logout', (_req, res) => res.json({ ok: true }));
 
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
@@ -82,7 +90,7 @@ io.on('connection', (socket) => {
 
 /** Tell every connected client that can see `projectId` that data changed. */
 export function broadcast(event, payload = {}) {
-  dataVersion++;
+  bumpVersion();
   const rooms = ['all'];
   if (payload.projectId) rooms.push(`project:${payload.projectId}`);
   io.to(rooms).emit(event, payload);

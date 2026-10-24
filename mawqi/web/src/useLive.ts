@@ -43,6 +43,8 @@ export function useLive<T>(path: string) {
     check()
     const timer = window.setInterval(() => { if (!document.hidden) check() }, POLL_MS)
     const onVisible = () => { if (!document.hidden) check() }
+    const onChanged = () => { load() }
+    window.addEventListener('mawqi:changed', onChanged)
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('online', onVisible)
     return () => {
@@ -50,6 +52,7 @@ export function useLive<T>(path: string) {
       window.clearInterval(timer)
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('online', onVisible)
+      window.removeEventListener('mawqi:changed', onChanged)
     }
   }, [load])
 

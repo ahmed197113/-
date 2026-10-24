@@ -27,12 +27,18 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY)
 export const setToken = (t: string | null) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY))
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
+  const method = (init.method || 'GET').toUpperCase()
+  // A unique query string defeats any cache between the browser and the server.
+  const url = method === 'GET' ? `${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}` : path
+  const res = await fetch(url, {
     ...init,
+    cache: 'no-store',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${getToken() ?? ''}`, ...init.headers },
   })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw Object.assign(new Error(body.error || 'تعذر الاتصال بالخادم'), { status: res.status })
+  // Any successful change refreshes every open page at once.
+  if (method !== 'GET' && !path.includes('/login') && !path.includes('/logout')) window.dispatchEvent(new Event('mawqi:changed'))
   return body as T
 }
 
