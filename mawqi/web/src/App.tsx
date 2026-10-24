@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth'
 import Layout from './components/Layout'
 import Login from './pages/Login'
@@ -41,9 +41,14 @@ function Routed() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routed />
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   )
+}
+
+// The host serves unknown paths itself (404), so routes live after "#". Old /path links are moved to /#/path.
+if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/api')) {
+  window.history.replaceState(null, '', '/#' + window.location.pathname + window.location.search)
 }
