@@ -4,6 +4,11 @@ import { randomUUID } from 'node:crypto';
 import { db, ensureFactory, factoryId, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
 import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
 import { addDays, round, todayStr, nowTime } from './util.js';
+import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+
+const withFiles = (entity, rows) => { const f = filesFor(entity, rows.map((r) => r.id)); return rows.map((r) => ({ ...r, media: f[r.id] || [] })); };
 
 export const api = Router();
 
@@ -115,8 +120,9 @@ api.put('/settings', need('users'), (req, res) => {
 /** Start real use: remove all demo data, keep only the admin who asks. */
 api.post('/admin/reset', need('users'), (req, res) => {
   if (String(req.body?.confirm || '') !== 'ابدأ') fail(400, 'اكتب كلمة «ابدأ» للتأكيد');
+  for (const f of db.prepare('SELECT path FROM attachments').all()) rmSync(join(UPLOAD_DIR, f.path), { force: true });
   tx(() => {
-    for (const t of ['project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
+    for (const t of ['attachments', 'project_members', 'direct_order_items', 'direct_orders', 'invoices', 'daily_reports', 'attendance', 'worker_assignments', 'issues', 'workers', 'subcontractors', 'projects']) db.exec(`DELETE FROM ${t}`);
     db.prepare('DELETE FROM users WHERE id <> ?').run(req.user.id);
     ensureFactory();
   });
@@ -165,7 +171,9 @@ const idList = (v, single) => {
 
 api.get('/projects', (req, res) => {
   const rows = db.prepare(projectSelect(`${inList('p.id', scopeOf(req))} AND p.kind = 'project'`) + ' ORDER BY p.status, p.name').all(projectParams());
-  res.json(rows.map(roundProject));
+  // Latest photo of each project, used as its cover.
+  const covers = Object.fromEntries(db.prepare(`SELECT project_id, MAX(id) AS id FROM attachments WHERE kind = 'image' AND entity IN ('project','daily_report','issue') GROUP BY project_id`).all().map((r) => [r.project_id, r.id]));
+  res.json(rows.map((r) => ({ ...roundProject(r), cover: covers[r.id] ? `/api/files/${covers[r.id]}` : null })));
 });
 
 api.get('/projects/:id', (req, res) => {
@@ -183,6 +191,8 @@ api.get('/projects/:id', (req, res) => {
   const inv = db.prepare(`SELECT kind, COALESCE(SUM(gross), 0) AS gross FROM invoices WHERE project_id = ? AND status IN ('approved','paid') GROUP BY kind`).all(id);
   p.invoiced = round(inv.find((r) => r.kind === 'client')?.gross ?? 0);
   p.subcontracted = round(inv.find((r) => r.kind === 'subcontractor')?.gross ?? 0);
+  p.gallery = projectGallery(id);
+  p.documents = filesFor('project', [id])[id]?.filter((f) => f.kind === 'file') ?? [];
   res.json(p);
 });
 
@@ -238,7 +248,7 @@ api.get('/workers', (req, res) => {
   const { from, toCapped } = monthRange();
   // All engineers and supervisors see every worker so they can pull them into their project or the factory.
   const where = ['1=1'];
-  const params = { $from: from, $to: toCapped, $soon: addDays(todayStr(), 30) };
+  const params = { $from: from, $to: toCapped, $soon: addDays(todayStr(), 30), $today: todayStr() };
   if (req.query.project === 'none') where.push('w.project_id IS NULL');
   else if (req.query.project) { where.push('w.project_id = $project'); params.$project = Number(req.query.project); }
   if (req.query.active !== 'all') where.push(`w.active = ${req.query.active === '0' ? 0 : 1}`);
@@ -246,10 +256,12 @@ api.get('/workers', (req, res) => {
     SELECT w.*, p.name AS project, p.kind AS location_kind, s.name AS subcontractor,
       (SELECT COUNT(*) FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to AND a.status IN ('present','late','overtime')) AS days_present,
       (SELECT COUNT(*) FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to AND a.status = 'absent') AS days_absent,
-      (w.iqama_expiry <= $soon) AS iqama_soon
+      (w.iqama_expiry <= $soon) AS iqama_soon,
+      (SELECT a.status FROM attendance a WHERE a.worker_id = w.id AND a.date = $today) AS today
     FROM workers w LEFT JOIN projects p ON p.id = w.project_id LEFT JOIN subcontractors s ON s.id = w.subcontractor_id
     WHERE ${where.join(' AND ')} ORDER BY w.name`).all(params);
-  res.json(rows);
+  const photos = workerPhotos();
+  res.json(rows.map((w) => ({ ...w, photo: photos[w.id] ? `/api/files/${photos[w.id]}` : null })));
 });
 
 api.get('/workers/:id', (req, res) => {
@@ -259,6 +271,9 @@ api.get('/workers/:id', (req, res) => {
   w.history = db.prepare(`SELECT wa.from_date, wa.to_date, p.name AS project FROM worker_assignments wa JOIN projects p ON p.id = wa.project_id
     WHERE wa.worker_id = ? ORDER BY wa.from_date DESC`).all(w.id);
   w.attendance = db.prepare(`SELECT date, status, check_in, check_out, overtime_hours FROM attendance WHERE worker_id = ? ORDER BY date DESC LIMIT 31`).all(w.id);
+  w.media = filesFor('worker', [w.id])[w.id] || [];
+  const ph = [...w.media].reverse().find((m) => m.tag === 'photo');
+  w.photo = ph ? ph.url : null;
   res.json(w);
 });
 
@@ -420,13 +435,13 @@ api.get('/daily-reports', (req, res) => {
   if (req.query.project) { where.push('d.project_id = $project'); params.$project = Number(req.query.project); }
   if (isDate(req.query.from)) { where.push('d.date >= $from'); params.$from = req.query.from; }
   if (isDate(req.query.to)) { where.push('d.date <= $to'); params.$to = req.query.to; }
-  res.json(db.prepare(`
+  res.json(withFiles('daily_report', db.prepare(`
     SELECT d.*, p.name AS project, u.name AS author,
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = d.project_id AND a.date = d.date AND a.status IN ('present','late','overtime')) AS present,
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = d.project_id AND a.date = d.date AND a.status = 'absent') AS absent,
       (SELECT COUNT(*) FROM issues i WHERE i.project_id = d.project_id AND substr(i.created_at, 1, 10) = d.date) AS new_issues
     FROM daily_reports d JOIN projects p ON p.id = d.project_id LEFT JOIN users u ON u.id = d.created_by
-    WHERE ${where.join(' AND ')} ORDER BY d.date DESC, p.name LIMIT 300`).all(params));
+    WHERE ${where.join(' AND ')} ORDER BY d.date DESC, p.name LIMIT 300`).all(params)));
 });
 const reportInput = (req, b) => ({
   project_id: ensureProject(req, b.project_id),
@@ -471,12 +486,12 @@ api.get('/issues', (req, res) => {
   if (req.query.project) { where.push('i.project_id = $project'); params.$project = Number(req.query.project); }
   if (req.query.status === 'active') where.push(`i.status <> 'closed'`);
   else if (['open', 'in_progress', 'closed'].includes(req.query.status)) { where.push('i.status = $status'); params.$status = req.query.status; }
-  res.json(db.prepare(`
+  res.json(withFiles('issue', db.prepare(`
     SELECT i.*, p.name AS project, a.name AS assignee, r.name AS reporter, (i.status <> 'closed' AND i.due_at < $now) AS overdue
     FROM issues i JOIN projects p ON p.id = i.project_id LEFT JOIN users a ON a.id = i.assignee_id LEFT JOIN users r ON r.id = i.reported_by
     WHERE ${where.join(' AND ')}
     ORDER BY (i.status = 'closed'), CASE i.severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, i.due_at
-    LIMIT 500`).all({ ...params, $now: nowStamp() }));
+    LIMIT 500`).all({ ...params, $now: nowStamp() })));
 });
 const issueInput = (req, b) => ({
   project_id: ensureProject(req, b.project_id), title: required(b.title, 'عنوان البلاغ'), description: str(b.description),
@@ -521,7 +536,7 @@ api.get('/invoices', (req, res) => {
   const rows = db.prepare(`SELECT v.*, p.name AS project, s.name AS subcontractor, p.client
     FROM invoices v JOIN projects p ON p.id = v.project_id LEFT JOIN subcontractors s ON s.id = v.subcontractor_id
     WHERE ${where.join(' AND ')} ORDER BY v.created_at DESC`).all(params).map(invoiceMath);
-  res.json(rows);
+  res.json(withFiles('invoice', rows));
 });
 const invoiceInput = (req, b) => {
   const kind = b.kind === 'subcontractor' ? 'subcontractor' : 'client';
@@ -556,6 +571,7 @@ api.delete('/invoices/:id', need('delete'), (req, res) => {
   const cur = db.prepare('SELECT project_id, status FROM invoices WHERE id = ?').get(Number(req.params.id));
   if (!cur) fail(404, 'المستخلص غير موجود');
   ensureProject(req, cur.project_id);
+  removeFilesOf('invoice', [Number(req.params.id)]);
   db.prepare('DELETE FROM invoices WHERE id = ?').run(Number(req.params.id));
   changed(req, 'invoices', cur.project_id);
   res.json({ ok: true });
@@ -581,6 +597,7 @@ api.get('/direct-orders/:id', (req, res) => {
   if (!o) fail(404, 'أمر الإسناد غير موجود');
   ensureProject(req, o.project_id);
   o.items = db.prepare('SELECT * FROM direct_order_items WHERE order_id = ? ORDER BY id').all(o.id);
+  o.media = filesFor('direct_order', [o.id])[o.id] || [];
   res.json(o);
 });
 const orderInput = (req, b) => {
@@ -631,6 +648,7 @@ api.delete('/direct-orders/:id', need('delete'), (req, res) => {
   if (!cur) fail(404, 'أمر الإسناد غير موجود');
   ensureProject(req, cur.project_id);
   tx(() => {
+    removeFilesOf('direct_order', [Number(req.params.id)]);
     db.prepare('DELETE FROM direct_order_items WHERE order_id = ?').run(Number(req.params.id));
     db.prepare('DELETE FROM direct_orders WHERE id = ?').run(Number(req.params.id));
   });
@@ -645,6 +663,8 @@ api.delete('/projects/:id', need('delete'), (req, res) => {
   if (id === factoryId()) fail(400, 'لا يمكن حذف المصنع');
   tx(() => {
     del('DELETE FROM direct_order_items WHERE order_id IN (SELECT id FROM direct_orders WHERE project_id = ?)', id);
+    for (const f of db.prepare('SELECT path FROM attachments WHERE project_id = ?').all(id)) rmSync(join(UPLOAD_DIR, f.path), { force: true });
+    del(`DELETE FROM attachments WHERE project_id = ? AND entity <> 'worker'`, id);
     for (const t of ['direct_orders', 'invoices', 'daily_reports', 'issues', 'attendance', 'worker_assignments', 'project_members']) del(`DELETE FROM ${t} WHERE project_id = ?`, id);
     del('UPDATE workers SET project_id = NULL WHERE project_id = ?', id);
     del('DELETE FROM projects WHERE id = ?', id);
@@ -657,6 +677,7 @@ api.delete('/workers/:id', need('delete'), (req, res) => {
   const w = db.prepare('SELECT project_id FROM workers WHERE id = ?').get(id);
   if (!w) fail(404, 'العامل غير موجود');
   tx(() => {
+    removeFilesOf('worker', [id]);
     del('DELETE FROM attendance WHERE worker_id = ?', id);
     del('DELETE FROM worker_assignments WHERE worker_id = ?', id);
     del('DELETE FROM workers WHERE id = ?', id);
@@ -667,6 +688,7 @@ api.delete('/workers/:id', need('delete'), (req, res) => {
 api.delete('/daily-reports/:id', need('delete'), (req, res) => {
   const r = db.prepare('SELECT project_id FROM daily_reports WHERE id = ?').get(Number(req.params.id));
   if (!r) fail(404, 'التقرير غير موجود');
+  removeFilesOf('daily_report', [Number(req.params.id)]);
   del('DELETE FROM daily_reports WHERE id = ?', Number(req.params.id));
   changed(req, 'daily_reports', r.project_id);
   res.json({ ok: true });
@@ -674,6 +696,7 @@ api.delete('/daily-reports/:id', need('delete'), (req, res) => {
 api.delete('/issues/:id', need('delete'), (req, res) => {
   const r = db.prepare('SELECT project_id FROM issues WHERE id = ?').get(Number(req.params.id));
   if (!r) fail(404, 'البلاغ غير موجود');
+  removeFilesOf('issue', [Number(req.params.id)]);
   del('DELETE FROM issues WHERE id = ?', Number(req.params.id));
   changed(req, 'issues', r.project_id);
   res.json({ ok: true });

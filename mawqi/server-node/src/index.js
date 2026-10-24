@@ -12,6 +12,7 @@ import { buildDashboard } from './dashboard.js';
 import { startJobs } from './jobs.js';
 import { seed } from './seed.js';
 import { api } from './routes.js';
+import { media } from './media.js';
 
 const count = (t) => db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n;
 const PROD = process.env.NODE_ENV === 'production';
@@ -68,6 +69,7 @@ app.post('/api/logout', (_req, res) => res.json({ ok: true }));
 app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
 
 app.get('/api/dashboard', requireAuth, (req, res) => res.json(buildDashboard(projectScope(req.user))));
+app.use('/api', requireAuth, media);
 app.use('/api', requireAuth, api);
 
 const http = createServer(app);
