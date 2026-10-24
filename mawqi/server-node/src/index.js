@@ -119,7 +119,7 @@ if (existsSync(mobileDist)) {
     if (/\.(html|webmanifest)$|sw\.js$|version\.json$/.test(file)) fresh(res);
     else if (file.includes('/_expo/')) res.set('Cache-Control', 'public, max-age=31536000, immutable');
   } }));
-  app.get(/^\/m(\/.*)?$/, (_req, res) => { fresh(res); res.sendFile(resolve(mobileDist, 'index.html')); });
+  app.get(/^\/m(\/.*)?$/, (_req, res) => { fresh(res); res.sendFile('index.html', { root: mobileDist, dotfiles: 'allow' }); });
 }
 
 // In production the server also hosts the built web dashboard (web/dist).
@@ -128,7 +128,7 @@ if (existsSync(webDist)) {
   const noStore = (res) => res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate', 'X-Cache-Enabled': 'False' });
   // index.html must always be fresh so a new release reaches everyone at once; hashed assets can be cached.
   app.use(express.static(webDist, { setHeaders: (res, file) => { if (file.endsWith('.html') || file.endsWith('.webmanifest')) noStore(res); } }));
-  app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => { noStore(res); res.sendFile(resolve(webDist, 'index.html')); });
+  app.get(/^\/(?!api\/|socket\.io\/).*/, (_req, res) => { noStore(res); res.sendFile('index.html', { root: webDist, dotfiles: 'allow' }); });
 }
 
 startJobs(broadcast);
