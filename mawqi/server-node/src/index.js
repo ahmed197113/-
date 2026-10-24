@@ -111,6 +111,17 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// The phone app as an installable web app (/m): every release reaches phones automatically, no APK to reinstall.
+const mobileDist = process.env.MAWQI_MOBILE_DIST || resolve(dirname(fileURLToPath(import.meta.url)), '../../mobile-web');
+if (existsSync(mobileDist)) {
+  const fresh = (res) => res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate', 'X-Cache-Enabled': 'False' });
+  app.use('/m', express.static(mobileDist, { index: false, setHeaders: (res, file) => {
+    if (/\.(html|webmanifest)$|sw\.js$|version\.json$/.test(file)) fresh(res);
+    else if (file.includes('/_expo/')) res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  } }));
+  app.get(/^\/m(\/.*)?$/, (_req, res) => { fresh(res); res.sendFile(resolve(mobileDist, 'index.html')); });
+}
+
 // In production the server also hosts the built web dashboard (web/dist).
 const webDist = process.env.MAWQI_WEB_DIST || resolve(dirname(fileURLToPath(import.meta.url)), '../../web/dist');
 if (existsSync(webDist)) {

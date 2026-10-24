@@ -70,13 +70,17 @@ const secure = Platform.OS === 'web'
   ? { get: (k: string) => AsyncStorage.getItem(k), set: (k: string, v: string) => AsyncStorage.setItem(k, v), del: (k: string) => AsyncStorage.removeItem(k) }
   : { get: (k: string) => SecureStore.getItemAsync(k), set: (k: string, v: string) => SecureStore.setItemAsync(k, v), del: (k: string) => SecureStore.deleteItemAsync(k) }
 
+/** Opened from the website (/m), the app talks to the same server it was loaded from. */
+const WEB_ORIGIN = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : null
+export const isWebApp = !!WEB_ORIGIN
+
 const K = { server: 'mawqi.server', token: 'mawqi_token', user: 'mawqi.user' }
 let server = ''
 let token: string | null = null
 let onUnauthorized: () => void = () => undefined
 
 export async function loadSession() {
-  server = (await AsyncStorage.getItem(K.server)) ?? ''
+  server = WEB_ORIGIN ?? (await AsyncStorage.getItem(K.server)) ?? ''
   token = await secure.get(K.token).catch(() => null)
   const raw = await AsyncStorage.getItem(K.user)
   return { server, token, user: raw ? (JSON.parse(raw) as User) : null }
@@ -91,7 +95,7 @@ export const normalizeServer = (url: string) => {
   return s
 }
 export async function setServer(url: string) {
-  server = normalizeServer(url)
+  server = WEB_ORIGIN ?? normalizeServer(url)
   await AsyncStorage.setItem(K.server, server)
 }
 export async function saveSession(t: string | null, user: User | null) {

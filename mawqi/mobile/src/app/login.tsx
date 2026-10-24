@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { ALT_SERVER, DEFAULT_SERVER, getServer, normalizeServer } from '../lib/api'
+import { ALT_SERVER, DEFAULT_SERVER, getServer, isWebApp, normalizeServer } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { Button, C, Chip, Field, T } from '../components/ui'
 
@@ -61,12 +61,12 @@ export default function Login() {
             )}
             <Button label="دخول" icon="log-in" busy={busy} onPress={submit} />
 
-            <Pressable onPress={() => setEditServer(!editServer)} style={s.serverToggle}>
+            {!isWebApp && <Pressable onPress={() => setEditServer(!editServer)} style={s.serverToggle}>
               <Ionicons name="server-outline" size={18} color={C.muted} />
               <T style={{ color: C.muted, fontSize: 14, flex: 1 }} numberOfLines={1}>الخادم: {normalizeServer(server).replace(/^https?:\/\//, '')}</T>
               <T w="bold" style={{ color: C.navy, fontSize: 14 }}>{editServer ? 'إخفاء' : 'تغيير'}</T>
-            </Pressable>
-            {editServer && (
+            </Pressable>}
+            {editServer && !isWebApp && (
               <View style={{ gap: 10 }}>
                 <Field label="عنوان خادم الشركة" value={server} onChangeText={setServerUrl} keyboardType="url" ltr autoCapitalize="none" autoCorrect={false} />
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

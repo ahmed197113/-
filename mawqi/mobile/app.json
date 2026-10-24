@@ -20,10 +20,19 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.metallines.mawqi",
       "versionCode": 9,
-      "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "المشاريع",
+      "shortName": "المشاريع",
+      "lang": "ar",
+      "themeColor": "#1e1757",
+      "backgroundColor": "#1e1757"
     },
     "scheme": "mawqi",
     "primaryColor": "#1e1757",
@@ -68,6 +77,9 @@
     "extra": {
       "supportsRTL": true,
       "forcesRTL": true
+    },
+    "experiments": {
+      "baseUrl": "/m"
     }
   }
 }

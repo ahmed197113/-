@@ -1,7 +1,7 @@
 import { router } from 'expo-router'
 import { View } from 'react-native'
 import Constants from 'expo-constants'
-import { getServer } from '../../lib/api'
+import { getServer, isWebApp } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useSync } from '../../lib/sync'
 import { AppScreen } from '../../components/AppScreen'
@@ -32,8 +32,8 @@ export default function More() {
       <Card style={{ paddingVertical: 4 }}>
         <ListItem icon="key" title="تغيير كلمة المرور" onPress={() => router.push('/password')} />
         <Sep />
-        <ListItem icon="server" title="عنوان الخادم" sub={getServer()} onPress={changeServer} />
-        <Sep />
+        {!isWebApp && <ListItem icon="server" title="عنوان الخادم" sub={getServer()} onPress={changeServer} />}
+        {!isWebApp && <Sep />}
         <ListItem icon="log-out" title="تسجيل الخروج" color={C.bad} onPress={signOut} end={<View />} />
       </Card>
       <T style={{ color: C.muted, textAlign: 'center', fontSize: 14 }}>

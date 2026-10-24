@@ -1,0 +1,41 @@
+name: Mawqi phone web app (/m)
+
+# Rebuilds the installable phone app whenever the app code changes and commits it,
+# so SiteGround serves the new version at /m and every installed phone updates by itself.
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/determined-ride-fvej2t]
+    paths:
+      - 'mawqi/mobile/**'
+      - 'mawqi/scripts/build-mobile-web.sh'
+      - '.github/workflows/mawqi-mobile-web.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mawqi-mobile-web
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mawqi/mobile/package-lock.json
+      - run: npm --prefix mawqi/mobile ci
+      - run: mawqi/scripts/build-mobile-web.sh
+      - name: Commit the build
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A mawqi/mobile-web
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git commit -m "Build phone web app (/m)"
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}
