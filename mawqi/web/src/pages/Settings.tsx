@@ -59,6 +59,7 @@ function UsersCard() {
             <div><strong>{u.name}</strong><small>{u.username} · {meta?.roles[u.role]}{u.projects ? ` · ${u.projects} مشروع` : ''}</small></div>
             {!u.active && <Badge tone="grey">موقوف</Badge>}
             <button className="icon-btn dark" onClick={() => setEditing(u)} title="تعديل"><Icon name="edit" size={18} /></button>
+            <DeleteButton icon path={`/api/users/${u.id}`} what={`المستخدم «${u.name}»`} />
           </li>
         ))}
       </ul>

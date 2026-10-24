@@ -164,6 +164,7 @@ export function ProjectDetailPage() {
       <PageHead title={p.name} sub={<>{p.city ?? ''}{p.client ? ` · المالك: ${p.client}` : ''} · {shortDate(p.start_date)} ← {shortDate(p.end_date)}</>}>
         <Badge tone={PROJECT_STATUS[p.status]?.tone}>{PROJECT_STATUS[p.status]?.label}</Badge>
         {can('projects') && <button className="btn" onClick={() => setEditing(true)}><Icon name="edit" size={18} /> تعديل</button>}
+        <DeleteButton path={`/api/projects/${p.id}`} what={`المشروع «${p.name}» وكل حضوره وبلاغاته وتقاريره ومستخلصاته`} onDone={() => nav('/projects')} />
       </PageHead>
 
       <div className="hero">

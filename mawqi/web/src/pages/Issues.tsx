@@ -64,6 +64,7 @@ export default function IssuesPage() {
                     {i.overdue ? <Badge tone="bad">متأخر</Badge> : null}
                     <span className="grow" />
                     {can('issues') && <button className="icon-btn dark" onClick={() => setEditing(i)} title="تعديل"><Icon name="edit" size={16} /></button>}
+                    <DeleteButton icon path={`/api/issues/${i.id}`} what={`البلاغ «${i.title}»`} />
                   </div>
                   <strong>{i.title}</strong>
                   {i.description && <p className="clip-2">{i.description}</p>}

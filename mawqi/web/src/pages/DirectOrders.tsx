@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { api, fmt, sar, sar2, shortDate } from '../api'
 import { Icon } from '../icons'
-import { Badge, Empty, ErrorBox, Field, FormModal, inp, Loading, Meter, ORDER_STATUS, PageHead, ProjectSelect, send, Stat, today, toast, useCan, useData, useMeta } from '../ui'
+import { Badge, DeleteButton, Empty, ErrorBox, Field, FormModal, inp, Loading, Meter, ORDER_STATUS, PageHead, ProjectSelect, send, Stat, today, toast, useCan, useData, useMeta } from '../ui'
 
 interface Order {
   id: number; project_id: number; project: string; subcontractor_id: number | null; subcontractor: string | null; number: string; title: string
@@ -46,7 +46,7 @@ export default function DirectOrdersPage() {
             const late = o.due_date && o.due_date < today() && !['done', 'cancelled'].includes(o.status)
             return (
               <article key={o.id} className="rcard" onClick={() => open(o)}>
-                <div className="rcard-top"><strong>{o.title}</strong><Badge tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].label}</Badge></div>
+                <div className="rcard-top"><strong>{o.title}</strong><span className="row-actions"><Badge tone={ORDER_STATUS[o.status].tone}>{ORDER_STATUS[o.status].label}</Badge><DeleteButton icon path={`/api/direct-orders/${o.id}`} what={`أمر الإسناد «${o.title}»`} /></span></div>
                 <small className="muted">{o.number} · {o.project} · {o.subcontractor ?? 'بدون مقاول'}</small>
                 <div className="pcard-row"><span>{o.items_count} بند · {sar(o.value)}</span><b>{Math.round(pct)}%</b></div>
                 <Meter value={pct} tone="good" />

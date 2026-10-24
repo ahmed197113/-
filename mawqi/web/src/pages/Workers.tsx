@@ -72,7 +72,7 @@ export default function WorkersPage() {
                     <td><span className="mono">{w.iqama_no}</span><small className={w.iqama_soon ? 'bad-t' : 'muted'}>تنتهي {w.iqama_expiry}</small></td>
                     <td className="num">{fmt(w.wage)} <small className="muted">{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></td>
                     <td><span className="good-t">{w.days_present} يوم</span>{w.days_absent > 0 && <small className="bad-t"> · غياب {w.days_absent}</small>}</td>
-                    <td>{can('workers') && <button className="icon-btn dark" onClick={(e) => { e.stopPropagation(); setEditing(w) }} title="تعديل"><Icon name="edit" size={18} /></button>}</td>
+                    <td>{can('workers') && <button className="icon-btn dark" onClick={(e) => { e.stopPropagation(); setEditing(w) }} title="تعديل"><Icon name="edit" size={18} /></button>}<DeleteButton icon path={`/api/workers/${w.id}`} what={`العامل «${w.name}» وسجل حضوره`} /></td>
                   </tr>
                 ))}
               </tbody>

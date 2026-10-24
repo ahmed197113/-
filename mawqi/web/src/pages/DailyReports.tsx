@@ -120,6 +120,7 @@ function ReportView({ r, onClose, onEdit }: { r: Report; onClose: () => void; on
     <Modal title={`${r.project} — ${longDate(r.date)}`} onClose={onClose} wide footer={
       <>
         <button className="btn ghost" onClick={() => window.print()}><Icon name="print" size={18} /> طباعة</button>
+        <DeleteButton path={`/api/daily-reports/${r.id}`} what="هذا التقرير" onDone={onClose} />
         {can('dailyReports') && <button className="btn primary" onClick={onEdit}><Icon name="edit" size={18} /> تعديل</button>}
       </>
     }>

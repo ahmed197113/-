@@ -541,3 +541,6 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
   .date-nav { flex-basis: 100%; }
   .date-nav input { flex: 1; }
 }
+.icon-btn.del:hover { background: var(--bad-bg); color: var(--bad); }
+.row-actions { display: inline-flex; gap: 4px; align-items: center; }
+.tip { margin: -8px 0 0; font-size: 14px; }

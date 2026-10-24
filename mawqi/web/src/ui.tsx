@@ -234,12 +234,13 @@ export function inp<T extends Record<string, unknown>>(v: T, set: (p: Partial<T>
 }
 
 /** Red "delete" button for edit dialogs — shown only to the general manager and the system manager. */
-export function DeleteButton({ path, what, onDone }: { path: string; what: string; onDone: () => void }) {
+export function DeleteButton({ path, what, onDone = () => undefined, icon }: { path: string; what: string; onDone?: () => void; icon?: boolean }) {
   const can = useCan()
   if (!can('delete')) return null
   const go = async () => {
     if (!window.confirm(`حذف ${what} نهائياً؟ لا يمكن التراجع.`)) return
     try { await send(path, 'DELETE', undefined, 'تم الحذف'); onDone() } catch (e) { toast((e as Error).message, 'err') }
   }
+  if (icon) return <button type="button" className="icon-btn dark del" title="حذف" aria-label="حذف" onClick={(e) => { e.stopPropagation(); go() }}><Icon name="trash" size={17} /></button>
   return <button type="button" className="btn ghost danger" onClick={go}><Icon name="trash" size={16} /> حذف</button>
 }

@@ -78,6 +78,7 @@ function DaySheet() {
         <Search value={q} onChange={setQ} placeholder="بحث عن عامل" />
       </div>
 
+      {editable && <p className="muted tip">أخطأت في تسجيل عامل؟ اضغط على نفس الحالة مرة ثانية لإلغائها، أو اختر الحالة الصحيحة، ثم «حفظ الحضور».</p>}
       <div className="att-summary">
         <strong>{longDate(date)}</strong>
         {counts.map(({ s, n }) => <span key={s} className={`chip-s c-${ATT[s].tone}`}>{ATT[s].label} <b>{n}</b></span>)}
