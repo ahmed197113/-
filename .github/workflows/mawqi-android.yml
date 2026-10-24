@@ -1,12 +1,8 @@
 name: Mawqi Android APK
 
+# The old full native build — now run by hand only. Phones use the auto-updating app (mawqi-android-shell.yml).
 on:
   workflow_dispatch:
-  push:
-    branches: [claude/determined-ride-fvej2t]
-    paths:
-      - 'mawqi/mobile/**'
-      - '.github/workflows/mawqi-android.yml'
 
 permissions:
   contents: write
