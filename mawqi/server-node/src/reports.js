@@ -6,6 +6,7 @@ import { db, officeId } from './db.js';
 import { PERMISSIONS, projectScope } from './auth.js';
 import { addDays, round, todayStr } from './util.js';
 import { COST, monthsBetween, overheadMonth, RATE } from './costs.js';
+import { custodyExpenses } from './link.js';
 
 export const reports = Router();
 
@@ -66,7 +67,7 @@ reports.get('/r', (req, res) => {
 
 const C = (key, label, type = 't', extra = {}) => ({ key, label, type, ...extra });
 
-reports.get('/r/:kind', (req, res, next) => {
+reports.get('/r/:kind', async (req, res, next) => {
   try {
     const def = CATALOG.find((r) => r.kind === req.params.kind);
     if (!def) throw new ReportError(404, 'التقرير غير موجود');
@@ -79,7 +80,7 @@ reports.get('/r/:kind', (req, res, next) => {
     let project = q.project ? Number(q.project) : null;
     if (project && scope !== null && !scope.includes(project)) throw new ReportError(403, 'هذا المشروع خارج صلاحياتك');
     const inScope = (col) => (project ? `${col} = ${project}` : scope === null ? '1=1' : scope.length ? `${col} IN (${scope.join(',')})` : '0=1');
-    const out = build(def.kind, { from, to, project, inScope, q, scope });
+    const out = await build(def.kind, { from, to, project, inScope, q, scope });
     let rows = out.rows;
     const search = String(q.q || '').trim();
     if (search) rows = rows.filter((r) => out.columns.some((c) => String(r[c.key] ?? '').includes(search)));
@@ -107,7 +108,7 @@ const daysBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.pa
 const placeName = (name, kind) => (kind === 'factory' ? `🏭 ${name}` : kind === 'office' ? `🏢 ${name}` : name);
 const card = (label, value, type = 'm', tone) => ({ label, value, type, tone });
 
-function build(kind, { from, to, project, inScope, q, scope }) {
+async function build(kind, { from, to, project, inScope, q, scope }) {
   const P = { $from: from, $to: to };
   switch (kind) {
     case 'project_costs': {
@@ -122,17 +123,20 @@ function build(kind, { from, to, project, inScope, q, scope }) {
         FROM projects p WHERE p.kind <> 'office' AND ${inScope('p.id')} ORDER BY p.kind <> 'project', p.name`).all(P);
       const share = new Map();
       for (const m of months) { const o = overheadMonth(m); for (const p of o.projects) share.set(p.id, (share.get(p.id) ?? 0) + o.share); }
+      const cx = await custodyExpenses(from, to);
       return {
         columns: [C('name', 'المشروع'), C('man_days', 'أيام عمل', 'n', { sum: true }), C('labour', 'العمالة', 'm', { sum: true }), C('iqama', 'تجديد الإقامات', 'm', { sum: true }),
-          C('overhead', 'حصة الإدارة', 'm', { sum: true }), C('subs', 'مقاولو الباطن', 'm', { sum: true }), C('total', 'التكلفة الفعلية', 'm', { sum: true, strong: true }),
+          C('overhead', 'حصة الإدارة', 'm', { sum: true }), C('custody', 'مصروفات العهد', 'm', { sum: true }), C('subs', 'مقاولو الباطن', 'm', { sum: true }), C('total', 'التكلفة الفعلية', 'm', { sum: true, strong: true }),
           C('billed', 'المستخلص المعتمد', 'm', { sum: true }), C('margin', 'الفرق', 'm', { sum: true, tone: true })],
         rows: rows.map((p) => {
           const overhead = round(share.get(p.id) ?? 0);
-          const total = round(p.labour + p.iqama + overhead + p.subs);
-          return { name: placeName(p.name, p.kind), man_days: p.man_days, labour: round(p.labour), iqama: round(p.iqama), overhead, subs: round(p.subs), total, billed: round(p.billed), margin: round(p.billed - total) };
+          const custody = round(cx.byProject.get(p.id) || 0);
+          const total = round(p.labour + p.iqama + overhead + custody + p.subs);
+          return { name: placeName(p.name, p.kind), man_days: p.man_days, labour: round(p.labour), iqama: round(p.iqama), overhead, custody, subs: round(p.subs), total, billed: round(p.billed), margin: round(p.billed - total) };
         }),
-        cards: (_r, t) => [card('التكلفة الفعلية', t.total), card('منها حصة الإدارة', t.overhead), card('المستخلص المعتمد', t.billed, 'm', 'good'), card('الفرق', t.margin, 'm', t.margin < 0 ? 'bad' : 'good')],
-        note: 'حصة الإدارة = (رواتب موظفي الإدارة + تجديد إقاماتهم) ÷ عدد المشاريع الجارية في كل شهر.',
+        cards: (_r, t) => [card('التكلفة الفعلية', t.total), card('منها حصة الإدارة', t.overhead), card('منها مصروفات العهد', t.custody), card('المستخلص المعتمد', t.billed, 'm', 'good'), card('الفرق', t.margin, 'm', t.margin < 0 ? 'bad' : 'good')],
+        note: 'حصة الإدارة = (رواتب موظفي الإدارة + تجديد إقاماتهم) ÷ عدد المشاريع الجارية في كل شهر. مصروفات العهد = المصروفات المعتمدة في تطبيق العهدة على مراكز التكلفة المربوطة بالمشروع.'
+          + (cx.off ? ' (تطبيق العهدة غير مربوط بعد)' : !cx.ok ? ` (${cx.error})` : cx.unlinked ? ` يوجد ${round(cx.unlinked)} ر.س مصروفات عهد على مراكز غير مربوطة بمشروع.` : ''),
       };
     }
     case 'overhead': {

@@ -176,6 +176,7 @@ for (const sql of [
   'ALTER TABLE workers ADD COLUMN phone TEXT',
   'ALTER TABLE issues ADD COLUMN resolution TEXT',
   'ALTER TABLE issues ADD COLUMN closed_at TEXT',
+  'ALTER TABLE users ADD COLUMN sso_source TEXT',
 ]) {
   try { db.exec(sql); } catch { /* already applied */ }
 }

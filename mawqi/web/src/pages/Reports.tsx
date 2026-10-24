@@ -7,7 +7,8 @@ import { download, ErrorBox, Loading, Meter, PageHead, ProjectSelect, Stat, this
 
 interface Summary {
   month: string
-  projects: { id: number; name: string; kind: string; contract_value: number; progress: number; labour: number; man_days: number; absences: number; billed: number; sub_cost: number; open_issues: number; iqama?: number; overhead?: number; total_cost?: number }[]
+  projects: { id: number; name: string; kind: string; contract_value: number; progress: number; labour: number; man_days: number; absences: number; billed: number; sub_cost: number; open_issues: number; iqama?: number; overhead?: number; custody?: number; total_cost?: number }[]
+  custody?: { linked: boolean; error: string | null; unlinked: number }
   overhead?: { salaries: number; iqama: number; total: number; share: number; projects: { id: number; name: string }[] }
 }
 
@@ -71,7 +72,7 @@ export default function ReportsPage() {
       <section className="panel flush printable">
         <div className="table-scroll">
           <table className="data">
-            <thead><tr><th>المشروع</th><th>الإنجاز</th><th>عمالة الشهر</th><th>تجديد إقامات</th><th>حصة الإدارة</th><th>التكلفة الفعلية</th><th>أيام عمل</th><th>غياب</th><th>المستخلص المعتمد</th><th>مقاولو الباطن</th><th>المتبقي من العقد</th></tr></thead>
+            <thead><tr><th>المشروع</th><th>الإنجاز</th><th>عمالة الشهر</th><th>تجديد إقامات</th><th>حصة الإدارة</th><th>مصروفات العهد</th><th>التكلفة الفعلية</th><th>أيام عمل</th><th>غياب</th><th>المستخلص المعتمد</th><th>مقاولو الباطن</th><th>المتبقي من العقد</th></tr></thead>
             <tbody>
               {rows.map((p) => (
                 <tr key={p.id}>
@@ -80,6 +81,7 @@ export default function ReportsPage() {
                   <td className="num">{sar(p.labour)}</td>
                   <td className="num">{p.iqama ? sar(p.iqama) : '—'}</td>
                   <td className="num">{p.overhead ? sar(p.overhead) : '—'}</td>
+                  <td className="num">{p.custody ? sar(p.custody) : '—'}</td>
                   <td className="num strong">{sar(p.total_cost ?? p.labour)}</td>
                   <td className="num">{fmt(p.man_days)}</td>
                   <td className="num bad-t">{fmt(p.absences)}</td>

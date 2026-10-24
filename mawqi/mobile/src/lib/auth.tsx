@@ -24,6 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => { saveSession(null, null).then(() => setUser(null)) })
     loadSession()
       .then(async ({ server, token, user: saved }) => {
+        // Opened from inside the custody app: sign in with the one-time link it made, then drop it from the address.
+        const sso = typeof window !== 'undefined' && window.location?.search ? new URLSearchParams(window.location.search).get('sso') : null
+        if (sso) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+          try {
+            const out = await api<{ token: string; user: User }>('/api/auth/sso', { method: 'POST', body: JSON.stringify({ token: sso }) })
+            await saveSession(out.token, out.user)
+            setUser(out.user)
+            return
+          } catch { /* fall back to the saved account or the login screen */ }
+        }
         if (!server || !token) return
         // Open with the saved account straight away so the app works without a network.
         if (saved) setUser(saved)

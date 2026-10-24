@@ -12,6 +12,7 @@ import { buildDashboard } from './dashboard.js';
 import { startJobs } from './jobs.js';
 import { seed } from './seed.js';
 import { reports } from './reports.js';
+import { linkAdmin, linkPublic } from './link.js';
 import { api } from './routes.js';
 import { media } from './media.js';
 
@@ -62,6 +63,7 @@ const loginRoute = (req, res) => {
   if (!out) return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   res.json(out);
 };
+app.use('/api', linkPublic);
 app.post('/api/auth/login', loginRoute);
 app.post('/api/login', loginRoute);
 app.get('/api/status', (_req, res) => res.json({ needsSetup: false, companyName: getSetting('company_name', 'شركة الخطوط المعدنية للمقاولات العامة'), version: readVersion() }));
@@ -73,6 +75,7 @@ app.get('/api/me', requireAuth, (req, res) => res.json(req.user));
 app.get('/api/dashboard', requireAuth, (req, res) => res.json(buildDashboard(projectScope(req.user))));
 app.use('/api', requireAuth, media);
 app.use('/api', requireAuth, reports);
+app.use('/api', requireAuth, linkAdmin);
 app.use('/api', requireAuth, api);
 
 const http = createServer(app);

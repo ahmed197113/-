@@ -7,6 +7,7 @@ import { addDays, round, todayStr, nowTime } from './util.js';
 import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
 import { rmSync } from 'node:fs';
 import { monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
+import { custodyExpenses } from './link.js';
 import { join } from 'node:path';
 
 const withFiles = (entity, rows) => { const f = filesFor(entity, rows.map((r) => r.id)); return rows.map((r) => ({ ...r, media: f[r.id] || [] })); };
@@ -217,7 +218,7 @@ api.get('/projects', (req, res) => {
   res.json(rows.map((r) => ({ ...roundProject(r), cover: covers[r.id] ? `/api/files/${covers[r.id]}` : null })));
 });
 
-api.get('/projects/:id', (req, res) => {
+api.get('/projects/:id', async (req, res) => {
   const id = ensureProject(req, req.params.id);
   const p = roundProject(db.prepare(projectSelect('p.id = $id')).get({ ...projectParams(), $id: id }));
   const today = todayStr();
@@ -234,9 +235,11 @@ api.get('/projects/:id', (req, res) => {
   p.subcontracted = round(inv.find((r) => r.kind === 'subcontractor')?.gross ?? 0);
   {
     const month = today.slice(0, 7);
-    const m = projectCost(id, `${month}-01`, today);
-    const all = projectCost(id, p.start_date < today ? p.start_date : today, today);
-    p.costs = { month: m, total: all };
+    const start = p.start_date < today ? p.start_date : today;
+    const [cm, ct] = await Promise.all([custodyExpenses(`${month}-01`, today), custodyExpenses(start, today)]);
+    const m = projectCost(id, `${month}-01`, today, cm.byProject.get(id) || 0);
+    const all = projectCost(id, start, today, ct.byProject.get(id) || 0);
+    p.costs = { month: m, total: all, custodyLinked: cm.ok, custodyError: cm.off ? null : cm.error || null };
   }
   p.renewals = db.prepare(`SELECT r.id, r.date, r.amount, w.name FROM iqama_renewals r JOIN workers w ON w.id = r.worker_id WHERE r.project_id = ? ORDER BY r.date DESC LIMIT 50`).all(id);
   p.gallery = projectGallery(id);
@@ -954,7 +957,7 @@ const ISSUE_STATUS = { open: 'مفتوح', in_progress: 'قيد المعالجة
 const SEVERITY_AR = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', critical: 'حرجة' };
 const INV_STATUS = { draft: 'مسودة', submitted: 'مقدم', approved: 'معتمد', paid: 'مدفوع', rejected: 'مرفوض' };
 
-api.get('/reports/summary', (req, res) => {
+api.get('/reports/summary', async (req, res) => {
   const { month, from, toCapped } = monthRange(req.query.month);
   const scope = scopeOf(req);
   const projects = db.prepare(`
@@ -971,9 +974,11 @@ api.get('/reports/summary', (req, res) => {
       const overhead = p.kind === 'project' ? overheadFor(p.id, [month]) : 0;
       return { ...p, labour: round(p.labour), billed: round(p.billed), sub_cost: round(p.sub_cost), iqama: round(p.iqama), overhead, total_cost: round(p.labour + p.iqama + overhead) };
     });
+  const cx = await custodyExpenses(from, toCapped);
+  for (const p of projects) { p.custody = round(cx.byProject.get(p.id) || 0); p.total_cost = round(p.total_cost + p.custody); }
   const o = overheadMonth(month, true);
   const top = scope === null;
-  res.json({ month, projects, overhead: { ...o, staff: top ? o.staff : [], renewals: top ? o.renewals : [] } });
+  res.json({ month, projects, overhead: { ...o, staff: top ? o.staff : [], renewals: top ? o.renewals : [] }, custody: { linked: cx.ok, error: cx.off ? null : cx.error || null, unlinked: round(cx.unlinked || 0) } });
 });
 
 const csvCell = (v) => {

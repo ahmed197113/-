@@ -49,6 +49,11 @@ export function login(username, password) {
   return { token, user: publicUser(u) };
 }
 
+/** A signed session for a user row (used by single sign-on from the custody app). */
+export function issueToken(u) {
+  return { token: jwt.sign({ sub: u.id, role: u.role }, SECRET, { expiresIn: '30d' }), user: publicUser(u) };
+}
+
 export function verifyToken(token) {
   const { sub } = jwt.verify(token, SECRET);
   const u = db.prepare('SELECT * FROM users WHERE id = ?').get(sub);

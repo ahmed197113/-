@@ -91,10 +91,10 @@ export function overheadFor(projectId, months) {
 }
 
 /** Full cost of a project for a date range. */
-export function projectCost(projectId, from, to) {
+export function projectCost(projectId, from, to, custody = 0) {
   const labour = db.prepare(`SELECT COALESCE(SUM(${COST}), 0) AS v FROM attendance a JOIN workers w ON w.id = a.worker_id
     WHERE a.project_id = ? AND a.date BETWEEN ? AND ?`).get(projectId, from, to).v;
   const iqama = db.prepare(`SELECT COALESCE(SUM(amount), 0) AS v FROM iqama_renewals WHERE project_id = ? AND date BETWEEN ? AND ?`).get(projectId, from, to).v;
   const overhead = overheadFor(projectId, monthsBetween(from, to));
-  return { labour: round(labour), iqama: round(iqama), overhead, total: round(labour + iqama + overhead) };
+  return { labour: round(labour), iqama: round(iqama), overhead, custody: round(custody), total: round(labour + iqama + overhead + custody) };
 }

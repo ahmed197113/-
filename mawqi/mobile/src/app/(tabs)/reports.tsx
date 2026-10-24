@@ -12,7 +12,7 @@ import { C, Card, Chip, Empty, ErrorBox, Header, Loading, Meter, Row, Sheet, T, 
 
 interface Summary {
   month: string
-  projects: { id: number; name: string; kind?: string; contract_value: number; progress: number; labour: number; man_days: number; absences: number; billed: number; sub_cost: number; open_issues: number; iqama?: number; overhead?: number; total_cost?: number }[]
+  projects: { id: number; name: string; kind?: string; contract_value: number; progress: number; labour: number; man_days: number; absences: number; billed: number; sub_cost: number; open_issues: number; iqama?: number; overhead?: number; custody?: number; total_cost?: number }[]
   overhead?: { total: number; share: number; projects: { id: number }[] }
 }
 
@@ -113,6 +113,7 @@ export default function Reports() {
               <Line label="عمالة الشهر" value={sar(p.labour)} />
               {!!p.iqama && <Line label="تجديد إقامات" value={sar(p.iqama)} />}
               {!!p.overhead && <Line label="حصة الإدارة" value={sar(p.overhead)} />}
+              {!!p.custody && <Line label="مصروفات العهد" value={sar(p.custody)} />}
               {p.total_cost !== undefined && <Line label="التكلفة الفعلية" value={sar(p.total_cost)} />}
               <Line label="أيام عمل / غياب" value={`${fmt(p.man_days)} / ${fmt(p.absences)}`} />
               {p.billed > 0 && <Line label="المستخلصات المعتمدة" value={`${compact(p.billed)} ر.س`} />}

@@ -90,6 +90,7 @@ export default function ProjectReportPage() {
                 <tr><th>العمالة (حسب الحضور)</th><td>{sar(d.costs.month.labour)}</td><td>{sar(d.costs.total.labour)}</td></tr>
                 <tr><th>تجديد إقامات عمال المشروع</th><td>{sar(d.costs.month.iqama)}</td><td>{sar(d.costs.total.iqama)}</td></tr>
                 <tr><th>حصة المشروع من مصاريف الإدارة</th><td>{sar(d.costs.month.overhead)}</td><td>{sar(d.costs.total.overhead)}</td></tr>
+                {(d.costs.total.custody ?? 0) > 0 && <tr><th>مصروفات العهد (من تطبيق العهدة)</th><td>{sar(d.costs.month.custody ?? 0)}</td><td>{sar(d.costs.total.custody ?? 0)}</td></tr>}
                 {d.subcontracted > 0 && <tr><th>مستخلصات مقاولي الباطن المعتمدة</th><td>—</td><td>{sar(d.subcontracted)}</td></tr>}
                 <tr className="total"><th>الإجمالي</th><td><b>{sar(d.costs.month.total)}</b></td><td><b>{sar(d.costs.total.total + d.subcontracted)}</b></td></tr>
               </tbody>

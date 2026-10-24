@@ -18,6 +18,7 @@ export default function SettingsPage() {
       <PasswordCard />
       {can('workers') && <ProfessionsCard />}
       {can('users') && <UsersCard />}
+      {can('users') && <LinkCard />}
       {can('users') && <CompanyCard />}
       {can('users') && <StorageCard />}
       {can('users') && <ResetCard />}
@@ -140,6 +141,37 @@ function ResetCard() {
         <Field label="اكتب «ابدأ» للتأكيد"><input value={word} onChange={(e) => setWord(e.target.value)} /></Field>
         <div className="field end"><button className="btn danger-solid" disabled={word !== 'ابدأ'} onClick={go}>مسح البيانات التجريبية</button></div>
       </div>
+    </section>
+  )
+}
+
+/** Single sign-on and cost sharing with the custody app (custody.metal-lines.com). */
+function LinkCard() {
+  const { data } = useData<{ url: string; key: string }>('/api/link')
+  const [v, setV] = useState<{ url: string; key: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const cur = v ?? (data ? { url: data.url || 'https://custody.metal-lines.com', key: data.key } : null)
+  if (!cur) return null
+  const save = async () => {
+    setBusy(true)
+    try { await send('/api/link', 'PUT', cur, 'تم حفظ الربط'); setV(null) } catch (e) { toast((e as Error).message, 'err') } finally { setBusy(false) }
+  }
+  const test = async () => {
+    setBusy(true)
+    try {
+      const r = (await send('/api/link/test', 'POST', {})) as { total: number; linked: number; company: string }
+      toast(`الربط يعمل ✓ — مصروفات العهد هذه السنة ${Math.round(r.total).toLocaleString('en')} ر.س على ${r.linked} مشروع مربوط`)
+    } catch (e) { toast((e as Error).message, 'err') } finally { setBusy(false) }
+  }
+  return (
+    <section className="panel" id="link">
+      <div className="panel-head"><h2><Icon name="contracts" /> الربط مع تطبيق العهدة</h2>{data?.key ? <span className="badge b-good">مفعّل</span> : <span className="badge">غير مفعّل</span>}</div>
+      <p className="muted">يفتح قسم «المشاريع» من داخل تطبيق العهدة بنفس الدخول، وتدخل مصروفات العهد المعتمدة في التكلفة الفعلية لكل مشروع. انسخ «مفتاح الربط» من إعدادات تطبيق العهدة والصقه هنا.</p>
+      <div className="form-grid">
+        <label className="field span-3"><span>رابط تطبيق العهدة</span><input dir="ltr" value={cur.url} onChange={(e) => setV({ ...cur, url: e.target.value })} placeholder="https://custody.metal-lines.com" /></label>
+        <label className="field span-3"><span>مفتاح الربط</span><input dir="ltr" value={cur.key} onChange={(e) => setV({ ...cur, key: e.target.value })} autoComplete="off" /></label>
+      </div>
+      <div className="row-actions"><button className="btn primary" disabled={busy} onClick={save}>حفظ</button><button className="btn" disabled={busy || !data?.key} onClick={test}>اختبار الربط</button></div>
     </section>
   )
 }
