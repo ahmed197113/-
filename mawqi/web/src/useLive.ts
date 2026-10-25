@@ -13,10 +13,13 @@ export function useLive<T>(path: string) {
   const [connected, setConnected] = useState(true)
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const version = useRef<number | null>(null)
+  const current = useRef(path)
+  current.current = path
 
   const load = useCallback(async () => {
     try {
       const d = await api<T>(path)
+      if (current.current !== path) return // a newer filter was chosen meanwhile
       setData(d)
       setError(null)
       setUpdatedAt(new Date())
@@ -27,6 +30,8 @@ export function useLive<T>(path: string) {
 
   useEffect(() => {
     let alive = true
+    // A new path (another project, date or month) must load right away, not wait for a server change.
+    version.current = null
     const check = async () => {
       try {
         const { version: v } = await api<{ version: number }>('/api/version')

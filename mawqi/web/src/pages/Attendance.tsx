@@ -89,7 +89,7 @@ function DaySheet() {
         </div>
         <ProjectSelect value={project} onChange={setProject} />
         <Search value={q} onChange={setQ} placeholder="بحث عن عامل" />
-        {editable && canMove && <button className="btn primary" onClick={() => setPulling(true)}><Icon name="plus" size={18} /> عامل من موقع آخر</button>}
+        {editable && canMove && <button className="btn primary" onClick={() => setPulling(true)}><Icon name="plus" size={18} /> إضافة عمال</button>}
       </div>
 
       {editable && <p className="muted tip">اختر حالة كل عامل{canMove ? '، وغيّر «الموقع» إن عمل اليوم في مشروع آخر أو المصنع' : ''}، ثم «حفظ الحضور». للإلغاء اضغط على نفس الحالة مرة ثانية.</p>}
@@ -152,7 +152,12 @@ function DaySheet() {
       )}
 
       {pulling && <PullWorker date={date} project={project} exclude={rows.map((r) => r.worker_id)} onClose={() => setPulling(false)}
-        onPick={(r, site) => { setPulled((l) => [r, ...l]); setDraft((d) => ({ ...d, [r.worker_id]: { status: 'present', project_id: site } })); setPulling(false) }} />}
+        onPick={(list, site) => {
+          setPulled((l) => [...list, ...l])
+          setDraft((d) => { const n = { ...d }; for (const r of list) n[r.worker_id] = { status: 'present', project_id: site }; return n })
+          setPulling(false)
+          toast(`أُضيف ${list.length} عامل حاضر — راجع ثم اضغط «حفظ الحضور»`)
+        }} />}
 
       {dirty > 0 && (
         <div className="savebar">
@@ -212,41 +217,50 @@ function MonthView() {
 
 interface AnyWorker { id: number; name: string; profession: string; project_id: number | null; project: string | null; location_kind?: string | null; photo?: string | null }
 
-/** Bring a worker from any other site into today's sheet (he will be recorded and moved to the chosen site). */
-function PullWorker({ project, exclude, onClose, onPick }: { date: string; project: string; exclude: number[]; onClose: () => void; onPick: (r: Row, site: number) => void }) {
+/** Bring workers from other sites (or not yet placed) into today's sheet — tick several and add them at once. */
+function PullWorker({ project, exclude, onClose, onPick }: { date: string; project: string; exclude: number[]; onClose: () => void; onPick: (r: Row[], site: number) => void }) {
   const { data } = useData<AnyWorker[]>('/api/workers?active=1')
   const meta = useMeta()
   const [q, setQ] = useState('')
   const [site, setSite] = useState<string>(project)
-  const list = (data ?? []).filter((w) => !exclude.includes(w.id) && (!q || `${w.name} ${w.profession} ${w.project ?? ''}`.includes(q.trim()))).slice(0, 80)
+  const [picked, setPicked] = useState<Set<number>>(new Set())
+  const list = (data ?? []).filter((w) => !exclude.includes(w.id) && (!q || `${w.name} ${w.profession} ${w.project ?? ''}`.includes(q.trim())))
+  const toggle = (id: number) => setPicked((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const allOn = list.length > 0 && list.every((w) => picked.has(w.id))
+  const add = () => {
+    if (!site) { toast('اختر أولاً الموقع الذي يعملون فيه اليوم', 'err'); return }
+    const p = meta?.places?.find((x) => x.id === Number(site))
+    onPick((data ?? []).filter((w) => picked.has(w.id)).map((w) => ({ worker_id: w.id, name: w.name, profession: w.profession, project_id: w.project_id ?? Number(site), project: w.project ?? p?.name ?? '', photo: w.photo,
+      status: null, check_in: null, check_out: null, overtime_hours: 0, method: null })), Number(site))
+  }
   return (
-    <Modal title="إضافة عامل من موقع آخر" onClose={onClose} wide>
+    <Modal title="إضافة عمال" onClose={onClose} wide>
       <div className="pull">
         <div className="toolbar">
-          <label className="inline">يعمل اليوم في
+          <label className="inline">يعملون اليوم في
             <select className="select" value={site} onChange={(e) => setSite(e.target.value)}>
               <option value="">اختر الموقع…</option>
               {(meta?.places ?? []).map((p) => <option key={p.id} value={p.id}>{p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}{p.name}</option>)}
             </select>
           </label>
-          <Search value={q} onChange={setQ} placeholder="ابحث باسم العامل" />
+          <Search value={q} onChange={setQ} placeholder="ابحث بالاسم أو المهنة أو الموقع" />
+          {list.length > 0 && <button type="button" className="btn ghost sm" onClick={() => setPicked((p) => { const n = new Set(p); for (const w of list) allOn ? n.delete(w.id) : n.add(w.id); return n })}>{allOn ? 'إلغاء التحديد' : `تحديد الكل (${list.length})`}</button>}
         </div>
         {!data ? <Loading /> : !list.length ? <Empty icon="workers" title="لا يوجد عمال آخرون" /> : (
           <ul className="people">
             {list.map((w) => (
-              <li key={w.id} className={site ? 'pickable' : 'off'} onClick={() => {
-                if (!site) { toast('اختر أولاً الموقع الذي يعمل فيه اليوم', 'err'); return }
-                const p = meta?.places?.find((x) => x.id === Number(site))
-                onPick({ worker_id: w.id, name: w.name, profession: w.profession, project_id: w.project_id ?? Number(site), project: w.project ?? p?.name ?? '', photo: w.photo,
-                  status: null, check_in: null, check_out: null, overtime_hours: 0, method: null }, Number(site))
-              }}>
+              <li key={w.id} className={`pickable ${picked.has(w.id) ? 'picked' : ''}`} onClick={() => toggle(w.id)}>
+                <input type="checkbox" checked={picked.has(w.id)} readOnly />
                 {w.photo ? <img className="avatar-s img" src={src(w.photo)} alt="" /> : <span className="avatar-s">{w.name.slice(0, 1)}</span>}
                 <div><strong>{w.name}</strong><small>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : w.location_kind === 'office' ? '🏢 ' : ''}${w.project}` : 'غير موزّع'}</small></div>
-                <span className="btn sm">إضافة</span>
               </li>
             ))}
           </ul>
         )}
+        <div className="modal-foot">
+          <button className="btn ghost" onClick={onClose}>إلغاء</button>
+          <button className="btn primary" disabled={!picked.size} onClick={add}><Icon name="plus" size={18} /> {picked.size ? `إضافة ${picked.size} عامل` : 'علّم العمال أولاً'}</button>
+        </div>
       </div>
     </Modal>
   )
