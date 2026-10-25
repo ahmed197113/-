@@ -88,14 +88,14 @@ export default function ProjectReportPage() {
               <thead><tr><th>البند</th><th>هذا الشهر</th><th>منذ بداية المشروع</th></tr></thead>
               <tbody>
                 <tr><th>العمالة (حسب الحضور)</th><td>{sar(d.costs.month.labour)}</td><td>{sar(d.costs.total.labour)}</td></tr>
-                <tr><th>تجديد إقامات عمال المشروع</th><td>{sar(d.costs.month.iqama)}</td><td>{sar(d.costs.total.iqama)}</td></tr>
+                <tr><th>إقامات وكروت عمل وتأمين عمال المشروع</th><td>{sar(d.costs.month.iqama)}</td><td>{sar(d.costs.total.iqama)}</td></tr>
                 <tr><th>حصة المشروع من مصاريف الإدارة</th><td>{sar(d.costs.month.overhead)}</td><td>{sar(d.costs.total.overhead)}</td></tr>
                 {(d.costs.total.custody ?? 0) > 0 && <tr><th>مصروفات العهد (من تطبيق العهدة)</th><td>{sar(d.costs.month.custody ?? 0)}</td><td>{sar(d.costs.total.custody ?? 0)}</td></tr>}
                 {d.subcontracted > 0 && <tr><th>مستخلصات مقاولي الباطن المعتمدة</th><td>—</td><td>{sar(d.subcontracted)}</td></tr>}
                 <tr className="total"><th>الإجمالي</th><td><b>{sar(d.costs.month.total)}</b></td><td><b>{sar(d.costs.total.total + d.subcontracted)}</b></td></tr>
               </tbody>
             </table>
-            <p className="muted">حصة الإدارة = رواتب وإقامات موظفي الإدارة ÷ عدد المشاريع الجارية في كل شهر.</p>
+            <p className="muted">حصة الإدارة = رواتب ورسوم موظفي الإدارة موزّعة على المشاريع الجارية بنسبة أيام عمل عمال كل مشروع. الإقامة وكرت العمل والتأمين تُوزَّع على أشهر مدتها.</p>
           </section>
         )}
 

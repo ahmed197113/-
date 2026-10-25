@@ -111,7 +111,7 @@ export default function Reports() {
               </Row>
               {!['factory', 'office'].includes(p.kind ?? '') && <Meter value={p.progress / 100} color={C.amber} />}
               <Line label="عمالة الشهر" value={sar(p.labour)} />
-              {!!p.iqama && <Line label="تجديد إقامات" value={sar(p.iqama)} />}
+              {!!p.iqama && <Line label="إقامات وكروت عمل وتأمين" value={sar(p.iqama)} />}
               {!!p.overhead && <Line label="حصة الإدارة" value={sar(p.overhead)} />}
               {!!p.custody && <Line label="مصروفات العهد" value={sar(p.custody)} />}
               {p.total_cost !== undefined && <Line label="التكلفة الفعلية" value={sar(p.total_cost)} />}

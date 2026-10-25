@@ -12,7 +12,9 @@ import type { Meta } from '../../lib/api'
 import { AppScreen } from '../../components/AppScreen'
 import { iqamaState } from '../../components/iqama'
 import { confirm, useToast } from '../../components/Toast'
-import { Button, C, Card, ErrorBox, Field, Header, Loading, Row, Sheet, T, type IconName } from '../../components/ui'
+import { Button, C, Card, ErrorBox, Field, Header, Loading, Picker, Row, Sheet, T, type IconName } from '../../components/ui'
+
+const FEE_KINDS: Record<string, string> = { iqama: 'إقامة', work_card: 'كرت عمل', insurance: 'تأمين', other: 'أخرى' }
 
 const ST: Record<AttStatus, { label: string; color: string }> = {
   present: { label: 'حاضر', color: C.good }, late: { label: 'متأخر', color: C.late }, overtime: { label: 'إضافي', color: C.over },
@@ -29,21 +31,19 @@ export default function WorkerCard() {
   const [moving, setMoving] = useState(false)
   const [busy, setBusy] = useState(false)
   const [renew, setRenew] = useState(false)
-  const [rf, setRf] = useState({ amount: '', new_expiry: '', note: '' })
+  const [rf, setRf] = useState({ kind: 'iqama', months: 3, amount: '', new_expiry: '', note: '' })
   const openRenew = () => {
     if (!w) return
-    const base = w.iqama_expiry.startsWith('9999') ? new Date().toISOString().slice(0, 10) : w.iqama_expiry
-    const d = new Date(`${base}T12:00:00Z`); d.setUTCFullYear(d.getUTCFullYear() + 1)
-    setRf({ amount: '', new_expiry: d.toISOString().slice(0, 10), note: '' }); setRenew(true)
+    setRf({ kind: 'iqama', months: 3, amount: '', new_expiry: '', note: '' }); setRenew(true)
   }
   const saveRenew = async () => {
     if (!w) return
-    if (!(Number(rf.amount) > 0)) return toast('اكتب مبلغ التجديد', 'error')
+    if (!(Number(rf.amount) > 0)) return toast('اكتب المبلغ', 'error')
     if (rf.new_expiry && !/^\d{4}-\d{2}-\d{2}$/.test(rf.new_expiry)) return toast('اكتب التاريخ بالشكل 2027-05-30', 'error')
     setBusy(true)
     try {
-      await api(`/api/workers/${w.id}/iqama-renewal`, { method: 'POST', body: JSON.stringify({ amount: Number(rf.amount), new_expiry: rf.new_expiry || null, note: rf.note }) })
-      toast('تم تسجيل تجديد الإقامة'); setRenew(false); poke(); refresh()
+      await api(`/api/workers/${w.id}/fees`, { method: 'POST', body: JSON.stringify({ kind: rf.kind, months: rf.months, amount: Number(rf.amount), new_expiry: rf.kind === 'iqama' ? rf.new_expiry || null : null, note: rf.note }) })
+      toast('تم التسجيل'); setRenew(false); poke(); refresh()
     } catch (e) { toast((e as Error).message, 'error') } finally { setBusy(false) }
   }
   const move = async (projectId: number | null, label: string) => {
@@ -123,20 +123,23 @@ export default function WorkerCard() {
             )) : <T style={{ color: C.muted }}>لا يوجد حضور مسجل بعد</T>}
           </Card>
           <Card style={{ gap: 8 }}>
-            <T w="black" style={{ fontSize: 18, color: C.navy }}>تجديدات الإقامة ومصاريفها</T>
+            <T w="black" style={{ fontSize: 18, color: C.navy }}>الإقامة وكرت العمل والتأمين</T>
             {(w.renewals ?? []).length ? (w.renewals ?? []).map((r) => (
               <Row key={r.id} style={s.att}>
-                <View style={{ flex: 1 }}><T w="bold">{sar(r.amount)}</T><T style={{ color: C.muted, fontSize: 13 }}>{shortDate(r.date)}{r.new_expiry ? ` · حتى ${r.new_expiry}` : ''}{r.project ? ` · ${r.project}` : ''}</T></View>
+                <View style={{ flex: 1 }}><T w="bold">{FEE_KINDS[r.kind ?? 'iqama'] ?? r.kind} · {sar(r.amount)}</T><T style={{ color: C.muted, fontSize: 13 }}>{shortDate(r.date)} · {r.months ?? 1} شهر{r.new_expiry ? ` · حتى ${r.new_expiry}` : ''}{r.project ? ` · ${r.project}` : ''}</T></View>
               </Row>
-            )) : <T style={{ color: C.muted }}>لا توجد تجديدات مسجلة</T>}
-            {can('costs') && <Button label="تسجيل تجديد إقامة" icon="card" kind="ghost" onPress={openRenew} />}
+            )) : <T style={{ color: C.muted }}>لا توجد مصاريف مسجلة</T>}
+            {can('costs') && <Button label="تسجيل إقامة / كرت عمل / تأمين" icon="card" kind="ghost" onPress={openRenew} />}
           </Card>
-          <Sheet visible={renew} title={`تجديد إقامة ${w.name}`} onClose={() => setRenew(false)}>
+          <Sheet visible={renew} title={`مصروف للعامل ${w.name}`} onClose={() => setRenew(false)}>
+            <Picker value={rf.kind} options={Object.entries(FEE_KINDS).map(([value, label]) => ({ value, label }))} onChange={(v) => setRf((x) => ({ ...x, kind: v }))} />
+            <T w="bold">المدة</T>
+            <Picker value={rf.months} options={[3, 6, 12].map((m) => ({ value: m, label: `${m} أشهر` }))} onChange={(v) => setRf((x) => ({ ...x, months: v }))} color={() => C.good} />
             <Field label="المبلغ المدفوع (ر.س)" value={rf.amount} onChangeText={(v) => setRf((x) => ({ ...x, amount: v }))} keyboardType="decimal-pad" autoFocus />
-            <Field label="تاريخ الانتهاء الجديد" value={rf.new_expiry} onChangeText={(v) => setRf((x) => ({ ...x, new_expiry: v }))} placeholder="2027-05-30" ltr />
+            {rf.kind === 'iqama' && <Field label="تاريخ الانتهاء الجديد (اختياري)" value={rf.new_expiry} onChangeText={(v) => setRf((x) => ({ ...x, new_expiry: v }))} placeholder="2027-05-30" ltr />}
             <Field label="ملاحظة" value={rf.note} onChangeText={(v) => setRf((x) => ({ ...x, note: v }))} />
-            <T style={{ color: C.muted }}>{w.location_kind === 'office' ? 'موظف إدارة: يُوزَّع المبلغ بالتساوي على المشاريع الجارية.' : `يُحمَّل المبلغ على ${w.project ?? 'موقع العامل'}.`}</T>
-            <Button label="حفظ التجديد" icon="checkmark-circle" kind="accent" busy={busy} onPress={saveRenew} />
+            <T style={{ color: C.muted }}>{Number(rf.amount) > 0 ? `${sar(Number(rf.amount) / rf.months)} شهرياً لمدة ${rf.months} أشهر. ` : `يُوزَّع المبلغ على ${rf.months} أشهر. `}{w.location_kind === 'office' ? 'موظف إدارة: يدخل في مصاريف الإدارة وتُوزَّع على المشاريع بنسبة عمالها.' : 'يُحمَّل كل شهر على موقع العامل في ذلك الشهر.'}</T>
+            <Button label="حفظ" icon="checkmark-circle" kind="accent" busy={busy} onPress={saveRenew} />
           </Sheet>
           <Card style={{ gap: 10 }}>
             <T w="black" style={{ fontSize: 18, color: C.navy }}>الصورة والإقامة والمستندات</T>

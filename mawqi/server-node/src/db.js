@@ -219,6 +219,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS iqama_renewals (
   created_at TEXT
 )`);
 
+// Worker fees: iqama renewal, work card (رخصة العمل), medical insurance… each spread over the months it covers.
+for (const sql of [
+  "ALTER TABLE iqama_renewals ADD COLUMN kind TEXT NOT NULL DEFAULT 'iqama'",
+  'ALTER TABLE iqama_renewals ADD COLUMN months INTEGER NOT NULL DEFAULT 3',
+]) {
+  try { db.exec(sql); } catch { /* already applied */ }
+}
+
 // A project can have several managers and several supervisors.
 db.exec(`CREATE TABLE IF NOT EXISTS project_members (
   project_id INTEGER NOT NULL REFERENCES projects(id),

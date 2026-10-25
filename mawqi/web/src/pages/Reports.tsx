@@ -63,7 +63,7 @@ export default function ReportsPage() {
 
       <div className="stats printable">
         <Stat icon="money" label="التكلفة الفعلية للشهر" value={sar(tot.real)} sub={`منها عمالة ${compact(tot.labour)}`} />
-        {data.overhead && data.overhead.total > 0 && <Stat icon="user" label="مصاريف الإدارة" value={sar(data.overhead.total)} sub={`÷ ${data.overhead.projects.length} مشروع = ${compact(data.overhead.share)} لكل مشروع`} />}
+        {data.overhead && data.overhead.total > 0 && <Stat icon="user" label="مصاريف الإدارة" value={sar(data.overhead.total)} sub={`تُوزَّع على ${data.overhead.projects.length} مشروع بنسبة عمالها`} />}
         <Stat icon="workers" label="أيام العمل (عامل × يوم)" value={fmt(tot.days)} />
         <Stat icon="user" label="نسبة الغياب" value={`${absRate.toFixed(1)}%`} tone={absRate > 8 ? 'bad' : 'good'} />
         <Stat icon="contracts" label="المستخلصات المعتمدة (تراكمي)" value={compact(tot.billed)} sub={`مقاولو الباطن ${compact(tot.sub)}`} tone="good" />
@@ -72,7 +72,7 @@ export default function ReportsPage() {
       <section className="panel flush printable">
         <div className="table-scroll">
           <table className="data">
-            <thead><tr><th>المشروع</th><th>الإنجاز</th><th>عمالة الشهر</th><th>تجديد إقامات</th><th>حصة الإدارة</th><th>مصروفات العهد</th><th>التكلفة الفعلية</th><th>أيام عمل</th><th>غياب</th><th>المستخلص المعتمد</th><th>مقاولو الباطن</th><th>المتبقي من العقد</th></tr></thead>
+            <thead><tr><th>المشروع</th><th>الإنجاز</th><th>عمالة الشهر</th><th>إقامات وكروت عمل وتأمين</th><th>حصة الإدارة</th><th>مصروفات العهد</th><th>التكلفة الفعلية</th><th>أيام عمل</th><th>غياب</th><th>المستخلص المعتمد</th><th>مقاولو الباطن</th><th>المتبقي من العقد</th></tr></thead>
             <tbody>
               {rows.map((p) => (
                 <tr key={p.id}>

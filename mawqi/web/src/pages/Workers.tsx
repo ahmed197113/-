@@ -17,10 +17,13 @@ interface Worker {
 }
 interface WorkerDetail extends Worker {
   history: { from_date: string; to_date: string | null; project: string }[]
-  renewals?: { id: number; date: string; amount: number; new_expiry: string | null; note: string | null; project: string | null }[]
+  renewals?: { id: number; date: string; amount: number; kind?: string; months?: number; new_expiry: string | null; note: string | null; project: string | null }[]
   attendance: { date: string; status: string; check_in: string | null; check_out: string | null; overtime_hours: number; project: string | null }[]
   media: MediaFile[]
 }
+
+const FEE_KINDS: Record<string, string> = { iqama: 'تجديد إقامة', work_card: 'كرت عمل', insurance: 'تأمين طبي', other: 'رسوم أخرى' }
+const FEE_MONTHS = [3, 6, 12]
 
 const NATIONALITIES = ['مصري', 'هندي', 'باكستاني', 'بنجلاديشي', 'نيبالي', 'يمني', 'سوداني', 'فلبيني', 'سعودي', 'أخرى']
 
@@ -213,27 +216,41 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
             <Attachments entity="worker" id={w.id} files={w.media ?? []} tag="iqama" canAdd={canAdd} canDelete={canDel} accept={ACCEPT_ALL} title="الإقامة والمستندات" empty="لا توجد صورة للإقامة" compact />
           </div>
           <div className="row-head">
-            <h3>تجديدات الإقامة ومصاريفها</h3>
-            {can('costs') && <button className="btn sm primary" onClick={() => setRenew(true)}><Icon name="plus" size={16} /> تسجيل تجديد</button>}
+            <h3>الإقامة وكرت العمل والتأمين</h3>
+            {can('costs') && <button className="btn sm primary" onClick={() => setRenew(true)}><Icon name="plus" size={16} /> تسجيل مصروف</button>}
           </div>
-          {!w.renewals?.length ? <p className="muted">لا توجد تجديدات مسجلة. سجّل كل تجديد بمبلغه ليُحمَّل على موقع العامل{w.location_kind === 'office' ? ' (موظف إدارة: يُوزَّع على كل المشاريع)' : ''}.</p> : (
+          {!w.renewals?.length ? <p className="muted">لا توجد مصاريف مسجلة. سجّل الإقامة وكرت العمل والتأمين بمبلغها ومدتها لتُوزَّع على أشهر المدة وتُحمَّل على موقع العامل{w.location_kind === 'office' ? ' (موظف إدارة: تدخل في مصاريف الإدارة وتُوزَّع على المشاريع بنسبة عمالها)' : ''}.</p> : (
             <ul className="list">
               {w.renewals.map((r) => (
-                <li key={r.id}><b>{sar(r.amount)}</b><span>{shortDate(r.date)}{r.new_expiry ? ` · الانتهاء الجديد ${r.new_expiry}` : ''}{r.note ? ` · ${r.note}` : ''}</span><span className="grow" /><small>{r.project ?? '—'}</small>
-                  <DeleteButton path={`/api/iqama-renewals/${r.id}`} what="هذا التجديد" icon /></li>
+                <li key={r.id}><b>{sar(r.amount)}</b><span><Badge tone="navy">{FEE_KINDS[r.kind ?? 'iqama'] ?? r.kind}</Badge> {shortDate(r.date)} · {r.months ?? 1} شهر ({sar(r.amount / (r.months || 1))} شهرياً){r.new_expiry ? ` · الانتهاء الجديد ${r.new_expiry}` : ''}{r.note ? ` · ${r.note}` : ''}</span><span className="grow" /><small>{r.project ?? '—'}</small>
+                  <DeleteButton path={`/api/fees/${r.id}`} what="هذا المصروف" icon /></li>
               ))}
             </ul>
           )}
           {renew && (
-            <FormModal title={`تجديد إقامة ${w.name}`} initial={{ date: today(), amount: '', new_expiry: addDays(w.iqama_expiry.startsWith('9999') ? today() : w.iqama_expiry, 365), note: '' }}
-              onClose={() => setRenew(false)} onSubmit={(v) => send(`/api/workers/${w.id}/iqama-renewal`, 'POST', v, 'تم تسجيل التجديد')}>
+            <FormModal title={`مصروف للعامل ${w.name}`} initial={{ kind: 'iqama', months: '3', date: today(), amount: '', new_expiry: '', note: '' }}
+              onClose={() => setRenew(false)} onSubmit={(v) => send(`/api/workers/${w.id}/fees`, 'POST', v, 'تم التسجيل')}>
               {(v, set) => (
                 <>
-                  <Field label="تاريخ التجديد">{inp(v, set, 'date', 'date')}</Field>
-                  <Field label="المبلغ المدفوع (ر.س)" hint="رسوم الإقامة + مكتب العمل + التأمين…">{inp(v, set, 'amount', 'number', { inputMode: 'decimal', autoFocus: true })}</Field>
-                  <Field label="تاريخ الانتهاء الجديد">{inp(v, set, 'new_expiry', 'date')}</Field>
-                  <Field label="ملاحظة" span={3}>{inp(v, set, 'note')}</Field>
-                  <p className="muted span-3">يُحمَّل المبلغ على {w.location_kind === 'office' ? 'مصاريف الإدارة وتُوزَّع بالتساوي على المشاريع الجارية' : `موقع العامل في تاريخ التجديد (${w.project ?? 'غير موزّع'})`}.</p>
+                  <Field label="النوع">
+                    <select value={v.kind} onChange={(e) => set({ kind: e.target.value })}>
+                      {Object.entries(FEE_KINDS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="المدة">
+                    <div className="seg full">
+                      {FEE_MONTHS.map((m) => <button type="button" key={m} className={`seg-btn ${String(v.months) === String(m) ? 'on c-good' : ''}`}
+                        onClick={() => set({ months: String(m), new_expiry: v.kind === 'iqama' && !w.iqama_expiry.startsWith('9999') ? addDays(w.iqama_expiry, m * 30) : v.new_expiry })}>{m} أشهر</button>)}
+                    </div>
+                  </Field>
+                  <Field label="تاريخ الدفع">{inp(v, set, 'date', 'date')}</Field>
+                  <Field label="المبلغ المدفوع (ر.س)">{inp(v, set, 'amount', 'number', { inputMode: 'decimal', autoFocus: true })}</Field>
+                  {v.kind === 'iqama' && <Field label="تاريخ الانتهاء الجديد (اختياري)">{inp(v, set, 'new_expiry', 'date')}</Field>}
+                  <Field label="ملاحظة" span={v.kind === 'iqama' ? 2 : 3}>{inp(v, set, 'note')}</Field>
+                  <p className="muted span-3">
+                    {Number(v.amount) > 0 ? `يُوزَّع ${sar(Number(v.amount))} على ${v.months} أشهر = ${sar(Number(v.amount) / Number(v.months))} شهرياً، ` : 'يُوزَّع المبلغ على أشهر المدة، '}
+                    ويُحمَّل كل شهر على {w.location_kind === 'office' ? 'مصاريف الإدارة (تُوزَّع على المشاريع بنسبة عمالها)' : 'الموقع الذي يعمل فيه العامل في ذلك الشهر'}.
+                  </p>
                 </>
               )}
             </FormModal>

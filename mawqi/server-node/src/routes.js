@@ -6,7 +6,7 @@ import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LAB
 import { addDays, round, todayStr, nowTime } from './util.js';
 import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
 import { rmSync } from 'node:fs';
-import { monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
+import { FEE_KINDS, feesByProject, monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
 import { custodyExpenses } from './link.js';
 import { join } from 'node:path';
 
@@ -241,7 +241,7 @@ api.get('/projects/:id', async (req, res) => {
     const all = projectCost(id, start, today, ct.byProject.get(id) || 0);
     p.costs = { month: m, total: all, custodyLinked: cm.ok, custodyError: cm.off ? null : cm.error || null };
   }
-  p.renewals = db.prepare(`SELECT r.id, r.date, r.amount, w.name FROM iqama_renewals r JOIN workers w ON w.id = r.worker_id WHERE r.project_id = ? ORDER BY r.date DESC LIMIT 50`).all(id);
+  p.renewals = db.prepare(`SELECT r.id, r.date, r.amount, r.kind, r.months, w.name FROM iqama_renewals r JOIN workers w ON w.id = r.worker_id WHERE r.project_id = ? ORDER BY r.date DESC LIMIT 50`).all(id);
   p.gallery = projectGallery(id);
   p.documents = filesFor('project', [id])[id]?.filter((f) => f.tag === 'doc') ?? [];
   res.json(p);
@@ -323,7 +323,7 @@ api.get('/workers/:id', (req, res) => {
     WHERE wa.worker_id = ? ORDER BY wa.from_date DESC`).all(w.id);
   w.attendance = db.prepare(`SELECT a.date, a.status, a.check_in, a.check_out, a.overtime_hours, p.name AS project FROM attendance a LEFT JOIN projects p ON p.id = a.project_id
     WHERE a.worker_id = ? ORDER BY a.date DESC LIMIT 62`).all(w.id);
-  w.renewals = db.prepare(`SELECT r.id, r.date, r.amount, r.new_expiry, r.note, p.name AS project FROM iqama_renewals r LEFT JOIN projects p ON p.id = r.project_id WHERE r.worker_id = ? ORDER BY r.date DESC`).all(w.id);
+  w.renewals = db.prepare(`SELECT r.id, r.date, r.amount, r.kind, r.months, r.new_expiry, r.note, p.name AS project FROM iqama_renewals r LEFT JOIN projects p ON p.id = r.project_id WHERE r.worker_id = ? ORDER BY r.date DESC`).all(w.id);
   w.media = filesFor('worker', [w.id])[w.id] || [];
   const ph = [...w.media].reverse().find((m) => m.tag === 'photo');
   w.photo = ph ? ph.url : null;
@@ -839,29 +839,32 @@ api.get('/iqama-renewals', (req, res) => {
     JOIN workers w ON w.id = r.worker_id LEFT JOIN projects p ON p.id = r.project_id LEFT JOIN users u ON u.id = r.created_by
     WHERE ${where.join(' AND ')} ORDER BY r.date DESC, r.id DESC LIMIT 500`).all(...params));
 });
-api.post('/workers/:id/iqama-renewal', need('costs'), (req, res) => {
+api.post(['/workers/:id/iqama-renewal', '/workers/:id/fees'], need('costs'), (req, res) => {
   const id = Number(req.params.id);
   const w = db.prepare('SELECT id, project_id FROM workers WHERE id = ?').get(id);
   if (!w) fail(404, 'العامل غير موجود');
   const b = req.body || {};
   const date = isDate(b.date) ? b.date : todayStr();
   const amount = num(b.amount, NaN);
-  if (!(amount > 0)) fail(400, 'اكتب مبلغ التجديد');
-  const expiry = str(b.new_expiry);
+  if (!(amount > 0)) fail(400, 'اكتب المبلغ');
+  const kind = FEE_KINDS[b.kind] ? b.kind : 'iqama';
+  const months = Math.round(num(b.months, 3));
+  if (!(months >= 1 && months <= 60)) fail(400, 'عدد الأشهر من 1 إلى 60');
+  const expiry = kind === 'iqama' ? str(b.new_expiry) : null;
   if (expiry && !isDate(expiry)) fail(400, 'تاريخ الانتهاء الجديد غير صحيح');
   // Charged to the site the worker belonged to on that day (or the chosen one).
   const at = db.prepare(`SELECT project_id FROM worker_assignments WHERE worker_id = ? AND from_date <= ? AND (to_date IS NULL OR to_date >= ?) ORDER BY from_date DESC LIMIT 1`).get(id, date, date)?.project_id;
   const project = b.project_id ? Number(b.project_id) : at ?? w.project_id ?? null;
   const rid = tx(() => {
-    const r = db.prepare(`INSERT INTO iqama_renewals (worker_id, project_id, date, amount, new_expiry, note, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(id, project, date, amount, expiry, str(b.note), req.user.id, nowStamp());
+    const r = db.prepare(`INSERT INTO iqama_renewals (worker_id, project_id, date, amount, kind, months, new_expiry, note, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(id, project, date, amount, kind, months, expiry, str(b.note), req.user.id, nowStamp());
     if (expiry) db.prepare('UPDATE workers SET iqama_expiry = ? WHERE id = ?').run(expiry, id);
     return Number(r.lastInsertRowid);
   });
   changed(req, 'workers', project);
   res.json({ ok: true, id: rid });
 });
-api.delete('/iqama-renewals/:id', need('delete'), (req, res) => {
+api.delete(['/iqama-renewals/:id', '/fees/:id'], need('delete'), (req, res) => {
   const r = db.prepare('SELECT project_id FROM iqama_renewals WHERE id = ?').get(Number(req.params.id));
   if (!r) fail(404, 'السجل غير موجود');
   db.prepare('DELETE FROM iqama_renewals WHERE id = ?').run(Number(req.params.id));
@@ -967,10 +970,10 @@ api.get('/reports/summary', async (req, res) => {
       (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to AND a.status = 'absent') AS absences,
       (SELECT COALESCE(SUM(gross), 0) FROM invoices v WHERE v.project_id = p.id AND v.kind = 'client' AND v.status IN ('approved','paid')) AS billed,
       (SELECT COALESCE(SUM(gross), 0) FROM invoices v WHERE v.project_id = p.id AND v.kind = 'subcontractor' AND v.status IN ('approved','paid')) AS sub_cost,
-      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status <> 'closed') AS open_issues,
-      (SELECT COALESCE(SUM(amount), 0) FROM iqama_renewals r WHERE r.project_id = p.id AND r.date BETWEEN $from AND $to) AS iqama
+      (SELECT COUNT(*) FROM issues i WHERE i.project_id = p.id AND i.status <> 'closed') AS open_issues
     FROM projects p WHERE ${inList('p.id', scope)} AND p.kind <> 'office' ORDER BY p.kind <> 'project', p.name`).all({ $from: from, $to: toCapped })
     .map((p) => {
+      p.iqama = feesByProject(from, toCapped).get(p.id) ?? 0;
       const overhead = p.kind === 'project' ? overheadFor(p.id, [month]) : 0;
       return { ...p, labour: round(p.labour), billed: round(p.billed), sub_cost: round(p.sub_cost), iqama: round(p.iqama), overhead, total_cost: round(p.labour + p.iqama + overhead) };
     });

@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { db, officeId } from './db.js';
 import { PERMISSIONS, projectScope } from './auth.js';
 import { addDays, round, todayStr } from './util.js';
-import { COST, monthsBetween, overheadMonth, RATE } from './costs.js';
+import { COST, FEE_KINDS, feePortions, feesByProject, monthsBetween, overheadMonth, RATE } from './costs.js';
 import { custodyExpenses } from './link.js';
 
 export const reports = Router();
@@ -24,10 +24,13 @@ const opts = (o) => Object.entries(o).map(([value, label]) => ({ value, label })
  * fin = financial report (hidden from site supervisors).
  */
 const CATALOG = [
-  { group: 'التكاليف والمالية', kind: 'project_costs', title: 'التكلفة الفعلية للمشاريع', text: 'عمالة + تجديد إقامات + حصة الإدارة + مقاولو الباطن، مقابل المستخلصات', filters: ['range', 'project'], fin: true },
-  { group: 'التكاليف والمالية', kind: 'overhead', title: 'مصاريف الإدارة وتوزيعها', text: 'رواتب وإقامات موظفي الإدارة شهرياً وحصة كل مشروع', filters: ['range'], fin: true },
+  { group: 'التكاليف والمالية', kind: 'project_costs', title: 'التكلفة الفعلية للمشاريع', text: 'عمالة + إقامات وكروت عمل وتأمين + حصة الإدارة + العهد + مقاولو الباطن، مقابل المستخلصات', filters: ['range', 'project'], fin: true },
+  { group: 'التكاليف والمالية', kind: 'overhead', title: 'مصاريف الإدارة وتوزيعها', text: 'رواتب ورسوم موظفي الإدارة شهرياً وحصة كل مشروع بنسبة عماله', filters: ['range'], fin: true },
   { group: 'التكاليف والمالية', kind: 'office_staff', title: 'موظفو الإدارة وتكلفتهم', text: 'كل موظف إداري: الأيام والراتب المحمّل على المشاريع', filters: ['range', 'q'], fin: true },
-  { group: 'التكاليف والمالية', kind: 'iqama_renewals', title: 'مصاريف تجديد الإقامات', text: 'كل تجديد: العامل والمبلغ والموقع المحمّل عليه', filters: ['range', 'project', 'q'], fin: true },
+  { group: 'التكاليف والمالية', kind: 'iqama_renewals', title: 'الإقامات وكروت العمل والتأمين', text: 'كل مبلغ مدفوع: العامل والنوع والمدة والموقع', filters: ['range', 'project', 'kind', 'q'], fin: true,
+    options: { kind: opts(FEE_KINDS) } },
+  { group: 'التكاليف والمالية', kind: 'fee_months', title: 'تحميل الرسوم شهرياً', text: 'القسط الشهري من الإقامة وكرت العمل والتأمين وعلى أي موقع حُمّل', filters: ['range', 'project', 'kind', 'q'], fin: true,
+    options: { kind: opts(FEE_KINDS) } },
   { group: 'التكاليف والمالية', kind: 'payroll', title: 'مسير الرواتب', text: 'مستحق كل عامل حسب أيام العمل والإضافي', filters: ['range', 'project', 'profession', 'q'], fin: true },
   { group: 'التكاليف والمالية', kind: 'labour_daily', title: 'تكلفة العمالة يوماً بيوم', text: 'لكل مشروع: عدد العمال والتكلفة في كل يوم', filters: ['range', 'project'], fin: true },
   { group: 'التكاليف والمالية', kind: 'invoices', title: 'المستخلصات', text: 'المالك ومقاولو الباطن مع الصافي والضريبة', filters: ['range', 'project', 'kind', 'status', 'q'], fin: true,
@@ -117,15 +120,16 @@ async function build(kind, { from, to, project, inScope, q, scope }) {
         SELECT p.id, p.name, p.kind, p.contract_value,
           (SELECT COALESCE(SUM(${COST}), 0) FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to) AS labour,
           (SELECT COUNT(*) FROM attendance a WHERE a.project_id = p.id AND a.date BETWEEN $from AND $to AND a.status IN ('present','late','overtime')) AS man_days,
-          (SELECT COALESCE(SUM(amount), 0) FROM iqama_renewals r WHERE r.project_id = p.id AND r.date BETWEEN $from AND $to) AS iqama,
           (SELECT COALESCE(SUM(gross), 0) FROM invoices v WHERE v.project_id = p.id AND v.kind = 'subcontractor' AND v.status IN ('approved','paid') AND COALESCE(v.period_to, substr(v.created_at,1,10)) BETWEEN $from AND $to) AS subs,
           (SELECT COALESCE(SUM(gross), 0) FROM invoices v WHERE v.project_id = p.id AND v.kind = 'client' AND v.status IN ('approved','paid') AND COALESCE(v.period_to, substr(v.created_at,1,10)) BETWEEN $from AND $to) AS billed
         FROM projects p WHERE p.kind <> 'office' AND ${inScope('p.id')} ORDER BY p.kind <> 'project', p.name`).all(P);
       const share = new Map();
-      for (const m of months) { const o = overheadMonth(m); for (const p of o.projects) share.set(p.id, (share.get(p.id) ?? 0) + o.share); }
+      for (const m of months) { const o = overheadMonth(m); for (const p of o.projects) share.set(p.id, (share.get(p.id) ?? 0) + p.share); }
+      const fees = feesByProject(from, to);
+      for (const p of rows) p.iqama = fees.get(p.id) ?? 0;
       const cx = await custodyExpenses(from, to);
       return {
-        columns: [C('name', 'المشروع'), C('man_days', 'أيام عمل', 'n', { sum: true }), C('labour', 'العمالة', 'm', { sum: true }), C('iqama', 'تجديد الإقامات', 'm', { sum: true }),
+        columns: [C('name', 'المشروع'), C('man_days', 'أيام عمل', 'n', { sum: true }), C('labour', 'العمالة', 'm', { sum: true }), C('iqama', 'إقامات وكروت عمل وتأمين', 'm', { sum: true }),
           C('overhead', 'حصة الإدارة', 'm', { sum: true }), C('custody', 'مصروفات العهد', 'm', { sum: true }), C('subs', 'مقاولو الباطن', 'm', { sum: true }), C('total', 'التكلفة الفعلية', 'm', { sum: true, strong: true }),
           C('billed', 'المستخلص المعتمد', 'm', { sum: true }), C('margin', 'الفرق', 'm', { sum: true, tone: true })],
         rows: rows.map((p) => {
@@ -135,52 +139,70 @@ async function build(kind, { from, to, project, inScope, q, scope }) {
           return { name: placeName(p.name, p.kind), man_days: p.man_days, labour: round(p.labour), iqama: round(p.iqama), overhead, custody, subs: round(p.subs), total, billed: round(p.billed), margin: round(p.billed - total) };
         }),
         cards: (_r, t) => [card('التكلفة الفعلية', t.total), card('منها حصة الإدارة', t.overhead), card('منها مصروفات العهد', t.custody), card('المستخلص المعتمد', t.billed, 'm', 'good'), card('الفرق', t.margin, 'm', t.margin < 0 ? 'bad' : 'good')],
-        note: 'حصة الإدارة = (رواتب موظفي الإدارة + تجديد إقاماتهم) ÷ عدد المشاريع الجارية في كل شهر. مصروفات العهد = المصروفات المعتمدة في تطبيق العهدة على مراكز التكلفة المربوطة بالمشروع.'
+        note: 'حصة الإدارة = (رواتب موظفي الإدارة + رسومهم) موزّعة على المشاريع الجارية بنسبة أيام عمل عمال كل مشروع في الشهر. الإقامة وكرت العمل والتأمين تُوزَّع على أشهر مدتها (3 أو 6 أو 12). مصروفات العهد = المصروفات المعتمدة في تطبيق العهدة على مراكز التكلفة المربوطة بالمشروع.'
           + (cx.off ? ' (تطبيق العهدة غير مربوط بعد)' : !cx.ok ? ` (${cx.error})` : cx.unlinked ? ` يوجد ${round(cx.unlinked)} ر.س مصروفات عهد على مراكز غير مربوطة بمشروع.` : ''),
       };
     }
     case 'overhead': {
-      const rows = monthsBetween(from, to).map((m) => {
+      const rows = [];
+      for (const m of monthsBetween(from, to)) {
         const o = overheadMonth(m);
-        return { month: m, salaries: o.salaries, iqama: o.iqama, total: o.total, count: o.projects.length, share: o.share, projects: o.projects.map((p) => p.name).join('، ') };
-      });
+        if (!o.projects.length) rows.push({ month: m, salaries: o.salaries, fees: o.fees, total: o.total, project: '— لا توجد مشاريع جارية', workers: 0, pct: 0, share: 0 });
+        o.projects.forEach((p, i) => rows.push({ month: i ? '' : m, salaries: i ? null : o.salaries, fees: i ? null : o.fees, total: i ? null : o.total,
+          project: p.name, workers: p.workers, worker_days: p.worker_days, pct: p.pct, share: p.share }));
+      }
       return {
-        columns: [C('month', 'الشهر'), C('salaries', 'رواتب الإدارة', 'm', { sum: true }), C('iqama', 'إقامات الإدارة', 'm', { sum: true }), C('total', 'الإجمالي', 'm', { sum: true, strong: true }),
-          C('count', 'عدد المشاريع', 'n'), C('share', 'حصة كل مشروع', 'm', { sum: true }), C('projects', 'المشاريع')],
+        columns: [C('month', 'الشهر'), C('salaries', 'رواتب الإدارة', 'm', { sum: true }), C('fees', 'رسوم الإدارة', 'm', { sum: true }), C('total', 'مصاريف الإدارة', 'm', { sum: true, strong: true }),
+          C('project', 'المشروع'), C('worker_days', 'أيام عمل العمال', 'n', { sum: true }), C('workers', 'متوسط العمال', 'n'), C('pct', 'النسبة %', 'n'), C('share', 'حصة المشروع', 'm', { sum: true, strong: true })],
         rows,
-        cards: (_r, t) => [card('مصاريف الإدارة', t.total), card('الرواتب', t.salaries), card('الإقامات', t.iqama)],
-        note: 'تتغير الحصة تلقائياً مع عدد المشاريع الجارية كل شهر.',
+        cards: (_r, t) => [card('مصاريف الإدارة', t.total), card('الرواتب', t.salaries), card('الإقامات وكروت العمل والتأمين', t.fees)],
+        note: 'تُوزَّع مصاريف الإدارة كل شهر على المشاريع الجارية بنسبة أيام عمل عمالها: مشروع فيه 3 عمال ومشروع فيه 6 يأخذان 33% و67%. إذا لم يكن في أي مشروع عمال تُقسم بالتساوي.',
       };
     }
     case 'office_staff': {
       const map = new Map();
-      for (const m of monthsBetween(from, to)) for (const s of overheadMonth(m, true).staff) {
-        const x = map.get(s.id) ?? { name: s.name, profession: s.profession, wage: s.wage, wage_type: s.wage_type === 'daily' ? 'يومي' : 'شهري', days: 0, cost: 0 };
-        x.days += s.days; x.cost += s.cost; map.set(s.id, x);
+      for (const m of monthsBetween(from, to)) for (const x of overheadMonth(m, true).staff) {
+        const y = map.get(x.id) ?? { name: x.name, profession: x.profession, wage: x.wage, wage_type: x.wage_type === 'daily' ? 'يومي' : 'شهري', days: 0, cost: 0, fees: 0 };
+        y.days += x.days; y.cost += x.cost; y.fees += x.fees; map.set(x.id, y);
       }
-      const office = officeId();
-      const iq = db.prepare(`SELECT worker_id, SUM(amount) AS v FROM iqama_renewals WHERE project_id = ? AND date BETWEEN ? AND ? GROUP BY worker_id`).all(office, from, to);
-      const names = new Map(db.prepare(`SELECT id, name, profession FROM workers`).all().map((w) => [w.id, w]));
-      const byName = new Map([...map.entries()]);
-      for (const r of iq) { const x = byName.get(r.worker_id) ?? { name: names.get(r.worker_id)?.name, profession: names.get(r.worker_id)?.profession, wage: 0, wage_type: '', days: 0, cost: 0 }; x.iqama = r.v; byName.set(r.worker_id, x); }
-      const rows = [...byName.values()].map((x) => ({ ...x, cost: round(x.cost), iqama: round(x.iqama ?? 0), total: round(x.cost + (x.iqama ?? 0)) }));
+      const rows = [...map.values()].map((x) => ({ ...x, cost: round(x.cost), iqama: round(x.fees), total: round(x.cost + x.fees) }));
       return {
         columns: [C('name', 'الموظف'), C('profession', 'الوظيفة'), C('wage_type', 'نوع الأجر'), C('wage', 'الأجر', 'm'), C('days', 'أيام', 'n', { sum: true }),
-          C('cost', 'الرواتب', 'm', { sum: true }), C('iqama', 'تجديد الإقامة', 'm', { sum: true }), C('total', 'الإجمالي', 'm', { sum: true, strong: true })],
+          C('cost', 'الرواتب', 'm', { sum: true }), C('iqama', 'إقامة وكرت عمل وتأمين', 'm', { sum: true }), C('total', 'الإجمالي', 'm', { sum: true, strong: true })],
         rows,
         cards: (r, t) => [card('عدد الموظفين', r.length, 'n'), card('إجمالي التكلفة', t.total)],
-        note: 'موظفو الإدارة هم العمال الموجودون في موقع «الإدارة».',
+        note: 'موظفو الإدارة هم العمال الموجودون في موقع «الإدارة». الرسوم = القسط الشهري من الإقامة وكرت العمل والتأمين.',
       };
     }
     case 'iqama_renewals': {
-      const rows = db.prepare(`SELECT r.date, w.name, w.iqama_no, w.profession, p.name AS project, p.kind, r.amount, r.new_expiry, r.note, u.name AS author
+      const kf = FEE_KINDS[q.kind] ? ` AND COALESCE(r.kind, 'iqama') = '${q.kind}'` : '';
+      const rows = db.prepare(`SELECT r.date, w.name, w.iqama_no, w.profession, COALESCE(r.kind, 'iqama') AS kind, r.months, p.name AS project, p.kind AS pkind, r.amount, r.new_expiry, r.note, u.name AS author
         FROM iqama_renewals r JOIN workers w ON w.id = r.worker_id LEFT JOIN projects p ON p.id = r.project_id LEFT JOIN users u ON u.id = r.created_by
-        WHERE r.date BETWEEN $from AND $to AND ${project ? `r.project_id = ${project}` : scope === null ? '1=1' : inScope('r.project_id')} ORDER BY r.date DESC`).all(P);
+        WHERE r.date BETWEEN $from AND $to${kf} AND ${project ? `r.project_id = ${project}` : scope === null ? '1=1' : inScope('r.project_id')} ORDER BY r.date DESC`).all(P);
       return {
-        columns: [C('date', 'التاريخ', 'd'), C('name', 'العامل'), C('iqama_no', 'رقم الإقامة'), C('project', 'حُمّل على'), C('amount', 'المبلغ', 'm', { sum: true, strong: true }),
-          C('new_expiry', 'الانتهاء الجديد', 'd'), C('note', 'ملاحظة'), C('author', 'سجّله')],
-        rows: rows.map((r) => ({ ...r, project: r.project ? placeName(r.project, r.kind) : '—' })),
-        cards: (r, t) => [card('عدد التجديدات', r.length, 'n'), card('إجمالي المصروف', t.amount)],
+        columns: [C('date', 'التاريخ', 'd'), C('name', 'العامل'), C('iqama_no', 'رقم الإقامة'), C('kind', 'النوع'), C('months', 'المدة (شهر)', 'n'), C('project', 'الموقع وقت الدفع'),
+          C('amount', 'المبلغ', 'm', { sum: true, strong: true }), C('monthly', 'القسط الشهري', 'm'), C('new_expiry', 'الانتهاء الجديد', 'd'), C('note', 'ملاحظة'), C('author', 'سجّله')],
+        rows: rows.map((r) => ({ ...r, kind: FEE_KINDS[r.kind] ?? r.kind, monthly: round(r.amount / (r.months || 1)), project: r.project ? placeName(r.project, r.pkind) : '—' })),
+        cards: (r, t) => [card('عدد العمليات', r.length, 'n'), card('إجمالي المدفوع', t.amount)],
+        note: 'كل مبلغ يُوزَّع على أشهر مدته ويُحمَّل كل شهر على الموقع الذي كان فيه العامل. انظر تقرير «تحميل الرسوم شهرياً».',
+      };
+    }
+    case 'fee_months': {
+      const names = new Map(db.prepare('SELECT id, name, kind FROM projects').all().map((p) => [p.id, p]));
+      const rows = [];
+      for (const m of monthsBetween(from, to)) for (const f of feePortions(m)) {
+        if (FEE_KINDS[q.kind] && f.kind !== q.kind) continue;
+        if (project && f.project_id !== project) continue;
+        if (!project && scope !== null && !scope.includes(f.project_id)) continue;
+        const p = names.get(f.project_id);
+        rows.push({ month: m, name: f.name, kind: f.kind_label, paid: f.date, total: round(f.total), part: `${f.index} من ${f.months}`, project: p ? placeName(p.name, p.kind) : '—', amount: round(f.amount) });
+      }
+      return {
+        columns: [C('month', 'الشهر'), C('name', 'العامل'), C('kind', 'النوع'), C('paid', 'تاريخ الدفع', 'd'), C('total', 'المبلغ المدفوع', 'm'), C('part', 'القسط'),
+          C('project', 'حُمّل على'), C('amount', 'المحمّل هذا الشهر', 'm', { sum: true, strong: true })],
+        rows,
+        cards: (r, t) => [card('المحمّل في الفترة', t.amount)],
+        note: 'ما يُحمَّل على «الإدارة» يدخل في مصاريف الإدارة ويُوزَّع على المشاريع بنسبة عمالها.',
       };
     }
     case 'payroll': {

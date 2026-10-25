@@ -47,7 +47,7 @@ export interface Worker {
   photo?: string | null; today?: AttStatus | null
 }
 export interface WorkerDetail extends Worker {
-  renewals?: { id: number; date: string; amount: number; new_expiry: string | null; note: string | null; project: string | null }[]
+  renewals?: { id: number; date: string; amount: number; kind?: string; months?: number; new_expiry: string | null; note: string | null; project: string | null }[]
   media?: import('./media').MediaFile[]
   attendance: { date: string; status: AttStatus; check_in: string | null; overtime_hours: number; project?: string | null }[]
   history: { from_date: string; to_date: string | null; project: string }[]
