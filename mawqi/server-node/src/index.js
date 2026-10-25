@@ -10,6 +10,7 @@ import { hashPassword } from './auth.js';
 import { login, projectScope, requireAuth, verifyToken } from './auth.js';
 import { buildDashboard } from './dashboard.js';
 import { startJobs } from './jobs.js';
+import { syncCustody } from './link.js';
 import { seed } from './seed.js';
 import { reports } from './reports.js';
 import { linkAdmin, linkPublic } from './link.js';
@@ -137,6 +138,9 @@ if (existsSync(webDist)) {
 }
 
 startJobs(broadcast);
+// Keep projects and custody cost centres in step (also runs right after any edit on either side).
+setTimeout(() => syncCustody().catch(() => null), 20_000);
+setInterval(() => syncCustody().then((r) => { if (r.ok && r.createdHere?.length) broadcast("data:changed", { entity: "projects" }); }).catch(() => null), 10 * 60_000);
 
 const PORT = Number(process.env.PORT || 4000);
 http.listen(PORT, '0.0.0.0', () => console.log(`المشاريع server on http://0.0.0.0:${PORT}`));

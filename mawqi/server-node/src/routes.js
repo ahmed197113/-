@@ -7,7 +7,7 @@ import { addDays, round, todayStr, nowTime } from './util.js';
 import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
 import { rmSync } from 'node:fs';
 import { FEE_KINDS, feesByProject, monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
-import { custodyExpenses } from './link.js';
+import { custodyExpenses, pushProject } from './link.js';
 import { join } from 'node:path';
 
 const withFiles = (entity, rows) => { const f = filesFor(entity, rows.map((r) => r.id)); return rows.map((r) => ({ ...r, media: f[r.id] || [] })); };
@@ -273,6 +273,7 @@ api.post('/projects', need('projectsCreate'), (req, res) => {
     return pid;
   });
   changed(req, 'projects', id);
+  pushProject(id);
   res.json({ id });
 });
 api.put('/projects/:id', need('projects'), (req, res) => {
@@ -291,6 +292,7 @@ api.put('/projects/:id', need('projects'), (req, res) => {
     setMembers(id, managers, idList(b.supervisor_ids, b.supervisor_id));
   });
   changed(req, 'projects', id);
+  pushProject(id);
   res.json({ ok: true });
 });
 

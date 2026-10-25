@@ -6,7 +6,7 @@ import { db, officeId } from './db.js';
 import { PERMISSIONS, projectScope } from './auth.js';
 import { addDays, round, todayStr } from './util.js';
 import { COST, FEE_KINDS, feePortions, feesByProject, monthsBetween, overheadMonth, RATE } from './costs.js';
-import { custodyExpenses } from './link.js';
+import { custodyExpenseLines, custodyExpenses } from './link.js';
 
 export const reports = Router();
 
@@ -31,6 +31,7 @@ const CATALOG = [
     options: { kind: opts(FEE_KINDS) } },
   { group: 'التكاليف والمالية', kind: 'fee_months', title: 'تحميل الرسوم شهرياً', text: 'القسط الشهري من الإقامة وكرت العمل والتأمين وعلى أي موقع حُمّل', filters: ['range', 'project', 'kind', 'q'], fin: true,
     options: { kind: opts(FEE_KINDS) } },
+  { group: 'التكاليف والمالية', kind: 'custody_lines', title: 'مصروفات العهد بالتفصيل', text: 'كل مصروف معتمد في تطبيق العهدة على المشروع: البند والموظف والمبلغ', filters: ['range', 'project', 'q'], fin: true },
   { group: 'التكاليف والمالية', kind: 'payroll', title: 'مسير الرواتب', text: 'مستحق كل عامل حسب أيام العمل والإضافي', filters: ['range', 'project', 'profession', 'q'], fin: true },
   { group: 'التكاليف والمالية', kind: 'labour_daily', title: 'تكلفة العمالة يوماً بيوم', text: 'لكل مشروع: عدد العمال والتكلفة في كل يوم', filters: ['range', 'project'], fin: true },
   { group: 'التكاليف والمالية', kind: 'invoices', title: 'المستخلصات', text: 'المالك ومقاولو الباطن مع الصافي والضريبة', filters: ['range', 'project', 'kind', 'status', 'q'], fin: true,
@@ -203,6 +204,20 @@ async function build(kind, { from, to, project, inScope, q, scope }) {
         rows,
         cards: (r, t) => [card('المحمّل في الفترة', t.amount)],
         note: 'ما يُحمَّل على «الإدارة» يدخل في مصاريف الإدارة ويُوزَّع على المشاريع بنسبة عمالها.',
+      };
+    }
+    case 'custody_lines': {
+      const cx = await custodyExpenseLines(from, to, project);
+      const names = new Map(db.prepare('SELECT id, name, kind FROM projects').all().map((p) => [p.id, p]));
+      const rows = cx.rows.filter((r) => (project ? r.projectId === project : scope === null || scope.includes(r.projectId)))
+        .map((r) => ({ date: r.date, no: r.no, project: names.get(r.projectId) ? placeName(names.get(r.projectId).name, names.get(r.projectId).kind) : '— غير مربوط', cc: r.costCenter, category: r.category,
+          description: [r.description, r.vendor].filter(Boolean).join(' — '), employee: r.employee, vat: round(r.vat), amount: round(r.amount) }));
+      return {
+        columns: [C('date', 'التاريخ', 'd'), C('no', 'الرقم'), C('project', 'المشروع'), C('cc', 'مركز التكلفة'), C('category', 'البند'), C('description', 'البيان'), C('employee', 'الموظف'),
+          C('vat', 'الضريبة', 'm', { sum: true }), C('amount', 'المبلغ', 'm', { sum: true, strong: true })],
+        rows,
+        cards: (r, t) => [card('عدد المصروفات', r.length, 'n'), card('الإجمالي', t.amount)],
+        note: cx.ok ? 'المصروفات المعتمدة في تطبيق العهدة على مراكز التكلفة المربوطة بالمشروع (والمراكز الفرعية تتبع المركز الرئيسي).' : cx.error,
       };
     }
     case 'payroll': {
