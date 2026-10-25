@@ -6,10 +6,13 @@ import { nowTime, todayStr, isFriday } from './util.js';
 /** Mark as absent every active worker not recorded today once the cutoff time has passed. */
 export function autoMarkAbsent() {
   const today = todayStr();
+  // Off unless switched on: the site engineers and supervisors are reminded until they record attendance,
+  // instead of everyone being marked absent automatically.
+  if (getSetting('absence_auto', '0') !== '1') return [];
   if (isFriday(today) || nowTime() < getSetting('absence_cutoff', '09:00')) return [];
   const missing = db.prepare(`
-    SELECT w.id, w.project_id FROM workers w
-    WHERE w.active = 1 AND w.project_id IS NOT NULL
+    SELECT w.id, w.project_id FROM workers w JOIN projects p ON p.id = w.project_id
+    WHERE w.active = 1 AND p.kind <> 'office'
       AND NOT EXISTS (SELECT 1 FROM attendance a WHERE a.worker_id = w.id AND a.date = ?)`).all(today);
   const ins = db.prepare(`INSERT INTO attendance (worker_id, project_id, date, status, method) VALUES (?, ?, ?, 'absent', 'auto')`);
   for (const w of missing) ins.run(w.id, w.project_id, today);

@@ -29,9 +29,29 @@ export default function Home() {
             <View style={s.logo}><Image source={require('../../../assets/logo.png')} style={{ width: 30, height: 38 }} resizeMode="contain" /></View>
           } />
       }>
+      <AttendanceReminder />
       {!data ? (loading ? <Loading /> : <ErrorBox text={error ?? ''} onRetry={refresh} />) : <Content d={data} />}
       {!!data && !!error && online && <T style={{ color: C.bad, textAlign: 'center' }}>{error}</T>}
     </AppScreen>
+  )
+}
+
+/** Sites whose attendance for today is not taken yet — stays until it is recorded. */
+function AttendanceReminder() {
+  const { can } = useAuth()
+  const { data } = useData<{ due: { id: number; name: string; missing: number; workers: number }[] }>(can('attendance') ? '/api/attendance/reminders' : null)
+  if (!data?.due?.length) return null
+  return (
+    <View style={s.remind}>
+      <Row style={{ gap: 8 }}><Ionicons name="alarm" size={24} color="#fff" /><T w="black" style={{ color: '#fff', fontSize: 18, flex: 1 }}>لم يُسجَّل حضور اليوم</T></Row>
+      {data.due.map((x) => (
+        <Pressable key={x.id} style={s.remindBtn} onPress={() => router.navigate({ pathname: '/attendance', params: { project: String(x.id) } })}>
+          <T w="bold" style={{ flex: 1, fontSize: 17, color: C.bad }}>{x.name}</T>
+          <T style={{ color: C.ink2 }}>{x.missing === x.workers ? `${fmt(x.workers)} عامل` : `باقي ${fmt(x.missing)} من ${fmt(x.workers)}`}</T>
+          <Ionicons name="chevron-back" size={22} color={C.bad} />
+        </Pressable>
+      ))}
+    </View>
   )
 }
 
@@ -167,6 +187,8 @@ function Summary({ d }: { d: Dashboard }) {
 }
 
 const s = StyleSheet.create({
+  remind: { backgroundColor: C.bad, borderRadius: 18, padding: 14, gap: 10 },
+  remindBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 14, minHeight: 54 },
   logo: { width: 46, height: 52, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   kpi: { flexBasis: '46%', flexGrow: 1, gap: 4, padding: 14 },

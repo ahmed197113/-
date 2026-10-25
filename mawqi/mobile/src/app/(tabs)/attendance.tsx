@@ -1,12 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useLocalSearchParams } from 'expo-router'
 import { addDays, fmt, longDate, today, type AttRow, type AttStatus, type Meta, type Worker } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useData, useSync } from '../../lib/sync'
 import { AppScreen } from '../../components/AppScreen'
 import { confirm, useToast } from '../../components/Toast'
-import { Button, C, Chip, Empty, ErrorBox, Header, Loading, Row, Search, Sheet, T, type IconName } from '../../components/ui'
+import { Button, C, Empty, ErrorBox, Header, Loading, Row, Search, Sheet, T, type IconName } from '../../components/ui'
 
 const STATUSES: { key: AttStatus; label: string; icon: IconName; color: string; bg: string }[] = [
   { key: 'present', label: 'حاضر', icon: 'checkmark-circle', color: C.good, bg: C.goodBg },
@@ -18,16 +19,21 @@ const STATUSES: { key: AttStatus; label: string; icon: IconName; color: string; 
 const DEFAULT_OT = 2
 
 interface Mark { status: AttStatus | null; ot: number; site?: number }
+interface SiteRow { id: number; name: string; kind: string; workers: number; recorded: number; present: number; absent: number; leave: number; missing: number; state: 'done' | 'partial' | 'none' | 'empty' }
 interface Entry { worker_id: number; status: AttStatus | null; overtime_hours: number; project_id?: number; check_in?: string | null; check_out?: string | null }
 
 export default function Attendance() {
   const toast = useToast()
   const { send, queue } = useSync()
   const meta = useData<Meta>('/api/meta')
-  // Real projects first, the factory last.
-  const projects = [...(meta.data?.projects ?? [])].sort((a, b) => Number((a.kind ?? 'project') !== 'project') - Number((b.kind ?? 'project') !== 'project'))
-  const [projectId, setProjectId] = useState<number | null>(null)
+  const params = useLocalSearchParams<{ project?: string }>()
+  // First the supervisor picks the site from big cards, then records its workers.
+  const [projectId, setProjectId] = useState<number | null>(params.project ? Number(params.project) : null)
+  useEffect(() => { if (params.project) setProjectId(Number(params.project)) }, [params.project])
   const [date, setDate] = useState(today())
+  const sitesData = useData<{ date: string; sites: SiteRow[] }>(`/api/attendance/sites?date=${date}`)
+  const sites = sitesData.data?.sites ?? []
+  const projects = sites
   const [q, setQ] = useState('')
   const [edits, setEdits] = useState<Map<number, Mark>>(new Map())
   const [busy, setBusy] = useState(false)
@@ -39,9 +45,8 @@ export default function Attendance() {
   const [pulled, setPulled] = useState<AttRow[]>([])
   useEffect(() => setPulled([]), [date, projectId])
 
-  useEffect(() => {
-    if (projects.length && !projects.some((p) => p.id === projectId)) setProjectId(projects[0].id)
-  }, [projects, projectId])
+  // Only one site: open it straight away.
+  useEffect(() => { if (projectId === null && sites.length === 1) setProjectId(sites[0].id) }, [sites, projectId])
 
   const att = useData<{ date: string; rows: AttRow[] }>(projectId ? `/api/attendance?date=${date}&project=${projectId}` : null)
 
@@ -123,7 +128,7 @@ export default function Attendance() {
       setEdits(new Map())
       setPulled([])
       toast(res === 'sent' ? `تم حفظ حضور ${entries.length} عامل` : 'لا يوجد اتصال — حُفظ الحضور وسيُرسل تلقائياً', res === 'sent' ? 'success' : 'info')
-      if (res === 'sent') att.reload()
+      if (res === 'sent') { att.reload(); sitesData.reload() }
     } catch (e) {
       toast((e as Error).message, 'error')
     } finally {
@@ -132,13 +137,7 @@ export default function Attendance() {
   }
 
   const isToday = date >= today()
-  const controls = (
-    <View style={{ gap: 12, paddingBottom: 4 }}>
-      {projects.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-          {projects.map((p) => <Chip key={p.id} label={p.name} active={p.id === projectId} onPress={() => p.id !== projectId && switchTo(() => setProjectId(p.id))} />)}
-        </ScrollView>
-      )}
+  const dateBar = (
       <View style={s.dateBar}>
         <Pressable style={s.dateBtn} onPress={() => switchTo(() => setDate(addDays(date, -1)))} accessibilityLabel="اليوم السابق">
           <Ionicons name="chevron-forward" size={26} color={C.navy} />
@@ -151,7 +150,27 @@ export default function Attendance() {
           <Ionicons name="chevron-back" size={26} color={C.navy} />
         </Pressable>
       </View>
-      {canMove && !!projectId && <Button label="إضافة عامل من موقع آخر" icon="person-add" kind="ghost" onPress={() => setPulling(true)} />}
+  )
+
+  // ----- Step 1: the sites as big cards -----
+  if (projectId === null) {
+    const todo = sites.filter((x) => x.state === 'none' || x.state === 'partial').length
+    return (
+      <AppScreen inTabs onRefresh={sitesData.refresh} refreshing={sitesData.refreshing}
+        header={<Header title="تسجيل الحضور" sub={todo ? `${todo} موقع لم يكتمل حضوره` : 'اختر الموقع'} />}>
+        {dateBar}
+        {!sitesData.data ? (sitesData.loading ? <Loading /> : <ErrorBox text={sitesData.error ?? ''} onRetry={sitesData.refresh} />)
+          : !sites.length ? <Empty icon="business-outline" title="لا توجد مواقع" sub="لم يُسند إليك أي مشروع بعد" />
+          : sites.map((x) => <SiteCard key={x.id} x={x} onPress={() => setProjectId(x.id)} />)}
+      </AppScreen>
+    )
+  }
+
+  const site = sites.find((x) => x.id === projectId)
+  const controls = (
+    <View style={{ gap: 12, paddingBottom: 4 }}>
+      {dateBar}
+      {canMove && <Button label="إضافة عمال إلى هذا الموقع" icon="person-add" kind="primary" onPress={() => setPulling(true)} />}
       {rows.length > 0 && (
         <>
           <Row style={{ gap: 8 }}>
@@ -168,17 +187,15 @@ export default function Attendance() {
     </View>
   )
 
-  const body = !projects.length
-    ? (meta.loading ? <Loading /> : meta.error && !meta.data ? <ErrorBox text={meta.error} onRetry={meta.refresh} /> : <Empty icon="business-outline" title="لا توجد مشاريع" sub="لم يُسند إليك أي مشروع بعد" />)
-    : !att.data && att.loading ? <Loading label="جارٍ تحميل العمال…" />
+  const body = !att.data && att.loading ? <Loading label="جارٍ تحميل العمال…" />
     : !att.data && att.error ? <ErrorBox text={att.error} onRetry={att.refresh} />
-    : rows.length === 0 ? <Empty icon="people-outline" title="لا يوجد عمال في هذا المشروع" sub="أضف العمال من لوحة التحكم على الويب" />
+    : rows.length === 0 ? <Empty icon="people-outline" title="لا يوجد عمال في هذا الموقع" sub={canMove ? 'اضغط «إضافة عمال إلى هذا الموقع» واختر العمال الموجودين فيه' : 'اطلب من المهندس إضافة العمال'} />
     : shown.length === 0 ? <Empty icon="search" title="لا توجد نتائج" sub={`لا يوجد عامل باسم «${q}»`} />
     : null
 
   return (
     <AppScreen inTabs scroll={false}
-      header={<Header title="تسجيل الحضور" sub={projects.find((p) => p.id === projectId)?.name ?? 'اختر المشروع'} />}
+      header={<Header title={`${site?.kind === 'factory' ? '🏭 ' : '🏗️ '}${site?.name ?? 'الحضور'}`} sub="تسجيل الحضور" onBack={() => switchTo(() => setProjectId(null))} />}
       footer={edits.size ? <Button label={`حفظ الحضور (${edits.size})`} icon="save" kind="accent" busy={busy} onPress={save} /> : undefined}>
       <FlatList
         data={body ? [] : shown}
@@ -209,14 +226,39 @@ export default function Attendance() {
           )
         })}
       </Sheet>
-      <PullSheet visible={pulling} exclude={rows.map((r) => r.worker_id)} onClose={() => setPulling(false)} onPick={(w) => {
-        const r: AttRow = { worker_id: w.id, name: w.name, profession: w.profession, project_id: w.project_id ?? projectId!, project: w.project ?? '', status: null, check_in: null, check_out: null, overtime_hours: 0 }
-        setPulled((l) => [r, ...l])
-        setEdits((prev) => new Map(prev).set(w.id, { status: 'present', ot: DEFAULT_OT, site: projectId! }))
+      <PullSheet visible={pulling} siteName={site?.name ?? ''} exclude={rows.map((r) => r.worker_id)} onClose={() => setPulling(false)} onPick={(list) => {
+        const add: AttRow[] = list.map((w) => ({ worker_id: w.id, name: w.name, profession: w.profession, project_id: w.project_id ?? projectId!, project: w.project ?? '', status: null, check_in: null, check_out: null, overtime_hours: 0 }))
+        setPulled((l) => [...add, ...l])
+        setEdits((prev) => { const m = new Map(prev); for (const w of list) m.set(w.id, { status: 'present', ot: DEFAULT_OT, site: projectId! }); return m })
         setPulling(false)
-        toast(`أُضيف ${w.name} — اضغط حفظ`, 'info')
+        toast(`أُضيف ${list.length} عامل حاضر — اضغط حفظ`, 'info')
       }} />
     </AppScreen>
+  )
+}
+
+const STATE = {
+  done: { label: 'تم تسجيل الحضور', color: C.good, bg: C.goodBg, icon: 'checkmark-circle' as IconName },
+  partial: { label: 'لم يكتمل', color: C.late, bg: C.lateBg, icon: 'time' as IconName },
+  none: { label: 'لم يُسجَّل بعد', color: C.bad, bg: C.badBg, icon: 'alert-circle' as IconName },
+  empty: { label: 'لا يوجد عمال', color: C.muted, bg: '#f1eff4', icon: 'people-outline' as IconName },
+}
+function SiteCard({ x, onPress }: { x: SiteRow; onPress: () => void }) {
+  const st = STATE[x.state]
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${x.name} ${st.label}`}
+      style={({ pressed }) => [s.siteCard, { borderStartColor: st.color }, pressed && { opacity: 0.8 }]}>
+      <View style={[s.siteIc, { backgroundColor: x.kind === 'factory' ? '#fbeadd' : C.navySoft }]}><T style={{ fontSize: 34 }}>{x.kind === 'factory' ? '🏭' : '🏗️'}</T></View>
+      <View style={{ flex: 1, gap: 4 }}>
+        <T w="black" style={{ fontSize: 20, color: C.navy }} numberOfLines={1}>{x.name}</T>
+        <T style={{ color: C.ink2, fontSize: 15 }}>{fmt(x.workers)} عامل{x.recorded ? ` · حاضر ${fmt(x.present)} · غائب ${fmt(x.absent)}` : ''}</T>
+        <View style={[s.pill, { backgroundColor: st.bg }]}>
+          <Ionicons name={st.icon} size={16} color={st.color} />
+          <T w="bold" style={{ color: st.color, fontSize: 14 }}>{x.state === 'partial' ? `سُجّل ${fmt(x.recorded)} من ${fmt(x.workers)}` : st.label}</T>
+        </View>
+      </View>
+      <Ionicons name="chevron-back" size={26} color={C.muted} />
+    </Pressable>
   )
 }
 
@@ -292,31 +334,43 @@ const s = StyleSheet.create({
   place: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderColor: C.line, borderRadius: 14, padding: 14 },
   pick: { flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderColor: C.line, paddingVertical: 12 },
   tag: { borderWidth: 1.5, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 2 },
+  siteCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: C.line, borderStartWidth: 6, padding: 16, minHeight: 110 },
+  siteIc: { width: 64, height: 64, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  check: { width: 30, height: 30, borderRadius: 9, borderWidth: 2, borderColor: C.line, alignItems: 'center', justifyContent: 'center' },
 })
 
-/** Bring a worker who is recorded on another site (or the factory) into this site's sheet. */
-function PullSheet({ visible, exclude, onClose, onPick }: { visible: boolean; exclude: number[]; onClose: () => void; onPick: (w: Worker) => void }) {
+/** Add the workers who are on this site (from another site, the factory or not yet placed) — several at once. */
+function PullSheet({ visible, siteName, exclude, onClose, onPick }: { visible: boolean; siteName: string; exclude: number[]; onClose: () => void; onPick: (w: Worker[]) => void }) {
   const all = useData<Worker[]>(visible ? '/api/workers?active=1' : null)
   const [q, setQ] = useState('')
-  useEffect(() => { if (visible) setQ('') }, [visible])
+  const [picked, setPicked] = useState<Set<number>>(new Set())
+  useEffect(() => { if (visible) { setQ(''); setPicked(new Set()) } }, [visible])
   const t = q.trim()
-  const list = (all.data ?? []).filter((w) => !exclude.includes(w.id) && (!t || w.name.includes(t) || (w.profession ?? '').includes(t) || (w.project ?? '').includes(t))).slice(0, 60)
+  const list = (all.data ?? []).filter((w) => !exclude.includes(w.id) && (!t || w.name.includes(t) || (w.profession ?? '').includes(t) || (w.project ?? '').includes(t)))
+  const toggle = (id: number) => setPicked((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
-    <Sheet visible={visible} title="إضافة عامل من موقع آخر" onClose={onClose}>
-      <Search value={q} onChangeText={setQ} placeholder="ابحث باسم العامل" />
+    <Sheet visible={visible} title={`إضافة عمال إلى ${siteName}`} onClose={onClose}>
+      <T style={{ color: C.muted }}>علّم العمال الموجودين في الموقع اليوم، ثم اضغط «إضافة». يُسجَّلون حاضرين وتستطيع تغيير حالة أي منهم.</T>
+      <Search value={q} onChangeText={setQ} placeholder="ابحث بالاسم أو المهنة أو الموقع" />
       {!all.data ? <Loading /> : !list.length ? <T style={{ color: C.muted, textAlign: 'center' }}>لا يوجد عمال آخرون</T> : (
-        <ScrollView style={{ maxHeight: 380 }} keyboardShouldPersistTaps="handled">
-          {list.map((w) => (
-            <Pressable key={w.id} style={s.pick} onPress={() => onPick(w)}>
-              <View style={{ flex: 1 }}>
-                <T w="bold" style={{ fontSize: 17 }}>{w.name}</T>
-                <T style={{ color: C.muted, fontSize: 14 }}>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : w.location_kind === 'office' ? '🏢 ' : ''}${w.project}` : 'غير موزّع'}</T>
-              </View>
-              <Ionicons name="add-circle" size={28} color={C.navy} />
-            </Pressable>
-          ))}
+        <ScrollView style={{ maxHeight: 360 }} keyboardShouldPersistTaps="handled">
+          {list.slice(0, 200).map((w) => {
+            const on = picked.has(w.id)
+            return (
+              <Pressable key={w.id} style={[s.pick, on && { backgroundColor: C.navySoft }]} onPress={() => toggle(w.id)} accessibilityRole="checkbox" accessibilityState={{ checked: on }}>
+                <View style={[s.check, on && { backgroundColor: C.navy, borderColor: C.navy }]}>{on && <Ionicons name="checkmark" size={20} color="#fff" />}</View>
+                <View style={{ flex: 1 }}>
+                  <T w="bold" style={{ fontSize: 17 }}>{w.name}</T>
+                  <T style={{ color: C.muted, fontSize: 14 }}>{w.profession} · الآن في: {w.project ? `${w.location_kind === 'factory' ? '🏭 ' : ''}${w.project}` : 'غير موزّع'}</T>
+                </View>
+              </Pressable>
+            )
+          })}
         </ScrollView>
       )}
+      <Button label={picked.size ? `إضافة ${picked.size} عامل` : 'اختر العمال'} icon="person-add" kind="accent" disabled={!picked.size}
+        onPress={() => onPick((all.data ?? []).filter((w) => picked.has(w.id)))} />
     </Sheet>
   )
 }

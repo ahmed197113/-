@@ -83,6 +83,7 @@ export async function loadSession() {
   server = WEB_ORIGIN ?? (await AsyncStorage.getItem(K.server)) ?? ''
   token = await secure.get(K.token).catch(() => null)
   const raw = await AsyncStorage.getItem(K.user)
+  if (token) tellNativeApp(token)
   return { server, token, user: raw ? (JSON.parse(raw) as User) : null }
 }
 export const getServer = () => server
@@ -98,7 +99,16 @@ export async function setServer(url: string) {
   server = WEB_ORIGIN ?? normalizeServer(url)
   await AsyncStorage.setItem(K.server, server)
 }
+/** The Android app (a thin shell around this page) checks attendance reminders in the background with this session. */
+export function tellNativeApp(t: string | null) {
+  try {
+    const n = typeof window !== 'undefined' ? (window as unknown as { MawqiNative?: { setSession(s: string, t: string): void; clearSession(): void } }).MawqiNative : undefined
+    if (!n) return
+    if (t) n.setSession(server || (typeof location !== 'undefined' ? location.origin : ''), t); else n.clearSession()
+  } catch { /* not inside the Android app */ }
+}
 export async function saveSession(t: string | null, user: User | null) {
+  tellNativeApp(t)
   token = t
   if (t) await secure.set(K.token, t)
   else await secure.del(K.token)

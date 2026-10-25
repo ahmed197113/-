@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
 import { db, ensureFactory, ensureOffice, factoryId, officeId, getSetting, memberIds, memberNames, setMembers, setSetting, tx } from './db.js';
 import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LABELS } from './auth.js';
-import { addDays, round, todayStr, nowTime } from './util.js';
+import { addDays, isFriday, round, todayStr, nowTime } from './util.js';
 import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
 import { rmSync } from 'node:fs';
 import { FEE_KINDS, feesByProject, monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
@@ -501,6 +501,46 @@ api.get('/attendance', (req, res) => {
     WHERE ${where.join(' AND ')} ORDER BY p.kind = 'factory', p.name, w.name`).all(...params)
     .map((r) => ({ ...r, photo: photos[r.worker_id] ? `/api/files/${photos[r.worker_id]}` : null }));
   res.json({ date, rows });
+});
+
+/**
+ * Attendance of every site the user looks after on a day: workers there, how many are recorded,
+ * so the supervisor picks a site from big cards and sees at a glance which sites still need attendance.
+ * Head office («الإدارة») has no daily attendance.
+ */
+function attendanceSites(req, date) {
+  const scope = scopeOf(req);
+  const site = 'COALESCE(a.project_id, w.project_id)';
+  const rows = db.prepare(`
+    SELECT ${site} AS id, COUNT(*) AS workers,
+      SUM(a.status IS NOT NULL AND COALESCE(a.method, '') <> 'auto') AS recorded,
+      SUM(a.status IN ('present','late','overtime')) AS present, SUM(a.status = 'absent') AS absent, SUM(a.status = 'leave') AS leave
+    FROM workers w LEFT JOIN attendance a ON a.worker_id = w.id AND a.date = ?
+    WHERE w.active = 1 AND ${site} IS NOT NULL AND ${inList(site, scope)} GROUP BY ${site}`).all(date);
+  const by = new Map(rows.map((r) => [r.id, r]));
+  return db.prepare(`SELECT id, name, kind, status FROM projects WHERE kind <> 'office' AND status = 'active' AND ${inList('id', scope)}
+      ORDER BY kind = 'factory', name`).all()
+    .map((p) => {
+      const r = by.get(p.id) ?? { workers: 0, recorded: 0, present: 0, absent: 0, leave: 0 };
+      const state = !r.workers ? 'empty' : r.recorded >= r.workers ? 'done' : r.recorded > 0 ? 'partial' : 'none';
+      return { id: p.id, name: p.name, kind: p.kind, workers: r.workers, recorded: r.recorded ?? 0, present: r.present ?? 0, absent: r.absent ?? 0, leave: r.leave ?? 0, missing: Math.max(0, r.workers - (r.recorded ?? 0)), state };
+    });
+}
+api.get('/attendance/sites', (req, res) => {
+  const date = isDate(req.query.date) ? req.query.date : todayStr();
+  res.json({ date, sites: attendanceSites(req, date) });
+});
+/**
+ * Daily reminder: sites (of this user) whose attendance for today is not taken yet.
+ * Shown inside the app and polled by the phone app to raise a notification, from the reminder time until it is recorded.
+ */
+api.get('/attendance/reminders', (req, res) => {
+  const today = todayStr();
+  const from = getSetting('attendance_remind_from', '08:00');
+  // Reminders go to the people responsible for each site (its engineers and supervisors).
+  const active = !isFriday(today) && nowTime() >= from && PERMISSIONS.attendance.includes(req.user.role) && scopeOf(req) !== null;
+  const due = active ? attendanceSites(req, today).filter((s) => s.state === 'none' || s.state === 'partial') : [];
+  res.json({ date: today, from, due: due.map((s) => ({ id: s.id, name: s.name, missing: s.missing, workers: s.workers })) });
 });
 
 /** Put a worker on another site from today (keeps the history of where he worked). */

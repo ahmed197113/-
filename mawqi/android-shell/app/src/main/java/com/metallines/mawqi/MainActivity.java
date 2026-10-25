@@ -13,6 +13,7 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -106,11 +107,35 @@ public class MainActivity extends Activity {
             }
         });
 
+        // The page tells the app who is signed in, so attendance reminders can be checked in the background.
+        web.addJavascriptInterface(new Object() {
+            @JavascriptInterface public void setSession(String server, String token) {
+                getSharedPreferences(ReminderJob.PREFS, MODE_PRIVATE).edit().putString("server", server).putString("token", token).apply();
+                ReminderJob.schedule(MainActivity.this);
+            }
+            @JavascriptInterface public void clearSession() {
+                getSharedPreferences(ReminderJob.PREFS, MODE_PRIVATE).edit().remove("token").apply();
+                ReminderJob.cancel(MainActivity.this);
+            }
+        }, "MawqiNative");
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, REQ_PERMS);
+        }
+
         // Excel / PDF downloads open in the phone's browser, which saves them.
         web.setDownloadListener((url, ua, cd, mime, len) -> openOutside(Uri.parse(url)));
 
-        if (saved != null) web.restoreState(saved);
+        String open = getIntent() != null ? getIntent().getStringExtra("open") : null;
+        if (open != null) web.loadUrl(home + open);
+        else if (saved != null) web.restoreState(saved);
         else web.loadUrl(home);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        String open = intent.getStringExtra("open");
+        if (open != null && web != null) web.loadUrl(home + open);
     }
 
     private boolean isDownload(Uri u) {

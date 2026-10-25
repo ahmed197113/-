@@ -717,3 +717,12 @@ table.sheet .sticky small { display: block; color: var(--muted); font-size: 11px
 .row-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 @media print { .rv-filterbar { display: none; } .rv-table td.long { min-width: 0; } }
 a.export { text-decoration: none; color: inherit; }
+
+/* Inside the custody app: one menu only (the custody app's) — sections as a slim bar on top. */
+.shell.embedded { display: block; }
+.shell.embedded .content { padding-top: 14px; }
+.topnav { position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding: 8px 12px; background: var(--card, #fff); border-bottom: 1px solid var(--line, #e7e3dd); }
+.topnav::-webkit-scrollbar { display: none; }
+.top-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; padding: 8px 14px; border-radius: 10px; color: var(--ink-2, #4a4458); font-weight: 600; font-size: 14px; text-decoration: none; }
+.top-item:hover { background: #f2efeb; }
+.top-item.active { background: var(--navy, #1e1757); color: #fff; }

@@ -5,9 +5,31 @@ import { Icon } from '../icons'
 import { NAV } from '../nav'
 import { Toaster } from '../ui'
 
+// Opened inside the custody app (it shows its own menu, logo and account): no second sidebar,
+// just the sections as a slim bar on top so it feels like one system.
+const EMBEDDED = (() => { try { return window.self !== window.top } catch { return true } })()
+if (EMBEDDED) document.documentElement.classList.add('embedded')
+
 export default function Layout() {
   const { user, logout, status } = useAuth()
   const [open, setOpen] = useState(false)
+
+  if (EMBEDDED) return (
+    <div className="shell embedded">
+      <nav className="topnav">
+        {NAV.map((n) => (
+          <NavLink key={n.path} to={n.path} end={n.path === '/'} className={({ isActive }) => `top-item ${isActive ? 'active' : ''}`}>
+            <Icon name={n.icon} size={18} />
+            <span>{n.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+      <main className="content">
+        <Outlet />
+      </main>
+      <Toaster />
+    </div>
+  )
 
   return (
     <div className="shell">
