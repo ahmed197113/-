@@ -24,6 +24,10 @@ class HttpError extends Error {
 }
 const fail = (status, message) => { throw new HttpError(status, message); };
 const scopeOf = (req) => projectScope(req.user);
+// Head-office staff («الإدارة») are visible only to the general manager, the system manager and the accountant —
+// never to site engineers or supervisors.
+const hidesOffice = (req) => scopeOf(req) !== null;
+const isOfficeWorker = (w) => !!w && w.project_id != null && w.project_id === officeId();
 const ensureProject = (req, projectId) => {
   const id = Number(projectId);
   if (!id || !db.prepare('SELECT 1 FROM projects WHERE id = ?').get(id)) fail(400, 'اختر المشروع');
@@ -56,7 +60,7 @@ api.get('/meta', (req, res) => {
     users: db.prepare('SELECT id, name, role, active FROM users ORDER BY name').all(),
     projects: db.prepare(`SELECT id, name, status, kind FROM projects WHERE ${inList('id', scope)} ORDER BY kind = 'project', kind = 'factory' DESC, name`).all(),
     // Every active site a worker can be sent to — engineers move workers freely between all projects.
-    places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ORDER BY kind = 'project', kind = 'factory' DESC, name`).all(),
+    places: db.prepare(`SELECT id, name, kind FROM projects WHERE status = 'active' ${scope === null ? '' : `AND kind <> 'office'`} ORDER BY kind = 'project', kind = 'factory' DESC, name`).all(),
     subcontractors: db.prepare('SELECT id, name FROM subcontractors ORDER BY name').all(),
     // Every profession already used, so new ones typed once become suggestions for everyone.
     professions: professionList().map((p) => p.name),
@@ -305,6 +309,7 @@ api.get('/workers', (req, res) => {
   if (req.query.project === 'none') where.push('w.project_id IS NULL');
   else if (req.query.project) { where.push('w.project_id = $project'); params.$project = Number(req.query.project); }
   if (req.query.active !== 'all') where.push(`w.active = ${req.query.active === '0' ? 0 : 1}`);
+  if (hidesOffice(req)) where.push(`(p.kind IS NULL OR p.kind <> 'office')`);
   const rows = db.prepare(`
     SELECT w.*, p.name AS project, p.kind AS location_kind, s.name AS subcontractor,
       (SELECT COUNT(*) FROM attendance a WHERE a.worker_id = w.id AND a.date BETWEEN $from AND $to AND a.status IN ('present','late','overtime')) AS days_present,
@@ -320,7 +325,7 @@ api.get('/workers', (req, res) => {
 api.get('/workers/:id', (req, res) => {
   const w = db.prepare(`SELECT w.*, p.name AS project, p.kind AS location_kind, s.name AS subcontractor FROM workers w
     LEFT JOIN projects p ON p.id = w.project_id LEFT JOIN subcontractors s ON s.id = w.subcontractor_id WHERE w.id = ?`).get(Number(req.params.id));
-  if (!w) fail(404, 'العامل غير موجود');
+  if (!w || (hidesOffice(req) && isOfficeWorker(w))) fail(404, 'العامل غير موجود');
   w.history = db.prepare(`SELECT wa.from_date, wa.to_date, p.name AS project FROM worker_assignments wa JOIN projects p ON p.id = wa.project_id
     WHERE wa.worker_id = ? ORDER BY wa.from_date DESC`).all(w.id);
   w.attendance = db.prepare(`SELECT a.date, a.status, a.check_in, a.check_out, a.overtime_hours, p.name AS project FROM attendance a LEFT JOIN projects p ON p.id = a.project_id
@@ -366,8 +371,9 @@ api.post('/workers', need('workers'), (req, res) => {
 api.put('/workers/:id', need('workers'), (req, res) => {
   const id = Number(req.params.id);
   const cur = db.prepare('SELECT * FROM workers WHERE id = ?').get(id);
-  if (!cur) fail(404, 'العامل غير موجود');
+  if (!cur || (hidesOffice(req) && isOfficeWorker(cur))) fail(404, 'العامل غير موجود');
   const w = workerInput(req, req.body || {});
+  if (hidesOffice(req) && w.project_id === officeId()) fail(403, 'النقل إلى الإدارة للمدير العام والمحاسب فقط');
   tx(() => {
     uniqueIqama(() => db.prepare(`UPDATE workers SET name=?, iqama_no=?, iqama_expiry=?, nationality=?, profession=?, phone=?, wage_type=?, wage=?, subcontractor_id=?, project_id=?, active=? WHERE id=?`)
       .run(w.name, w.iqama_no, w.iqama_expiry, w.nationality, w.profession, w.phone, w.wage_type, w.wage, w.subcontractor_id, w.project_id, w.active, id));
@@ -385,7 +391,8 @@ api.put('/workers/:id', need('workers'), (req, res) => {
 api.post('/workers/:id/move', need('moveWorkers'), (req, res) => {
   const id = Number(req.params.id);
   const cur = db.prepare('SELECT id, name, project_id FROM workers WHERE id = ? AND active = 1').get(id);
-  if (!cur) fail(404, 'العامل غير موجود');
+  if (!cur || (hidesOffice(req) && isOfficeWorker(cur))) fail(404, 'العامل غير موجود');
+  if (hidesOffice(req) && req.body?.project_id && Number(req.body.project_id) === officeId()) fail(403, 'النقل إلى الإدارة للمدير العام والمحاسب فقط');
   // Engineers and supervisors may send a worker to any active project or the factory, so workers can be followed day by day.
   let target = null;
   if (req.body?.project_id) {
@@ -527,7 +534,8 @@ api.post('/attendance', need('attendance'), (req, res) => {
         check_out = excluded.check_out, overtime_hours = excluded.overtime_hours, recorded_by = excluded.recorded_by`);
     for (const e of entries) {
       const w = getW.get(Number(e.worker_id));
-      if (!w) continue;
+      if (!w || (hidesOffice(req) && isOfficeWorker(w))) continue;
+      if (hidesOffice(req) && e.project_id && Number(e.project_id) === officeId()) fail(403, 'النقل إلى الإدارة للمدير العام والمحاسب فقط');
       const before = getA.get(w.id, date)?.project_id ?? w.project_id;
       let site = before;
       if (e.project_id && Number(e.project_id) !== before) {
