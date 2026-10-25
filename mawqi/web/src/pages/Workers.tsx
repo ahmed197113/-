@@ -47,7 +47,7 @@ export default function WorkersPage() {
   if (error && !data) return <ErrorBox error={error} />
   if (!data) return <Loading />
   const iqamaSoon = data.filter((w) => w.iqama_soon).length
-  const monthlyCost = data.reduce((a, w) => a + (w.wage_type === 'daily' ? w.wage * 26 : w.wage), 0)
+  const monthlyCost = data.reduce((a, w) => a + (w.wage_type === 'daily' ? (w.wage ?? 0) * 26 : (w.wage ?? 0)), 0)
 
   return (
     <div className="page">
@@ -61,7 +61,7 @@ export default function WorkersPage() {
       <div className="stats">
         <Stat icon="workers" label="عدد العمال" value={fmt(data.length)} />
         <Stat icon="id" label="إقامات تنتهي خلال 30 يوماً" value={fmt(iqamaSoon)} tone={iqamaSoon ? 'bad' : 'good'} />
-        <Stat icon="money" label="تقدير الرواتب الشهرية" value={sar(monthlyCost)} sub="اليومي × 26 يوم عمل" />
+        {can('costs') && <Stat icon="money" label="تقدير الرواتب الشهرية" value={sar(monthlyCost)} sub="اليومي × 26 يوم عمل" />}
       </div>
 
       <div className="toolbar">
@@ -79,7 +79,7 @@ export default function WorkersPage() {
         {shown.length === 0 ? <Empty icon="workers" title="لا يوجد عمال مطابقون" /> : (
           <div className="table-scroll">
             <table className="data">
-              <thead><tr><th>العامل</th><th>الموقع الحالي</th><th>الإقامة</th><th>الأجر</th><th>حضور الشهر</th><th /></tr></thead>
+              <thead><tr><th>العامل</th><th>الموقع الحالي</th><th>الإقامة</th>{can('costs') && <th>الأجر</th>}<th>حضور الشهر</th><th /></tr></thead>
               <tbody>
                 {shown.map((w) => (
                   <tr key={w.id} onClick={() => setViewing(w.id)} className="clickable">
@@ -91,7 +91,7 @@ export default function WorkersPage() {
                       </div>
                     </td>
                     <td><span className="mono">{w.iqama_no}</span><small className={w.iqama_soon ? 'bad-t' : 'muted'}>{w.iqama_expiry.startsWith("9999") ? "الانتهاء غير محدد" : `تنتهي ${w.iqama_expiry}`}</small></td>
-                    <td className="num">{fmt(w.wage)} <small className="muted">{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></td>
+                    {can('costs') && <td className="num">{fmt(w.wage)} <small className="muted">{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></td>}
                     <td><span className="good-t">{w.days_present} يوم</span>{w.days_absent > 0 && <small className="bad-t"> · غياب {w.days_absent}</small>}</td>
                     <td>{can('workers') && <button className="icon-btn dark" onClick={(e) => { e.stopPropagation(); setEditing(w) }} title="تعديل"><Icon name="edit" size={18} /></button>}<DeleteButton icon path={`/api/workers/${w.id}`} what={`العامل «${w.name}» وسجل حضوره`} /></td>
                   </tr>
@@ -111,6 +111,7 @@ export default function WorkersPage() {
 }
 
 function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () => void }) {
+  const money = useCan()('costs')
   const meta = useMeta()
   const isNew = !worker.id
   const [newSub, setNewSub] = useState('')
@@ -152,10 +153,10 @@ function WorkerForm({ worker, onClose }: { worker: Partial<Worker>; onClose: () 
             <input list="prof-list" value={v.profession} onChange={(e) => set({ profession: e.target.value })} placeholder="مثال: مهندس موقع" />
             <datalist id="prof-list">{(meta?.professions ?? []).map((n) => <option key={n} value={n} />)}</datalist>
           </Field>
-          <Field label="نوع الأجر">
+          {money && <><Field label="نوع الأجر">
             <select value={v.wage_type} onChange={(e) => set({ wage_type: e.target.value as 'daily' | 'monthly' })}><option value="daily">يومي</option><option value="monthly">شهري</option></select>
           </Field>
-          <Field label={v.wage_type === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'}>{inp(v, set, 'wage', 'number', { min: 0 })}</Field>
+          <Field label={v.wage_type === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'}>{inp(v, set, 'wage', 'number', { min: 0 })}</Field></>}
           <Field label="المشروع" hint={!isNew && String(v.project_id) !== String(worker.project_id ?? '') ? 'سيُسجل نقل العامل من اليوم' : undefined}>
             <select value={v.project_id} onChange={(e) => set({ project_id: e.target.value })}>
               <option value="">غير موزّع</option>{meta?.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -206,7 +207,7 @@ function WorkerView({ id, onClose, onEdit }: { id: number; onClose: () => void; 
             <div><span>المهنة</span><b>{w.profession}</b></div>
             <div><span>الجنسية</span><b>{w.nationality}</b></div>
             <div><span>الإقامة</span><b className="mono">{w.iqama_no}</b><small>{w.iqama_expiry.startsWith("9999") ? "الانتهاء غير محدد" : `تنتهي ${w.iqama_expiry}`}</small></div>
-            <div><span>الأجر</span><b>{fmt(w.wage)} ر.س</b><small>{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></div>
+            {can('costs') && <div><span>الأجر</span><b>{fmt(w.wage)} ر.س</b><small>{w.wage_type === 'daily' ? 'يومي' : 'شهري'}</small></div>}
             <div><span>المشروع</span><b>{w.project ?? '—'}</b></div>
             <div><span>الجهة</span><b>{w.subcontractor ?? 'عمالة الشركة'}</b></div>
             {w.phone && <div><span>الجوال</span><b><a href={`tel:${w.phone}`}>{w.phone}</a></b></div>}

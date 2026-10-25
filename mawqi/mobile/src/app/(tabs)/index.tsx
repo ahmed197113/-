@@ -63,7 +63,7 @@ function Content({ d }: { d: Dashboard }) {
         <Kpi icon="checkmark-circle" label="الحاضرون" value={fmt(c.presentToday)} color={C.good} sub={`من ${fmt(c.totalWorkers)} عامل`} />
         <Kpi icon="close-circle" label="الغائبون" value={fmt(c.absentToday)} color={C.bad} sub={c.notRecorded ? `${fmt(c.notRecorded)} لم يُسجَّل` : `${fmt(c.onLeaveToday)} إجازة`} />
         <Kpi icon="warning" label="بلاغات مفتوحة" value={fmt(c.openIssues)} color={C.amber} />
-        <Kpi icon="cash" label="تكلفة اليوم" value={fmt(c.costToday)} unit="ر.س" color={C.navy} />
+        {c.costToday !== undefined && <Kpi icon="cash" label="تكلفة اليوم" value={fmt(c.costToday)} unit="ر.س" color={C.navy} />}
       </View>
       <Summary d={d} />
       <Alerts alerts={d.alerts} />
@@ -152,7 +152,7 @@ function ProjectCard({ p }: { p: ProjectRow }) {
       <Row style={{ justifyContent: 'space-between', marginTop: 2 }}>
         <T style={s.stat}>غائب <T w="bold" style={s.stat}>{fmt(p.absent)}</T></T>
         <T style={s.stat}>بلاغات <T w="bold" style={s.stat}>{fmt(p.open_issues)}</T></T>
-        <T style={s.stat}>اليوم <T w="bold" style={s.stat}>{sar(p.cost_today)}</T></T>
+        {p.cost_today !== undefined && <T style={s.stat}>اليوم <T w="bold" style={s.stat}>{sar(p.cost_today)}</T></T>}
       </Row>
     </Card>
     </Pressable>
@@ -171,7 +171,7 @@ function Summary({ d }: { d: Dashboard }) {
   if (c.notRecorded) lines.push({ color: C.late, text: `لم يُسجَّل حضور ${fmt(c.notRecorded)} عامل بعد.` })
   if (short.length) lines.push({ color: C.bad, text: `نقص عمالة في ${short.map((p) => p.name).join('، ')}.` })
   if (overdue) lines.push({ color: C.bad, text: `${fmt(overdue)} بلاغ متأخر يحتاج متابعة.` })
-  if (c.totalWorkers) lines.push({ color: C.navy, text: `تكلفة العمالة اليوم ${sar(c.costToday)} — الشهر ${sar(c.costMonth)}.` })
+  if (c.totalWorkers && c.costToday !== undefined) lines.push({ color: C.navy, text: `تكلفة العمالة اليوم ${sar(c.costToday)} — الشهر ${sar(c.costMonth)}.` })
   if (c.totalWorkers && !short.length && !overdue) lines.push({ color: C.good, text: 'كل المواقع بعمالة كافية ولا بلاغات متأخرة 👍' })
   return (
     <Card style={{ gap: 8 }}>

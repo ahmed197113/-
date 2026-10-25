@@ -110,7 +110,7 @@ export default function WorkerCard() {
             <Info icon="flag" label="الجنسية" value={w.nationality} />
             {!!w.phone && <Info icon="call" label="الجوال" value={w.phone} />}
             {!!w.subcontractor && <Info icon="people" label="مقاول الباطن" value={w.subcontractor} />}
-            <Info icon="cash" label="الأجر" value={`${sar(w.wage)} ${w.wage_type === 'daily' ? 'يومياً' : 'شهرياً'}`} />
+            {w.wage !== undefined && <Info icon="cash" label="الأجر" value={`${sar(w.wage)} ${w.wage_type === 'daily' ? 'يومياً' : 'شهرياً'}`} />}
           </Card>
           <Card style={{ gap: 8 }}>
             <T w="black" style={{ fontSize: 18, color: C.navy }}>أين عمل كل يوم</T>
@@ -122,7 +122,7 @@ export default function WorkerCard() {
               </Row>
             )) : <T style={{ color: C.muted }}>لا يوجد حضور مسجل بعد</T>}
           </Card>
-          <Card style={{ gap: 8 }}>
+          {can('costs') && <Card style={{ gap: 8 }}>
             <T w="black" style={{ fontSize: 18, color: C.navy }}>الإقامة وكرت العمل والتأمين</T>
             {(w.renewals ?? []).length ? (w.renewals ?? []).map((r) => (
               <Row key={r.id} style={s.att}>
@@ -130,7 +130,7 @@ export default function WorkerCard() {
               </Row>
             )) : <T style={{ color: C.muted }}>لا توجد مصاريف مسجلة</T>}
             {can('costs') && <Button label="تسجيل إقامة / كرت عمل / تأمين" icon="card" kind="ghost" onPress={openRenew} />}
-          </Card>
+          </Card>}
           <Sheet visible={renew} title={`مصروف للعامل ${w.name}`} onClose={() => setRenew(false)}>
             <Picker value={rf.kind} options={Object.entries(FEE_KINDS).map(([value, label]) => ({ value, label }))} onChange={(v) => setRf((x) => ({ ...x, kind: v }))} />
             <T w="bold">المدة</T>

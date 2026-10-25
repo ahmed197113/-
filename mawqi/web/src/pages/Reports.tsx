@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import type { Catalog } from './ReportView'
 import { compact, fmt, sar } from '../api'
 import { Icon } from '../icons'
-import { download, ErrorBox, Loading, Meter, PageHead, ProjectSelect, Stat, thisMonth, useData } from '../ui'
+import { download, ErrorBox, Loading, Meter, PageHead, ProjectSelect, Stat, thisMonth, useData , useCan } from '../ui'
 
 interface Summary {
   month: string
@@ -22,6 +22,7 @@ const EXPORTS = [
 ]
 
 export default function ReportsPage() {
+  const money = useCan()('costs')
   const [month, setMonth] = useState(thisMonth())
   const [project, setProject] = useState('')
   const { data, error } = useData<Summary>(`/api/reports/summary?month=${month}`)
@@ -55,6 +56,7 @@ export default function ReportsPage() {
         </section>
       ))}
 
+      {money && <>
       <h2 className="section-title">ملخص الشهر</h2>
       <div className="toolbar">
         <input type="month" className="select" value={month} max={thisMonth()} onChange={(e) => e.target.value && setMonth(e.target.value)} />
@@ -94,10 +96,11 @@ export default function ReportsPage() {
           </table>
         </div>
       </section>
+      </>}
 
       <h2 className="section-title">ملفات Excel</h2>
       <div className="exports">
-        {EXPORTS.map((e) => (
+        {EXPORTS.filter((e) => money || !['payroll', 'costs', 'invoices'].includes(e.kind)).map((e) => (
           <button key={e.kind} className="export" onClick={() => download(`/api/export/${e.kind}?${e.monthly ? q : project ? `project=${project}` : ''}`)}>
             <span className="export-icon"><Icon name={e.icon} size={26} /></span>
             <span><strong>{e.title}</strong><small>{e.text}{e.monthly ? ` — ${month}` : ''}</small></span>

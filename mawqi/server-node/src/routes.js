@@ -372,7 +372,7 @@ api.put('/workers/:id', need('workers'), (req, res) => {
   const id = Number(req.params.id);
   const cur = db.prepare('SELECT * FROM workers WHERE id = ?').get(id);
   if (!cur || (hidesOffice(req) && isOfficeWorker(cur))) fail(404, 'العامل غير موجود');
-  const w = workerInput(req, req.body || {});
+  const w = workerInput(req, { ...(req.body || {}), ...(PERMISSIONS.costs.includes(req.user.role) ? {} : { wage: cur.wage, wage_type: cur.wage_type }) });
   if (hidesOffice(req) && w.project_id === officeId()) fail(403, 'النقل إلى الإدارة للمدير العام والمحاسب فقط');
   tx(() => {
     uniqueIqama(() => db.prepare(`UPDATE workers SET name=?, iqama_no=?, iqama_expiry=?, nationality=?, profession=?, phone=?, wage_type=?, wage=?, subcontractor_id=?, project_id=?, active=? WHERE id=?`)
@@ -879,7 +879,7 @@ api.delete('/direct-orders/:id', need('delete'), (req, res) => {
 });
 
 // ---------- iqama renewals (a real cost charged to the worker's site) ----------
-api.get('/iqama-renewals', (req, res) => {
+api.get('/iqama-renewals', need('costs'), (req, res) => {
   const where = ['1=1']; const params = [];
   if (req.query.worker) { where.push('r.worker_id = ?'); params.push(Number(req.query.worker)); }
   if (/^\d{4}-\d{2}$/.test(String(req.query.month || ''))) { const b = monthBounds(req.query.month); where.push('r.date BETWEEN ? AND ?'); params.push(b.from, b.to); }
@@ -921,7 +921,7 @@ api.delete(['/iqama-renewals/:id', '/fees/:id'], need('delete'), (req, res) => {
   changed(req, 'workers', r.project_id);
   res.json({ ok: true });
 });
-api.get('/overhead', (req, res) => {
+api.get('/overhead', need('costs'), (req, res) => {
   const { month } = monthRange(req.query.month);
   res.json(overheadMonth(month, scopeOf(req) === null));
 });
@@ -1047,6 +1047,8 @@ const sendCsv = (res, name, header, rows) => {
 
 api.get('/export/:kind', (req, res) => {
   const kind = req.params.kind;
+  const fin = PERMISSIONS.costs.includes(req.user.role);
+  if (!fin && ['payroll', 'costs', 'invoices'].includes(kind)) fail(403, 'هذا الملف للمدير العام والمحاسب فقط');
   const project = req.query.project ? Number(req.query.project) : null;
   if (project) ensureProject(req, project);
   if (kind === 'attendance' || kind === 'payroll') {
@@ -1065,7 +1067,7 @@ api.get('/export/:kind', (req, res) => {
     const rows = db.prepare(`SELECT w.*, p.name AS project, s.name AS subcontractor FROM workers w LEFT JOIN projects p ON p.id = w.project_id
       LEFT JOIN subcontractors s ON s.id = w.subcontractor_id WHERE ${pf('w.project_id')} ORDER BY w.name`).all();
     return sendCsv(res, 'العمال', ['الاسم', 'رقم الإقامة', 'انتهاء الإقامة', 'الجنسية', 'المهنة', 'الجوال', 'نوع الأجر', 'الأجر', 'المشروع', 'مقاول الباطن', 'الحالة'],
-      rows.map((w) => [w.name, w.iqama_no, w.iqama_expiry, w.nationality, w.profession, w.phone ?? '', w.wage_type === 'daily' ? 'يومي' : 'شهري', w.wage, w.project ?? '', w.subcontractor ?? '', w.active ? 'نشط' : 'موقوف']));
+      rows.map((w) => [w.name, w.iqama_no, w.iqama_expiry, w.nationality, w.profession, w.phone ?? '', w.wage_type === 'daily' ? 'يومي' : 'شهري', fin ? w.wage : '', w.project ?? '', w.subcontractor ?? '', w.active ? 'نشط' : 'موقوف']));
   }
   if (kind === 'issues') {
     const rows = db.prepare(`SELECT i.*, p.name AS project, a.name AS assignee FROM issues i JOIN projects p ON p.id = i.project_id

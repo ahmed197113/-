@@ -171,13 +171,14 @@ function DaySheet() {
 }
 
 function MonthView() {
+  const money = useCan()('costs')
   const [month, setMonth] = useState(thisMonth())
   const [project, setProject] = useState('')
   const qs = `month=${month}${project ? `&project=${project}` : ''}`
   const { data, error } = useData<MonthSheet>(`/api/attendance/month?${qs}`)
   if (error && !data) return <ErrorBox error={error} />
   if (!data) return <Loading />
-  const total = data.rows.reduce((a, r) => a + r.pay, 0)
+  const total = data.rows.reduce((a, r) => a + (r.pay ?? 0), 0)
   return (
     <>
       <div className="toolbar">
@@ -185,25 +186,25 @@ function MonthView() {
         <ProjectSelect value={project} onChange={setProject} />
         <span className="grow" />
         <button className="btn" onClick={() => download(`/api/export/attendance?${qs}`)}><Icon name="download" size={18} /> كشف الحضور Excel</button>
-        <button className="btn primary" onClick={() => download(`/api/export/payroll?${qs}`)}><Icon name="money" size={18} /> مسير الرواتب Excel</button>
+        {money && <button className="btn primary" onClick={() => download(`/api/export/payroll?${qs}`)}><Icon name="money" size={18} /> مسير الرواتب Excel</button>}
       </div>
       <div className="legend">
         {ORDER.map((s) => <span key={s}><i className={`day d-${ATT[s].tone}`}>{ATT[s].short}</i>{ATT[s].label}</span>)}
-        <span className="grow" /><span>إجمالي المستحق: <b>{sar(total)}</b></span>
+        <span className="grow" />{money && <span>إجمالي المستحق: <b>{sar(total)}</b></span>}
       </div>
       {data.rows.length === 0 ? <Empty icon="attendance" title="لا يوجد حضور في هذا الشهر" /> : (
         <section className="panel flush">
           <div className="table-scroll">
             <table className="sheet">
               <thead>
-                <tr><th className="sticky">العامل</th>{Array.from({ length: data.days }, (_, i) => <th key={i}>{i + 1}</th>)}<th>عمل</th><th>غياب</th><th>إضافي</th><th>المستحق</th></tr>
+                <tr><th className="sticky">العامل</th>{Array.from({ length: data.days }, (_, i) => <th key={i}>{i + 1}</th>)}<th>عمل</th><th>غياب</th><th>إضافي</th>{money && <th>المستحق</th>}</tr>
               </thead>
               <tbody>
                 {data.rows.map((r) => (
                   <tr key={r.id}>
                     <td className="sticky"><strong>{r.name}</strong><small>{r.project}</small></td>
                     {r.cells.map((c, i) => <td key={i} className={c ? `cell d-${ATT[c].tone}` : 'cell'}>{c ? ATT[c].short : ''}</td>)}
-                    <td className="num">{r.worked}</td><td className="num bad-t">{r.absent || ''}</td><td className="num">{r.overtime || ''}</td><td className="num">{fmt(r.pay)}</td>
+                    <td className="num">{r.worked}</td><td className="num bad-t">{r.absent || ''}</td><td className="num">{r.overtime || ''}</td>{money && <td className="num">{fmt(r.pay)}</td>}
                   </tr>
                 ))}
               </tbody>

@@ -11,6 +11,7 @@ import { login, projectScope, requireAuth, verifyToken } from './auth.js';
 import { buildDashboard } from './dashboard.js';
 import { startJobs } from './jobs.js';
 import { syncCustody } from './link.js';
+import { PERMISSIONS } from './auth.js';
 import { seed } from './seed.js';
 import { reports } from './reports.js';
 import { linkAdmin, linkPublic } from './link.js';
@@ -64,6 +65,25 @@ const loginRoute = (req, res) => {
   if (!out) return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   res.json(out);
 };
+// Money is for the general manager, the system manager and the accountant only: every API answer to anyone else
+// (site engineers, supervisors) has its cost, wage and money fields removed on the server, whatever page asks.
+const MONEY_KEYS = new Set(['cost', 'cost_today', 'cost_month', 'cost_total', 'costToday', 'costMonth', 'costs', 'wage', 'rate', 'pay', 'labour',
+  'overhead', 'total_cost', 'sub_cost', 'renewals', 'contract_value', 'billed', 'invoiced', 'subcontracted', 'fees', 'iqama', 'custody', 'margin']);
+const stripMoney = (v) => {
+  if (Array.isArray(v)) return v.map(stripMoney);
+  if (v && typeof v === 'object') {
+    const out = {};
+    for (const [k, x] of Object.entries(v)) if (!MONEY_KEYS.has(k)) out[k] = stripMoney(x);
+    return out;
+  }
+  return v;
+};
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/integration/')) return next();
+  const json = res.json.bind(res);
+  res.json = (body) => json(req.user && !PERMISSIONS.costs.includes(req.user.role) && res.statusCode < 400 ? stripMoney(body) : body);
+  next();
+});
 app.use('/api', linkPublic);
 app.post('/api/auth/login', loginRoute);
 app.post('/api/login', loginRoute);

@@ -76,9 +76,10 @@ export default function ProjectReportPage() {
           <div><span>العمال على المشروع</span><b>{fmt(d.assigned)}</b><small>المخطط {fmt(d.planned_workers)}</small></div>
           <div><span>الحضور اليوم</span><b>{fmt(d.present)}</b></div>
           <div><span>نسبة الغياب (14 يوماً)</span><b>{absRate.toFixed(1)}%</b></div>
+          {d.cost_month !== undefined && <>
           <div><span>التكلفة الفعلية هذا الشهر</span><b>{sar(d.costs?.month.total ?? d.cost_month)}</b></div>
           <div><span>التكلفة الفعلية منذ البداية</span><b>{compact(d.costs?.total.total ?? d.cost_total)} ر.س</b></div>
-          <div><span>المستخلصات المعتمدة</span><b>{compact(d.invoiced)} ر.س</b>{d.contract_value > 0 && <small>من عقد {compact(d.contract_value)}</small>}</div>
+          <div><span>المستخلصات المعتمدة</span><b>{compact(d.invoiced)} ر.س</b>{d.contract_value > 0 && <small>من عقد {compact(d.contract_value)}</small>}</div></>}
         </section>
 
         {d.costs && (

@@ -67,7 +67,7 @@ export default function ProjectScreen() {
       <View style={s.kpis}>
         <Box label="الحضور اليوم" value={`${fmt(present)} / ${fmt(p.planned_workers)}`} color={present < p.planned_workers * 0.8 ? C.bad : C.good} />
         <Box label="بلاغات مفتوحة" value={fmt(p.open_issues)} color={p.open_issues ? C.amber : C.good} />
-        <Box label="عمالة الشهر" value={sar(p.cost_month)} color={C.navy} />
+        {p.cost_month !== undefined && <Box label="عمالة الشهر" value={sar(p.cost_month)} color={C.navy} />}
         <Box label="المستخلصات المعتمدة" value={sar(p.invoiced)} color={C.good} />
       </View>
 

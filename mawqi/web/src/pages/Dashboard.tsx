@@ -40,7 +40,7 @@ export default function DashboardPage() {
         <Kpi icon="user" label="الغائبون" value={fmt(c.absentToday)} tone="bad"
           sub={`${fmt(c.onLeaveToday)} إجازة · ${fmt(c.notRecorded)} لم يُحضَّر`} />
         <Kpi icon="issues" label="المشاكل المفتوحة" value={fmt(c.openIssues)} tone="warn" />
-        <Kpi icon="money" label="تكلفة العمالة اليوم" value={sar(c.costToday)} tone="navy" sub={`الشهر: ${sar(c.costMonth)}`} />
+        {c.costToday !== undefined && <Kpi icon="money" label="تكلفة العمالة اليوم" value={sar(c.costToday)} tone="navy" sub={`الشهر: ${sar(c.costMonth)}`} />}
       </section>
 
       <ProjectsTable rows={data.projects} />
@@ -48,7 +48,7 @@ export default function DashboardPage() {
       <div className="grid-2">
         <div className="stack">
           <AttendanceChart series={data.attendanceSeries} />
-          <CostChart rows={data.projects} />
+          {c.costToday !== undefined && <CostChart rows={data.projects} />}
         </div>
         <AlertsPanel alerts={data.alerts} />
       </div>
@@ -80,6 +80,7 @@ function Kpi({ icon, label, value, sub, tone }: { icon: string; label: string; v
 }
 
 function ProjectsTable({ rows }: { rows: ProjectRow[] }) {
+  const money = rows.some((p) => p.cost_today !== undefined)
   const [q, setQ] = useState('')
   const [onlyShort, setOnlyShort] = useState(false)
   const shown = useMemo(() => rows.filter((p) =>
@@ -98,7 +99,7 @@ function ProjectsTable({ rows }: { rows: ProjectRow[] }) {
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>المشروع</th><th>الحضور / المخطط</th><th>نسبة الإنجاز</th><th>مشاكل مفتوحة</th><th>تكلفة اليوم</th><th>تكلفة الشهر</th></tr>
+            <tr><th>المشروع</th><th>الحضور / المخطط</th><th>نسبة الإنجاز</th><th>مشاكل مفتوحة</th>{money && <><th>تكلفة اليوم</th><th>تكلفة الشهر</th></>}</tr>
           </thead>
           <tbody>
             {shown.map((p) => {
@@ -118,12 +119,12 @@ function ProjectsTable({ rows }: { rows: ProjectRow[] }) {
                     <div className="progress"><div className="meter"><i style={{ width: `${p.progress}%` }} /></div><span>{fmt(p.progress)}%</span></div>
                   </td>
                   <td>{p.open_issues > 0 ? <span className="pill warn">{p.open_issues}</span> : <span className="pill ok">0</span>}</td>
-                  <td className="num">{sar(p.cost_today)}</td>
-                  <td className="num">{sar(p.cost_month)}</td>
+                  {money && <><td className="num">{sar(p.cost_today)}</td>
+                  <td className="num">{sar(p.cost_month)}</td></>}
                 </tr>
               )
             })}
-            {!shown.length && <tr><td colSpan={6} className="muted center">لا توجد نتائج</td></tr>}
+            {!shown.length && <tr><td colSpan={money ? 6 : 4} className="muted center">لا توجد نتائج</td></tr>}
           </tbody>
         </table>
       </div>
@@ -141,7 +142,7 @@ function ProjectsTable({ rows }: { rows: ProjectRow[] }) {
               <div className="pc-stats">
                 <span>الإنجاز <b>{fmt(p.progress)}%</b></span>
                 <span>مشاكل <b>{p.open_issues}</b></span>
-                <span>اليوم <b>{sar(p.cost_today)}</b></span>
+                {money && <span>اليوم <b>{sar(p.cost_today)}</b></span>}
               </div>
             </li>
           )
@@ -235,7 +236,7 @@ function TodaySummary({ data }: { data: Dashboard }) {
   else {
     lines.push({ tone: rate >= 85 ? 'good' : rate >= 70 ? 'warn' : 'bad', text: `حضر اليوم ${fmt(c.presentToday)} من ${fmt(c.totalWorkers)} عامل (${rate}%)، وغاب ${fmt(c.absentToday)}${c.onLeaveToday ? `، وفي إجازة ${fmt(c.onLeaveToday)}` : ''}.` })
     if (c.notRecorded) lines.push({ tone: 'warn', text: `لم يُسجَّل حضور ${fmt(c.notRecorded)} عامل حتى الآن.` })
-    lines.push({ tone: 'navy', text: `تكلفة العمالة اليوم ${sar(c.costToday)}، ومنذ بداية الشهر ${sar(c.costMonth)}.` })
+    if (c.costToday !== undefined) lines.push({ tone: 'navy', text: `تكلفة العمالة اليوم ${sar(c.costToday)}، ومنذ بداية الشهر ${sar(c.costMonth)}.` })
   }
   if (short.length) lines.push({ tone: 'bad', text: `نقص عمالة في: ${short.map((p) => `${p.name} (${p.present} من ${p.planned_workers})`).join('، ')}.` })
   if (overdue) lines.push({ tone: 'bad', text: `${fmt(overdue)} بلاغ تجاوز موعده ويحتاج متابعة.` })

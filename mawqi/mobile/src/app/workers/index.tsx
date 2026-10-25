@@ -103,6 +103,7 @@ export default function Workers() {
 const EMPTY = { name: '', iqama_no: '', iqama_expiry: '', nationality: '', profession: '', phone: '', wage: '' }
 
 function NewWorker({ visible, onClose, onDone }: { visible: boolean; onClose: () => void; onDone: () => void }) {
+  const { can } = useAuth()
   const toast = useToast()
   const { poke } = useSync()
   const meta = useData<Meta>(visible ? '/api/meta' : null)
@@ -142,8 +143,9 @@ function NewWorker({ visible, onClose, onDone }: { visible: boolean; onClose: ()
       )}
       <Field label="الجنسية" value={f.nationality} onChangeText={set('nationality')} placeholder="مصري" />
       <Field label="الجوال" value={f.phone} onChangeText={set('phone')} keyboardType="phone-pad" ltr />
+      {can('costs') && <>
       <Picker value={wageType} onChange={setWageType} options={[{ value: 'daily', label: 'أجر يومي' }, { value: 'monthly', label: 'راتب شهري' }]} />
-      <Field label={wageType === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'} value={f.wage} onChangeText={set('wage')} keyboardType="number-pad" />
+      <Field label={wageType === 'daily' ? 'الأجر اليومي (ر.س)' : 'الراتب الشهري (ر.س)'} value={f.wage} onChangeText={set('wage')} keyboardType="number-pad" /></>}
       <T w="semibold" style={{ color: C.ink2 }}>أين يعمل؟</T>
       <Picker value={place} onChange={setPlace} options={[...places.map((p) => ({ value: p.id, label: `${p.kind === 'factory' ? '🏭 ' : p.kind === 'office' ? '🏢 ' : ''}${p.name}` })), { value: 0, label: 'غير موزّع' }]} />
       <Button label="حفظ العامل" icon="checkmark-circle" kind="accent" busy={busy} onPress={submit} />
