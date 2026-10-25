@@ -19,7 +19,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    const me = getToken() ? api<User>('/api/me').then(setUser).catch(() => setToken(null)) : Promise.resolve()
+    // Opened from inside the custody app: sign in with its one-time link, then drop it from the address.
+    const sso = new URLSearchParams(window.location.search).get('sso')
+    if (sso) window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+    const me = sso
+      ? api<{ token: string; user: User }>('/api/auth/sso', { method: 'POST', body: JSON.stringify({ token: sso }) })
+        .then((out) => { setToken(out.token); setUser(out.user) })
+        .catch(() => (getToken() ? api<User>('/api/me').then(setUser).catch(() => setToken(null)) : undefined))
+      : getToken() ? api<User>('/api/me').then(setUser).catch(() => setToken(null)) : Promise.resolve()
     Promise.all([api<Status>('/api/status').then(setStatus).catch(() => undefined), me]).finally(() => setReady(true))
   }, [])
 
