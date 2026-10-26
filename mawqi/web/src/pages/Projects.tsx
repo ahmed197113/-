@@ -8,7 +8,7 @@ import {
   Stat, Tabs, today, useCan, useData, useMeta,
 } from '../ui'
 
-export interface Cost { labour: number; iqama: number; overhead: number; custody?: number; total: number }
+export interface Cost { labour: number; iqama: number; fixed?: number; overhead: number; custody?: number; total: number }
 export interface Project {
   id: number; name: string; city: string | null; client: string | null; contract_value: number
   lat: number; lng: number; radius_m: number; start_date: string; end_date: string; planned_workers: number; progress: number
@@ -198,7 +198,7 @@ export function ProjectDetailPage() {
 
       <div className="stats">
         <Stat icon="workers" label="الحضور اليوم" value={`${p.present} / ${p.planned_workers}`} sub={`${p.assigned} عامل على المشروع`} tone={p.present < p.planned_workers * 0.8 ? 'bad' : 'good'} />
-        {p.costs ? <Stat icon="money" label="التكلفة الفعلية (الشهر)" value={sar(p.costs.month.total)} sub={`عمالة ${compact(p.costs.month.labour)} · إقامات ${compact(p.costs.month.iqama)} · حصة الإدارة ${compact(p.costs.month.overhead)}${p.costs.month.custody ? ` · عهد ${compact(p.costs.month.custody)}` : ''} — الإجمالي منذ البداية ${compact(p.costs.total.total)}`} />
+        {p.costs ? <Stat icon="money" label="التكلفة الفعلية (الشهر)" value={sar(p.costs.month.total)} sub={`عمالة ${compact(p.costs.month.labour)} · إقامات ${compact(p.costs.month.iqama)}${p.costs.month.fixed ? ` · إيجارات ${compact(p.costs.month.fixed)}` : ''} · حصة الإدارة ${compact(p.costs.month.overhead)}${p.costs.month.custody ? ` · عهد ${compact(p.costs.month.custody)}` : ''} — الإجمالي منذ البداية ${compact(p.costs.total.total)}`} />
           : p.cost_month !== undefined ? <Stat icon="money" label="تكلفة العمالة (الشهر)" value={sar(p.cost_month)} sub={`الإجمالي ${compact(p.cost_total)} ر.س`} /> : null}
         {p.invoiced !== undefined && <Stat icon="contracts" label="المستخلصات المعتمدة" value={compact(p.invoiced)} sub={p.contract_value ? `من عقد ${compact(p.contract_value)}` : 'ر.س'} tone="good" />}
         <Stat icon="issues" label="بلاغات مفتوحة" value={fmt(p.open_issues)} tone={p.open_issues ? 'warn' : 'good'} />

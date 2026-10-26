@@ -6,7 +6,7 @@ import { checkPassword, hashPassword, isTop, PERMISSIONS, projectScope, ROLE_LAB
 import { addDays, isFriday, round, todayStr, nowTime } from './util.js';
 import { filesFor, projectGallery, removeFilesOf, UPLOAD_DIR, workerPhotos } from './media.js';
 import { rmSync } from 'node:fs';
-import { FEE_KINDS, feesByProject, monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
+import { FEE_KINDS, FIXED_KINDS, feesByProject, fixedByProject, monthBounds, overheadFor, overheadMonth, projectCost } from './costs.js';
 import { custodyExpenses, pushProject } from './link.js';
 import { join } from 'node:path';
 
@@ -921,6 +921,46 @@ api.delete(['/iqama-renewals/:id', '/fees/:id'], need('delete'), (req, res) => {
   changed(req, 'workers', r.project_id);
   res.json({ ok: true });
 });
+// ---------- fixed expenses: rent of the office, the factory, cars… (money: managers & accountant only) ----------
+const fixedInput = (b) => {
+  const name = str(b.name) ?? fail(400, 'اكتب اسم المصروف');
+  const amount = num(b.amount, NaN);
+  if (!(amount > 0)) fail(400, 'اكتب المبلغ');
+  const months = Math.round(num(b.months, 1));
+  if (![1, 2, 3, 4, 6, 12].includes(months)) fail(400, 'المدة: شهر أو 3 أو 6 أو 12 شهراً');
+  const start = isDate(b.start_date) ? b.start_date : `${todayStr().slice(0, 7)}-01`;
+  const end = isDate(b.end_date) ? b.end_date : null;
+  if (end && end < start) fail(400, 'تاريخ الإيقاف قبل تاريخ البداية');
+  const project = b.project_id ? Number(b.project_id) : officeId();
+  if (!db.prepare('SELECT id FROM projects WHERE id = ?').get(project)) fail(400, 'الموقع غير موجود');
+  return { name, kind: FIXED_KINDS[b.kind] ? b.kind : 'other', amount, months, project_id: project, start_date: start, end_date: end, note: str(b.note) };
+};
+api.get('/fixed-costs', need('costs'), (_req, res) => {
+  res.json({ kinds: FIXED_KINDS, list: db.prepare(`SELECT f.*, p.name AS project, p.kind AS project_kind, ROUND(f.amount * 1.0 / f.months, 2) AS monthly
+    FROM fixed_costs f LEFT JOIN projects p ON p.id = f.project_id ORDER BY (f.end_date IS NOT NULL AND f.end_date < date('now')), f.name`).all() });
+});
+api.post('/fixed-costs', need('costs'), (req, res) => {
+  const f = fixedInput(req.body || {});
+  const r = db.prepare(`INSERT INTO fixed_costs (name, kind, amount, months, project_id, start_date, end_date, note, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(f.name, f.kind, f.amount, f.months, f.project_id, f.start_date, f.end_date, f.note, req.user.id, nowStamp());
+  changed(req, 'costs');
+  res.json({ id: Number(r.lastInsertRowid) });
+});
+api.put('/fixed-costs/:id', need('costs'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!db.prepare('SELECT id FROM fixed_costs WHERE id = ?').get(id)) fail(404, 'المصروف غير موجود');
+  const f = fixedInput(req.body || {});
+  db.prepare(`UPDATE fixed_costs SET name = ?, kind = ?, amount = ?, months = ?, project_id = ?, start_date = ?, end_date = ?, note = ? WHERE id = ?`)
+    .run(f.name, f.kind, f.amount, f.months, f.project_id, f.start_date, f.end_date, f.note, id);
+  changed(req, 'costs');
+  res.json({ ok: true });
+});
+api.delete('/fixed-costs/:id', need('delete'), (req, res) => {
+  db.prepare('DELETE FROM fixed_costs WHERE id = ?').run(Number(req.params.id));
+  changed(req, 'costs');
+  res.json({ ok: true });
+});
+
 api.get('/overhead', need('costs'), (req, res) => {
   const { month } = monthRange(req.query.month);
   res.json(overheadMonth(month, scopeOf(req) === null));
@@ -1024,8 +1064,9 @@ api.get('/reports/summary', async (req, res) => {
     FROM projects p WHERE ${inList('p.id', scope)} AND p.kind <> 'office' ORDER BY p.kind <> 'project', p.name`).all({ $from: from, $to: toCapped })
     .map((p) => {
       p.iqama = feesByProject(from, toCapped).get(p.id) ?? 0;
+      p.fixed = round(fixedByProject(from, toCapped).get(p.id) ?? 0);
       const overhead = p.kind === 'project' ? overheadFor(p.id, [month]) : 0;
-      return { ...p, labour: round(p.labour), billed: round(p.billed), sub_cost: round(p.sub_cost), iqama: round(p.iqama), overhead, total_cost: round(p.labour + p.iqama + overhead) };
+      return { ...p, labour: round(p.labour), billed: round(p.billed), sub_cost: round(p.sub_cost), iqama: round(p.iqama), overhead, total_cost: round(p.labour + p.iqama + p.fixed + overhead) };
     });
   const cx = await custodyExpenses(from, toCapped);
   for (const p of projects) { p.custody = round(cx.byProject.get(p.id) || 0); p.total_cost = round(p.total_cost + p.custody); }

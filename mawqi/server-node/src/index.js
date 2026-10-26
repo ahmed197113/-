@@ -68,7 +68,7 @@ const loginRoute = (req, res) => {
 // Money is for the general manager, the system manager and the accountant only: every API answer to anyone else
 // (site engineers, supervisors) has its cost, wage and money fields removed on the server, whatever page asks.
 const MONEY_KEYS = new Set(['cost', 'cost_today', 'cost_month', 'cost_total', 'costToday', 'costMonth', 'costs', 'wage', 'rate', 'pay', 'labour',
-  'overhead', 'total_cost', 'sub_cost', 'renewals', 'contract_value', 'billed', 'invoiced', 'subcontracted', 'fees', 'iqama', 'custody', 'margin']);
+  'overhead', 'total_cost', 'sub_cost', 'renewals', 'contract_value', 'billed', 'invoiced', 'subcontracted', 'fees', 'iqama', 'custody', 'margin', 'fixed', 'fixedItems']);
 const stripMoney = (v) => {
   if (Array.isArray(v)) return v.map(stripMoney);
   if (v && typeof v === 'object') {

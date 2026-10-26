@@ -15,6 +15,7 @@ import ReportsPage from './pages/Reports'
 import ReportViewPage from './pages/ReportView'
 import SettingsPage from './pages/Settings'
 import ProjectReportPage from './pages/ProjectReport'
+import FixedCostsPage from './pages/FixedCosts'
 
 function Routed() {
   const { user, ready, status } = useAuth()
@@ -35,6 +36,7 @@ function Routed() {
         <Route path="direct-orders" element={<DirectOrdersPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/:kind" element={<ReportViewPage />} />
+        <Route path="fixed-costs" element={<FixedCostsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />

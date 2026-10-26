@@ -227,6 +227,22 @@ for (const sql of [
   try { db.exec(sql); } catch { /* already applied */ }
 }
 
+// Fixed recurring expenses (rent of the office, the factory, cars…): an amount paid for N months, repeated until stopped.
+// project_id = the site it is charged to; the head office («الإدارة») shares it between the projects by their workers.
+db.exec(`CREATE TABLE IF NOT EXISTS fixed_costs (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'other',
+  amount REAL NOT NULL,
+  months INTEGER NOT NULL DEFAULT 1,
+  project_id INTEGER REFERENCES projects(id),
+  start_date TEXT NOT NULL,
+  end_date TEXT,
+  note TEXT,
+  created_by INTEGER,
+  created_at TEXT
+)`);
+
 // A project can have several managers and several supervisors.
 db.exec(`CREATE TABLE IF NOT EXISTS project_members (
   project_id INTEGER NOT NULL REFERENCES projects(id),

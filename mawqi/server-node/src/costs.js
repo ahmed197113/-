@@ -1,5 +1,6 @@
 // Real cost of each project: labour (attendance) + worker fees (iqama, work card, insurance) spread over their months
-// + a share of head-office costs in proportion to the project's worker-days.
+// + fixed expenses charged to the site (rent, cars…) + a share of head-office costs (salaries, fees, office rent…)
+// in proportion to the project's worker-days.
 import { db, officeId } from './db.js';
 import { round, todayStr } from './util.js';
 
@@ -78,6 +79,28 @@ export function feePortions(month) {
   });
 }
 
+export const FIXED_KINDS = { rent_office: 'إيجار مبنى إداري', rent_factory: 'إيجار مصنع', car: 'إيجار سيارة', other: 'مصروف ثابت آخر' };
+
+/**
+ * Monthly share of the fixed expenses (rent, cars…) active in a month: amount ÷ months it covers,
+ * every month from the start until it is stopped. Charged to its site (or the head office).
+ */
+export function fixedPortions(month) {
+  return cached(`fixed|${month}`, () => {
+    const { from, to } = monthBounds(month);
+    const office = officeId();
+    return db.prepare(`SELECT id, name, kind, amount, months, project_id, start_date, end_date FROM fixed_costs
+      WHERE start_date <= ? AND (end_date IS NULL OR end_date >= ?)`).all(to, from)
+      .map((f) => ({ ...f, kind_label: FIXED_KINDS[f.kind] ?? f.kind, month, project_id: f.project_id ?? office, amount: f.amount / Math.max(1, f.months), total: f.amount }));
+  });
+}
+/** Fixed expenses charged to each site over a date range: Map(project_id → amount). */
+export function fixedByProject(from, to) {
+  const m = new Map();
+  for (const month of monthsBetween(from, to)) for (const f of fixedPortions(month)) if (f.project_id) m.set(f.project_id, (m.get(f.project_id) ?? 0) + f.amount);
+  return m;
+}
+
 /** Worker fees charged to each site over a date range: Map(project_id → amount). */
 export function feesByProject(from, to) {
   const m = new Map();
@@ -95,7 +118,7 @@ export function overheadMonth(month, detail = false) {
   return cached(`oh|${month}|${detail}`, () => {
   const { from, to, toCapped } = monthBounds(month);
   const office = officeId();
-  const empty = { month, from, to: toCapped, salaries: 0, iqama: 0, fees: 0, total: 0, projects: [], share: 0, staff: [], renewals: [], basis: 'workers' };
+  const empty = { month, from, to: toCapped, salaries: 0, iqama: 0, fees: 0, fixed: 0, fixedItems: [], total: 0, projects: [], share: 0, staff: [], renewals: [], basis: 'workers' };
   if (!office || toCapped < from) return empty;
   const staffRows = db.prepare(`
     SELECT w.id, w.name, w.profession, w.wage, w.wage_type, ${RATE} AS rate, wa.from_date, COALESCE(wa.to_date, $to) AS to_date,
@@ -123,13 +146,15 @@ export function overheadMonth(month, detail = false) {
   }
   const salaries = [...staff.values()].reduce((t, s) => t + s.cost, 0);
   const fees = renewals.reduce((t, r) => t + r.amount, 0);
+  const fixedItems = fixedPortions(month).filter((f) => f.project_id === office);
+  const fixed = fixedItems.reduce((t, f) => t + f.amount, 0);
   const projects = db.prepare(`SELECT p.id, p.name,
       (SELECT COALESCE(SUM(MAX(0, julianday(MIN(COALESCE(wa.to_date, $to), $to)) - julianday(MAX(wa.from_date, $from)) + 1)), 0)
         FROM worker_assignments wa JOIN workers w ON w.id = wa.worker_id
         WHERE wa.project_id = p.id AND wa.from_date <= $to AND COALESCE(wa.to_date, $to) >= $from AND (w.active = 1 OR wa.to_date IS NOT NULL)) AS worker_days
     FROM projects p WHERE p.kind = 'project' AND p.start_date <= $to
     AND (p.status = 'active' OR (p.status = 'done' AND p.end_date >= $from)) ORDER BY p.name`).all({ $from: from, $to: toCapped });
-  const total = salaries + fees;
+  const total = salaries + fees + fixed;
   const allDays = projects.reduce((t, p) => t + p.worker_days, 0);
   // No workers on any project this month → fall back to an equal split.
   const basis = allDays > 0 ? 'workers' : 'equal';
@@ -140,7 +165,8 @@ export function overheadMonth(month, detail = false) {
     p.share = round(basis === 'workers' ? (total * p.worker_days) / allDays : total / projects.length);
   }
   return {
-    month, from, to: toCapped, salaries: round(salaries), iqama: round(fees), fees: round(fees), total: round(total), projects, basis,
+    month, from, to: toCapped, salaries: round(salaries), iqama: round(fees), fees: round(fees), fixed: round(fixed), total: round(total), projects, basis,
+    fixedItems: fixedItems.map((f) => ({ id: f.id, name: f.name, kind: f.kind_label, amount: round(f.amount) })),
     share: projects.length ? round(total / projects.length) : 0,
     staff: detail ? [...staff.values()].map((s) => ({ ...s, cost: round(s.cost), fees: round(s.fees), total: round(s.cost + s.fees) })) : [],
     renewals: detail ? renewals.map((r) => ({ ...r, amount: round(r.amount) })) : [],
@@ -161,5 +187,6 @@ export function projectCost(projectId, from, to, custody = 0) {
     WHERE a.project_id = ? AND a.date BETWEEN ? AND ?`).get(projectId, from, to).v;
   const iqama = feesByProject(from, to).get(projectId) ?? 0;
   const overhead = overheadFor(projectId, monthsBetween(from, to));
-  return { labour: round(labour), iqama: round(iqama), overhead, custody: round(custody), total: round(labour + iqama + overhead + custody) };
+  const fixed = fixedByProject(from, to).get(projectId) ?? 0;
+  return { labour: round(labour), iqama: round(iqama), fixed: round(fixed), overhead, custody: round(custody), total: round(labour + iqama + fixed + overhead + custody) };
 }

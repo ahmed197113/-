@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Icon } from '../icons'
 import { NAV } from '../nav'
-import { Toaster } from '../ui'
+import { Toaster, useCan } from '../ui'
 
 // Opened inside the custody app (it shows its own menu, logo and account): no second sidebar,
 // just the sections as a slim bar on top so it feels like one system.
@@ -11,13 +11,15 @@ const EMBEDDED = (() => { try { return window.self !== window.top } catch { retu
 if (EMBEDDED) document.documentElement.classList.add('embedded')
 
 export default function Layout() {
+  const can = useCan()
+  const nav = NAV.filter((n) => !n.perm || can(n.perm as Parameters<typeof can>[0]))
   const { user, logout, status } = useAuth()
   const [open, setOpen] = useState(false)
 
   if (EMBEDDED) return (
     <div className="shell embedded">
       <nav className="topnav">
-        {NAV.map((n) => (
+        {nav.map((n) => (
           <NavLink key={n.path} to={n.path} end={n.path === '/'} className={({ isActive }) => `top-item ${isActive ? 'active' : ''}`}>
             <Icon name={n.icon} size={18} />
             <span>{n.label}</span>
@@ -42,7 +44,7 @@ export default function Layout() {
           </div>
         </div>
         <nav>
-          {NAV.map((n) => (
+          {nav.map((n) => (
             <NavLink key={n.path} to={n.path} end={n.path === '/'} onClick={() => setOpen(false)} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <Icon name={n.icon} />
               <span>{n.label}</span>

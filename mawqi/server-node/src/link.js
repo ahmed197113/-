@@ -5,7 +5,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { db, getSetting, setSetting } from './db.js';
 import { hashPassword, isTop, issueToken } from './auth.js';
 import { round, todayStr } from './util.js';
-import { COST, feePortions, monthsBetween, overheadMonth } from './costs.js';
+import { COST, feePortions, fixedByProject, fixedPortions, monthsBetween, overheadMonth } from './costs.js';
 
 const ROLES = ['admin', 'sysadmin', 'project_manager', 'supervisor', 'accountant'];
 export const linkInfo = () => ({ url: getSetting('custody_url', ''), key: getSetting('custody_key', '') });
@@ -120,16 +120,19 @@ linkPublic.get('/integration/costs', (req, res) => {
   const overhead = months.map((m) => {
     const o = overheadMonth(m, true);
     for (const x of o.projects) { const p = byId.get(x.id); if (p) p.overhead += x.share; }
-    return { month: m, salaries: o.salaries, fees: o.fees, total: o.total, basis: o.basis, projects: o.projects, staff: o.staff };
+    return { month: m, salaries: o.salaries, fees: o.fees, fixed: o.fixed, fixedItems: o.fixedItems, total: o.total, basis: o.basis, projects: o.projects, staff: o.staff };
   });
-  for (const p of projects) { p.fees = round(p.fees); p.overhead = round(p.overhead); }
+  const fixed = fixedByProject(from, to);
+  for (const p of projects) { p.fees = round(p.fees); p.overhead = round(p.overhead); p.fixed = round(fixed.get(p.id) ?? 0); }
   const invoices = db.prepare(`SELECT v.id, v.kind, v.number, v.status, v.gross, COALESCE(v.period_to, substr(v.created_at,1,10)) AS date, v.project_id, s.name AS sub
     FROM invoices v LEFT JOIN subcontractors s ON s.id = v.subcontractor_id
     WHERE v.status IN ('approved','paid') AND COALESCE(v.period_to, substr(v.created_at,1,10)) BETWEEN $from AND $to ${only ? `AND v.project_id = ${only}` : ''} ORDER BY date`).all(P);
   const labourMonths = only ? db.prepare(`SELECT substr(a.date,1,7) AS month, COUNT(DISTINCT a.worker_id) AS workers, SUM(a.status IN ('present','late','overtime')) AS man_days, COALESCE(SUM(${COST}), 0) AS cost
     FROM attendance a JOIN workers w ON w.id = a.worker_id WHERE a.project_id = ? AND a.date BETWEEN ? AND ? GROUP BY month ORDER BY month`).all(only, from, to).map((r) => ({ ...r, cost: round(r.cost) })) : [];
+  const fixedLines = only ? months.flatMap((m) => fixedPortions(m).filter((f) => f.project_id === only)
+    .map((f) => ({ month: m, name: f.name, kind: f.kind_label, total: round(f.total), months: f.months, amount: round(f.amount) }))) : [];
   const workers = db.prepare(`SELECT COUNT(*) AS n, SUM(wage_type = 'monthly') AS monthly FROM workers WHERE active = 1`).get();
-  res.json({ from, to, projects, overhead, fees, invoices, labourMonths, workers: workers.n });
+  res.json({ from, to, projects, overhead, fees, fixedLines, invoices, labourMonths, workers: workers.n });
 });
 
 const norm = (t) => String(t || '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();

@@ -5,7 +5,7 @@ import { Router } from 'express';
 import { db, officeId } from './db.js';
 import { PERMISSIONS, projectScope } from './auth.js';
 import { addDays, round, todayStr } from './util.js';
-import { COST, FEE_KINDS, feePortions, feesByProject, monthsBetween, overheadMonth, RATE } from './costs.js';
+import { COST, FEE_KINDS, feePortions, feesByProject, fixedByProject, monthsBetween, overheadMonth, RATE } from './costs.js';
 import { custodyExpenseLines, custodyExpenses } from './link.js';
 
 export const reports = Router();
@@ -24,7 +24,7 @@ const opts = (o) => Object.entries(o).map(([value, label]) => ({ value, label })
  * fin = financial report (hidden from site supervisors).
  */
 const CATALOG = [
-  { group: 'التكاليف والمالية', kind: 'project_costs', title: 'التكلفة الفعلية للمشاريع', text: 'عمالة + إقامات وكروت عمل وتأمين + حصة الإدارة + العهد + مقاولو الباطن، مقابل المستخلصات', filters: ['range', 'project'], fin: true },
+  { group: 'التكاليف والمالية', kind: 'project_costs', title: 'التكلفة الفعلية للمشاريع', text: 'عمالة + إقامات وكروت عمل وتأمين + إيجارات + حصة الإدارة + العهد + مقاولو الباطن، مقابل المستخلصات', filters: ['range', 'project'], fin: true },
   { group: 'التكاليف والمالية', kind: 'overhead', title: 'مصاريف الإدارة وتوزيعها', text: 'رواتب ورسوم موظفي الإدارة شهرياً وحصة كل مشروع بنسبة عماله', filters: ['range'], fin: true },
   { group: 'التكاليف والمالية', kind: 'office_staff', title: 'موظفو الإدارة وتكلفتهم', text: 'كل موظف إداري: الأيام والراتب المحمّل على المشاريع', filters: ['range', 'q'], fin: true },
   { group: 'التكاليف والمالية', kind: 'iqama_renewals', title: 'الإقامات وكروت العمل والتأمين', text: 'كل مبلغ مدفوع: العامل والنوع والمدة والموقع', filters: ['range', 'project', 'kind', 'q'], fin: true,
@@ -127,17 +127,18 @@ async function build(kind, { from, to, project, inScope, q, scope }) {
       const share = new Map();
       for (const m of months) { const o = overheadMonth(m); for (const p of o.projects) share.set(p.id, (share.get(p.id) ?? 0) + p.share); }
       const fees = feesByProject(from, to);
-      for (const p of rows) p.iqama = fees.get(p.id) ?? 0;
+      const fixed = fixedByProject(from, to);
+      for (const p of rows) { p.iqama = fees.get(p.id) ?? 0; p.fixed = fixed.get(p.id) ?? 0; }
       const cx = await custodyExpenses(from, to);
       return {
-        columns: [C('name', 'المشروع'), C('man_days', 'أيام عمل', 'n', { sum: true }), C('labour', 'العمالة', 'm', { sum: true }), C('iqama', 'إقامات وكروت عمل وتأمين', 'm', { sum: true }),
+        columns: [C('name', 'المشروع'), C('man_days', 'أيام عمل', 'n', { sum: true }), C('labour', 'العمالة', 'm', { sum: true }), C('iqama', 'إقامات وكروت عمل وتأمين', 'm', { sum: true }), C('fixed', 'إيجارات ومصروفات ثابتة', 'm', { sum: true }),
           C('overhead', 'حصة الإدارة', 'm', { sum: true }), C('custody', 'مصروفات العهد', 'm', { sum: true }), C('subs', 'مقاولو الباطن', 'm', { sum: true }), C('total', 'التكلفة الفعلية', 'm', { sum: true, strong: true }),
           C('billed', 'المستخلص المعتمد', 'm', { sum: true }), C('margin', 'الفرق', 'm', { sum: true, tone: true })],
         rows: rows.map((p) => {
           const overhead = round(share.get(p.id) ?? 0);
           const custody = round(cx.byProject.get(p.id) || 0);
-          const total = round(p.labour + p.iqama + overhead + custody + p.subs);
-          return { name: placeName(p.name, p.kind), man_days: p.man_days, labour: round(p.labour), iqama: round(p.iqama), overhead, custody, subs: round(p.subs), total, billed: round(p.billed), margin: round(p.billed - total) };
+          const total = round(p.labour + p.iqama + p.fixed + overhead + custody + p.subs);
+          return { name: placeName(p.name, p.kind), man_days: p.man_days, labour: round(p.labour), iqama: round(p.iqama), fixed: round(p.fixed), overhead, custody, subs: round(p.subs), total, billed: round(p.billed), margin: round(p.billed - total) };
         }),
         cards: (_r, t) => [card('التكلفة الفعلية', t.total), card('منها حصة الإدارة', t.overhead), card('منها مصروفات العهد', t.custody), card('المستخلص المعتمد', t.billed, 'm', 'good'), card('الفرق', t.margin, 'm', t.margin < 0 ? 'bad' : 'good')],
         note: 'حصة الإدارة = (رواتب موظفي الإدارة + رسومهم) موزّعة على المشاريع الجارية بنسبة أيام عمل عمال كل مشروع في الشهر. الإقامة وكرت العمل والتأمين تُوزَّع على أشهر مدتها (3 أو 6 أو 12). مصروفات العهد = المصروفات المعتمدة في تطبيق العهدة على مراكز التكلفة المربوطة بالمشروع.'
@@ -148,15 +149,15 @@ async function build(kind, { from, to, project, inScope, q, scope }) {
       const rows = [];
       for (const m of monthsBetween(from, to)) {
         const o = overheadMonth(m);
-        if (!o.projects.length) rows.push({ month: m, salaries: o.salaries, fees: o.fees, total: o.total, project: '— لا توجد مشاريع جارية', workers: 0, pct: 0, share: 0 });
-        o.projects.forEach((p, i) => rows.push({ month: i ? '' : m, salaries: i ? null : o.salaries, fees: i ? null : o.fees, total: i ? null : o.total,
+        if (!o.projects.length) rows.push({ month: m, salaries: o.salaries, fees: o.fees, fixed: o.fixed, total: o.total, project: '— لا توجد مشاريع جارية', workers: 0, pct: 0, share: 0 });
+        o.projects.forEach((p, i) => rows.push({ month: i ? '' : m, salaries: i ? null : o.salaries, fees: i ? null : o.fees, fixed: i ? null : o.fixed, total: i ? null : o.total,
           project: p.name, workers: p.workers, worker_days: p.worker_days, pct: p.pct, share: p.share }));
       }
       return {
-        columns: [C('month', 'الشهر'), C('salaries', 'رواتب الإدارة', 'm', { sum: true }), C('fees', 'رسوم الإدارة', 'm', { sum: true }), C('total', 'مصاريف الإدارة', 'm', { sum: true, strong: true }),
+        columns: [C('month', 'الشهر'), C('salaries', 'رواتب الإدارة', 'm', { sum: true }), C('fees', 'رسوم الإدارة', 'm', { sum: true }), C('fixed', 'إيجارات ومصروفات ثابتة', 'm', { sum: true }), C('total', 'مصاريف الإدارة', 'm', { sum: true, strong: true }),
           C('project', 'المشروع'), C('worker_days', 'أيام عمل العمال', 'n', { sum: true }), C('workers', 'متوسط العمال', 'n'), C('pct', 'النسبة %', 'n'), C('share', 'حصة المشروع', 'm', { sum: true, strong: true })],
         rows,
-        cards: (_r, t) => [card('مصاريف الإدارة', t.total), card('الرواتب', t.salaries), card('الإقامات وكروت العمل والتأمين', t.fees)],
+        cards: (_r, t) => [card('مصاريف الإدارة', t.total), card('الرواتب', t.salaries), card('الإقامات وكروت العمل والتأمين', t.fees), card('الإيجارات والمصروفات الثابتة', t.fixed)],
         note: 'تُوزَّع مصاريف الإدارة كل شهر على المشاريع الجارية بنسبة أيام عمل عمالها: مشروع فيه 3 عمال ومشروع فيه 6 يأخذان 33% و67%. إذا لم يكن في أي مشروع عمال تُقسم بالتساوي.',
       };
     }

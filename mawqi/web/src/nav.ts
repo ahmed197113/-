@@ -9,6 +9,7 @@ export const NAV: NavItem[] = [
   { path: '/issues', label: 'المشاكل والبلاغات', icon: 'issues' },
   { path: '/invoices', label: 'المستخلصات', icon: 'contracts' },
   { path: '/direct-orders', label: 'الإسناد المباشر', icon: 'assign' },
+  { path: '/fixed-costs', label: 'الإيجارات والمصروفات الثابتة', icon: 'money', perm: 'costs' },
   { path: '/reports', label: 'التقارير والتصدير', icon: 'exports' },
   { path: '/settings', label: 'الإعدادات', icon: 'settings' },
 ]
